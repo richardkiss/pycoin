@@ -2,9 +2,7 @@
 
 import distutils.core
 
-kwargs = {}
-
-version = "0.1"
+version = "0.11"
 
 distutils.core.setup(
     name="pycoin",
@@ -13,7 +11,6 @@ distutils.core.setup(
     author="Richard Kiss",
     author_email="him@richardkiss.com",
     url="https://github.com/richardkiss/pycoin",
-    license="http://www.apache.org/licenses/LICENSE-2.0",
-    description="A bunch of utilities that might be helpful when dealing with Bitcoin addresses and transactions.",
-    **kwargs
+    license="http://opensource.org/licenses/MIT",
+    description="A bunch of utilities that might be helpful when dealing with Bitcoin addresses and transactions."
 )
