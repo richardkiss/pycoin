@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
+Deal with the part of a Tx that specifies where the Bitcoin goes to.
 
 
 The MIT License (MIT)
@@ -26,4 +26,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from .Tx import Tx, ValidationFailureError
+import decimal
+
+from ..serialize.bitcoin_streamer import parse_struct, stream_struct
+
+from .script.tools import disassemble
+
+COIN_FACTOR = decimal.Decimal(100000000)
+
+class TxOut(object):
+    """
+    The part of a Tx that specifies where the Bitcoin goes to.
+    """
+    def __init__(self, coin_value, script):
+        self.coin_value = int(coin_value)
+        self.script = script
+
+    def stream(self, f):
+        stream_struct("QS", f, self.coin_value, self.script)
+
+    @classmethod
+    def parse(self, f):
+        return self(*parse_struct("QS", f))
+
+    def __str__(self):
+        return 'TxOut<%s "%s">' % (decimal.Decimal(self.coin_value)/COIN_FACTOR, disassemble(self.script))

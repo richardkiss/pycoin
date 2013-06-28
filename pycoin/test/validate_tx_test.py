@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
+import binascii
 import io
 import unittest
 
 from pycoin.tx import Tx, ValidationFailureError, script
 from pycoin.tx.script import tools
-from pycoin.serialize import h2b, h2b_rev
 from pycoin.block import Block
+
+h2b = binascii.unhexlify
 
 class ValidatingTest(unittest.TestCase):
     def test_validate(self):
@@ -62,7 +64,7 @@ class ValidatingTest(unittest.TestCase):
         tx_to_validate = block_80974.txs[2]
         self.assertEqual("OP_DUP OP_HASH160 d4caa8447532ca8ee4c80a1ae1d230a01e22bfdb OP_EQUALVERIFY OP_CHECKSIG",
             tools.disassemble(tx_to_validate.txs_out[0].script))
-        self.assertEqual(tx_to_validate.hash(), h2b_rev("7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b"))
+        self.assertEqual(tx_to_validate.id(), "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b")
 
         tx_to_validate.validate(tx_db)
 
@@ -82,7 +84,7 @@ class ValidatingTest(unittest.TestCase):
         with self.assertRaises(ValidationFailureError) as cm:
             tx_to_validate.validate(tx_db)
         exception = cm.exception
-        self.assertEqual(exception.args[0], "Tx 3c0ef7e369e81876abb0c870d433c935660126be62a9fd5fef22394d898d1465 TxIn index 0 did not verify")
+        self.assertEqual(exception.args[0], "Tx 3c0ef7e369e81876abb0c870d433c935660126be62a9fd5fef22394d898d1465 TxIn index 0 script did not verify")
 
 def main():
     unittest.main()

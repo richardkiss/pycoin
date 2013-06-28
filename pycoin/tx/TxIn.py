@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
+Deal with the part of a Tx that specifies where the Bitcoin comes from.
 
 
 The MIT License (MIT)
@@ -26,4 +26,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from .Tx import Tx, ValidationFailureError
+from ..serialize import b2h, b2h_rev
+from ..serialize.bitcoin_streamer import parse_struct, stream_struct
+
+from .script.tools import disassemble
+
+class TxIn(object):
+    """
+    The part of a Tx that specifies where the Bitcoin comes from.
+    """
+    def __init__(self, previous_hash, previous_index, script=b'', sequence=4294967295):
+        self.previous_hash = previous_hash
+        self.previous_index = previous_index
+        self.script = script
+        self.sequence = sequence
+
+    def stream(self, f):
+        stream_struct("#LSL", f, self.previous_hash, self.previous_index, self.script, self.sequence)
+
+    @classmethod
+    def parse(self, f):
+        return self(*parse_struct("#LSL", f))
+
+    def __str__(self):
+        return 'TxIn<%s[%d] "%s">' % (b2h_rev(self.previous_hash), self.previous_index, disassemble(self.script))
+
+class TxInGeneration(TxIn):
+    def __str__(self):
+        return 'TxIn<COINBASE: %s>' % b2h(self.script)
