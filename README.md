@@ -1,7 +1,7 @@
 pycoin -- Python Bitcoin Utilities
 ==================================
 
-This is an implementation of a bunch of utility routines that may be useful when dealing with Bitcoin stuff. It has been test with Python 3.3 (but *not* Python 2.7).
+This is an implementation of a bunch of utility routines that may be useful when dealing with Bitcoin stuff. It has been tested with Python 2.7 and Python 3.3.
 
 
 ECDSA Signing and Verification

@@ -86,8 +86,5 @@ class ValidatingTest(unittest.TestCase):
         exception = cm.exception
         self.assertEqual(exception.args[0], "Tx 3c0ef7e369e81876abb0c870d433c935660126be62a9fd5fef22394d898d1465 TxIn index 0 script did not verify")
 
-def main():
-    unittest.main()
-
 if __name__ == "__main__":
-    main()
+    unittest.main()

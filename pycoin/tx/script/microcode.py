@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
+Implement instructions of the Bitcoin VM.
 
 
 The MIT License (MIT)
@@ -27,9 +27,11 @@ THE SOFTWARE.
 """
 
 import binascii
+import hashlib
+
+from . import ScriptError
 
 from .opcodes import OPCODE_TO_INT
-
 from ...encoding import ripemd160_sha256, double_sha256
 
 def as_bignum(s):
@@ -47,8 +49,8 @@ def from_bignum(v):
         l.append(mod)
     return bytes(l)
 
-VCH_TRUE = '\1\1'
-VCH_FALSE = '\0'
+VCH_TRUE = b'\1\1'
+VCH_FALSE = b'\0'
 
 do_OP_NOP = do_OP_NOP1 = do_OP_NOP2 = do_OP_NOP3 = do_OP_NOP4 = do_OP_NOP5 = lambda s: None
 do_OP_NOP6 = do_OP_NOP7 = do_OP_NOP8 = do_OP_NOP9 = do_OP_NOP10 = lambda s: None
@@ -248,7 +250,7 @@ def do_OP_CAT(stack):
 
 def do_OP_SUBSTR(stack):
     """
-    >>> s = ['abcdef', chr(3), chr(2)]
+    >>> s = ['abcdef', bytes([3]), bytes([2])]
     >>> do_OP_SUBSTR(s)
     >>> print(s)
     ['de']
@@ -259,23 +261,35 @@ def do_OP_SUBSTR(stack):
 
 def do_OP_LEFT(stack):
     """
-    >>> s = ['abcdef', chr(3)]
+    >>> s = [b'abcdef', bytes([3])]
     >>> do_OP_LEFT(s)
     >>> print(s)
-    ['abc']
+    [b'abc']
+    >>> s = [b'abcdef', bytes([0])]
+    >>> do_OP_LEFT(s)
+    >>> print(s)
+    [b'']
     """
     pos = as_bignum(stack.pop())
     stack.append(stack.pop()[:pos])
 
 def do_OP_RIGHT(stack):
     """
-    >>> s = ['abcdef', chr(3)]
+    >>> s = [b'abcdef', bytes([3])]
     >>> do_OP_RIGHT(s)
     >>> print(s)
-    ['def']
+    [b'def']
+    >>> s = [b'abcdef', bytes([0])]
+    >>> do_OP_RIGHT(s)
+    >>> print(s)
+    [b'']
     """
     pos = as_bignum(stack.pop())
-    stack.append(stack.pop()[-pos:])
+    if pos > 0:
+        stack.append(stack.pop()[-pos:])
+    else:
+        stack.pop()
+        stack.append(b'')
 
 def do_OP_SIZE(stack):
     """
@@ -339,11 +353,21 @@ def make_bool(v):
     return VCH_FALSE
 
 def do_OP_EQUAL(stack):
+    """
+    >>> s = [b'string1', b'string1']
+    >>> do_OP_EQUAL(s)
+    >>> print(s == [VCH_TRUE])
+    True
+    >>> s = [b'string1', b'string2']
+    >>> do_OP_EQUAL(s)
+    >>> print(s == [VCH_FALSE])
+    True
+    """
     v1 = stack.pop()
     v2 = stack.pop()
     stack.append(make_bool(v1 == v2))
 
-do_OP_EQUALVERIFY = do_OP_EQUAL
+do_OP_EQUALVERIFY = lambda s: do_OP_EQUAL(s)
 
 def make_bin_op(binop):
     def f(stack):
@@ -372,6 +396,16 @@ do_OP_MIN = make_bin_op(min)
 do_OP_MAX = make_bin_op(max)
 
 def do_OP_WITHIN(stack):
+    """
+    >>> s = [b'c', b'b', b'a']
+    >>> do_OP_WITHIN(s)
+    >>> print(s == [VCH_TRUE])
+    True
+    >>> s = [b'b', b'c', b'a']
+    >>> do_OP_WITHIN(s)
+    >>> print(s == [VCH_FALSE])
+    True
+    """
     v3 = stack.pop()
     v2 = stack.pop()
     v1 = stack.pop()
@@ -379,19 +413,49 @@ def do_OP_WITHIN(stack):
     stack.append(make_bool(ok))
 
 def do_OP_RIPEMD160(stack):
-    stack.append(ripmemd160(stack.pop()))
+    """
+    >>> s = [b'foo']
+    >>> do_OP_RIPEMD160(s)
+    >>> print(s == [bytes([66, 207, 162, 17, 1, 142, 164, 146, 253, 238, 69, 172, 99, 123, 121, 114, 160, 173, 104, 115])])
+    True
+    """
+    stack.append(hashlib.new("ripemd160", stack.pop()).digest())
 
 def do_OP_SHA1(stack):
+    """
+    >>> s = [b'foo']
+    >>> do_OP_SHA1(s)
+    >>> print(s == [bytes([11, 238, 199, 181, 234, 63, 15, 219, 201, 93, 13, 212, 127, 60, 91, 194, 117, 218, 138, 51])])
+    True
+    """
     stack.append(hashlib.sha1(stack.pop()).digest())
 
 def do_OP_SHA256(stack):
+    """
+    >>> s = [b'foo']
+    >>> do_OP_SHA256(s)
+    >>> print(s == [bytes([44, 38, 180, 107, 104, 255, 198, 143, 249, 155, 69, 60, 29, 48, 65, 52, 19, 66, 45, 112, 100, 131, 191, 160, 249, 138, 94, 136, 98, 102, 231, 174])])
+    True
+    """
     stack.append(hashlib.sha256(stack.pop()).digest())
 
 def do_OP_HASH160(stack):
+    """
+    >>> s = [b'foo']
+    >>> do_OP_HASH160(s)
+    >>> print(s == [bytes([225, 207, 124, 129, 3, 71, 107, 109, 127, 233, 228, 151, 154, 161, 14, 124, 83, 31, 207, 66])])
+    True
+    """
     stack.append(ripemd160_sha256(stack.pop()))
 
 def do_OP_HASH256(stack):
-    stack.append(double_sha256(stack.pop()).digest())
+    """
+    >>> s = [b'foo']
+    >>> do_OP_HASH256(s)
+    >>> print(s == [bytes([199, 173, 232, 143, 199, 162, 20, 152, 166, 165, 229, 195, 133, 225, 246, 139, 237, 130, 43, 114, 170, 99, 196, 169, 164, 138, 2, 194, 70, 110, 226, 158])])
+    True
+    """
+    stack.append(double_sha256(stack.pop()))
 
 def make_unary_num_op(unary_f):
     def f(stack):

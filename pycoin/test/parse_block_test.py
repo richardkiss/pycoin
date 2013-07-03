@@ -39,9 +39,9 @@ class BlockTest(unittest.TestCase):
         for tx in block.txs:
             print(tx)
             for t in tx.txs_in:
-                print("  ", t)
+                print("  %s" % t)
             for t in tx.txs_out:
-                print("  ", t)
+                print("  %s" % t)
 
         block.check_merkle_hash()
 

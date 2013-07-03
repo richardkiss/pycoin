@@ -19,7 +19,7 @@ def parse_bc_string(f):
 
 def stream_bc_int(f, v):
     if v < 253:
-        f.write(bytes([v]))
+        f.write(struct.pack("<B", v))
     elif v <= 65535:
         f.write(b'\xfd' + struct.pack("<H", v))
     elif v <= 0xffffffff:

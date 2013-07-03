@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
+Some tools for traversing Bitcoin VM scripts.
 
 
 The MIT License (MIT)
@@ -28,11 +28,14 @@ THE SOFTWARE.
 
 import binascii
 import io
+import logging
 
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
 
+bytes_from_int = chr if bytes == str else lambda x: bytes([x])
+
 def get_opcode(script, pc):
-    opcode = script[pc]
+    opcode = ord(script[pc:pc+1])
     pc += 1
     data = b''
     if opcode <= OPCODE_TO_INT["OP_PUSHDATA4"]:
@@ -55,11 +58,11 @@ def compile(s):
     f = io.BytesIO()
     for t in s.split():
         if t in OPCODE_TO_INT:
-            f.write(bytes([OPCODE_TO_INT[t]]))
+            f.write(bytes_from_int(OPCODE_TO_INT[t]))
         else:
             t = binascii.unhexlify(t)
             # BRAIN DAMAGE: if len(t) is too much, we need a different opcode
-            f.write(bytes([len(t)]))
+            f.write(bytes_from_int(len(t)))
             f.write(t)
     return f.getvalue()
 
@@ -76,3 +79,16 @@ def disassemble(script):
             continue
         opcodes.append(INT_TO_OPCODE[opcode])
     return ' '.join(opcodes)
+
+def delete_subscript(script, subscript):
+    new_script = bytearray()
+    pc = 0
+    size = len(subscript)
+    while pc < len(script):
+        if script[pc:pc+size] == subscript:
+            pc += size
+            continue
+        opcode, data, pc = get_opcode(script, pc)
+        new_script.append(opcode)
+        new_script += data
+    return bytes(new_script)

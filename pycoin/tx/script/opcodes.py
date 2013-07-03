@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
+Enumerate the opcodes of the Bitcoin VM.
 
 
 The MIT License (MIT)
@@ -164,6 +164,8 @@ OPCODE_TO_INT = dict(o for o in OPCODE_LIST)
 INT_TO_OPCODE = dict(reversed(i) for i in OPCODE_LIST)
 
 def populate_module():
+    """Make all the opcodes globals in this module to make it possible to
+    use constructs like opcodes.OP_PUBKEY"""
     g = globals()
     for opcode, val in OPCODE_LIST:
         g[opcode] = val

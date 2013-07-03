@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
+Sign and verify Bitcoin transactions.
+
+These functions were adapted from the Bitcoin-QT client, as of around 0.31,
+for maximum compatibility. Some of what's going on is a bit cryptic.
 
 
 The MIT License (MIT)
@@ -27,18 +30,21 @@ THE SOFTWARE.
 """
 
 import binascii
-import logging
-import io
-import struct
 
 from ... import ecdsa
-from ...encoding import public_pair_to_sec, public_pair_from_sec, double_sha256
+from ...encoding import from_bytes_32
+from ...encoding import public_pair_to_sec, public_pair_from_sec,\
+    ripemd160_sha256_sec_to_bitcoin_address, public_pair_to_bitcoin_address
 
 from . import der
 from . import opcodes
 from . import tools
 
+from . import ScriptError
+
 from .microcode import VCH_TRUE
+
+bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 
 SIGHASH_ALL = 1
 SIGHASH_NONE = 2
@@ -50,7 +56,12 @@ TEMPLATES = [
     tools.compile("OP_DUP OP_HASH160 OP_PUBKEYHASH OP_EQUALVERIFY OP_CHECKSIG"),
 ]
 
+class SigningError(Exception): pass
+
 def match_script_to_templates(script_public_key):
+    """Examine the script passed in by script_public_key and see if it
+    matches the form of one of the templates in TEMPLATES. If so,
+    return the form it matches; otherwise, return None."""
     script1 = script_public_key
     for script2 in TEMPLATES:
         r = []
@@ -73,43 +84,25 @@ def match_script_to_templates(script_public_key):
                 break
     return None
 
-def solver(script_public_key, hash, n_hash_type, secret_exponent_key_for_public_pair_lookup, public_key_for_hash):
-    # n_hash_type => 1
+def signature_hash(script, the_tx, n_in, hash_type):
+    """Return the canonical hash for a transaction. We need to
+    remove references to the signature, since it's a signature
+    of the hash before the signature is applied.
 
-    opcode_value_list = match_script_to_templates(script_public_key)
-    if not opcode_value_list:
-        return None
+    # TODO: move this into Tx
 
-    ba = bytearray()
+    script:
+    the_tx:
+    n_in:
+    hash_type:
+    """
 
-    for opcode, v in opcode_value_list:
-        if opcode not in (opcodes.OP_PUBKEY, opcodes.OP_PUBKEYHASH):
-            return None
-        if opcode == opcodes.OP_PUBKEY:
-            public_pair = public_pair_from_sec(v)
-        else:
-            public_pair, compressed = public_key_for_hash(v)
-        if hash != 0:
-            secret_exponent = secret_exponent_key_for_public_pair_lookup(public_pair)
-            r,s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, hash)
-            sig = sigencode_der(r, s) + bytes([n_hash_type])
-            ba += tools.compile(binascii.hexlify(sig).decode("utf8"))
-            if opcode == opcodes.OP_PUBKEYHASH:
-                ba += tools.compile(binascii.hexlify(public_pair_to_sec(public_pair, compressed=compressed)))
-
-    return bytes(ba)
-
-def signature_hash(script, tx_to, n_in, hash_type):
-    if n_in >= len(tx_to.txs_in):
-        raise Exception("transaction index n_in out of range")
-
-    s = io.BytesIO()
-    tx_to.stream(s)
-    tx_tmp = tx_to.parse(io.BytesIO(s.getvalue()))
+    # first off, make a copy of the the_tx
+    tx_tmp = the_tx.clone()
 
     # In case concatenating two scripts ends up with two codeseparators,
     # or an extra one at the end, this prevents all those possible incompatibilities.
-    script = delete_subscript(script, [opcodes.OP_CODESEPARATOR])
+    script = tools.delete_subscript(script, [opcodes.OP_CODESEPARATOR])
 
     # blank out other inputs' signatures
     for i in range(len(tx_tmp.txs_in)):
@@ -129,9 +122,6 @@ def signature_hash(script, tx_to, n_in, hash_type):
     elif (hash_type & 0x1f) == SIGHASH_SINGLE:
         # Only lockin the txout payee at same index as txin
         n_out = n_in
-        if n_out >= len(tx_tmp.txs_out):
-            raise Exception("transaction index n_out out of range")
-
         for i in range(n_out):
             tx_tmp.txs_out[i].coin_value = -1
             tx_tmp.txs_out[i].script = ''
@@ -145,11 +135,53 @@ def signature_hash(script, tx_to, n_in, hash_type):
     if hash_type & SIGHASH_ANYONECANPAY:
         tx_tmp.txs_in = [tx_tmp.txs_in[n_in]]
 
-    s = io.BytesIO()
-    tx_tmp.stream(s)
-    s.write(struct.pack("<L", hash_type))
-    v = double_sha256(s.getvalue())
-    return int.from_bytes(v, byteorder="big")
+    return from_bytes_32(tx_tmp.hash(hash_type=hash_type))
+
+def solver(script_public_key, hash, n_hash_type, secret_exponent_key_for_public_pair_lookup, public_pair_compressed_for_ripemd160_sha256_sec):
+    """Figure out how to create a signature for the incoming transaction, and sign it.
+
+    script_public_key: the tx_out script that needs to be "solved"
+    hash: the bignum hash value of the new transaction reassigning the coins
+    n_hash_type: always SIGHASH_ALL (1)
+    secret_exponent_key_for_public_pair_lookup: a function that returns the
+        secret_exponent for the given public_pair
+    public_pair_compressed_for_ripemd160_sha256_sec: a function returns a tuple
+        (public_pair, compressed) for a given ripemd160_sha256_sec
+    """
+    # n_hash_type => 1
+
+    opcode_value_list = match_script_to_templates(script_public_key)
+    if not opcode_value_list:
+        return None
+
+    if hash == 0:
+        raise SigningError("hash can't be 0")
+
+    ba = bytearray()
+
+    compressed = True
+    for opcode, v in opcode_value_list:
+        if opcode not in (opcodes.OP_PUBKEY, opcodes.OP_PUBKEYHASH):
+            return None
+        if opcode == opcodes.OP_PUBKEY:
+            public_pair = public_pair_from_sec(v)
+        else:
+            the_tuple = public_pair_compressed_for_ripemd160_sha256_sec(v)
+            if the_tuple is None:
+                bitcoin_address = ripemd160_sha256_sec_to_bitcoin_address(v)
+                raise SigningError("can't determine public key for %s" % bitcoin_address)
+            public_pair, compressed = the_tuple
+        secret_exponent = secret_exponent_key_for_public_pair_lookup(public_pair)
+        if secret_exponent is None:
+            bitcoin_address = public_pair_to_bitcoin_address(public_pair, compressed=compressed)
+            raise SigningError("can't determine private key for %s" % bitcoin_address)
+        r,s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, hash)
+        sig = der.sigencode_der(r, s) + bytes_from_int(n_hash_type)
+        ba += tools.compile(binascii.hexlify(sig).decode("utf8"))
+        if opcode == opcodes.OP_PUBKEYHASH:
+            ba += tools.compile(binascii.hexlify(public_pair_to_sec(public_pair, compressed=compressed)))
+
+    return bytes(ba)
 
 def sign_signature(tx_from, tx_to, n_in, secret_exponent_key_for_public_pair_lookup, public_key_for_hash, hash_type=SIGHASH_ALL, script_prereq=b''):
     # tx_from : the Tx where that has a TxOut assigned to this public key
@@ -168,45 +200,18 @@ def sign_signature(tx_from, tx_to, n_in, secret_exponent_key_for_public_pair_loo
         return False
     return script_prereq + new_script + tx_in.script
 
-def delete_subscript(script, subscript):
-    new_script = bytearray()
-    pc = 0
-    size = len(subscript)
-    while pc < len(script):
-        if script[pc:pc+size] == subscript:
-            pc += size
-            continue
-        opcode, data, pc = tools.get_opcode(script, pc)
-        new_script.append(opcode)
-        new_script += data
-    return bytes(new_script)
-
 def verify_script_signature(script, tx_to, n_in, public_key_blob, sig_blob, subscript, hash_type):
-    if sig_blob[-1] != 1:
-        raise ScriptError("unknown signature type %d" % sig_blob[-1])
-    sig_pair = sigdecode_der(sig_blob[:-1])
+    signature_type = ord(sig_blob[-1:])
+    if signature_type != 1:
+        raise ScriptError("unknown signature type %d" % signature_type)
+    sig_pair = der.sigdecode_der(sig_blob[:-1])
     # drop the signature, since there's no way for a signature to sign itself
-    subscript = delete_subscript(subscript, tools.compile(binascii.hexlify(sig_blob).decode("utf8")))
+    subscript = tools.delete_subscript(subscript, tools.compile(binascii.hexlify(sig_blob).decode("utf8")))
     if hash_type == 0:
-        hash_type = sig_blob[-1]
-    elif hash_type != sig_blob[-1]:
+        hash_type = signature_type
+    elif hash_type != signature_type:
         raise ScriptError("wrong hash type")
     the_hash = signature_hash(script, tx_to, n_in, hash_type)
     public_pair = public_pair_from_sec(public_key_blob)
     v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, the_hash, sig_pair)
     return v
-
-def sigencode_der(r, s):
-    return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
-
-def sigdecode_der(sig_der):
-    rs_strings, empty = der.remove_sequence(sig_der)
-    if empty != b"":
-        raise der.UnexpectedDER("trailing junk after DER sig: %s" %
-                                binascii.hexlify(empty))
-    r, rest = der.remove_integer(rs_strings)
-    s, empty = der.remove_integer(rest)
-    if empty != b"":
-        raise der.UnexpectedDER("trailing junk after DER numbers: %s" %
-                                binascii.hexlify(empty))
-    return r, s

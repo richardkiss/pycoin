@@ -32,6 +32,22 @@ import os
 
 from . import ellipticcurve, numbertheory
 
+def random_exponent_from_entropy(entropy_generator, order):
+    byte_count = 0
+    while 1:
+        if order == 0:
+            break
+        byte_count += 1
+        order >>= 8
+    random_bytes = entropy_generator(byte_count)
+    k = 0
+    idx = 0
+    while idx < len(random_bytes):
+        k <<= 8
+        k |= ord(random_bytes[idx:idx+1])
+        idx += 1
+    return k
+
 def sign(generator, secret_exponent, val, k=None, entropy_generator=os.urandom):
     """Return a signature for the provided hash, using the provided
     random nonce.  It is absolutely vital that random_k be an unpredictable
@@ -49,7 +65,7 @@ def sign(generator, secret_exponent, val, k=None, entropy_generator=os.urandom):
     G = generator
     n = G.order()
     if k is None:
-        k = int.from_bytes(entropy_generator((n.bit_length()+7)//8), byteorder='big')
+        k = random_exponent_from_entropy(entropy_generator, n)
     k = k % n
     p1 = k * G
     r = p1.x()
@@ -71,7 +87,10 @@ def public_pair_for_x(generator, x, is_even):
         return (x, p - beta)
     return (x, beta)
 
-def verify(generator, public_point, val, signature):
+def is_public_pair_valid(generator, public_pair):
+    return generator.curve().contains_point(public_pair[0], public_pair[1])
+
+def verify(generator, public_pair, val, signature):
     """
     Verify that signature is a valid signature of hash.
     Return True if the signature is valid.
@@ -87,7 +106,7 @@ def verify(generator, public_point, val, signature):
     c = numbertheory.inverse_mod( s, n )
     u1 = ( val * c ) % n
     u2 = ( r * c ) % n
-    point = u1 * G + u2 * ellipticcurve.Point( G.curve(), public_point[0], public_point[1], G.order() )
+    point = u1 * G + u2 * ellipticcurve.Point( G.curve(), public_pair[0], public_pair[1], G.order() )
     v = point.x() % n
     return v == r
 

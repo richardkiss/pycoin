@@ -8,7 +8,7 @@ class SigningTest(unittest.TestCase):
     def test_sign(self):
         for se in ["47f7616ea6f9b923076625b4488115de1ef1187f760e65f89eb6f4f7ff04b012"] + [x * 64 for x in "123456789abcde"]:
             secret_exponent = int(se, 16)
-            val = int.from_bytes(b"foo bar", byteorder="big")
+            val = 28832970699858290 #int.from_bytes(b"foo bar", byteorder="big")
             sig = sign(generator_secp256k1, secret_exponent, val)
 
             public_pair = public_pair_for_secret_exponent(generator_secp256k1, secret_exponent)

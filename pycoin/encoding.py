@@ -30,6 +30,9 @@ THE SOFTWARE.
 import binascii
 import hashlib
 
+bytes_from_int = chr if bytes == str else lambda x: bytes([x])
+byte_to_int = ord if bytes == str else lambda x: x
+
 BASE58_ALPHABET = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 BASE58_BASE = len(BASE58_ALPHABET)
 BASE58_LOOKUP = dict((c, i) for i, c in enumerate(BASE58_ALPHABET))
@@ -63,20 +66,40 @@ def from_long(v, prefix, base, charset):
     base: the new base
     charset: an array indicating what printable character to use for each value.
     """
-    l = []
+    l = bytearray()
     while v > 0:
         try:
             v, mod = divmod(v, base)
             l.append(charset(mod))
         except Exception:
             raise EncodingError("can't convert to character corresponding to %d" % mod)
-    l += [charset(0)] * prefix
+    l.extend([charset(0)] * prefix)
     l.reverse()
     return bytes(l)
 
+def to_bytes_32(v):
+    return from_long(v, 0, 256, lambda x: x)
+
+if hasattr(int, "to_bytes"):
+    to_bytes_32 = lambda v: v.to_bytes(32, byteorder="big")
+
+def from_bytes_32(v):
+    return to_long(256, byte_to_int, v)[0]
+
+if hasattr(int, "from_bytes"):
+    from_bytes_32 = lambda v: int.from_bytes(v, byteorder="big")
+
+def double_sha256(data):
+    """A standard compound hash."""
+    return hashlib.sha256(hashlib.sha256(data).digest()).digest()
+
+def ripemd160_sha256(data):
+    """A standard compound hash."""
+    return hashlib.new("ripemd160", hashlib.sha256(data).digest()).digest()
+
 def b2a_base58(s):
     """Convert binary to base58 using BASE58_ALPHABET. Like Bitcoin addresses."""
-    v, prefix = to_long(256, lambda x: x, s)
+    v, prefix = to_long(256, byte_to_int, s)
     s = from_long(v, prefix, BASE58_BASE, lambda v: BASE58_ALPHABET[v])
     return s.decode("utf8")
 
@@ -106,13 +129,13 @@ def a2b_hashed_base58(s):
         return data
     raise EncodingError("hashed base58 has bad checksum %s" % s)
 
-def double_sha256(data):
-    """A standard compound hash."""
-    return hashlib.sha256(hashlib.sha256(data).digest()).digest()
-
-def ripemd160_sha256(data):
-    """A standard compound hash."""
-    return hashlib.new("ripemd160", hashlib.sha256(data).digest()).digest()
+def is_hashed_base58_valid(base58):
+    """Return True if and only if base58 is valid hashed_base58."""
+    try:
+        a2b_hashed_base58(base58)
+    except EncodingError:
+        return False
+    return True
 
 def wif_to_tuple_of_secret_exponent_compressed(wif):
     """Convert a WIF string to the corresponding secret exponent. Private key manipulation.
@@ -122,11 +145,11 @@ def wif_to_tuple_of_secret_exponent_compressed(wif):
     Not that it matters, since we can use the secret exponent to generate both the compressed
     and uncompressed Bitcoin address."""
     decoded = a2b_hashed_base58(wif)
-    header80, private_key = decoded[0], decoded[1:]
-    if header80 != 128:
+    header80, private_key = decoded[:1], decoded[1:]
+    if header80 != b'\x80':
         raise EncodingError("unexpected first byte of WIF %s" % wif)
     compressed = len(private_key) > 32
-    return int.from_bytes(private_key[:32], byteorder="big"), compressed
+    return from_bytes_32(private_key[:32]), compressed
 
 def wif_to_secret_exponent(wif):
     """Convert a WIF string to the corresponding secret exponent."""
@@ -142,9 +165,39 @@ def is_valid_wif(wif):
 
 def secret_exponent_to_wif(secret_exp, compressed=True):
     """Convert a secret exponent (correspdong to a private key) to WIF format."""
-    d = b'\x80' + secret_exp.to_bytes(32, byteorder="big")
+    d = b'\x80' + to_bytes_32(secret_exp)
     if compressed: d += b'\01'
     return b2a_hashed_base58(d)
+
+def public_pair_to_sec(public_pair, compressed=True):
+    """Convert a public pair (a pair of bignums corresponding to a public key) to the
+    gross internal sec binary format used by OpenSSL."""
+    x_str = to_bytes_32(public_pair[0])
+    if compressed:
+        return bytes_from_int((2 + (public_pair[1] & 1))) + x_str
+    y_str = to_bytes_32(public_pair[1])
+    return b'\4' + x_str + y_str
+
+def public_pair_from_sec(sec):
+    """Convert a public key in sec binary format to a public pair."""
+    x = from_bytes_32(sec[1:33])
+    sec0 = sec[:1]
+    if sec0 == b'\4':
+        y = from_bytes_32(sec[33:65])
+        from .ecdsa import generator_secp256k1, is_public_pair_valid
+        public_pair = (x, y)
+        # verify this is on the curve
+        if not is_public_pair_valid(generator_secp256k1, public_pair):
+            raise EncodingError("invalid (x, y) pair")
+        return public_pair
+    if sec0 in (b'\2', b'\3'):
+        from .ecdsa import public_pair_for_x, generator_secp256k1
+        return public_pair_for_x(generator_secp256k1, x, is_even=(sec0==b'\2'))
+    raise EncodingError("bad sec encoding for public key")
+
+def is_sec_compressed(sec):
+    """Return a boolean indicating if the sec represents a compressed public key."""
+    return sec[:1] in (b'\2', b'\3')
 
 def public_pair_to_ripemd160_sha256_sec(public_pair, compressed=True):
     """Convert a public_pair (corresponding to a public key) to ripemd160_sha256_sec format.
@@ -152,9 +205,9 @@ def public_pair_to_ripemd160_sha256_sec(public_pair, compressed=True):
     the corresponding Bitcoin address."""
     return ripemd160_sha256(public_pair_to_sec(public_pair, compressed=compressed))
 
-def public_pair_to_bitcoin_address(public_pair, compressed=True):
-    """Convert a public_pair (corresponding to a public key) to a Bitcoin address."""
-    return b2a_hashed_base58(b"\x00" + public_pair_to_ripemd160_sha256_sec(public_pair, compressed=compressed))
+def ripemd160_sha256_sec_to_bitcoin_address(ripemd160_sha256_sec):
+    """Convert the ripemd160_sha256 of a sec version of a public_pair to a Bitcoin address."""
+    return b2a_hashed_base58(b'\0' + ripemd160_sha256_sec)
 
 def bitcoin_address_to_ripemd160_sha256_sec(bitcoin_address):
     """Convert a Bitcoin address back to the ripemd160_sha256_sec format of the public key.
@@ -162,9 +215,13 @@ def bitcoin_address_to_ripemd160_sha256_sec(bitcoin_address):
     blob = a2b_hashed_base58(bitcoin_address)
     if len(blob) != 21:
         raise EncodingError("incorrect binary length (%d) for Bitcoin address %s" % (len(blob), bitcoin_address))
-    if blob[0] != 0:
-        raise EncodingError("incorrect first byte (%d) for Bitcoin address %s" % (blob[0], bitcoin_address))
+    if blob[:1] != b'\0':
+        raise EncodingError("incorrect first byte (%s) for Bitcoin address %s" % (blob[0], bitcoin_address))
     return blob[1:]
+
+def public_pair_to_bitcoin_address(public_pair, compressed=True):
+    """Convert a public_pair (corresponding to a public key) to a Bitcoin address."""
+    return ripemd160_sha256_sec_to_bitcoin_address(public_pair_to_ripemd160_sha256_sec(public_pair, compressed=compressed))
 
 def is_valid_bitcoin_address(bitcoin_address):
     """Return True if and only if bitcoin_address is valid."""
@@ -173,36 +230,3 @@ def is_valid_bitcoin_address(bitcoin_address):
     except EncodingError:
         return False
     return True
-
-def is_hashed_base58_valid(base58):
-    """Return True if and only if base58 is valid hashed_base58."""
-    try:
-        a2b_hashed_base58(base58)
-    except EncodingError:
-        return False
-    return True
-
-def public_pair_to_sec(public_pair, compressed=True):
-    """Convert a public pair (a pair of bignums corresponding to a public key) to the
-    gross internal sec binary format used by OpenSSL."""
-    x_str = public_pair[0].to_bytes(32, byteorder="big")
-    if compressed:
-        return bytes([(2 + (public_pair[1] & 1))]) + x_str
-    y_str = public_pair[1].to_bytes(32, byteorder="big")
-    return bytes([4]) + x_str + y_str
-
-def public_pair_from_sec(sec):
-    """Convert a public key in sec binary format to a public pair."""
-    x = int.from_bytes(sec[1:33], byteorder="big")
-    if sec[0] == 4:
-        y = int.from_bytes(sec[33:65], byteorder="big")
-        # TODO: verify this is on the curve
-        return (x, y)
-    if sec[0] in (2, 3):
-        from .ecdsa import public_pair_for_x, generator_secp256k1
-        return public_pair_for_x(generator_secp256k1, x, is_even=(sec[0]==2))
-    raise EncodingError("bad sec encoding for public key")
-
-def is_sec_compressed(sec):
-    """Return a boolean indicating if the sec represents a compressed public key."""
-    return sec[0] in (2,3)

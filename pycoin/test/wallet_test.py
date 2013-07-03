@@ -130,7 +130,7 @@ class Bip0032TestCase(unittest.TestCase):
                 self.assertEqual(k.wallet_key(), k2.wallet_key())
                 self.assertEqual(k.wallet_key(), k3.wallet_key())
                 self.assertEqual(k.wallet_key(), k4.wallet_key())
-                print("   ", k.bitcoin_address(), k.wif())
+                print("   %s %s" % (k.bitcoin_address(), k.wif()))
 
 if __name__ == '__main__':
     unittest.main()
