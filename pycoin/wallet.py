@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-A BIP0029-style hierarchical wallet.
+A BIP0032-style hierarchical wallet.
 
-Implement a BIP0029-style hierarchical wallet which can create public
+Implement a BIP0032-style hierarchical wallet which can create public
 or private wallet keys. Each key can create many child nodes. Each node
 has a wallet key and a corresponding private & public key, which can
 be used to generate Bitcoin addresses or WIF private keys.
@@ -111,7 +111,7 @@ class Wallet(object):
                 raise EncodingError("private key encoding wrong length")
             self.secret_exponent_bytes = secret_exponent_bytes
             self.secret_exponent = from_bytes_32(self.secret_exponent_bytes)
-            if self.secret_exponent > ecdsa.generator_secp256k1.curve().p():
+            if self.secret_exponent > ecdsa.generator_secp256k1.order():
                 raise InvalidKeyGeneratedError("this key would produce an invalid secret exponent; please skip it")
             self.public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, self.secret_exponent)
         else:
