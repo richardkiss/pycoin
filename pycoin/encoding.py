@@ -93,7 +93,7 @@ def double_sha256(data):
     """A standard compound hash."""
     return hashlib.sha256(hashlib.sha256(data).digest()).digest()
 
-def ripemd160_sha256(data):
+def hash160(data):
     """A standard compound hash."""
     return hashlib.new("ripemd160", hashlib.sha256(data).digest()).digest()
 
@@ -199,18 +199,18 @@ def is_sec_compressed(sec):
     """Return a boolean indicating if the sec represents a compressed public key."""
     return sec[:1] in (b'\2', b'\3')
 
-def public_pair_to_ripemd160_sha256_sec(public_pair, compressed=True):
-    """Convert a public_pair (corresponding to a public key) to ripemd160_sha256_sec format.
+def public_pair_to_hash160_sec(public_pair, compressed=True):
+    """Convert a public_pair (corresponding to a public key) to hash160_sec format.
     This is a hash of the sec representation of a public key, and is used to generate
     the corresponding Bitcoin address."""
-    return ripemd160_sha256(public_pair_to_sec(public_pair, compressed=compressed))
+    return hash160(public_pair_to_sec(public_pair, compressed=compressed))
 
-def ripemd160_sha256_sec_to_bitcoin_address(ripemd160_sha256_sec):
-    """Convert the ripemd160_sha256 of a sec version of a public_pair to a Bitcoin address."""
-    return b2a_hashed_base58(b'\0' + ripemd160_sha256_sec)
+def hash160_sec_to_bitcoin_address(hash160_sec):
+    """Convert the hash160 of a sec version of a public_pair to a Bitcoin address."""
+    return b2a_hashed_base58(b'\0' + hash160_sec)
 
-def bitcoin_address_to_ripemd160_sha256_sec(bitcoin_address):
-    """Convert a Bitcoin address back to the ripemd160_sha256_sec format of the public key.
+def bitcoin_address_to_hash160_sec(bitcoin_address):
+    """Convert a Bitcoin address back to the hash160_sec format of the public key.
     Since we only know the hash of the public key, we can't get the full public key back."""
     blob = a2b_hashed_base58(bitcoin_address)
     if len(blob) != 21:
@@ -221,12 +221,12 @@ def bitcoin_address_to_ripemd160_sha256_sec(bitcoin_address):
 
 def public_pair_to_bitcoin_address(public_pair, compressed=True):
     """Convert a public_pair (corresponding to a public key) to a Bitcoin address."""
-    return ripemd160_sha256_sec_to_bitcoin_address(public_pair_to_ripemd160_sha256_sec(public_pair, compressed=compressed))
+    return hash160_sec_to_bitcoin_address(public_pair_to_hash160_sec(public_pair, compressed=compressed))
 
 def is_valid_bitcoin_address(bitcoin_address):
     """Return True if and only if bitcoin_address is valid."""
     try:
-        bitcoin_address_to_ripemd160_sha256_sec(bitcoin_address)
+        bitcoin_address_to_hash160_sec(bitcoin_address)
     except EncodingError:
         return False
     return True

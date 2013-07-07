@@ -32,18 +32,21 @@ import hashlib
 from . import ScriptError
 
 from .opcodes import OPCODE_TO_INT
-from ...encoding import ripemd160_sha256, double_sha256
+from ...encoding import hash160, double_sha256
+
+bytes_from_ints = (lambda x: ''.join(chr(c) for c in x)) if bytes == str else bytes
+bytes_to_ints = (lambda x: (ord(c) for c in x)) if bytes == str else lambda x: x
 
 def as_bignum(s):
     v = 0
     b = 0
-    for c in s:
+    for c in bytes_to_ints(s):
         v += (c << b)
         b += 8
     return v
 
 def from_bignum(v):
-    l = []
+    l = bytearray()
     while v > 0:
         v, mod = divmod(v, 256)
         l.append(mod)
@@ -188,7 +191,7 @@ def do_OP_OVER(stack):
 
 def do_OP_PICK(stack):
     """
-    >>> s = ['a', 'b', 'c', 'd', bytes([2])]
+    >>> s = ['a', 'b', 'c', 'd', b'\2']
     >>> do_OP_PICK(s)
     >>> print(s)
     ['a', 'b', 'c', 'd', 'b']
@@ -198,7 +201,7 @@ def do_OP_PICK(stack):
 
 def do_OP_ROLL(stack):
     """
-    >>> s = ['a', 'b', 'c', 'd', bytes([2])]
+    >>> s = ['a', 'b', 'c', 'd', b'\2']
     >>> do_OP_ROLL(s)
     >>> print(s)
     ['a', 'c', 'd', 'b']
@@ -250,7 +253,7 @@ def do_OP_CAT(stack):
 
 def do_OP_SUBSTR(stack):
     """
-    >>> s = ['abcdef', bytes([3]), bytes([2])]
+    >>> s = ['abcdef', b'\3', b'\2']
     >>> do_OP_SUBSTR(s)
     >>> print(s)
     ['de']
@@ -261,28 +264,28 @@ def do_OP_SUBSTR(stack):
 
 def do_OP_LEFT(stack):
     """
-    >>> s = [b'abcdef', bytes([3])]
+    >>> s = [b'abcdef', b'\\3']
     >>> do_OP_LEFT(s)
-    >>> print(s)
-    [b'abc']
-    >>> s = [b'abcdef', bytes([0])]
+    >>> print(len(s)==1 and s[0]==b'abc')
+    True
+    >>> s = [b'abcdef', b'\\0']
     >>> do_OP_LEFT(s)
-    >>> print(s)
-    [b'']
+    >>> print(len(s) ==1 and s[0]==b'')
+    True
     """
     pos = as_bignum(stack.pop())
     stack.append(stack.pop()[:pos])
 
 def do_OP_RIGHT(stack):
     """
-    >>> s = [b'abcdef', bytes([3])]
+    >>> s = [b'abcdef', b'\\3']
     >>> do_OP_RIGHT(s)
-    >>> print(s)
-    [b'def']
-    >>> s = [b'abcdef', bytes([0])]
+    >>> print(s==[b'def'])
+    True
+    >>> s = [b'abcdef', b'\\0']
     >>> do_OP_RIGHT(s)
-    >>> print(s)
-    [b'']
+    >>> print(s==[b''])
+    True
     """
     pos = as_bignum(stack.pop())
     if pos > 0:
@@ -295,12 +298,12 @@ def do_OP_SIZE(stack):
     """
     >>> s = [b'abcdef']
     >>> do_OP_SIZE(s)
-    >>> print(s)
-    [b'abcdef', b'\\x06']
+    >>> print(s == [b'abcdef', b'\x06'])
+    True
     >>> s = [b'abcdef'*1000]
     >>> do_OP_SIZE(s)
-    >>> print(binascii.hexlify(s[-1]))
-    b'7017'
+    >>> print(binascii.hexlify(s[-1]) == b'7017')
+    True
     """
     stack.append(from_bignum(len(stack[-1])))
 
@@ -308,11 +311,13 @@ def do_OP_INVERT(stack):
     """
     >>> s = [binascii.unhexlify('5dcf39822aebc166')]
     >>> do_OP_INVERT(s)
-    >>> print(binascii.hexlify(s[0]))
-    b'a230c67dd5143e99'
+    >>> print(binascii.hexlify(s[0]) == b'a230c67dd5143e99')
+    True
     """
     v = stack.pop()
-    stack.append(bytes((s^0xff) for s in v))
+    # use bytes_from_ints and bytes_to_ints so it works with
+    # Python 2.7 and 3.3. Ugh
+    stack.append(bytes_from_ints((s^0xff) for s in bytes_to_ints(v)))
 
 def make_same_size(v1, v2):
     larger = max(len(v1), len(v2))
@@ -325,23 +330,23 @@ def make_bitwise_bin_op(binop):
     """
     >>> s = [binascii.unhexlify('5dcf39832aebc166'), binascii.unhexlify('ff00f086') ]
     >>> do_OP_AND(s)
-    >>> print(binascii.hexlify(s[0]))
-    b'5d00308200000000'
+    >>> print(binascii.hexlify(s[0]) == b'5d00308200000000')
+    True
     >>> s = [binascii.unhexlify('5dcf39832aebc166'), binascii.unhexlify('ff00f086') ]
     >>> do_OP_OR(s)
-    >>> print(binascii.hexlify(s[0]))
-    b'ffcff9872aebc166'
+    >>> print(binascii.hexlify(s[0]) == b'ffcff9872aebc166')
+    True
     >>> s = [binascii.unhexlify('5dcf39832aebc166'), binascii.unhexlify('ff00f086') ]
     >>> do_OP_XOR(s)
-    >>> print(binascii.hexlify(s[0]))
-    b'a2cfc9052aebc166'
+    >>> print(binascii.hexlify(s[0]) == b'a2cfc9052aebc166')
+    True
     >>> s = []
     """
     def f(stack):
         v1 = stack.pop()
         v2 = stack.pop()
         v1, v2 = make_same_size(v1, v2)
-        stack.append(bytes(binop(v1[i], v2[i]) for i in range(len(v1))))
+        stack.append(bytes_from_ints(binop(c1, c2) for c1, c2 in zip(bytes_to_ints(v1), bytes_to_ints(v2))))
     return f
 
 do_OP_AND = make_bitwise_bin_op(lambda x,y: x & y)
@@ -416,7 +421,7 @@ def do_OP_RIPEMD160(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_RIPEMD160(s)
-    >>> print(s == [bytes([66, 207, 162, 17, 1, 142, 164, 146, 253, 238, 69, 172, 99, 123, 121, 114, 160, 173, 104, 115])])
+    >>> print(s == [bytearray([66, 207, 162, 17, 1, 142, 164, 146, 253, 238, 69, 172, 99, 123, 121, 114, 160, 173, 104, 115])])
     True
     """
     stack.append(hashlib.new("ripemd160", stack.pop()).digest())
@@ -425,7 +430,7 @@ def do_OP_SHA1(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_SHA1(s)
-    >>> print(s == [bytes([11, 238, 199, 181, 234, 63, 15, 219, 201, 93, 13, 212, 127, 60, 91, 194, 117, 218, 138, 51])])
+    >>> print(s == [bytearray([11, 238, 199, 181, 234, 63, 15, 219, 201, 93, 13, 212, 127, 60, 91, 194, 117, 218, 138, 51])])
     True
     """
     stack.append(hashlib.sha1(stack.pop()).digest())
@@ -434,7 +439,7 @@ def do_OP_SHA256(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_SHA256(s)
-    >>> print(s == [bytes([44, 38, 180, 107, 104, 255, 198, 143, 249, 155, 69, 60, 29, 48, 65, 52, 19, 66, 45, 112, 100, 131, 191, 160, 249, 138, 94, 136, 98, 102, 231, 174])])
+    >>> print(s == [bytearray([44, 38, 180, 107, 104, 255, 198, 143, 249, 155, 69, 60, 29, 48, 65, 52, 19, 66, 45, 112, 100, 131, 191, 160, 249, 138, 94, 136, 98, 102, 231, 174])])
     True
     """
     stack.append(hashlib.sha256(stack.pop()).digest())
@@ -443,16 +448,16 @@ def do_OP_HASH160(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_HASH160(s)
-    >>> print(s == [bytes([225, 207, 124, 129, 3, 71, 107, 109, 127, 233, 228, 151, 154, 161, 14, 124, 83, 31, 207, 66])])
+    >>> print(s == [bytearray([225, 207, 124, 129, 3, 71, 107, 109, 127, 233, 228, 151, 154, 161, 14, 124, 83, 31, 207, 66])])
     True
     """
-    stack.append(ripemd160_sha256(stack.pop()))
+    stack.append(hash160(stack.pop()))
 
 def do_OP_HASH256(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_HASH256(s)
-    >>> print(s == [bytes([199, 173, 232, 143, 199, 162, 20, 152, 166, 165, 229, 195, 133, 225, 246, 139, 237, 130, 43, 114, 170, 99, 196, 169, 164, 138, 2, 194, 70, 110, 226, 158])])
+    >>> print(s == [bytearray([199, 173, 232, 143, 199, 162, 20, 152, 166, 165, 229, 195, 133, 225, 246, 139, 237, 130, 43, 114, 170, 99, 196, 169, 164, 138, 2, 194, 70, 110, 226, 158])])
     True
     """
     stack.append(double_sha256(stack.pop()))

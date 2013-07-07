@@ -12,7 +12,7 @@ Instead of hiding behind a bunch of opaque abstraction, the library deals with E
 - the ```secret_exponent``` (a large integer that represents a private key)
 - the ```public_pair``` (a pair of large integers x and y that represent a public key)
 
-There are a handful of functions: you can do things like sign, verify, generate the public pair from the secret exponent, and flush out the public pair from just the x value (there are two possible values for y of opposite even/odd parity, so you include a flag indicating which value for y you want).
+There are a handful of functions: you can do things like create a signature, verify a signature, generate the public pair from the secret exponent, and flush out the public pair from just the x value (there are two possible values for y of opposite even/odd parity, so you include a flag indicating which value for y you want).
 
 
 Encoding
@@ -22,7 +22,7 @@ The library declares some conversion utilities useful when dealing with Bitcoin.
 
 * base58 (the encoding used for Bitcoin addresses)
 * hashed base58 (with a standard checksum)
-* Bitcoin hashes (double sha256, ripemd160/sha256)
+* Bitcoin hashes (double sha256, ripemd160/sha256, known as "hash160")
 * Bitcoin addresses
 * WIF (Wallet import format)
 * SEC (the gross internal format of public keys used by OpenSSL, both compressed and uncompressed)
@@ -55,16 +55,16 @@ A private Wallet object can generate a subkey whose addresses CANNOT be derived 
 Transaction Validation and Signing
 ----------------------------------
 
-The Tx transaction class makes it easy to generate new coinbase transactions, or generate and sign new transactions that reassign the incoming coins to a new public keys. Look at the test code for an example.
+The Tx transaction class makes it easy to generate new coinbase transactions, or generate and sign new transactions that reassign the incoming coins to a new public keys. Look at the test code in build_tx_test.py or the spend.py script for examples.
 
-You will need to provide the "sign" method with a Tx DB that includes the source transactions, and a list of private keys 
+You will need to provide the "sign" method with a Tx DB that includes the scripts for the source transactions, and a list of private keys 
 for the source transactions.
 
 
 Donate
 ------
 
-Want to donate? Feel free. Send to 1FKYxGDywd7giFbnmKdvYmVgBHB9B2HXMw.
+Want to donate? Feel free. Send to 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T.
 
 
 [BIP0032]: https://en.bitcoin.it/wiki/BIP_0032

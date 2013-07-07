@@ -27,7 +27,6 @@ THE SOFTWARE.
 """
 
 import decimal
-import logging
 import struct
 
 import io

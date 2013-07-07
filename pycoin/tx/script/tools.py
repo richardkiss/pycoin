@@ -35,6 +35,8 @@ from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 
 def get_opcode(script, pc):
+    """Step through the script, returning a tuple with the next opcode, the next
+    piece of data (if the opcode represents data), and the new PC."""
     opcode = ord(script[pc:pc+1])
     pc += 1
     data = b''
@@ -55,6 +57,7 @@ def get_opcode(script, pc):
     return opcode, data, pc
 
 def compile(s):
+    """Compile the given script. Returns a bytes object with the compiled script."""
     f = io.BytesIO()
     for t in s.split():
         if t in OPCODE_TO_INT:
@@ -67,6 +70,7 @@ def compile(s):
     return f.getvalue()
 
 def disassemble(script):
+    """Disassemble the given script. Returns a string."""
     opcodes = []
     pc = 0
     while pc < len(script):
@@ -81,6 +85,9 @@ def disassemble(script):
     return ' '.join(opcodes)
 
 def delete_subscript(script, subscript):
+    """Returns a script with the given subscript removed. The subscript
+    must appear in the main script aligned to opcode boundaries for it
+    to be removed."""
     new_script = bytearray()
     pc = 0
     size = len(subscript)

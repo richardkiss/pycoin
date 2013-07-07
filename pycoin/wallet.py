@@ -49,7 +49,7 @@ from . import ecdsa
 from .encoding import public_pair_to_sec, public_pair_from_sec,\
     secret_exponent_to_wif, public_pair_to_bitcoin_address,\
     from_bytes_32, to_bytes_32,\
-    public_pair_to_ripemd160_sha256_sec, EncodingError
+    public_pair_to_hash160_sec, EncodingError
 
 from .encoding import a2b_hashed_base58, b2a_hashed_base58
 
@@ -147,7 +147,7 @@ class Wallet(object):
         return bytes(ba)
 
     def fingerprint(self):
-        return public_pair_to_ripemd160_sha256_sec(self.public_pair, compressed=True)[:4]
+        return public_pair_to_hash160_sec(self.public_pair, compressed=True)[:4]
 
     def wallet_key(self, as_private=False):
         """Yield a 111-byte string corresponding to this node."""
@@ -180,11 +180,12 @@ class Wallet(object):
         if as_private is None: as_private = self.is_private
         if i<0:
             is_prime = True
+            i_as_bytes = struct.pack(">l", i)
         else:
             i &= 0x7fffffff
             if is_prime:
                 i |= 0x80000000
-        i_as_bytes = struct.pack(">L", i)
+            i_as_bytes = struct.pack(">L", i)
         if is_prime:
             if not self.is_private:
                 raise PublicPrivateMismatchError("can't derive a private key from a public key")
@@ -207,27 +208,28 @@ class Wallet(object):
     def subkey_for_path(self, path):
         """
         path: a path of subkeys denoted by numbers and slashes. Use
-            p or i<0 for private key derivation. End with :pub to force
+            p or i<0 for private key derivation. End with .pub to force
             the key public.
 
         Examples:
             1p/-5/2/1 would call subkey(i=1, is_prime=True).subkey(i=-5).
                 subkey(i=2).subkey(i=1) and then yield the private key
-            0/0/458:pub would call subkey(i=0).subkey(i=0).subkey(i=458) and
+            0/0/458.pub would call subkey(i=0).subkey(i=0).subkey(i=458) and
                 then yield the public key
 
         You should choose either the p or the negative number convention for private key derivation.
         """
-        force_public = (path[-4:] == ':pub')
+        force_public = (path[-4:] == '.pub')
         if force_public:
             path = path[:-4]
         key = self
-        invocations = path.split("/")
-        for v in invocations:
-            is_prime = v[-1] in ("'p")
-            if is_prime: v = v[:-1]
-            v = int(v)
-            key = key.subkey(i=v, is_prime=is_prime, as_private=key.is_private)
+        if path:
+            invocations = path.split("/")
+            for v in invocations:
+                is_prime = v[-1] in ("'p")
+                if is_prime: v = v[:-1]
+                v = int(v)
+                key = key.subkey(i=v, is_prime=is_prime, as_private=key.is_private)
         if force_public and key.is_private:
             key = key.public_copy()
         return key

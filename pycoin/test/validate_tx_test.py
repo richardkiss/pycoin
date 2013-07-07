@@ -59,14 +59,14 @@ class ValidatingTest(unittest.TestCase):
         block_80971 = Block.parse(io.BytesIO(block_80971_data))
         block_80974 = Block.parse(io.BytesIO(block_80974_data))
 
-        tx_db = dict((tx.hash(), tx) for tx in block_80971.txs)
+        tx_out_script_db = dict(((tx.hash(), idx), tx_out.script) for tx in block_80971.txs for idx, tx_out in enumerate(tx.txs_out))
 
         tx_to_validate = block_80974.txs[2]
         self.assertEqual("OP_DUP OP_HASH160 d4caa8447532ca8ee4c80a1ae1d230a01e22bfdb OP_EQUALVERIFY OP_CHECKSIG",
             tools.disassemble(tx_to_validate.txs_out[0].script))
         self.assertEqual(tx_to_validate.id(), "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b")
 
-        tx_to_validate.validate(tx_db)
+        tx_to_validate.validate(tx_out_script_db)
 
         # now, let's corrupt the Tx and see what happens
         tx_out = tx_to_validate.txs_out[1]
@@ -75,14 +75,14 @@ class ValidatingTest(unittest.TestCase):
 
         tx_out.script = tools.compile(disassembly)
 
-        tx_to_validate.validate(tx_db)
+        tx_to_validate.validate(tx_out_script_db)
 
         disassembly = disassembly.replace("9661a79ae1f6d487af3420c13e649d6df3747fc2", "9661a79ae1f6d487af3420c13e649d6df3747fc3")
 
         tx_out.script = tools.compile(disassembly)
 
         with self.assertRaises(ValidationFailureError) as cm:
-            tx_to_validate.validate(tx_db)
+            tx_to_validate.validate(tx_out_script_db)
         exception = cm.exception
         self.assertEqual(exception.args[0], "Tx 3c0ef7e369e81876abb0c870d433c935660126be62a9fd5fef22394d898d1465 TxIn index 0 script did not verify")
 

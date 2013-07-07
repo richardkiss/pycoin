@@ -22,7 +22,7 @@ class Bip0032TestCase(unittest.TestCase):
 
         pub_mp0 = master.subkey(is_prime=True, as_private=False)
         self.assertEqual(pub_mp0.wallet_key(), m0p.wallet_key())
-        self.assertEqual(master.subkey_for_path("0p:pub").wallet_key(), pub_mp0.wallet_key())
+        self.assertEqual(master.subkey_for_path("0p.pub").wallet_key(), pub_mp0.wallet_key())
 
         m0p1 = m0p.subkey(i=1)
         self.assertEqual(m0p1.wallet_key(), "xpub6ASuArnXKPbfEwhqN6e3mwBcDTgzisQN1wXN9BJcM47sSikHjJf3UFHKkNAWbWMiGj7Wf5uMash7SyYq527Hqck2AxYysAA7xmALppuCkwQ")
@@ -31,7 +31,7 @@ class Bip0032TestCase(unittest.TestCase):
 
         pub_m0p1 = m0p.subkey(i=1, as_private=False)
         self.assertEqual(pub_m0p1.wallet_key(), m0p1.wallet_key())
-        self.assertEqual(master.subkey_for_path("0p/1:pub").wallet_key(), pub_m0p1.wallet_key())
+        self.assertEqual(master.subkey_for_path("0p/1.pub").wallet_key(), pub_m0p1.wallet_key())
 
         m0p1_1_2p = m0p1.subkey(i=2, is_prime=True)
         self.assertEqual(m0p1_1_2p.wallet_key(), "xpub6D4BDPcP2GT577Vvch3R8wDkScZWzQzMMUm3PWbmWvVJrZwQY4VUNgqFJPMM3No2dFDFGTsxxpG5uJh7n7epu4trkrX7x7DogT5Uv6fcLW5")
@@ -40,7 +40,7 @@ class Bip0032TestCase(unittest.TestCase):
 
         pub_m0p1_1_2p = m0p1.subkey(i=2, as_private=False, is_prime=True)
         self.assertEqual(pub_m0p1_1_2p.wallet_key(), m0p1_1_2p.wallet_key())
-        self.assertEqual(master.subkey_for_path("0p/1/2p:pub").wallet_key(), pub_m0p1_1_2p.wallet_key())
+        self.assertEqual(master.subkey_for_path("0p/1/2p.pub").wallet_key(), pub_m0p1_1_2p.wallet_key())
 
         m0p1_1_2p_2 = m0p1_1_2p.subkey(i=2)
         self.assertEqual(m0p1_1_2p_2.wallet_key(), "xpub6FHa3pjLCk84BayeJxFW2SP4XRrFd1JYnxeLeU8EqN3vDfZmbqBqaGJAyiLjTAwm6ZLRQUMv1ZACTj37sR62cfN7fe5JnJ7dh8zL4fiyLHV")
@@ -49,7 +49,7 @@ class Bip0032TestCase(unittest.TestCase):
 
         pub_m0p1_1_2p_2 = m0p1_1_2p.subkey(i=2, as_private=False)
         self.assertEqual(pub_m0p1_1_2p_2.wallet_key(), m0p1_1_2p_2.wallet_key())
-        self.assertEqual(master.subkey_for_path("0p/1/2p/2:pub").wallet_key(), pub_m0p1_1_2p_2.wallet_key())
+        self.assertEqual(master.subkey_for_path("0p/1/2p/2.pub").wallet_key(), pub_m0p1_1_2p_2.wallet_key())
 
         m0p1_1_2p_2_1000000000 = m0p1_1_2p_2.subkey(i=1000000000)
         self.assertEqual(m0p1_1_2p_2_1000000000.wallet_key(), "xpub6H1LXWLaKsWFhvm6RVpEL9P4KfRZSW7abD2ttkWP3SSQvnyA8FSVqNTEcYFgJS2UaFcxupHiYkro49S8yGasTvXEYBVPamhGW6cFJodrTHy")
@@ -58,7 +58,7 @@ class Bip0032TestCase(unittest.TestCase):
 
         pub_m0p1_1_2p_2_1000000000 = m0p1_1_2p_2.subkey(i=1000000000, as_private=False)
         self.assertEqual(pub_m0p1_1_2p_2_1000000000.wallet_key(), m0p1_1_2p_2_1000000000.wallet_key())
-        self.assertEqual(master.subkey_for_path("0p/1/2p/2/1000000000:pub").wallet_key(), pub_m0p1_1_2p_2_1000000000.wallet_key())
+        self.assertEqual(master.subkey_for_path("0p/1/2p/2/1000000000.pub").wallet_key(), pub_m0p1_1_2p_2_1000000000.wallet_key())
 
 
     def test_vector_2(self):
@@ -102,7 +102,7 @@ class Bip0032TestCase(unittest.TestCase):
         pub_m0_2147483647p_1_2147483646p_2 = pub_m0_2147483647p_1_2147483646p.subkey(i=2, as_private=False)
         self.assertEqual(pub_m0_2147483647p_1_2147483646p_2.wallet_key(), m0_2147483647p_1_2147483646p_2.wallet_key())
         self.assertEqual(master.subkey_for_path("0/2147483647p/1/2147483646p/2").wallet_key(), m0_2147483647p_1_2147483646p_2.wallet_key())
-        self.assertEqual(master.subkey_for_path("0/2147483647p/1/2147483646p/2:pub").wallet_key(), pub_m0_2147483647p_1_2147483646p_2.wallet_key())
+        self.assertEqual(master.subkey_for_path("0/2147483647p/1/2147483646p/2.pub").wallet_key(), pub_m0_2147483647p_1_2147483646p_2.wallet_key())
 
 
     def test_streams(self):

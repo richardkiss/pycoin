@@ -84,12 +84,12 @@ class BuildTxTest(unittest.TestCase):
 
         self.assertEqual("12WivmEn8AUth6x6U8HuJuXHaJzDw3gHNZ", bitcoin_address_2)
 
-        TX_DB = dict((tx.hash(), tx) for tx in [the_coinbase_tx])
+        tx_out_script_db = dict(((tx.hash(), idx), tx_out.script) for tx in [the_coinbase_tx] for idx, tx_out in enumerate(tx.txs_out))
 
         coins_from = [(the_coinbase_tx.hash(), 0)]
         coins_to = [(int(50 * 1e8), bitcoin_address_2)]
-        coinbase_spend_tx = Tx.standard_tx(coins_from, coins_to, TX_DB, [exponent])
-        coinbase_spend_tx.validate(TX_DB)
+        coinbase_spend_tx = Tx.standard_tx(coins_from, coins_to, tx_out_script_db, [exponent])
+        coinbase_spend_tx.validate(tx_out_script_db)
 
         ## now try to respend from priv_key_2 to priv_key_3
 
@@ -102,11 +102,11 @@ class BuildTxTest(unittest.TestCase):
 
         self.assertEqual("13zzEHPCH2WUZJzANymow3ZrxcZ8iFBrY5", bitcoin_address_3)
 
-        TX_DB = dict((tx.hash(), tx) for tx in [coinbase_spend_tx])
+        tx_out_script_db = dict(((tx.hash(), idx), tx_out.script) for tx in [coinbase_spend_tx] for idx, tx_out in enumerate(tx.txs_out))
 
-        spend_tx = Tx.standard_tx([(coinbase_spend_tx.hash(), 0)], [(int(50 * 1e8), bitcoin_address_3)], TX_DB, [exponent_2])
+        spend_tx = Tx.standard_tx([(coinbase_spend_tx.hash(), 0)], [(int(50 * 1e8), bitcoin_address_3)], tx_out_script_db, [exponent_2])
 
-        spend_tx.validate(TX_DB)
+        spend_tx.validate(tx_out_script_db)
 
 if __name__ == '__main__':
     unittest.main()

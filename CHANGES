@@ -1,0 +1,15 @@
+
+Version 0.13
+------------
+
+* first crack at support for Python 2.7
+* rename ripemd160_sha256 to hash160
+* add a bunch of pydoc comments
+* first crack at genwallet.py utility (need a better name)
+* very preliminary crack at spend.py utility
+* reduce Tx database that's required to be passed to the "sign" method
+  to include bare minimum of data (the output script for a given hash/index)
+* change ":pub" keypath suffix to ".pub" (still not sure about this)
+* lots of refactoring, parameter renaming, moving things around
+  related to signing and verifying transactions. Better, but still
+  not perfect.

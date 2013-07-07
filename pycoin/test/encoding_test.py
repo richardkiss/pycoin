@@ -54,9 +54,9 @@ class EncodingTestCase(unittest.TestCase):
         do_test(b'\x74' * 10000,
             b'nMw6\xaa7<G\x18\xee\xf2\xb9E(\xfe\xd5u\x19\xa0\xbd\xc3\xa8\xf40\n\xee7,\xbe\xde\xa9\xa0')
 
-    def test_ripemd160_sha256(self):
+    def test_hash160(self):
         def do_test(blob, expected_hash):
-            self.assertEqual(encoding.ripemd160_sha256(blob), expected_hash)
+            self.assertEqual(encoding.hash160(blob), expected_hash)
 
         do_test(b"This is a test",
             b'\x18\xac\x98\xfa*$\x12\xdd\xb7]\xe6\x04Y\xb5*\xcd\x98\xf2\xd9r')
@@ -94,13 +94,13 @@ class EncodingTestCase(unittest.TestCase):
             do_test(se, wif, is_compressed=False)
 
     def test_public_pair_to_sec(self):
-        def do_test(as_public_pair, as_sec, is_compressed, as_ripemd160_sha256_sec, as_bitcoin_address):
+        def do_test(as_public_pair, as_sec, is_compressed, as_hash160_sec, as_bitcoin_address):
             self.assertEqual(encoding.public_pair_from_sec(as_sec), as_public_pair)
             self.assertEqual(encoding.public_pair_to_sec(as_public_pair, compressed=is_compressed), as_sec)
             self.assertEqual(encoding.is_sec_compressed(as_sec), is_compressed)
-            self.assertEqual(encoding.public_pair_to_ripemd160_sha256_sec(as_public_pair, compressed=is_compressed),
-                             as_ripemd160_sha256_sec)
-            self.assertEqual(encoding.ripemd160_sha256_sec_to_bitcoin_address(as_ripemd160_sha256_sec), as_bitcoin_address)
+            self.assertEqual(encoding.public_pair_to_hash160_sec(as_public_pair, compressed=is_compressed),
+                             as_hash160_sec)
+            self.assertEqual(encoding.hash160_sec_to_bitcoin_address(as_hash160_sec), as_bitcoin_address)
             self.assertEqual(encoding.public_pair_to_bitcoin_address(as_public_pair, compressed=is_compressed), as_bitcoin_address)
             self.assertTrue(encoding.is_valid_bitcoin_address(as_bitcoin_address))
             bad_address = as_bitcoin_address[:17] + chr(ord(as_bitcoin_address[17]) + 1) + as_bitcoin_address[18:]
@@ -154,9 +154,9 @@ class EncodingTestCase(unittest.TestCase):
             ),
         ]
 
-        for public_pair, sec, compressed, ripemd160_sha256_sec, bitcoin_address in SEC_TEST_DATA:
+        for public_pair, sec, compressed, hash160_sec, bitcoin_address in SEC_TEST_DATA:
             do_test(public_pair, binascii.unhexlify(sec), compressed,
-                    binascii.unhexlify(ripemd160_sha256_sec), bitcoin_address)
+                    binascii.unhexlify(hash160_sec), bitcoin_address)
 
 if __name__ == '__main__':
     unittest.main()
