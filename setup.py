@@ -2,7 +2,7 @@
 
 import distutils.core
 
-version = "0.14"
+version = "0.15"
 
 distutils.core.setup(
     name="pycoin",
