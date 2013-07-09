@@ -81,7 +81,7 @@ def public_pair_for_secret_exponent(generator, secret_exponent):
 def public_pair_for_x(generator, x, is_even):
     curve = generator.curve()
     p = curve.p()
-    alpha = ( x * x * x  + curve.a() * x + curve.b() ) % p
+    alpha = ( pow(x, 3, p)  + curve.a() * x + curve.b() ) % p
     beta = numbertheory.modular_sqrt(alpha, p)
     if is_even == bool(beta & 1):
         return (x, p - beta)
@@ -127,7 +127,7 @@ def possible_public_pairs_for_signature(generator, value, signature):
     minus_e = -value % order
     x = r
     # 1.3
-    alpha = ( x * x * x  + curve.a() * x + curve.b() ) % p
+    alpha = ( pow(x,3,p)  + curve.a() * x + curve.b() ) % p
     beta = numbertheory.modular_sqrt(alpha, p)
     for y in [beta, p - beta]:
         # 1.4 the constructor checks that nR is at infinity
