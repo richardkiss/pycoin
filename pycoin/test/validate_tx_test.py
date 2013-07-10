@@ -4,7 +4,7 @@ import binascii
 import io
 import unittest
 
-from pycoin.tx import Tx, ValidationFailureError, script
+from pycoin.tx import Tx, ValidationFailureError
 from pycoin.tx.script import tools
 from pycoin.block import Block
 
@@ -59,32 +59,139 @@ class ValidatingTest(unittest.TestCase):
         block_80971 = Block.parse(io.BytesIO(block_80971_data))
         block_80974 = Block.parse(io.BytesIO(block_80974_data))
 
-        tx_out_script_db = dict(((tx.hash(), idx), tx_out.script) for tx in block_80971.txs for idx, tx_out in enumerate(tx.txs_out))
+        tx_db = { tx.hash(): tx for tx in block_80971.txs }
+
+        def tx_out_for_hash_index_f(tx_hash, tx_out_idx):
+            tx = tx_db.get(tx_hash)
+            return tx.txs_out[tx_out_idx]
 
         tx_to_validate = block_80974.txs[2]
         self.assertEqual("OP_DUP OP_HASH160 d4caa8447532ca8ee4c80a1ae1d230a01e22bfdb OP_EQUALVERIFY OP_CHECKSIG",
             tools.disassemble(tx_to_validate.txs_out[0].script))
         self.assertEqual(tx_to_validate.id(), "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b")
 
-        tx_to_validate.validate(tx_out_script_db)
+        tx_to_validate.validate(tx_out_for_hash_index_f)
 
         # now, let's corrupt the Tx and see what happens
         tx_out = tx_to_validate.txs_out[1]
 
         disassembly = tools.disassemble(tx_out.script)
-
         tx_out.script = tools.compile(disassembly)
 
-        tx_to_validate.validate(tx_out_script_db)
+        tx_to_validate.validate(tx_out_for_hash_index_f)
 
         disassembly = disassembly.replace("9661a79ae1f6d487af3420c13e649d6df3747fc2", "9661a79ae1f6d487af3420c13e649d6df3747fc3")
 
         tx_out.script = tools.compile(disassembly)
 
         with self.assertRaises(ValidationFailureError) as cm:
-            tx_to_validate.validate(tx_out_script_db)
+            tx_to_validate.validate(tx_out_for_hash_index_f)
         exception = cm.exception
         self.assertEqual(exception.args[0], "Tx 3c0ef7e369e81876abb0c870d433c935660126be62a9fd5fef22394d898d1465 TxIn index 0 script did not verify")
+
+    def test_validate_two_inputs(self):
+        def tx_from_b64(h):
+            f = io.BytesIO(binascii.a2b_base64(h))
+            return Tx.parse(f)
+        # c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d
+        # This is the one we're going to validate. It has inputs from
+        #  tx_1 = b52201c2741d410b70688335afebba0d58f8675fa9b6c8c54becb0d7c0a75983
+        # and tx_2 = 72151f65db1d8594df90778639a4c0c17c1e303af01de0d04af8fac13854bbfd
+        #
+        TX_0_HEX = """
+AQAAAAKDWafA17DsS8XItqlfZ/hYDbrrrzWDaHALQR10wgEitQAAAACLSDBFAiAnyvQ1P7b8
++84JbBUbE1Xtgrd0KNpD4eyVTNU/burbtgIhAOS8T1TrhXkGXQTGbLSEJy5uvZMGEzOjITxO
++DrykiPlAUEE3yJcIB5OCpaDjrop+N3bm8h9PKw8bF/YB4v3yD+VeQf4fXdUZ9hJJSnFeJ+Q
+eJrC7q3Y23QSYeYbW/AfA3D5G//////9u1Q4wfr4StDgHfA6MB58wcCkOYZ3kN+UhR3bZR8V
+cgAAAACLSDBFAiAN6ZQr+9HTgmF57EsPyXIhQ6J5M4lgwlj/tJTShZ+toQIhAL0U1i9yiCEm
+75uCEp8uRaySqS7P4x7A+L2Vr5kS+7ANAUEEkSqVI6gw1scM0GuJWgMh4jpWKJA0yOl03uQa
+V/jHURn+HswOIORzvsG9qQY1/9BZgDPaMuI5U5JlyA3WkhLxgf////8CtkSUzxAAAAAZdqkU
+LXTu3lp2t/wMSuvqbifOSj9/kvmIrAAoa+4AAAAAGXapFF3ySpVdjz9V8fRKvzDqXQRcmowS
+iKwAAAAA"""
+        TX_1_HEX = """AQAAAAEL3YmFDcZpf4SH7uN1IBmMoBd4OhmTp4EAQ8A0ZQ3tiwAAAACKRzBEAiA4Fkl8lkJS
+eLtWHsp1j0h7y0KKFmqxhDR0CK0HnmZWBQIgDSTDenor3zbNqTs+FApeDl8DKCz1xGQCJQN0
+/sp00VABQQQzSNc33wdDXA/F9y9/hAR88q6Se6vRCHEC7dYgbIp1pgxqGzrWXQroGkQLhnAb
+n/fDhUoVbCgM/UHXYmjXlhdO/////wI3HGlfEQAAABl2qRRM+dhUVUjeAlb0jEsHJrFClGGS
+Z4isMAYVCgAAAAAZdqkUgnSLXoYTeOKFFRdtLYxWcGZ2Ht2IrAAAAAA=
+"""
+        TX_2_HEX = """AQAAAAFDjBbw61AYUWMx+3moZ2vb9dvLKydOSFIwcfBTjG0QSgEAAACKRzBEAiA5WWKhR48O
+I60ZDCXnOru/FH6NvuTGhRLggjbpJB2dhgIgKp0FFL0ClSCxxqGjYneDinvgROGSw6DtVtvf
+lrhaom8BQQR50YjAg1e5qRkP4ER29ec5jKfzk3DHJhS7Si0sEbvNIJMfjjbZfZWtJi15wHZh
+uHh4e3G6SWMdJLHH5pgbseFh/////wLPE5deAAAAABl2qRSmRdbMvv5fEbgFD1YktaBU9zQT
+W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
+"""
+        tx_0 = tx_from_b64(TX_0_HEX)
+        self.assertEqual(tx_0.id(), "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d")
+        tx_1 = tx_from_b64(TX_1_HEX)
+        self.assertEqual(tx_1.id(), "b52201c2741d410b70688335afebba0d58f8675fa9b6c8c54becb0d7c0a75983")
+        tx_2 = tx_from_b64(TX_2_HEX)
+        self.assertEqual(tx_2.id(), "72151f65db1d8594df90778639a4c0c17c1e303af01de0d04af8fac13854bbfd")
+
+        TX_DB = { tx.hash(): tx for tx in [tx_0, tx_1, tx_2] }
+
+        def tx_out_for_hash_index_f(tx_hash, tx_out_idx):
+            tx = TX_DB.get(tx_hash)
+            return tx.txs_out[tx_out_idx]
+
+        tx_to_validate = tx_0
+        self.assertEqual("OP_DUP OP_HASH160 2d74eede5a76b7fc0c4aebea6e27ce4a3f7f92f9 OP_EQUALVERIFY OP_CHECKSIG",
+            tools.disassemble(tx_to_validate.txs_out[0].script))
+        self.assertEqual(tx_to_validate.id(), "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d")
+
+        tx_to_validate.validate(tx_out_for_hash_index_f)
+
+        # now let's mess with signatures
+        disassembly = tools.disassemble(tx_to_validate.txs_in[0].script)
+        tx_to_validate.txs_in[0].script = tools.compile(disassembly)
+        tx_to_validate.validate(tx_out_for_hash_index_f)
+        disassembly = disassembly.replace("353fb6fcfbce09", "353fb6fcfbce19")
+        tx_to_validate.txs_in[0].script = tools.compile(disassembly)
+        with self.assertRaises(ValidationFailureError) as cm:
+            tx_to_validate.validate(tx_out_for_hash_index_f)
+        exception = cm.exception
+        self.assertEqual(exception.args[0], "Tx b52201c2741d410b70688335afebba0d58f8675fa9b6c8c54becb0d7c0a75983 TxIn index 0 script did not verify")
+
+        tx_to_validate = tx_from_b64(TX_0_HEX)
+        tx_to_validate.validate(tx_out_for_hash_index_f)
+        disassembly = tools.disassemble(tx_to_validate.txs_in[1].script)
+        disassembly = disassembly.replace("960c258ffb494d2859f", "960d258ffb494d2859f")
+        tx_to_validate.txs_in[1].script = tools.compile(disassembly)
+        with self.assertRaises(ValidationFailureError) as cm:
+            tx_to_validate.validate(tx_out_for_hash_index_f)
+        exception = cm.exception
+        self.assertEqual(exception.args[0], "Tx 72151f65db1d8594df90778639a4c0c17c1e303af01de0d04af8fac13854bbfd TxIn index 0 script did not verify")
+
+        # futz with signature on tx_1
+        tx_to_validate = tx_from_b64(TX_0_HEX)
+        original_tx_hash = tx_1.hash()
+        disassembly = tools.disassemble(tx_1.txs_out[0].script)
+        disassembly = disassembly.replace("4cf9d8545548de0256f48c4b0726b14294619267", "4cf9d8545548de1256f48c4b0726b14294619267")
+        tx_1.txs_out[0].script = tools.compile(disassembly)
+        TX_DB[original_tx_hash] = tx_1
+        with self.assertRaises(ValidationFailureError) as cm:
+            tx_to_validate.validate(tx_out_for_hash_index_f)
+        exception = cm.exception
+        self.assertEqual(exception.args[0], "Tx b52201c2741d410b70688335afebba0d58f8675fa9b6c8c54becb0d7c0a75983 TxIn index 0 script did not verify")
+
+        # fix it up again
+        TX_DB[original_tx_hash] = tx_from_b64(TX_1_HEX)
+        tx_to_validate.validate(tx_out_for_hash_index_f)
+
+        # futz with signature on tx_2
+        tx_to_validate = tx_from_b64(TX_0_HEX)
+        original_tx_hash = tx_2.hash()
+        disassembly = tools.disassemble(tx_2.txs_out[0].script)
+        disassembly = disassembly.replace("a645d6ccbefe5f11b8050f5624b5a054f734135b", "a665d6ccbefe5f11b8050f5624b5a054f734135b")
+        tx_2.txs_out[0].script = tools.compile(disassembly)
+        TX_DB[original_tx_hash] = tx_2
+        with self.assertRaises(ValidationFailureError) as cm:
+            tx_to_validate.validate(tx_out_for_hash_index_f)
+        exception = cm.exception
+        self.assertEqual(exception.args[0], "Tx 72151f65db1d8594df90778639a4c0c17c1e303af01de0d04af8fac13854bbfd TxIn index 0 script did not verify")
+
+        # fix it up again
+        TX_DB[original_tx_hash] = tx_from_b64(TX_2_HEX)
+        tx_to_validate.validate(tx_out_for_hash_index_f)
 
 if __name__ == "__main__":
     unittest.main()

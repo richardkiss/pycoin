@@ -9,7 +9,8 @@ from pycoin.block import Block
 from pycoin import ecdsa
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 
-from pycoin.tx import Tx
+from pycoin.tx import Tx, UnsignedTx
+from pycoin.tx.script.solvers import SecretExponentSolver
 
 h2b = binascii.unhexlify
 
@@ -48,7 +49,7 @@ class BuildTxTest(unittest.TestCase):
     def test_standard_tx_out(self):
         coin_value = 10
         recipient_bc_address = '1BcJRKjiwYQ3f37FQSpTYM7AfnXurMjezu'
-        tx_out = Tx.standard_tx([], [(coin_value, recipient_bc_address)]).txs_out[0]
+        tx_out = UnsignedTx.standard_tx([], [(coin_value, recipient_bc_address)]).new_txs_out[0]
         s = str(tx_out)
         self.assertEqual('TxOut<1E-7 "OP_DUP OP_HASH160 745e5b81fd30ca1e90311b012badabaa4411ae1a OP_EQUALVERIFY OP_CHECKSIG">', s)
 
@@ -64,6 +65,13 @@ class BuildTxTest(unittest.TestCase):
         self.assertEqual(tx1, tx2)
 
     def test_build_spends(self):
+        # first, here is the tx database
+        TX_DB = {}
+
+        def tx_out_for_hash_index_f(tx_hash, tx_out_idx):
+            tx = TX_DB.get(tx_hash)
+            return tx.txs_out[tx_out_idx]
+
         # create a coinbase Tx where we know the public & private key
 
         exponent = wif_to_secret_exponent("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
@@ -72,6 +80,7 @@ class BuildTxTest(unittest.TestCase):
         public_key_sec = public_pair_to_sec(ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent), compressed=compressed)
 
         the_coinbase_tx = Tx.coinbase_tx(public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
+        TX_DB[the_coinbase_tx.hash()] = the_coinbase_tx
 
         # now create a Tx that spends the coinbase
 
@@ -84,12 +93,16 @@ class BuildTxTest(unittest.TestCase):
 
         self.assertEqual("12WivmEn8AUth6x6U8HuJuXHaJzDw3gHNZ", bitcoin_address_2)
 
-        tx_out_script_db = dict(((tx.hash(), idx), tx_out.script) for tx in [the_coinbase_tx] for idx, tx_out in enumerate(tx.txs_out))
-
-        coins_from = [(the_coinbase_tx.hash(), 0)]
+        coins_from = [(the_coinbase_tx.hash(), 0, the_coinbase_tx.txs_out[0])]
         coins_to = [(int(50 * 1e8), bitcoin_address_2)]
-        coinbase_spend_tx = Tx.standard_tx(coins_from, coins_to, tx_out_script_db, [exponent])
-        coinbase_spend_tx.validate(tx_out_script_db)
+        unsigned_coinbase_spend_tx = UnsignedTx.standard_tx(coins_from, coins_to)
+        solver = SecretExponentSolver([exponent])
+        coinbase_spend_tx = unsigned_coinbase_spend_tx.sign(solver)
+
+        # now check that it validates
+        coinbase_spend_tx.validate(tx_out_for_hash_index_f)
+
+        TX_DB[coinbase_spend_tx.hash()] = coinbase_spend_tx
 
         ## now try to respend from priv_key_2 to priv_key_3
 
@@ -102,11 +115,12 @@ class BuildTxTest(unittest.TestCase):
 
         self.assertEqual("13zzEHPCH2WUZJzANymow3ZrxcZ8iFBrY5", bitcoin_address_3)
 
-        tx_out_script_db = dict(((tx.hash(), idx), tx_out.script) for tx in [coinbase_spend_tx] for idx, tx_out in enumerate(tx.txs_out))
+        unsigned_spend_tx = UnsignedTx.standard_tx([(coinbase_spend_tx.hash(), 0, coinbase_spend_tx.txs_out[0])], [(int(50 * 1e8), bitcoin_address_3)])
+        solver.add_secret_exponents([exponent_2])
+        spend_tx = unsigned_spend_tx.sign(solver)
 
-        spend_tx = Tx.standard_tx([(coinbase_spend_tx.hash(), 0)], [(int(50 * 1e8), bitcoin_address_3)], tx_out_script_db, [exponent_2])
-
-        spend_tx.validate(tx_out_script_db)
+        # now check that it validates
+        spend_tx.validate(tx_out_for_hash_index_f)
 
 if __name__ == '__main__':
     unittest.main()

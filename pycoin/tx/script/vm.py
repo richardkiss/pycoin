@@ -28,18 +28,44 @@ THE SOFTWARE.
 
 import logging
 
+from ... import ecdsa
+from ...encoding import public_pair_from_sec
+
+from . import der
 from . import opcodes
 from . import ScriptError
 
 from .microcode import MICROCODE_LOOKUP, VCH_TRUE, make_bool
-from .signing import verify_script_signature
 from .tools import get_opcode
 
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split()))
 
 INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split()))
 
-def eval_script(script, tx_hash, hash_type, stack=[]):
+def check_signature(script, signature_hash, public_key_blob, sig_blob, hash_type):
+    """Ensure the given transaction has the correct signature. Invoked by the VM.
+    Adapted from official Bitcoin-QT client.
+
+    script: the script that is claimed to unlock the coins used in this transaction
+    signature_hash: the signature hash of the transaction being verified
+    public_key_blob: the blob representing the SEC-encoded public pair
+    sig_blob: the blob representing the DER-encoded signature
+    hash_type: expected signature_type (or 0 for wild card)
+    """
+    signature_type = ord(sig_blob[-1:])
+    if signature_type != 1:
+        raise ScriptError("unknown signature type %d" % signature_type)
+    sig_pair = der.sigdecode_der(sig_blob[:-1])
+    if hash_type == 0:
+        hash_type = signature_type
+    elif hash_type != signature_type:
+        raise ScriptError("wrong hash type")
+    public_pair = public_pair_from_sec(public_key_blob)
+    v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair)
+    return make_bool(v)
+
+def eval_script(script, signature_hash, hash_type, stack=[]):
+    altstack = []
     if len(script) > 10000:
         return False
 
@@ -57,17 +83,18 @@ def eval_script(script, tx_hash, hash_type, stack=[]):
             # deal with if_condition first
 
             if if_condition is not None:
-                if opcode == OP_ELSE:
+                # TODO: fix IF (which doesn't properly nest)
+                if opcode == opcodes.OP_ELSE:
                     if_condition = not if_condition
                     continue
-                if opcode == OP_ENDIF:
+                if opcode == opcodes.OP_ENDIF:
                     if_condition = None
                     continue
                 if not if_condition:
                     continue
-                if opcode in (OP_IF, OP_NOTIF):
-                    if_condition = (stack.pop() == VCH_TRUE)
-                    continue
+            if opcode in (opcodes.OP_IF, opcodes.OP_NOTIF):
+                if_condition = (stack.pop() == VCH_TRUE)
+                continue
 
             if opcode == opcodes.OP_CODESEPARATOR:
                 begin_code_hash = pc - 1
@@ -102,8 +129,7 @@ def eval_script(script, tx_hash, hash_type, stack=[]):
             if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
                 public_key_blob = stack.pop()
                 sig_blob = stack.pop()
-                v = verify_script_signature(script, tx_hash, public_key_blob, sig_blob, hash_type)
-                v = make_bool(v)
+                v = check_signature(script, signature_hash, public_key_blob, sig_blob, hash_type)
                 stack.append(v)
                 if opcode == opcodes.OP_CHECKSIGVERIFY:
                     if stack.pop() != VCH_TRUE:
@@ -123,12 +149,12 @@ def eval_script(script, tx_hash, hash_type, stack=[]):
 
     return len(stack) != 0
 
-def verify_script(script_signature, script_public_key, tx_hash, hash_type=0):
+def verify_script(script_signature, script_public_key, signature_hash, hash_type=0):
     stack = []
-    if not eval_script(script_signature, tx_hash, hash_type, stack):
+    if not eval_script(script_signature, signature_hash, hash_type, stack):
         logging.debug("script_signature did not evaluate")
         return False
-    if not eval_script(script_public_key, tx_hash, hash_type, stack):
+    if not eval_script(script_public_key, signature_hash, hash_type, stack):
         logging.debug("script_public_key did not evaluate")
         return False
 

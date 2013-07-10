@@ -27,3 +27,6 @@ THE SOFTWARE.
 """
 
 from .Tx import Tx, ValidationFailureError
+from .TxOut import TxOut
+from .UnsignedTx import UnsignedTx
+from .script.solvers import SecretExponentSolver

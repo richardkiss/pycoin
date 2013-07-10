@@ -55,10 +55,9 @@ A private Wallet object can generate a subkey whose addresses CANNOT be derived 
 Transaction Validation and Signing
 ----------------------------------
 
-The Tx transaction class makes it easy to generate new coinbase transactions, or generate and sign new transactions that reassign the incoming coins to a new public keys. Look at the test code in build_tx_test.py or the spend.py script for examples.
+The UnsignedTx transaction class makes it easy to generate and sign new transactions that reassign the incoming coins to a new public keys. Look at the test code in build_tx_test.py or the spend.py script for examples.
 
-You will need to provide the "sign" method with a Tx DB that includes the scripts for the source transactions, and a list of private keys 
-for the source transactions.
+You will need to create a "solver", and provide it with the private keys relevant to the transaction, then pass it into the "sign" method.
 
 
 Donate

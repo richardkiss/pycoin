@@ -8,15 +8,16 @@ import sys
 import urllib.request
 
 from pycoin import encoding
-from pycoin.tx import Tx
-from pycoin.tx.TxOut import TxOut
+from pycoin.tx import Tx, UnsignedTx, TxOut, SecretExponentSolver
 
-def source_tx_for_address(bitcoin_address):
+def hash_index_tx_out_list_for_address(bitcoin_address):
     r = json.loads(urllib.request.urlopen("http://blockchain.info/unspent?active=%s" % bitcoin_address).read().decode("utf8"))
-    tx_db = {}
+    coins_sources = []
     for unspent_output in r["unspent_outputs"]:
-        tx_db[(binascii.unhexlify(unspent_output["tx_hash"]), unspent_output["tx_output_n"])] = binascii.unhexlify(unspent_output["script"])
-    return tx_db
+        tx_out = TxOut(unspent_output["value"], binascii.unhexlify(unspent_output["script"]))
+        coins_source = (binascii.unhexlify(unspent_output["tx_hash"]), unspent_output["tx_output_n"], tx_out)
+        coins_sources.append(coins_source)
+    return coins_sources
 
 def main():
     parser = argparse.ArgumentParser(description="Create a Bitcoin transaction.")
@@ -26,25 +27,23 @@ def main():
     parser.add_argument('-f', "--secret-exponents", help='WIF items for source Bitcoin addresses', type=argparse.FileType('r'))
     args = parser.parse_args()
 
-    tx_db = {}
-
-    previous_hash_index__tuple_list = []
+    coins_from = []
     for bca in args.source_address:
-        tx_db.update(source_tx_for_address(bca))
-    for k, v in tx_db.items():
-        previous_hash_index__tuple_list.append(k)
+        coins_from.extend(hash_index_tx_out_list_for_address(bca))
 
     secret_exponents = []
     for l in args.secret_exponents:
         secret_exponents.append(encoding.wif_to_secret_exponent(l[:-1]))
 
-    coin_value__bitcoin_address__tuple_list = []
+    coins_to = []
     for daa in args.destination_address:
         address, amount = daa.split("/")
         amount = int(amount)
-        coin_value__bitcoin_address__tuple_list.append((amount, address))
+        coins_to.append((amount, address))
 
-    new_tx = Tx.standard_tx(previous_hash_index__tuple_list, coin_value__bitcoin_address__tuple_list, tx_db, secret_exponents)
+    unsigned_tx = UnsignedTx.standard_tx(coins_from, coins_to)
+    solver = SecretExponentSolver(secret_exponents)
+    new_tx = unsigned_tx.sign(solver)
     s = io.BytesIO()
     new_tx.stream(s)
     print(binascii.hexlify(s.getvalue()))
