@@ -4,11 +4,10 @@ import binascii
 import io
 import unittest
 
+from pycoin.encoding import h2b
 from pycoin.tx import Tx, ValidationFailureError
 from pycoin.tx.script import tools
 from pycoin.block import Block
-
-h2b = binascii.unhexlify
 
 class ValidatingTest(unittest.TestCase):
     def test_validate(self):
@@ -91,7 +90,7 @@ class ValidatingTest(unittest.TestCase):
 
     def test_validate_two_inputs(self):
         def tx_from_b64(h):
-            f = io.BytesIO(binascii.a2b_base64(h))
+            f = io.BytesIO(binascii.a2b_base64(h.encode("utf8")))
             return Tx.parse(f)
         # c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d
         # This is the one we're going to validate. It has inputs from

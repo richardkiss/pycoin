@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-import binascii
 import unittest
 
 from pycoin import wallet
+from pycoin.encoding import h2b
 
 class Bip0032TestCase(unittest.TestCase):
 
     def test_vector_1(self):
-        master = wallet.Wallet.from_master_secret(binascii.unhexlify("000102030405060708090a0b0c0d0e0f"))
+        master = wallet.Wallet.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"))
         self.assertEqual(master.wallet_key(as_private=True), "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi")
         self.assertEqual(master.bitcoin_address(), "15mKKb2eos1hWa6tisdPwwDC1a5J1y9nma")
         self.assertEqual(master.wif(), "L52XzL2cMkHxqxBXRyEpnPQZGUs3uKiL3R11XbAdHigRzDozKZeW")
@@ -62,7 +62,7 @@ class Bip0032TestCase(unittest.TestCase):
 
 
     def test_vector_2(self):
-        master = wallet.Wallet.from_master_secret(binascii.unhexlify("fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542"))
+        master = wallet.Wallet.from_master_secret(h2b("fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542"))
         self.assertEqual(master.wallet_key(as_private=True), "xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U")
 
         self.assertEqual(master.wallet_key(), "xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB")

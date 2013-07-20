@@ -42,7 +42,7 @@ def encode_integer(r):
     h = "%x" % r
     if len(h)%2:
         h = "0" + h
-    s = binascii.unhexlify(h)
+    s = binascii.unhexlify(h.encode("utf8"))
     if ord(s[:1]) <= 0x7f:
         return b"\x02" + bytes_from_int(len(s)) + s
     else:

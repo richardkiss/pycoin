@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import binascii
 import unittest
 
 from pycoin import encoding
@@ -12,8 +11,8 @@ class EncodingTestCase(unittest.TestCase):
             self.assertEqual((as_int, prefix), encoding.to_long(base, encoding.byte_to_int, as_rep))
             self.assertEqual(as_rep, encoding.from_long(as_int, prefix, base, lambda v:v))
 
-        do_test(10000101, 2, binascii.unhexlify("00009896e5"), 256)
-        do_test(10000101, 3, binascii.unhexlify("0000009896e5"), 256)
+        do_test(10000101, 2, encoding.h2b("00009896e5"), 256)
+        do_test(10000101, 3, encoding.h2b("0000009896e5"), 256)
         do_test(1460765565493402645157733592332121663123460211377, 1, b'\0\xff\xde\xfeOHu\xcf\x11\x9f\xc3\xd8\xf4\xa0\x9a\xe3~\xc4\xccB\xb1', 256)
 
     def test_to_from_base58(self):
@@ -155,8 +154,7 @@ class EncodingTestCase(unittest.TestCase):
         ]
 
         for public_pair, sec, compressed, hash160_sec, bitcoin_address in SEC_TEST_DATA:
-            do_test(public_pair, binascii.unhexlify(sec), compressed,
-                    binascii.unhexlify(hash160_sec), bitcoin_address)
+            do_test(public_pair, encoding.h2b(sec), compressed, encoding.h2b(hash160_sec), bitcoin_address)
 
 if __name__ == '__main__':
     unittest.main()

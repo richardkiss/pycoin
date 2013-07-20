@@ -125,6 +125,6 @@ class SecretExponentSolver(object):
             sig = der.sigencode_der(r, s) + bytes_from_int(signature_type)
             ba += tools.compile(binascii.hexlify(sig).decode("utf8"))
             if opcode == opcodes.OP_PUBKEYHASH:
-                ba += tools.compile(binascii.hexlify(public_pair_to_sec(public_pair, compressed=compressed)))
+                ba += tools.compile(binascii.hexlify(public_pair_to_sec(public_pair, compressed=compressed)).decode("utf8"))
 
         return bytes(ba)

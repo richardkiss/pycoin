@@ -39,6 +39,13 @@ BASE58_LOOKUP = dict((c, i) for i, c in enumerate(BASE58_ALPHABET))
 
 class EncodingError(Exception): pass
 
+def h2b(h):
+    """
+    A version of binascii.unhexlify that accepts unicode. This is
+    no longer necessary as of Python 3.3. But it doesn't hurt.
+    """
+    return binascii.unhexlify(h.encode("ascii"))
+
 def to_long(base, lookup_f, s):
     """Convert an array to a (possibly bignum) integer, along with a prefix value of how many prefixed zeros there are.
 

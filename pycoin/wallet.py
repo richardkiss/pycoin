@@ -61,7 +61,7 @@ PRIVATE_TEST_VERSION = [
 ]
 
 # generate lookup and reverse lookup
-PRIVATE_TEST__VERSION_LOOKUP = dict(((p, t), binascii.unhexlify(v)) for p, t, v in PRIVATE_TEST_VERSION)
+PRIVATE_TEST__VERSION_LOOKUP = dict(((p, t), binascii.unhexlify(v.encode("utf8"))) for p, t, v in PRIVATE_TEST_VERSION)
 VERSION__PRIVATE_TEST_LOOKUP = dict((int(v, 16), (p, t)) for p, t, v in PRIVATE_TEST_VERSION)
 
 class PublicPrivateMismatchError(Exception): pass

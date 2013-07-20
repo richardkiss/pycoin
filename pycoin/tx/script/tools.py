@@ -63,7 +63,7 @@ def compile(s):
         if t in OPCODE_TO_INT:
             f.write(bytes_from_int(OPCODE_TO_INT[t]))
         else:
-            t = binascii.unhexlify(t)
+            t = binascii.unhexlify(t.encode("utf8"))
             # BRAIN DAMAGE: if len(t) is too much, we need a different opcode
             f.write(bytes_from_int(len(t)))
             f.write(t)

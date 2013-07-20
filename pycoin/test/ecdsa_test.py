@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import binascii
 import unittest
 
 from pycoin.ecdsa import generator_secp256k1, sign, verify, public_pair_for_secret_exponent

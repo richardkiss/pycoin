@@ -45,9 +45,9 @@ def merkle_pair(hashes, hash_f):
     return l
 
 def test_merkle():
-    import binascii
+    from .encoding import h2b
     def to_bin(s):
-        return bytes(reversed(binascii.unhexlify(s)))
+        return bytes(reversed(h2b(s)))
     s1 = to_bin("56dee62283a06e85e182e2d0b421aceb0eadec3d5f86cdadf9688fc095b72510")
     assert merkle([s1], double_sha256) == s1
     # from block 71043

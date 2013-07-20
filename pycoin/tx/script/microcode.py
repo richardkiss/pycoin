@@ -32,7 +32,7 @@ import hashlib
 from . import ScriptError
 
 from .opcodes import OPCODE_TO_INT
-from ...encoding import hash160, double_sha256
+from ...encoding import hash160, h2b, double_sha256
 
 bytes_from_ints = (lambda x: ''.join(chr(c) for c in x)) if bytes == str else bytes
 bytes_to_ints = (lambda x: (ord(c) for c in x)) if bytes == str else lambda x: x
@@ -309,7 +309,7 @@ def do_OP_SIZE(stack):
 
 def do_OP_INVERT(stack):
     """
-    >>> s = [binascii.unhexlify('5dcf39822aebc166')]
+    >>> s = [h2b('5dcf39822aebc166')]
     >>> do_OP_INVERT(s)
     >>> print(binascii.hexlify(s[0]) == b'a230c67dd5143e99')
     True
@@ -328,15 +328,15 @@ def make_same_size(v1, v2):
 
 def make_bitwise_bin_op(binop):
     """
-    >>> s = [binascii.unhexlify('5dcf39832aebc166'), binascii.unhexlify('ff00f086') ]
+    >>> s = [h2b('5dcf39832aebc166'), h2b('ff00f086') ]
     >>> do_OP_AND(s)
     >>> print(binascii.hexlify(s[0]) == b'5d00308200000000')
     True
-    >>> s = [binascii.unhexlify('5dcf39832aebc166'), binascii.unhexlify('ff00f086') ]
+    >>> s = [h2b('5dcf39832aebc166'), h2b('ff00f086') ]
     >>> do_OP_OR(s)
     >>> print(binascii.hexlify(s[0]) == b'ffcff9872aebc166')
     True
-    >>> s = [binascii.unhexlify('5dcf39832aebc166'), binascii.unhexlify('ff00f086') ]
+    >>> s = [h2b('5dcf39832aebc166'), h2b('ff00f086') ]
     >>> do_OP_XOR(s)
     >>> print(binascii.hexlify(s[0]) == b'a2cfc9052aebc166')
     True

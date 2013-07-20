@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
-import binascii
 import unittest
 
 from pycoin.ecdsa import public_pair_for_secret_exponent, generator_secp256k1
 
-from pycoin.encoding import bitcoin_address_to_hash160_sec, is_sec_compressed, public_pair_to_sec, secret_exponent_to_wif, public_pair_to_bitcoin_address, wif_to_tuple_of_secret_exponent_compressed, public_pair_from_sec, public_pair_to_hash160_sec
+from pycoin.encoding import bitcoin_address_to_hash160_sec, h2b, is_sec_compressed, public_pair_to_sec, secret_exponent_to_wif, public_pair_to_bitcoin_address, wif_to_tuple_of_secret_exponent_compressed, public_pair_from_sec, public_pair_to_hash160_sec
 
 """
 http://sourceforge.net/mailarchive/forum.php?thread_name=CAPg%2BsBhDFCjAn1tRRQhaudtqwsh4vcVbxzm%2BAA2OuFxN71fwUA%40mail.gmail.com&forum_name=bitcoin-development
@@ -16,8 +15,8 @@ class BuildTxTest(unittest.TestCase):
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
             secret_exponent = int(exp_hex, 16)
-            sec = binascii.unhexlify(public_pair_sec)
-            c_sec = binascii.unhexlify(c_public_pair_sec)
+            sec = h2b(public_pair_sec)
+            c_sec = h2b(c_public_pair_sec)
 
             self.assertEqual(secret_exponent_to_wif(secret_exponent, compressed=False), wif)
             self.assertEqual(secret_exponent_to_wif(secret_exponent, compressed=True), c_wif)
