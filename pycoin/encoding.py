@@ -185,7 +185,7 @@ def public_pair_to_sec(public_pair, compressed=True):
     y_str = to_bytes_32(public_pair[1])
     return b'\4' + x_str + y_str
 
-def public_pair_from_sec(sec):
+def sec_to_public_pair(sec):
     """Convert a public key in sec binary format to a public pair."""
     x = from_bytes_32(sec[1:33])
     sec0 = sec[:1]

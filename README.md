@@ -1,7 +1,7 @@
 pycoin -- Python Bitcoin Utilities
 ==================================
 
-This is an implementation of a bunch of utility routines that may be useful when dealing with Bitcoin stuff. It has been tested with Python 2.7 and Python 3.3.
+This is an implementation of a bunch of utility routines that may be useful when dealing with Bitcoin stuff. It has been tested with Python 2.7, 3.2 and 3.3.
 
 
 ECDSA Signing and Verification
@@ -27,6 +27,7 @@ The library declares some conversion utilities useful when dealing with Bitcoin.
 * WIF (Wallet import format)
 * SEC (the gross internal format of public keys used by OpenSSL, both compressed and uncompressed)
 
+The command-line utility "bu" ("Bitcoin utility") exposes a lot of this API on the command-line.
 
 Wallets
 -------
@@ -51,6 +52,8 @@ A private Wallet object can yield a public Wallet object (which generates only t
 
 A private Wallet object can generate a subkey whose addresses CANNOT be derived from the corresponding public Wallet object (to generate change addresses, for example). Set ```is_prime=True```.
 
+The command-line utility "genwallet" exposes a lot of this API on the command-line.
+
 
 Transaction Validation and Signing
 ----------------------------------
@@ -59,6 +62,7 @@ The UnsignedTx transaction class makes it easy to generate and sign new transact
 
 You will need to create a "solver", and provide it with the private keys relevant to the transaction, then pass it into the "sign" method.
 
+The command-line utility "spend" provides sample code for generating transactions. Note that it doesn't post the transactions to the network, so you can mess around with relative impunity.
 
 Donate
 ------

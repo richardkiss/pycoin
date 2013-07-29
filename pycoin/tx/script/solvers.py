@@ -29,7 +29,7 @@ THE SOFTWARE.
 import binascii
 
 from ... import ecdsa
-from ...encoding import public_pair_to_sec, public_pair_from_sec,\
+from ...encoding import public_pair_to_sec, sec_to_public_pair,\
     hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address,\
     public_pair_to_hash160_sec
 
@@ -108,7 +108,7 @@ class SecretExponentSolver(object):
         compressed = True
         for opcode, v in opcode_value_list:
             if opcode == opcodes.OP_PUBKEY:
-                public_pair = public_pair_from_sec(v)
+                public_pair = sec_to_public_pair(v)
             elif opcode == opcodes.OP_PUBKEYHASH:
                 the_tuple = self.public_pair_compressed_for_hash160_lookup.get(v)
                 if the_tuple is None:

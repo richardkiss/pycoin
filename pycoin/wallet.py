@@ -46,7 +46,7 @@ import struct
 
 from . import ecdsa
 
-from .encoding import public_pair_to_sec, public_pair_from_sec,\
+from .encoding import public_pair_to_sec, sec_to_public_pair,\
     secret_exponent_to_wif, public_pair_to_bitcoin_address,\
     from_bytes_32, to_bytes_32,\
     public_pair_to_hash160_sec, EncodingError
@@ -93,7 +93,7 @@ class Wallet(object):
                 raise EncodingError("private key encoded wrong")
             d["secret_exponent_bytes"] = data[46:]
         else:
-            d["public_pair"] = public_pair_from_sec(data[45:])
+            d["public_pair"] = sec_to_public_pair(data[45:])
 
         return class_(**d)
 

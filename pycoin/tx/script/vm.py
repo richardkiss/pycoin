@@ -29,7 +29,7 @@ THE SOFTWARE.
 import logging
 
 from ... import ecdsa
-from ...encoding import public_pair_from_sec
+from ...encoding import sec_to_public_pair
 
 from . import der
 from . import opcodes
@@ -60,7 +60,7 @@ def check_signature(script, signature_hash, public_key_blob, sig_blob, hash_type
         hash_type = signature_type
     elif hash_type != signature_type:
         raise ScriptError("wrong hash type")
-    public_pair = public_pair_from_sec(public_key_blob)
+    public_pair = sec_to_public_pair(public_key_blob)
     v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair)
     return make_bool(v)
 
