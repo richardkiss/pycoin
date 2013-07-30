@@ -53,9 +53,9 @@ def main():
     tx_hex = binascii.hexlify(tx_bytes).decode("utf8")
     recommended_tx_fee = tx_fee.recommended_fee_for_tx(new_tx)
     if actual_tx_fee > recommended_tx_fee:
-        print("warning: transaction fee of exceeds expected value of %s" % recommended_tx_fee)
+        print("warning: transaction fee of exceeds expected value of %s BTC" % satoshi_to_btc(recommended_tx_fee))
     elif actual_tx_fee < recommended_tx_fee:
-        print("warning: transaction fee lower than (casually calculated) expected value of %s, transaction might not propogate" % recommended_tx_fee)
+        print("warning: transaction fee lower than (casually calculated) expected value of %s BTC, transaction might not propogate" % satoshi_to_btc(recommended_tx_fee))
     print("copy the following hex to http://blockchain.info/pushtx to put the transaction on the network:\n")
     print(tx_hex)
 
