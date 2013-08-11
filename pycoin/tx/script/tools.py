@@ -43,6 +43,7 @@ else:
         while v > 0:
             v, mod = divmod(v, 256)
             l.append(mod)
+        l.reverse()
         return bytes(l)
 
 if hasattr(int, "from_bytes"):
