@@ -1,3 +1,29 @@
+Version 0.23
+------------
+
+* fixed two bugs specific to Python 2.7 (thanks to Peter D. Gray)
+
+Version 0.22
+------------
+
+* now works with Python 3.2
+* added "bu" command-line utility
+* improvements to "spend" command-line utility
+* added some blockchain.info utilities
+* first crack at transaction fee conventions
+* rename public_pair_from_sec to sec_to_public_pair
+
+Version 0.20
+------------
+
+* transaction signing is much easier to use now
+* massive refactoring of script package
+
+Version 0.14
+------------
+
+* a few speed-ups
+* fix genwallet script
 
 Version 0.13
 ------------

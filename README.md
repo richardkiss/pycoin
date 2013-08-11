@@ -7,7 +7,7 @@ This is an implementation of a bunch of utility routines that may be useful when
 ECDSA Signing and Verification
 ------------------------------
 
-Instead of hiding behind a bunch of opaque abstraction, the library deals with ECDSA keys directly. The key structures are:
+Instead of hiding behind a bunch of opaque abstraction, the library deals with ECDSA keys directly. Important structures include:
 
 - the ```secret_exponent``` (a large integer that represents a private key)
 - the ```public_pair``` (a pair of large integers x and y that represent a public key)
@@ -18,7 +18,7 @@ There are a handful of functions: you can do things like create a signature, ver
 Encoding
 --------
 
-The library declares some conversion utilities useful when dealing with Bitcoin. The key structures are
+The library declares some conversion utilities useful when dealing with Bitcoin. Important structures include:
 
 * base58 (the encoding used for Bitcoin addresses)
 * hashed base58 (with a standard checksum)
@@ -32,7 +32,7 @@ The command-line utility "bu" ("Bitcoin utility") exposes a lot of this API on t
 Wallets
 -------
 
-The library also implements a deterministic wallet that will securly generate Bitcoin addresses compliant with [BIP0032].
+The library implements a deterministic wallet that will securly generate Bitcoin addresses compliant with [BIP0032].
 
 This includes creating and parsing standard wallet keys.
 
