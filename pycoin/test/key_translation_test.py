@@ -81,6 +81,17 @@ class BuildTxTest(unittest.TestCase):
                 "1PM35qz2uwCDzcUJtiqDSudAaaLrWRw41L",
                 "19ck9VKC6KjGxR9LJg4DNMRc45qFrJguvV")
 
+        # in this case, the public_pair y value is less than 256**31, and so has a leading 00 byte.
+        # This triggers a bug in the Python 2.7 version of to_bytes_32.
+        do_test("ae2aaef5080b6e1704aab382a40a7c9957a40b4790f7df7faa04b14f4db56361",
+                "5K8zSJ4zcV3UfkAKCFY5PomL6SRx2pYjaKfnAtMVh6zbhnAuPon",
+                "L34GWeLdHcmw81W7JfAAPfQfH1F7u2s4v5QANdfTe1TEAYpjXoLL",
+                "04f650fb572d1475950b63f5175c77e8b5ed9035a209d8fb5af5a04d6bc39b7323"\
+                  "00186733fcfe3def4ace6feae8b82dd03cc31b7855307d33b0a039170f374962",
+                "02f650fb572d1475950b63f5175c77e8b5ed9035a209d8fb5af5a04d6bc39b7323",
+                "18fKPR8s1MQeckAsgya1sx6Z3WmFXd8wv8",
+                "1DVJQzgnyCahXdoXdJ3tjGA3hrYVgKpvgK")
+
 if __name__ == '__main__':
     unittest.main()
 

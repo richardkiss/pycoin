@@ -15,6 +15,14 @@ class EncodingTestCase(unittest.TestCase):
         do_test(10000101, 3, encoding.h2b("0000009896e5"), 256)
         do_test(1460765565493402645157733592332121663123460211377, 1, b'\0\xff\xde\xfeOHu\xcf\x11\x9f\xc3\xd8\xf4\xa0\x9a\xe3~\xc4\xccB\xb1', 256)
 
+    def test_to_bytes_32(self):
+        for i in range(256):
+            v = encoding.to_bytes_32(i)
+            self.assertEqual(v, b'\0' * 31 + bytes(bytearray([i])))
+        for i in range(256,512):
+            v = encoding.to_bytes_32(i)
+            self.assertEqual(v, b'\0' * 30 + bytes(bytearray([1, i&0xff])))
+
     def test_to_from_base58(self):
         def do_test(as_text, as_bin):
             self.assertEqual(as_bin, encoding.a2b_base58(as_text))
