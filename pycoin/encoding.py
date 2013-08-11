@@ -65,7 +65,7 @@ def to_long(base, lookup_f, s):
             prefix += 1
     return v, prefix
 
-def from_long(v, prefix, base, charset):
+def from_long(v, prefix, base, charset, force_len=None):
     """The inverse of to_long. Convert an integer to an arbitrary base.
 
     v: the integer value to convert
@@ -81,11 +81,18 @@ def from_long(v, prefix, base, charset):
         except Exception:
             raise EncodingError("can't convert to character corresponding to %d" % mod)
     l.extend([charset(0)] * prefix)
+
+    if force_len is not None:
+        if len(l) < force_len:
+            l.extend([charset(0)] * (force_len - len(l)))
+        elif len(l) > force_len:
+            raise OverflowError()
+            
     l.reverse()
     return bytes(l)
 
 def to_bytes_32(v):
-    return from_long(v, 0, 256, lambda x: x)
+    return from_long(v, 0, 256, lambda x: x, force_len=32)
 
 if hasattr(int, "to_bytes"):
     to_bytes_32 = lambda v: v.to_bytes(32, byteorder="big")
