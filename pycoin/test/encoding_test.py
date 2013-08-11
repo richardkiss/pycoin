@@ -64,6 +64,10 @@ class EncodingTestCase(unittest.TestCase):
         do_test(b'\x74' * 10000,
             b'\xa9a\x07\x02\x96gt\x01\xa5~\xae\r\x96\xd1MZ\x88\n,A')
 
+    def test_to_bytes_32(self):
+        # Check a py2 vs py3 difference
+        self.assertEqual(encoding.to_bytes_32(65), bytearray(31) + bytearray('A'))
+
     def test_wif_to_from_secret_exponent(self):
         def do_test(as_secret_exponent, as_wif, is_compressed):
             self.assertEqual(as_wif, encoding.secret_exponent_to_wif(as_secret_exponent, compressed=is_compressed))
