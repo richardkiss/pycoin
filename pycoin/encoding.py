@@ -37,6 +37,20 @@ BASE58_ALPHABET = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 BASE58_BASE = len(BASE58_ALPHABET)
 BASE58_LOOKUP = dict((c, i) for i, c in enumerate(BASE58_ALPHABET))
 
+def private_byte_prefix(is_test):
+  """WIF prefix. Returns b'\x80' for main network and b'\xef' for testnet"""
+  if is_test: 
+    return b'\xef'
+  else:
+    return b'\x80'
+
+def public_byte_prefix(is_test):
+  """Address prefix. Returns b'\0' for main network and b'\x6f' for testnet"""
+  if is_test: 
+    return b'\x6f'
+  else:
+    return b'\0'
+
 class EncodingError(Exception): pass
 
 def h2b(h):
@@ -149,7 +163,7 @@ def is_hashed_base58_valid(base58):
         return False
     return True
 
-def wif_to_tuple_of_secret_exponent_compressed(wif):
+def wif_to_tuple_of_secret_exponent_compressed(wif, is_test=False):
     """Convert a WIF string to the corresponding secret exponent. Private key manipulation.
     Returns a tuple: the secret exponent, as a bignum integer, and a boolean indicating if the
     WIF corresponded to a compressed key or not.
@@ -158,7 +172,7 @@ def wif_to_tuple_of_secret_exponent_compressed(wif):
     and uncompressed Bitcoin address."""
     decoded = a2b_hashed_base58(wif)
     header80, private_key = decoded[:1], decoded[1:]
-    if header80 != b'\x80':
+    if header80 != private_byte_prefix(is_test):
         raise EncodingError("unexpected first byte of WIF %s" % wif)
     compressed = len(private_key) > 32
     return from_bytes_32(private_key[:32]), compressed
@@ -175,9 +189,9 @@ def is_valid_wif(wif):
         return False
     return True
 
-def secret_exponent_to_wif(secret_exp, compressed=True):
+def secret_exponent_to_wif(secret_exp, compressed=True, is_test=False):
     """Convert a secret exponent (correspdong to a private key) to WIF format."""
-    d = b'\x80' + to_bytes_32(secret_exp)
+    d = private_byte_prefix(is_test) + to_bytes_32(secret_exp)
     if compressed: d += b'\01'
     return b2a_hashed_base58(d)
 
@@ -217,23 +231,23 @@ def public_pair_to_hash160_sec(public_pair, compressed=True):
     the corresponding Bitcoin address."""
     return hash160(public_pair_to_sec(public_pair, compressed=compressed))
 
-def hash160_sec_to_bitcoin_address(hash160_sec):
+def hash160_sec_to_bitcoin_address(hash160_sec, is_test=False):
     """Convert the hash160 of a sec version of a public_pair to a Bitcoin address."""
-    return b2a_hashed_base58(b'\0' + hash160_sec)
+    return b2a_hashed_base58(public_byte_prefix(is_test) + hash160_sec)
 
-def bitcoin_address_to_hash160_sec(bitcoin_address):
+def bitcoin_address_to_hash160_sec(bitcoin_address, is_test=False):
     """Convert a Bitcoin address back to the hash160_sec format of the public key.
     Since we only know the hash of the public key, we can't get the full public key back."""
     blob = a2b_hashed_base58(bitcoin_address)
     if len(blob) != 21:
         raise EncodingError("incorrect binary length (%d) for Bitcoin address %s" % (len(blob), bitcoin_address))
-    if blob[:1] != b'\0':
+    if blob[:1] != public_byte_prefix(is_test):
         raise EncodingError("incorrect first byte (%s) for Bitcoin address %s" % (blob[0], bitcoin_address))
     return blob[1:]
 
-def public_pair_to_bitcoin_address(public_pair, compressed=True):
+def public_pair_to_bitcoin_address(public_pair, compressed=True, is_test=False):
     """Convert a public_pair (corresponding to a public key) to a Bitcoin address."""
-    return hash160_sec_to_bitcoin_address(public_pair_to_hash160_sec(public_pair, compressed=compressed))
+    return hash160_sec_to_bitcoin_address(public_pair_to_hash160_sec(public_pair, compressed=compressed), is_test=is_test)
 
 def is_valid_bitcoin_address(bitcoin_address):
     """Return True if and only if bitcoin_address is valid."""
