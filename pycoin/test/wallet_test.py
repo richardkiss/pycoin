@@ -104,6 +104,12 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertEqual(master.subkey_for_path("0/2147483647p/1/2147483646p/2").wallet_key(), m0_2147483647p_1_2147483646p_2.wallet_key())
         self.assertEqual(master.subkey_for_path("0/2147483647p/1/2147483646p/2.pub").wallet_key(), pub_m0_2147483647p_1_2147483646p_2.wallet_key())
 
+    def test_testnet(self):
+        # WARNING: these values have not been verified independently. TODO: do so
+        master = wallet.Wallet.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"), is_test=True)
+        self.assertEqual(master.wallet_key(as_private=True), "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5khqjWaWSFhN3YcCUUdiKH6isR4Pwy3U5y5egddBr16m")
+        self.assertEqual(master.bitcoin_address(), "mkHGce7dctSxHgaWSSbmmrRWsZfzz7MxMk")
+        self.assertEqual(master.wif(), "cVPXTF2TnozE1PenpP3x9huctiATZmp27T9Ue1d8nqLSExoPwfN5")
 
     def test_streams(self):
         m0 = wallet.Wallet.from_master_secret("foo bar baz".encode("utf8"))
