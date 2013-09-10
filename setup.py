@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-import distutils.core
+from setuptools import setup
 
 version = "0.23"
 
-distutils.core.setup(
+setup(
     name="pycoin",
     version=version,
     packages = [
