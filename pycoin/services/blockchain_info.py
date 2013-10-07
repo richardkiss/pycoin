@@ -35,8 +35,8 @@ def coin_sources_for_address(bitcoin_address):
     r = json.loads(urlopen(URL).read().decode("utf8"))
     coins_sources = []
     for unspent_output in r["unspent_outputs"]:
-        tx_out = TxOut(unspent_output["value"], binascii.unhexlify(unspent_output["script"]))
-        coins_source = (binascii.unhexlify(unspent_output["tx_hash"]), unspent_output["tx_output_n"], tx_out)
+        tx_out = TxOut(unspent_output["value"], binascii.unhexlify(unspent_output["script"].encode()))
+        coins_source = (binascii.unhexlify(unspent_output["tx_hash"].encode()), unspent_output["tx_output_n"], tx_out)
         coins_sources.append(coins_source)
     return coins_sources
 
