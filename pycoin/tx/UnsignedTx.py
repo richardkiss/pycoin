@@ -51,7 +51,7 @@ class UnsignedTx(object):
         self.lock_time = lock_time
 
     @classmethod
-    def standard_tx(class_, previous_hash_index_txout_tuple_list, coin_value__bitcoin_address__tuple_list, version=1, lock_time=0):
+    def standard_tx(class_, previous_hash_index_txout_tuple_list, coin_value__bitcoin_address__tuple_list, version=1, lock_time=0, is_test=False):
         """Create a standard transaction.
         previous_hash_index_txout_tuple_list: a list of tuples of the form
             (previous hash, previous index, tx_out) corresponding to the
@@ -68,7 +68,7 @@ class UnsignedTx(object):
         new_txs_out = []
         STANDARD_SCRIPT_OUT = "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG"
         for coin_value, bitcoin_address in coin_value__bitcoin_address__tuple_list:
-            hash160 = bitcoin_address_to_hash160_sec(bitcoin_address)
+            hash160 = bitcoin_address_to_hash160_sec(bitcoin_address, is_test)
             script_text = STANDARD_SCRIPT_OUT % b2h(hash160)
             script_bin = tools.compile(script_text)
             new_txs_out.append(TxOut(coin_value, script_bin))
