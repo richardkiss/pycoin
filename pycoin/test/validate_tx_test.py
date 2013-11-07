@@ -58,7 +58,7 @@ class ValidatingTest(unittest.TestCase):
         block_80971 = Block.parse(io.BytesIO(block_80971_data))
         block_80974 = Block.parse(io.BytesIO(block_80974_data))
 
-        tx_db = { tx.hash(): tx for tx in block_80971.txs }
+        tx_db = { tx.hash(): [tx for tx in block_80971.txs] }
 
         def tx_out_for_hash_index_f(tx_hash, tx_out_idx):
             tx = tx_db.get(tx_hash)
@@ -126,7 +126,7 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
         tx_2 = tx_from_b64(TX_2_HEX)
         self.assertEqual(tx_2.id(), "72151f65db1d8594df90778639a4c0c17c1e303af01de0d04af8fac13854bbfd")
 
-        TX_DB = { tx.hash(): tx for tx in [tx_0, tx_1, tx_2] }
+        TX_DB = { tx.hash(): [tx for tx in [tx_0, tx_1, tx_2]] }
 
         def tx_out_for_hash_index_f(tx_hash, tx_out_idx):
             tx = TX_DB.get(tx_hash)
