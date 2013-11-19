@@ -12,7 +12,7 @@ def gpg_entropy():
     return output
 
 def dev_random_entropy():
-    return open("/dev/urandom", "rb").read(64)
+    return open("/dev/random", "rb").read(64)
 
 def b2h(b):
     return binascii.hexlify(b).decode("utf8")
@@ -26,7 +26,7 @@ def main():
     parser.add_argument('-f', "--wallet-key-file", help='initial wallet key', type=argparse.FileType('r'))
     parser.add_argument('-k', "--wallet-key", help='initial wallet key')
     parser.add_argument('-g', "--gpg", help='use gpg --gen-random to get additional entropy', action='store_true')
-    parser.add_argument('-u', "--dev-random", help='use /dev/urandom to get additional entropy', action='store_true')
+    parser.add_argument('-u', "--dev-random", help='use /dev/random to get additional entropy', action='store_true')
     parser.add_argument('-n', "--uncompressed", help='show in uncompressed form', action='store_true')
     parser.add_argument('-p', help='generate wallet key from passphrase. NOT RECOMMENDED', metavar='passphrase')
     parser.add_argument('-s', "--subkey", help='subkey path (example: 0p/2/1)')
