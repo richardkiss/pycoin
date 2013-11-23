@@ -58,7 +58,7 @@ The command-line utility "genwallet" exposes a lot of this API on the command-li
 Transaction Validation and Signing
 ----------------------------------
 
-The UnsignedTx transaction class makes it easy to generate and sign new transactions that reassign the incoming coins to a new public keys. Look at the test code in build_tx_test.py or the spend.py script for examples.
+The UnsignedTx transaction class makes it easy to generate and sign new transactions that reassign the incoming coins to new public keys. Look at the test code in build_tx_test.py or the spend.py script for examples.
 
 You will need to create a "solver", and provide it with the private keys relevant to the transaction, then pass it into the "sign" method.
 
