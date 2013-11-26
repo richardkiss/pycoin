@@ -82,8 +82,8 @@ def main():
                 child_index = "%dp (%d)" % (wc, wallet.child_number)
             else:
                 child_index = "%d" % wallet.child_number
-            print('  "child index": "%s",' % child_index)
-            print('  "chain code": "%s",' % b2h(wallet.chain_code))
+            print('  "child_index": "%s",' % child_index)
+            print('  "chain_code": "%s",' % b2h(wallet.chain_code))
             if wallet.is_private:
                 print('  "WIF" : "%s",' % wallet.wif())
                 print('  "WIF_uncompressed" : "%s",' % wallet.wif(compressed=False))
