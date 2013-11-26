@@ -73,7 +73,7 @@ def main():
                 print('  "secret_exponent" : "%d",' % wallet.secret_exponent)
             else:
                 print('  "key" : "public",')
-            print('  "public_pair_x: "%d",\n  "public_pair_y" : "%d",' % wallet.public_pair)
+            print('  "public_pair_x": "%d",\n  "public_pair_y" : "%d",' % wallet.public_pair)
             print('  "tree_depth" : "%d",' % wallet.depth)
             print('  "fingerprint" : "%s",' % b2h(wallet.fingerprint()))
             print('  "parent_fingerprint" : "%s",' % b2h(wallet.parent_fingerprint))
