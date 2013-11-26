@@ -85,8 +85,8 @@ def main():
             print('  "child_index": "%s",' % child_index)
             print('  "chain_code": "%s",' % b2h(wallet.chain_code))
             if wallet.is_private:
-                print('  "WIF" : "%s",' % wallet.wif())
-                print('  "WIF_uncompressed" : "%s",' % wallet.wif(compressed=False))
+                print('  "wif" : "%s",' % wallet.wif())
+                print('  "wif_uncompressed" : "%s",' % wallet.wif(compressed=False))
             print('  "bitcoin_addr" : "%s",' % wallet.bitcoin_address())
             print('  "bitcoin_addr_uncompressed": "%s"' % wallet.bitcoin_address(compressed=False))
             print('}')
