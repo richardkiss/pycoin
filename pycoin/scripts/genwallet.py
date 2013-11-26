@@ -22,6 +22,7 @@ def main():
 
     parser.add_argument('-a', "--address", help='show as Bitcoin address', action='store_true')
     parser.add_argument('-i', "--info", help='show metadata', action='store_true')
+    parser.add_argument('-j', "--json", help='output metadata as JSON', action='store_true')
     parser.add_argument('-w', "--wif", help='show as Bitcoin WIF', action='store_true')
     parser.add_argument('-f', "--wallet-key-file", help='initial wallet key', type=argparse.FileType('r'))
     parser.add_argument('-k', "--wallet-key", help='initial wallet key')
@@ -60,7 +61,36 @@ def main():
     try:
         if args.subkey:
             wallet = wallet.subkey_for_path(args.subkey)
-        if args.info:
+        if args.json:
+            print("{")
+            print('  "wallet_key" : "%s",' % wallet.wallet_key(as_private=wallet.is_private))
+            if wallet.is_test:
+                print('  "network" : "test",')
+            else:
+                print('  "network" : "main",')
+            if wallet.is_private:
+                print('  "key" : "private",')
+                print('  "secret_exponent" : "%d",' % wallet.secret_exponent)
+            else:
+                print('  "key" : "public",')
+            print('  "public_pair_x: "%d",\n  "public_pair_y" : "%d",' % wallet.public_pair)
+            print('  "tree_depth" : "%d",' % wallet.depth)
+            print('  "fingerprint" : "%s",' % b2h(wallet.fingerprint()))
+            print('  "parent_fingerprint" : "%s",' % b2h(wallet.parent_fingerprint))
+            if wallet.child_number >= 0x80000000:
+                wc = wallet.child_number - 0x80000000
+                child_index = "%dp (%d)" % (wc, wallet.child_number)
+            else:
+                child_index = "%d" % wallet.child_number
+            print('  "child index": "%s",' % child_index)
+            print('  "chain code": "%s",' % b2h(wallet.chain_code))
+            if wallet.is_private:
+                print('  "WIF" : "%s",' % wallet.wif())
+                print('  "WIF_uncompressed" : "%s",' % wallet.wif(compressed=False))
+            print('  "bitcoin_addr" : "%s",' % wallet.bitcoin_address())
+            print('  "bitcoin_addr_uncompressed": "%s"' % wallet.bitcoin_address(compressed=False))
+            print('}')
+        elif args.info:
             print(wallet.wallet_key(as_private=wallet.is_private))
             if wallet.is_test:
                 print("test network")
