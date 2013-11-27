@@ -2,6 +2,7 @@
 
 import argparse
 import binascii
+import json
 import subprocess
 import sys
 
@@ -22,6 +23,7 @@ def main():
 
     parser.add_argument('-a', "--address", help='show as Bitcoin address', action='store_true')
     parser.add_argument('-i', "--info", help='show metadata', action='store_true')
+    parser.add_argument('-j', "--json", help='output metadata as JSON', action='store_true')
     parser.add_argument('-w', "--wif", help='show as Bitcoin WIF', action='store_true')
     parser.add_argument('-f', "--wallet-key-file", help='initial wallet key', type=argparse.FileType('r'))
     parser.add_argument('-k', "--wallet-key", help='initial wallet key')
@@ -60,7 +62,36 @@ def main():
     try:
         if args.subkey:
             wallet = wallet.subkey_for_path(args.subkey)
-        if args.info:
+        if wallet.child_number >= 0x80000000:
+            wc = wallet.child_number - 0x80000000
+            child_index = "%dp (%d)" % (wc, wallet.child_number)
+        else:
+            child_index = "%d" % wallet.child_number
+        if args.json:
+            d = dict(
+                wallet_key=wallet.wallet_key(as_private=wallet.is_private),
+                public_pair_x=wallet.public_pair[0],
+                public_pair_y=wallet.public_pair[1],
+                tree_depth=wallet.depth,
+                fingerprint=b2h(wallet.fingerprint()),
+                parent_fingerprint=b2h(wallet.parent_fingerprint),
+                child_index=child_index,
+                chain_code=b2h(wallet.chain_code),
+                bitcoin_addr=wallet.bitcoin_address(),
+                bitcoin_addr_uncompressed=wallet.bitcoin_address(compressed=False),
+                network="test" if wallet.is_test else "main",
+            )
+            if wallet.is_private:
+                d.update(dict(
+                    key="private",
+                    secret_exponent=wallet.secret_exponent,
+                    WIF=wallet.wif(),
+                    WIF_uncompressed=wallet.wif(compressed=False)
+                ))
+            else:
+                d.update(dict(key="public"))
+            print json.dumps(d, indent=3)
+        elif args.info:
             print(wallet.wallet_key(as_private=wallet.is_private))
             if wallet.is_test:
                 print("test network")
@@ -75,11 +106,6 @@ def main():
             print("tree depth:      %d" % wallet.depth)
             print("fingerprint:     %s" % b2h(wallet.fingerprint()))
             print("parent f'print:  %s" % b2h(wallet.parent_fingerprint))
-            if wallet.child_number >= 0x80000000:
-                wc = wallet.child_number - 0x80000000
-                child_index = "%dp (%d)" % (wc, wallet.child_number)
-            else:
-                child_index = "%d" % wallet.child_number
             print("child index:     %s" % child_index)
             print("chain code:      %s" % b2h(wallet.chain_code))
             if wallet.is_private:
