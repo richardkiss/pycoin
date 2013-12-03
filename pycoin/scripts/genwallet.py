@@ -32,6 +32,7 @@ def main():
     parser.add_argument('-n', "--uncompressed", help='show in uncompressed form', action='store_true')
     parser.add_argument('-p', help='generate wallet key from passphrase. NOT RECOMMENDED', metavar='passphrase')
     parser.add_argument('-s', "--subkey", help='subkey path (example: 0p/2/1)')
+    parser.add_argument('-r', "--public", help='display public key derived from supplied private key', action='store_true')
     parser.add_argument('-t', help='generate test key', action="store_true")
     parser.add_argument('inputfile', help='source of entropy. stdin by default', type=argparse.FileType(mode='r+b'), nargs='?')
     args = parser.parse_args()
@@ -93,6 +94,8 @@ def main():
             print json.dumps(d, indent=3)
         elif args.info:
             print(wallet.wallet_key(as_private=wallet.is_private))
+            if wallet.is_private:
+                print(wallet.wallet_key(as_private=False))
             if wallet.is_test:
                 print("test network")
             else:
@@ -118,7 +121,8 @@ def main():
         elif args.wif:
             print(wallet.wif(compressed=not args.uncompressed))
         else:
-            print(wallet.wallet_key(as_private=wallet.is_private))
+            as_private = wallet.is_private and not args.public
+            print(wallet.wallet_key(as_private=as_private))
     except PublicPrivateMismatchError as ex:
         print(ex.args[0])
 
