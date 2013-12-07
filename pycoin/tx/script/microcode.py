@@ -33,7 +33,7 @@ from . import ScriptError
 
 from .opcodes import OPCODE_TO_INT
 from .tools import bytes_to_int, int_to_bytes
-from ...encoding import hash160, h2b, double_sha256
+from ...encoding import hash160, h2b, double_sha256, ripemd160
 
 bytes_from_ints = (lambda x: ''.join(chr(c) for c in x)) if bytes == str else bytes
 bytes_to_ints = (lambda x: (ord(c) for c in x)) if bytes == str else lambda x: x
@@ -410,7 +410,7 @@ def do_OP_RIPEMD160(stack):
     >>> print(s == [bytearray([66, 207, 162, 17, 1, 142, 164, 146, 253, 238, 69, 172, 99, 123, 121, 114, 160, 173, 104, 115])])
     True
     """
-    stack.append(hashlib.new("ripemd160", stack.pop()).digest())
+    stack.append(ripemd160(stack.pop()).digest())
 
 def do_OP_SHA1(stack):
     """
