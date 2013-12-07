@@ -30,6 +30,11 @@ THE SOFTWARE.
 import binascii
 import hashlib
 
+try:
+    from Crypto.Hash.RIPEMD import RIPEMD160Hash as RIPEMD160
+except ImportError:
+    RIPEMD160 = None
+
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 byte_to_int = ord if bytes == str else lambda x: x
 
@@ -107,7 +112,10 @@ def double_sha256(data):
 
 def hash160(data):
     """A standard compound hash."""
-    return hashlib.new("ripemd160", hashlib.sha256(data).digest()).digest()
+    if RIPEMD160:
+        return RIPEMD160(hashlib.sha256(data).digest()).digest()
+    else:
+        return hashlib.new("ripemd160", hashlib.sha256(data).digest()).digest()
 
 def b2a_base58(s):
     """Convert binary to base58 using BASE58_ALPHABET. Like Bitcoin addresses."""
