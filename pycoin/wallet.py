@@ -83,6 +83,9 @@ class Wallet(object):
     def from_wallet_key(class_, b58_str):
         """Generate a Wallet from a base58 string in a standard way."""
         data = a2b_hashed_base58(b58_str)
+        header = struct.unpack(">L", data[:4])[0]
+        if header not in VERSION__PRIVATE_TEST_LOOKUP:
+            raise EncodingError("bad wallet key header")
         is_private, is_test = VERSION__PRIVATE_TEST_LOOKUP.get(struct.unpack(">L", data[:4])[0])
         parent_fingerprint, child_number = struct.unpack(">4sL", data[5:13])
 
@@ -129,6 +132,7 @@ class Wallet(object):
             raise EncodingError("parent_fingerprint wrong length")
         self.parent_fingerprint = parent_fingerprint
         self.child_number = child_number
+        self.subkey_cache = dict()
 
     def serialize(self, as_private=None):
         """Yield a 78-byte binary blob corresponding to this node."""
@@ -167,7 +171,7 @@ class Wallet(object):
         """Yield the corresponding public node for this node."""
         return self.__class__(is_private=False, is_test=self.is_test, chain_code=self.chain_code, depth=self.depth, parent_fingerprint=self.parent_fingerprint, child_number=self.child_number, public_pair=self.public_pair)
 
-    def subkey(self, i=0, is_prime=False, as_private=None):
+    def _subkey(self, i, is_prime, as_private):
         """Yield a child node for this node.
 
         i: the index for this node.
@@ -177,7 +181,6 @@ class Wallet(object):
 
         Note that setting i<0 uses private key derivation, no matter the
         value for is_prime."""
-        if as_private is None: as_private = self.is_private
         if i<0:
             is_prime = True
             i_as_bytes = struct.pack(">l", i)
@@ -205,6 +208,15 @@ class Wallet(object):
             d["public_pair"] = the_point.pair()
         return self.__class__(**d)
 
+    def subkey(self, i=0, is_prime=False, as_private=None):
+        if as_private is None: as_private = self.is_private
+        is_prime = not not is_prime
+        as_private = not not as_private
+        lookup = (i, is_prime, as_private)
+        if lookup not in self.subkey_cache:
+            self.subkey_cache[lookup] = self._subkey(i, is_prime, as_private)
+        return self.subkey_cache[lookup]
+
     def subkey_for_path(self, path):
         """
         path: a path of subkeys denoted by numbers and slashes. Use
@@ -217,7 +229,8 @@ class Wallet(object):
             0/0/458.pub would call subkey(i=0).subkey(i=0).subkey(i=458) and
                 then yield the public key
 
-        You should choose either the p or the negative number convention for private key derivation.
+        You should choose one of the p or the negative number convention for private key
+        derivation and stick with it.
         """
         force_public = (path[-4:] == '.pub')
         if force_public:
@@ -234,11 +247,17 @@ class Wallet(object):
             key = key.public_copy()
         return key
 
-    def repr(self):
+    def children(self, max_level=50, start_index=0, include_prime=True):
+        for i in range(start_index, max_level+start_index+1):
+            yield self.subkey(i)
+            if include_prime:
+                yield self.subkey(i, is_prime=True)
+
+    def __repr__(self):
         if self.child_number == 0:
             r = self.wallet_key(as_private=False)
         else:
             r = self.bitcoin_address()
         if self.is_private:
-            return "private_for<%s>" % r
+            return "private_for <%s>" % r
         return "<%s>" % r
