@@ -75,20 +75,43 @@ class SecretExponentSolver(object):
     """This is an sample solver that, with a list of secret exponents, can be used
     as a solver to be passed to the "sign" method of an UnsignedTx.
     """
-    def __init__(self, secret_exponents):
-        self.secret_exponents = set()
+    def __init__(self, secret_exponent_iterator):
+        self.secret_exponent_iterator = iter(secret_exponent_iterator)
         self.secret_exponent_for_public_pair_lookup = {}
         self.public_pair_compressed_for_hash160_lookup = {}
-        self.add_secret_exponents(secret_exponents)
+
+    def add_secret_exponent(self, secret_exponent):
+        public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, secret_exponent)
+        self.secret_exponent_for_public_pair_lookup[public_pair] = secret_exponent
+        for compressed in (True, False):
+            hash160 = public_pair_to_hash160_sec(public_pair, compressed=compressed)
+            self.public_pair_compressed_for_hash160_lookup[hash160] = (public_pair, compressed)
 
     def add_secret_exponents(self, secret_exponents):
         """Increase the space of known secret keys."""
         for secret_exponent in secret_exponents:
-            public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, secret_exponent)
-            self.secret_exponent_for_public_pair_lookup[public_pair] = secret_exponent
-            for compressed in (True, False):
-                hash160 = public_pair_to_hash160_sec(public_pair, compressed=compressed)
-                self.public_pair_compressed_for_hash160_lookup[hash160] = (public_pair, compressed)
+            self.add_secret_exponent(secret_exponent)
+
+    def next_secret_exponent(self):
+        self.add_secret_exponent(next(self.secret_exponent_iterator))
+
+    def secret_exponent_for_public_pair(self, public_pair, compressed):
+        while not public_pair in self.secret_exponent_for_public_pair_lookup:
+            try:
+                self.next_secret_exponent()
+            except StopIteration:
+                bitcoin_address = public_pair_to_bitcoin_address(public_pair, compressed=compressed)
+                raise SolvingError("can't determine private key for %s" % bitcoin_address)
+        return self.secret_exponent_for_public_pair_lookup[public_pair]
+
+    def public_pair_for_hash160(self, hash160):
+        while not hash160 in self.public_pair_compressed_for_hash160_lookup:
+            try:
+                self.next_secret_exponent()
+            except StopIteration:
+                bitcoin_address = hash160_sec_to_bitcoin_address(hash160)
+                raise SolvingError("can't determine private key for %s" % bitcoin_address)
+        return self.public_pair_compressed_for_hash160_lookup.get(hash160)
 
     def __call__(self, tx_out_script, signature_hash, signature_type):
         """Figure out how to create a signature for the incoming transaction, and sign it.
@@ -110,17 +133,10 @@ class SecretExponentSolver(object):
             if opcode == opcodes.OP_PUBKEY:
                 public_pair = sec_to_public_pair(v)
             elif opcode == opcodes.OP_PUBKEYHASH:
-                the_tuple = self.public_pair_compressed_for_hash160_lookup.get(v)
-                if the_tuple is None:
-                    bitcoin_address = hash160_sec_to_bitcoin_address(v)
-                    raise SolvingError("can't determine private key for %s" % bitcoin_address)
-                public_pair, compressed = the_tuple
+                public_pair, compressed = self.public_pair_for_hash160(v)
             else:
                 raise SolvingError("can't determine how to sign this script")
-            secret_exponent = self.secret_exponent_for_public_pair_lookup.get(public_pair)
-            if secret_exponent is None:
-                bitcoin_address = public_pair_to_bitcoin_address(public_pair, compressed=compressed)
-                raise SolvingError("can't determine private key for %s" % bitcoin_address)
+            secret_exponent = self.secret_exponent_for_public_pair(public_pair, compressed=compressed)
             r,s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, signature_hash)
             sig = der.sigencode_der(r, s) + bytes_from_int(signature_type)
             ba += tools.compile(binascii.hexlify(sig).decode("utf8"))
