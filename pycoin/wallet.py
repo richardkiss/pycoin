@@ -68,6 +68,12 @@ class PublicPrivateMismatchError(Exception): pass
 
 class InvalidKeyGeneratedError(Exception): pass
 
+def wallet_iterator_for_wallet_key_path(wallet_key_path):
+    subkey_paths = ""
+    if "/" in wallet_key_path:
+        wallet_key_path, subkey_paths = wallet_key_path.split("/", 1)
+    return Wallet.from_wallet_key(wallet_key_path).subkeys_for_path(subkey_paths)
+
 class Wallet(object):
     """
     This is a deterministic wallet that complies with BIP0032
@@ -247,6 +253,42 @@ class Wallet(object):
             key = key.public_copy()
         return key
 
+    def subkeys_for_path(self, path):
+        """
+        A generalized form that can return multiple subkeys.
+        """
+        if path == '':
+            yield self
+            return
+
+        def range_iterator(the_range):
+            for r in the_range.split(","):
+                is_prime = r[-1] in "'p"
+                if is_prime:
+                    r = r[:-1]
+                prime_char = "p" if is_prime else ''
+                if '-' in r:
+                    low, high = [int(x) for x in r.split("-", 1)]
+                    for t in range(low, high+1):
+                        yield "%d%s" % (t, prime_char)
+                else:
+                    yield "%s%s" % (r, prime_char)
+
+        def subkey_iterator(subkey_paths):
+            # examples:
+            #   0/1p/0-4 => ['0/1p/0', '0/1p/1', '0/1p/2', '0/1p/3', '0/1p/4']
+            #   0/2,5,9-11 => ['0/2', '0/5', '0/9', '0/10', '0/11']
+            #   3p/2/5/15-20p => ['3p/2/5/15p', '3p/2/5/16p', '3p/2/5/17p', '3p/2/5/18p', '3p/2/5/19p', '3p/2/5/20p']
+            #   5-6/7-8p,15/1-2 => ['5/7p/1', '5/7p/2', '5/8p/1', '5/8p/2', '5/15/1', '5/15/2', '6/7p/1', '6/7p/2', '6/8p/1', '6/8p/2', '6/15/1', '6/15/2']
+
+            components = subkey_paths.split("/")
+            iterators = [range_iterator(c) for c in components]
+            for v in itertools.product(*iterators):
+                yield '/'.join(v)
+
+        for subkey in subkey_iterator(path):
+            yield self.subkey_for_path(subkey)
+
     def children(self, max_level=50, start_index=0, include_prime=True):
         for i in range(start_index, max_level+start_index+1):
             yield self.subkey(i)
@@ -261,3 +303,4 @@ class Wallet(object):
         if self.is_private:
             return "private_for <%s>" % r
         return "<%s>" % r
+
