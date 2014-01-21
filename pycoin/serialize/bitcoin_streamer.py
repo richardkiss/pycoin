@@ -46,4 +46,6 @@ BITCOIN_STREAMER.register_array_count_parse(parse_bc_int)
 BITCOIN_STREAMER.register_functions(STREAMER_FUNCTIONS.items())
 
 parse_struct = BITCOIN_STREAMER.parse_struct
+parse_as_dict = BITCOIN_STREAMER.parse_as_dict
 stream_struct = BITCOIN_STREAMER.stream_struct
+pack_struct = BITCOIN_STREAMER.pack_struct

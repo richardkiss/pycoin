@@ -27,6 +27,7 @@ THE SOFTWARE.
 
 from ..encoding import bitcoin_address_to_hash160_sec
 from ..serialize import b2h, b2h_rev
+from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .Tx import Tx, SIGHASH_ALL
 from .TxIn import TxIn
@@ -43,12 +44,43 @@ class UnsignedTxOut(object):
         self.script = script
         self.sequence = sequence
 
+    def stream(self, f):
+        stream_struct("#LQSL", f, self.previous_hash, self.previous_index, self.coin_value, self.script, self.sequence)
+
+    @classmethod
+    def parse(self, f):
+        return self(*parse_struct("#LQSL", f))
+
 class UnsignedTx(object):
+    @classmethod
+    def parse(class_, f, is_first_in_block=False):
+        """Parse a Bitcoin transaction Tx from the file-like object f."""
+        version, count = parse_struct("LI", f)
+        unsigned_txs_out = []
+        for i in range(count):
+            unsigned_txs_out.append(UnsignedTxOut.parse(f))
+        count, = parse_struct("I", f)
+        new_txs_out = []
+        for i in range(count):
+            new_txs_out.append(TxOut.parse(f))
+        lock_time, = parse_struct("L", f)
+        return class_(version, unsigned_txs_out, new_txs_out, lock_time)
+
     def __init__(self, version, unsigned_txs_out, new_txs_out, lock_time=0):
         self.version = version
         self.unsigned_txs_out = unsigned_txs_out
         self.new_txs_out = new_txs_out
         self.lock_time = lock_time
+
+    def stream(self, f):
+        """Stream an UnsignedTxOut to the file-like object f."""
+        stream_struct("LI", f, self.version, len(self.unsigned_txs_out))
+        for t in self.unsigned_txs_out:
+            t.stream(f)
+        stream_struct("I", f, len(self.new_txs_out))
+        for t in self.new_txs_out:
+            t.stream(f)
+        stream_struct("L", f, self.lock_time)
 
     @classmethod
     def standard_tx(class_, previous_hash_index_txout_tuple_list, coin_value__bitcoin_address__tuple_list, version=1, lock_time=0, is_test=False):

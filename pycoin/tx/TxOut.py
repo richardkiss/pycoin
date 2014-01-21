@@ -31,6 +31,7 @@ import decimal
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .script.tools import disassemble
+from .script.solvers import bitcoin_address_for_script
 
 COIN_FACTOR = decimal.Decimal(100000000)
 
@@ -51,3 +52,7 @@ class TxOut(object):
 
     def __str__(self):
         return 'TxOut<%s "%s">' % (decimal.Decimal(self.coin_value)/COIN_FACTOR, disassemble(self.script))
+
+    def bitcoin_address(self):
+        # attempt to return the destination address, or None on failure
+        return bitcoin_address_for_script(self.script)

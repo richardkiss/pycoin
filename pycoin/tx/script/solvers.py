@@ -29,7 +29,7 @@ THE SOFTWARE.
 import binascii
 
 from ... import ecdsa
-from ...encoding import public_pair_to_sec, sec_to_public_pair,\
+from ...encoding import public_pair_to_sec, is_sec_compressed, sec_to_public_pair,\
     hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address,\
     public_pair_to_hash160_sec
 
@@ -70,6 +70,22 @@ def match_script_to_templates(script1):
             elif (opcode1, data1) != (opcode2, data2):
                 break
     raise SolvingError("don't recognize output script")
+
+def bitcoin_address_for_script(script):
+    try:
+        r = match_script_to_templates(script)
+        if len(r) != 1 or len(r[0]) != 2:
+            return None
+        if r[0][0] == opcodes.OP_PUBKEYHASH:
+            return hash160_sec_to_bitcoin_address(r[0][1])
+        if r[0][0] == opcodes.OP_PUBKEY:
+            sec = r[0][1]
+            return public_pair_to_bitcoin_address(
+                sec_to_public_pair(sec),
+                compressed=is_sec_compressed(sec))
+    except SolvingError:
+        pass
+    return None
 
 class SecretExponentSolver(object):
     """This is an sample solver that, with a list of secret exponents, can be used

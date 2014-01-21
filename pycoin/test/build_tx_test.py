@@ -61,6 +61,11 @@ class BuildTxTest(unittest.TestCase):
         tx2 = s.getvalue()
         self.assertEqual(tx1, tx2)
 
+    def test_tx_out_bitcoin_address(self):
+        coinbase_bytes = h2b("04ed66471b02c301")
+        tx = Tx.coinbase_tx(COINBASE_PUB_KEY_FROM_80971, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
+        self.assertEqual(tx.txs_out[0].bitcoin_address(), '1DmapcnrJNGeJB13fv9ngRFX1iRvR4zamn')
+
     def test_build_spends(self):
         # first, here is the tx database
         TX_DB = {}
