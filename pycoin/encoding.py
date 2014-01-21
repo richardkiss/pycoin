@@ -242,24 +242,37 @@ def hash160_sec_to_bitcoin_address(hash160_sec, is_test=False):
     """Convert the hash160 of a sec version of a public_pair to a Bitcoin address."""
     return b2a_hashed_base58(public_byte_prefix(is_test) + hash160_sec)
 
-def bitcoin_address_to_hash160_sec(bitcoin_address, is_test=False):
-    """Convert a Bitcoin address back to the hash160_sec format of the public key.
-    Since we only know the hash of the public key, we can't get the full public key back."""
+def bitcoin_address_to_hash160_sec_with_network(bitcoin_address):
+    """
+    Convert a Bitcoin address back to the hash160_sec format and
+    make a note of the network (returning either "main" or "test")
+    """
     blob = a2b_hashed_base58(bitcoin_address)
     if len(blob) != 21:
         raise EncodingError("incorrect binary length (%d) for Bitcoin address %s" % (len(blob), bitcoin_address))
-    if blob[:1] != public_byte_prefix(is_test):
+    if blob[:1] not in [b'\x6f', b'\0']:
         raise EncodingError("incorrect first byte (%s) for Bitcoin address %s" % (blob[0], bitcoin_address))
-    return blob[1:]
+    network = 'main' if blob[:1] == b'\0' else 'test'
+    return blob[1:], network
+
+def bitcoin_address_to_hash160_sec(bitcoin_address, is_test=False):
+    """Convert a Bitcoin address back to the hash160_sec format of the public key.
+    Since we only know the hash of the public key, we can't get the full public key back."""
+    hash160, network = bitcoin_address_to_hash160_sec_with_network(bitcoin_address)
+    if (network == 'main') == (not is_test):
+        return hash160
+    raise EncodingError("Bitcoin address %s for wrong network (%s)" % (bitcoin_address, network))
 
 def public_pair_to_bitcoin_address(public_pair, compressed=True, is_test=False):
     """Convert a public_pair (corresponding to a public key) to a Bitcoin address."""
     return hash160_sec_to_bitcoin_address(public_pair_to_hash160_sec(public_pair, compressed=compressed), is_test=is_test)
 
-def is_valid_bitcoin_address(bitcoin_address):
+def is_valid_bitcoin_address(bitcoin_address, allow_main=True, allow_test=False):
     """Return True if and only if bitcoin_address is valid."""
     try:
-        bitcoin_address_to_hash160_sec(bitcoin_address)
+        hash160, network = bitcoin_address_to_hash160_sec_with_network(bitcoin_address)
     except EncodingError:
         return False
-    return True
+    if network == 'main':
+        return allow_main
+    return allow_test

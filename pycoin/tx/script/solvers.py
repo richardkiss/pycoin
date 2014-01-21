@@ -71,18 +71,19 @@ def match_script_to_templates(script1):
                 break
     raise SolvingError("don't recognize output script")
 
-def bitcoin_address_for_script(script):
+def bitcoin_address_for_script(script, is_test=False):
     try:
         r = match_script_to_templates(script)
         if len(r) != 1 or len(r[0]) != 2:
             return None
         if r[0][0] == opcodes.OP_PUBKEYHASH:
-            return hash160_sec_to_bitcoin_address(r[0][1])
+            return hash160_sec_to_bitcoin_address(r[0][1], is_test=is_test)
         if r[0][0] == opcodes.OP_PUBKEY:
             sec = r[0][1]
             return public_pair_to_bitcoin_address(
                 sec_to_public_pair(sec),
-                compressed=is_sec_compressed(sec))
+                compressed=is_sec_compressed(sec),
+                is_test=is_test)
     except SolvingError:
         pass
     return None
