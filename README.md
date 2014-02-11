@@ -29,6 +29,7 @@ The library declares some conversion utilities useful when dealing with Bitcoin.
 
 The command-line utility "bu" ("Bitcoin utility") exposes a lot of this API on the command-line.
 
+
 Wallets
 -------
 
@@ -64,11 +65,23 @@ You will need to create a "solver", and provide it with the private keys relevan
 
 The command-line utility "spend" provides sample code for generating transactions. Note that it doesn't post the transactions to the network, so you can mess around with relative impunity.
 
+
+Users
+-----
+
+Here's a partial list of users of pycoin:
+
+ChangeTip http://changetip.com/
+CoinSafe http://coinsafe.com/
+
+Email me at him@richardkiss.com to be added to this list.
+
+
 Donate
 ------
 
 Want to donate? Feel free. Send to 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T.
+Or hire me to do bitcoin consulting... him@richardkiss.com.
 
 
 [BIP0032]: https://en.bitcoin.it/wiki/BIP_0032
-
