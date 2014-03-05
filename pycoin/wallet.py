@@ -82,7 +82,7 @@ class Wallet(object):
     @classmethod
     def from_master_secret(class_, master_secret, is_test=False):
         """Generate a Wallet from a master password."""
-        I64 = hashlib.sha512(master_secret).digest()
+        I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
         return class_(is_private=True, is_test=is_test, chain_code=I64[32:], secret_exponent_bytes=I64[:32])
 
     @classmethod
