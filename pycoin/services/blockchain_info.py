@@ -25,20 +25,49 @@ def payments_for_address(bitcoin_address):
             response.append((tx.get("hash"), total_out))
     return response
 
+# These are the fields we care about for Tx signing
+UNSPENT_OUTPUT_FIELDS = ['value', 'script', 'tx_hash', 'tx_output_n',]
+def unspent_outputs_for_address(bitcoin_address):
+    """
+    Fetch data from BCI.
+    Can be used to take to airgap machine for offline signing.
+    """
+    URL = "http://blockchain.info/unspent?active=%s" % bitcoin_address
+    r = json.loads(urlopen(URL).read().decode("utf8"))
+
+    # Get rid of unneccesary fields
+    unspent_outputs_cleaned = []
+    for unspent_output in r["unspent_outputs"]:
+        unspent_output_cleaned = {}
+        for unspent_output_field in UNSPENT_OUTPUT_FIELDS:
+            unspent_output_cleaned[unspent_output_field] = unspent_output[unspent_output_field]
+        unspent_outputs_cleaned.append(unspent_output_cleaned)
+    return unspent_outputs_cleaned
+
+def coin_sources_for_unspent_outputs(unspent_outputs):
+    """"
+    Take unspent outputs and return an array of elements of the following form for signing:
+        (tx_hash, tx_output_index, tx_out)
+        tx_out is a TxOut item with attrs "value" & "script"
+    """
+    coins_sources = []
+    for unspent_output in unspent_outputs:
+        tx_out = TxOut(unspent_output["value"], binascii.unhexlify(unspent_output["script"].encode()))
+        coins_source = (binascii.unhexlify(unspent_output["tx_hash"].encode()), unspent_output["tx_output_n"], tx_out)
+        coins_sources.append(coins_source)
+    return coins_sources
+
 def coin_sources_for_address(bitcoin_address):
     """"
     return an array of elements of the form:
         (tx_hash, tx_output_index, tx_out)
         tx_out is a TxOut item with attrs "value" & "script"
+
+    Use this method for online transaction signing.
+    Use the two methods below for offline signing.
     """
-    URL = "http://blockchain.info/unspent?active=%s" % bitcoin_address
-    r = json.loads(urlopen(URL).read().decode("utf8"))
-    coins_sources = []
-    for unspent_output in r["unspent_outputs"]:
-        tx_out = TxOut(unspent_output["value"], binascii.unhexlify(unspent_output["script"].encode()))
-        coins_source = (binascii.unhexlify(unspent_output["tx_hash"].encode()), unspent_output["tx_output_n"], tx_out)
-        coins_sources.append(coins_source)
-    return coins_sources
+    unspent_outputs = unspent_outputs_for_address(bitcoin_address)
+    return coin_sources_for_unspent_outputs(unspent_outputs)
 
 def send_tx(tx):
     s = io.BytesIO()
