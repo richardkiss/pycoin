@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Pycoin by richardkiss</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Pycoin</h1>
+        <p>Python-based Bitcoin utility library.</p>
+
+        <p class="view"><a href="https://github.com/richardkiss/pycoin">View the Project on GitHub <small>richardkiss/pycoin</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/richardkiss/pycoin/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/richardkiss/pycoin/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/richardkiss/pycoin">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="pycoin----python-bitcoin-utilities" class="anchor" href="#pycoin----python-bitcoin-utilities"><span class="octicon octicon-link"></span></a>pycoin -- Python Bitcoin Utilities</h1>
+
+<p>This is an implementation of a bunch of utility routines that may be useful when dealing with Bitcoin stuff. It has been tested with Python 2.7, 3.2 and 3.3.</p>
+
+<h2>
+<a name="ecdsa-signing-and-verification" class="anchor" href="#ecdsa-signing-and-verification"><span class="octicon octicon-link"></span></a>ECDSA Signing and Verification</h2>
+
+<p>Instead of hiding behind a bunch of opaque abstraction, the library deals with ECDSA keys directly. Important structures include:</p>
+
+<ul>
+<li>the <code>secret_exponent</code> (a large integer that represents a private key)</li>
+<li>the <code>public_pair</code> (a pair of large integers x and y that represent a public key)</li>
+</ul><p>There are a handful of functions: you can do things like create a signature, verify a signature, generate the public pair from the secret exponent, and flush out the public pair from just the x value (there are two possible values for y of opposite even/odd parity, so you include a flag indicating which value for y you want).</p>
+
+<h2>
+<a name="encoding" class="anchor" href="#encoding"><span class="octicon octicon-link"></span></a>Encoding</h2>
+
+<p>The library declares some conversion utilities useful when dealing with Bitcoin. Important structures include:</p>
+
+<ul>
+<li>base58 (the encoding used for Bitcoin addresses)</li>
+<li>hashed base58 (with a standard checksum)</li>
+<li>Bitcoin hashes (double sha256, ripemd160/sha256, known as "hash160")</li>
+<li>Bitcoin addresses</li>
+<li>WIF (Wallet import format)</li>
+<li>SEC (the gross internal format of public keys used by OpenSSL, both compressed and uncompressed)</li>
+</ul><p>The command-line utility "bu" ("Bitcoin utility") exposes a lot of this API on the command-line.</p>
+
+<h2>
+<a name="wallets" class="anchor" href="#wallets"><span class="octicon octicon-link"></span></a>Wallets</h2>
+
+<p>The library implements a deterministic wallet that will securly generate Bitcoin addresses compliant with <a href="https://en.bitcoin.it/wiki/BIP_0032">BIP0032</a>.</p>
+
+<p>This includes creating and parsing standard wallet keys.</p>
+
+<p>Using this method, you can create a wallet that generates as many public keys as you need while keeping the private keys offline. For example,</p>
+
+<p>xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8</p>
+
+<p>is the public wallet the corresponds to the the private wallet</p>
+
+<p>xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi</p>
+
+<p>First, you generate a Wallet object from either a master secret (so a pass phrase of some kind) or a wallet key, like one of the above.</p>
+
+<p>A Wallet object can generate a subkey using the "subkey" method, which is a child key that can be derived from the parent easily if you know the value for i (which usually ranges from 1 to as high as you want).</p>
+
+<p>A private Wallet object can yield a public Wallet object (which generates only the corresponding public keys), but not the other way around.</p>
+
+<p>A private Wallet object can generate a subkey whose addresses CANNOT be derived from the corresponding public Wallet object (to generate change addresses, for example). Set <code>is_prime=True</code>.</p>
+
+<p>The command-line utility "genwallet" exposes a lot of this API on the command-line.</p>
+
+<h2>
+<a name="transaction-validation-and-signing" class="anchor" href="#transaction-validation-and-signing"><span class="octicon octicon-link"></span></a>Transaction Validation and Signing</h2>
+
+<p>The UnsignedTx transaction class makes it easy to generate and sign new transactions that reassign the incoming coins to new public keys. Look at the test code in build_tx_test.py or the spend.py script for examples.</p>
+
+<p>You will need to create a "solver", and provide it with the private keys relevant to the transaction, then pass it into the "sign" method.</p>
+
+<p>The command-line utility "spend" provides sample code for generating transactions. Note that it doesn't post the transactions to the network, so you can mess around with relative impunity.</p>
+
+<h2>
+<a name="users" class="anchor" href="#users"><span class="octicon octicon-link"></span></a>Users</h2>
+
+<p>Here's a partial list of users of pycoin:</p>
+
+<p>ChangeTip <a href="http://changetip.com/">http://changetip.com/</a>
+CoinSafe <a href="http://coinsafe.com/">http://coinsafe.com/</a></p>
+
+<p>Email me at <a href="mailto:him@richardkiss.com">him@richardkiss.com</a> to be added to this list.</p>
+
+<h2>
+<a name="donate" class="anchor" href="#donate"><span class="octicon octicon-link"></span></a>Donate</h2>
+
+<p>Want to donate? Feel free. Send to 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T.
+Or hire me to do bitcoin consulting... <a href="mailto:him@richardkiss.com">him@richardkiss.com</a>.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/richardkiss">richardkiss</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-48860139-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
