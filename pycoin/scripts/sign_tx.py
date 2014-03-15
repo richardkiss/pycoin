@@ -15,12 +15,17 @@ from pycoin.serialize import stream_to_bytes
 from pycoin.tx import UnsignedTx, SecretExponentSolver
 from pycoin.wallet import Wallet
 
+try:
+    advance_iterator = next
+except NameError:
+    def advance_iterator(it):
+        return it.next()
 
 def roundrobin(*iterables):
     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
     # Recipe credited to George Sakkis
     pending = len(iterables)
-    nexts = itertools.cycle(iter(it).__next__ for it in iterables)
+    nexts = itertools.cycle((lambda: advance_iterator(iter(it))) for it in iterables)
     while pending:
         try:
             for next in nexts:
