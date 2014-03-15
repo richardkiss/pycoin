@@ -29,58 +29,45 @@ from ..encoding import bitcoin_address_to_hash160_sec
 from ..serialize import b2h, b2h_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
-from .Tx import Tx, SIGHASH_ALL
+from .Tx import Tx, SIGHASH_ALL, ValidationFailureError
 from .TxIn import TxIn
 from .TxOut import TxOut
 
 from .script import tools
 from .script.vm import verify_script
+from .script.solvers import SolvingError
 
-class UnsignedTxOut(object):
-    def __init__(self, previous_hash, previous_index, coin_value, script, sequence=4294967295):
-        self.previous_hash = previous_hash
-        self.previous_index = previous_index
-        self.coin_value = coin_value
-        self.script = script
-        self.sequence = sequence
-
-    def stream(self, f):
-        stream_struct("#LQSL", f, self.previous_hash, self.previous_index, self.coin_value, self.script, self.sequence)
-
-    @classmethod
-    def parse(self, f):
-        return self(*parse_struct("#LQSL", f))
-
-class UnsignedTx(object):
+class UnsignedTx(Tx):
     @classmethod
     def parse(class_, f, is_first_in_block=False):
         """Parse a Bitcoin transaction Tx from the file-like object f."""
         version, count = parse_struct("LI", f)
-        unsigned_txs_out = []
+        txs_in = []
         for i in range(count):
-            unsigned_txs_out.append(UnsignedTxOut.parse(f))
+            txs_in.append(TxIn.parse(f))
         count, = parse_struct("I", f)
-        new_txs_out = []
+        txs_out = []
         for i in range(count):
-            new_txs_out.append(TxOut.parse(f))
+            txs_out.append(TxOut.parse(f))
         lock_time, = parse_struct("L", f)
-        return class_(version, unsigned_txs_out, new_txs_out, lock_time)
+        count, = parse_struct("I", f)
+        txs_out_for_txs_in = []
+        for i in range(count):
+            txs_out_for_txs_in.append(TxOut.parse(f))
+        return class_(txs_out_for_txs_in, version, txs_in, txs_out, lock_time)
 
-    def __init__(self, version, unsigned_txs_out, new_txs_out, lock_time=0):
-        self.version = version
-        self.unsigned_txs_out = unsigned_txs_out
-        self.new_txs_out = new_txs_out
-        self.lock_time = lock_time
+    def __init__(self, txs_out_for_txs_in, version, txs_in, txs_out, lock_time=0):
+        """
+        """
+        super(UnsignedTx, self).__init__(version, txs_in, txs_out, lock_time)
+        self.txs_out_for_txs_in = txs_out_for_txs_in
 
     def stream(self, f):
-        """Stream an UnsignedTxOut to the file-like object f."""
-        stream_struct("LI", f, self.version, len(self.unsigned_txs_out))
-        for t in self.unsigned_txs_out:
+        """Stream an UnsignedTx to the file-like object f."""
+        super(UnsignedTx, self).stream(f)
+        stream_struct("I", f, len(self.txs_out_for_txs_in))
+        for t in self.txs_out_for_txs_in:
             t.stream(f)
-        stream_struct("I", f, len(self.new_txs_out))
-        for t in self.new_txs_out:
-            t.stream(f)
-        stream_struct("L", f, self.lock_time)
 
     @classmethod
     def standard_tx(class_, previous_hash_index_txout_tuple_list, coin_value__bitcoin_address__tuple_list, version=1, lock_time=0, is_test=False):
@@ -97,17 +84,30 @@ class UnsignedTx(object):
         Returns an UnsignedTx object. You must call "sign" before you drop it
         on the network."""
 
-        new_txs_out = []
+        txs_in = []
+        txs_out_for_txs_in = []
+        for h, idx, tx_out in previous_hash_index_txout_tuple_list:
+            txs_in.append(TxIn(h, idx))
+            txs_out_for_txs_in.append(tx_out)
+
+        txs_out = []
         STANDARD_SCRIPT_OUT = "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG"
         for coin_value, bitcoin_address in coin_value__bitcoin_address__tuple_list:
             hash160 = bitcoin_address_to_hash160_sec(bitcoin_address, is_test)
             script_text = STANDARD_SCRIPT_OUT % b2h(hash160)
             script_bin = tools.compile(script_text)
-            new_txs_out.append(TxOut(coin_value, script_bin))
+            txs_out.append(TxOut(coin_value, script_bin))
 
-        unsigned_txs_out = [UnsignedTxOut(h, idx, tx_out.coin_value, tx_out.script) for h, idx, tx_out in previous_hash_index_txout_tuple_list]
+        return class_(txs_out_for_txs_in, version, txs_in, txs_out, lock_time)
 
-        return class_(version, unsigned_txs_out, new_txs_out, lock_time)
+    def unsigned_count(self):
+        unsigned_count = 0
+        for idx, tx_in in enumerate(self.txs_in):
+            tx_out_script = self.txs_out_for_txs_in[idx].script
+            signature_hash = self.signature_hash(tx_out_script, idx, hash_type=SIGHASH_ALL)
+            if tx_in.verify(tx_out_script, signature_hash, hash_type=0):
+                unsigned_count += 1
+        return unsigned_count
 
     def sign(self, solver, hash_type=SIGHASH_ALL):
         """Sign a standard transaction.
@@ -118,19 +118,17 @@ class UnsignedTx(object):
             Normally you would use an instance of a SecretExponentSolver object
             (which has a __call__ method declared)."""
 
-        blank_txs_in = [TxIn(unsigned_tx_out.previous_hash, unsigned_tx_out.previous_index) for unsigned_tx_out_idx, unsigned_tx_out in enumerate(self.unsigned_txs_out)]
-        tx = Tx(self.version, blank_txs_in, self.new_txs_out, self.lock_time)
+        for idx, tx_in in enumerate(self.txs_in):
+            tx_out = self.txs_out_for_txs_in[idx]
+            try:
+                self.sign_tx_in(solver, idx, tx_out.script)
+            except SolvingError:
+                pass
 
-        new_txs_in = []
-        for unsigned_tx_out_idx, unsigned_tx_out in enumerate(self.unsigned_txs_out):
-            # Leave out the signature from the hash, since a signature can't sign itself.
-            # The checksig op will also drop the signatures from its hash.
-            signature_hash = tx.signature_hash(unsigned_tx_out.script, unsigned_tx_out_idx, hash_type=hash_type)
-            new_script = solver(unsigned_tx_out.script, signature_hash, hash_type)
-            new_txs_in.append(TxIn(unsigned_tx_out.previous_hash, unsigned_tx_out.previous_index, new_script))
-            if not verify_script(new_script, unsigned_tx_out.script, signature_hash, hash_type=0):
-                raise ValidationFailureError("just signed script Tx %s TxIn index %d did not verify" % (b2h_rev(tx_in.previous_hash), unsigned_tx_out_idx))
+        return self
 
-        # we have our solutions! Fill them in
-        tx.txs_in = new_txs_in
-        return tx
+    def total_in(self):
+        return sum(tx_out.coin_value for tx_out in self.txs_out_for_txs_in)
+
+    def fee(self):
+        return self.total_in() - self.total_out()

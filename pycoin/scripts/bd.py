@@ -103,13 +103,19 @@ def parse_as_public_pair(s):
                     return (v0, v1)
 
 def parse_as_hash160(s):
+    try:
+        v = encoding.bitcoin_address_to_hash160_sec_with_network(s)
+        if v:
+            return v[0]
+    except EncodingError:
+        pass
     if s.startswith("h:"):
         s = s[2:]
     try:
         v = encoding.h2b(s)
         if len(v) == 20:
             return v
-    except TypeError, binascii.Error:
+    except (TypeError, binascii.Error):
         pass
 
 def roundrobin(*iterables):
@@ -243,7 +249,7 @@ def main():
         # product output in the form:
         #  tx_hash_hex/tx_output_index_decimal/tx_out_val/tx_out_script_hex
         # which can be used as a fake input to a later transaction
-        print "/".join([tx_hash_hex, str(tx_output_index), tx_out_val, tx_out_script_hex])
+        print("/".join([tx_hash_hex, str(tx_output_index), tx_out_val, tx_out_script_hex]))
         return
 
     unsigned_tx = get_unsigned_tx(parser)
@@ -392,7 +398,7 @@ def main():
             if args.uncompressed and key_unc in output_dict:
                 key = key_unc
             if key in output_dict:
-                print output_dict[key]
+                print(output_dict[key])
             else:
                 parser.error("can't generate %s" % key)
         if args.json:
@@ -402,7 +408,7 @@ def main():
             dump_output(output_dict, output_order)
 
     if args.json:
-        print json.dumps(json_output, indent=3)
+        print(json.dumps(json_output, indent=3))
 
 def dump_output(output_dict, output_order):
     print('')

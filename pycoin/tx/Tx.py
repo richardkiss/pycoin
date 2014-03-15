@@ -32,12 +32,11 @@ from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
-from .TxIn import TxIn, TxInGeneration
+from .TxIn import TxIn
 from .TxOut import TxOut
 
 from .script import opcodes
 from .script import tools
-from .script.vm import verify_script
 
 SIGHASH_ALL = 1
 SIGHASH_NONE = 2
@@ -50,7 +49,7 @@ class Tx(object):
     @classmethod
     def coinbase_tx(class_, public_key_sec, coin_value, coinbase_bytes=b'', version=1, lock_time=0):
         """Create a special "first in block" transaction that includes the bonus for mining and transaction fees."""
-        tx_in = TxInGeneration(previous_hash=(b'\0' * 32), previous_index=(1<<32)-1, script=coinbase_bytes)
+        tx_in = TxIn.coinbase_tx_in(script=coinbase_bytes)
         COINBASE_SCRIPT_OUT = "%s OP_CHECKSIG"
         script_text = COINBASE_SCRIPT_OUT % b2h(public_key_sec)
         script_bin = tools.compile(script_text)
@@ -62,9 +61,6 @@ class Tx(object):
         """Parse a Bitcoin transaction Tx from the file-like object f."""
         version, count = parse_struct("LI", f)
         txs_in = []
-        if is_first_in_block:
-            txs_in.append(TxInGeneration.parse(f))
-            count = count - 1
         for i in range(count):
             txs_in.append(TxIn.parse(f))
         count, = parse_struct("I", f)
@@ -161,13 +157,38 @@ class Tx(object):
             corresponding TxOut.
         """
         for idx, tx_in in enumerate(self.txs_in):
-            possible_solution = tx_in.script
-            tx_out_script_to_check = tx_out_for_hash_index_f(tx_in.previous_hash, tx_in.previous_index).script
-            signature_hash = self.signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
-            if not verify_script(possible_solution, tx_out_script_to_check, signature_hash, hash_type=0):
-                previous_hash = tx_in.previous_hash
-                previous_index = tx_in.previous_index
-                raise ValidationFailureError("Tx %s TxIn index %d script did not verify" % (b2h_rev(previous_hash), previous_index))
+            previous_hash, previous_index = tx_in.previous_hash, tx_in.previous_index
+            tx_out_script = tx_out_for_hash_index_f(previous_hash, previous_index).script
+            signature_hash = self.signature_hash(tx_out_script, idx, hash_type=SIGHASH_ALL)
+            if not tx_in.verify(tx_out_script, signature_hash, hash_type=0):
+                raise ValidationFailureError("Tx %s TxIn index %d script did not verify" %\
+                                             (b2h_rev(previous_hash), previous_index))
+
+    def sign_tx_in(self, solver, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL):
+        """Sign a standard transaction.
+        solver:
+            A function solver(tx_out_script, signature_hash, signature_type)
+            that accepts the tx_out_script, the signature hash, and a signature
+            type, and returns a script that "solves" the tx_out_script.
+            Normally you would use an instance of a SecretExponentSolver object
+            (which has a __call__ method declared).
+        tx_in_idx: the index of the tx_in we are currently signing
+        tx_out: the tx_out referenced by the given tx_in """
+
+        tx_in = self.txs_in[tx_in_idx]
+
+        # Leave out the signature from the hash, since a signature can't sign itself.
+        # The checksig op will also drop the signatures from its hash.
+        signature_hash = self.signature_hash(tx_out_script, tx_in_idx, hash_type=hash_type)
+        if tx_in.verify(tx_out_script, signature_hash, hash_type=0):
+            return
+
+        tx_in.script = solver(tx_out_script, signature_hash, hash_type)
+        if not tx_in.verify(tx_out_script, signature_hash, hash_type=0):
+            raise ValidationFailureError("just signed script Tx %s TxIn index %d did not verify" % (b2h_rev(tx_in.previous_hash), tx_in_idx))
+
+    def total_out(self):
+        return sum(tx_out.coin_value for tx_out in self.txs_out)
 
     def __str__(self):
         return "Tx [%s]" % self.id()

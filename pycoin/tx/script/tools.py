@@ -92,8 +92,8 @@ def compile(s):
             f.write(t)
     return f.getvalue()
 
-def disassemble(script):
-    """Disassemble the given script. Returns a string."""
+def opcode_list(script):
+    """Disassemble the given script. Returns a list of opcodes."""
     opcodes = []
     pc = 0
     while pc < len(script):
@@ -105,7 +105,11 @@ def disassemble(script):
             logging.info("missing opcode %r", opcode)
             continue
         opcodes.append(INT_TO_OPCODE[opcode])
-    return ' '.join(opcodes)
+    return opcodes
+
+def disassemble(script):
+    """Disassemble the given script. Returns a string."""
+    return ' '.join(opcode_list(script))
 
 def delete_subscript(script, subscript):
     """Returns a script with the given subscript removed. The subscript
