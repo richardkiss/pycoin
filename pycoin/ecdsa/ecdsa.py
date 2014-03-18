@@ -55,7 +55,7 @@ def sign(generator, secret_exponent, val, k=None, entropy_generator=os.urandom):
         # OpenSSL uses an algorithm similar to this.
         # The idea is that even if the entropy generator is predictable,
         # the secret exponent is not.
-        byte_count = (n+7)//8
+        byte_count = (n.bit_length() + 7) // 8
         h = hashlib.sha512(b'\0' * 4)
         h.update(intbytes.to_bytes(secret_exponent, length=byte_count))
         h.update(intbytes.to_bytes(val, length=byte_count))
