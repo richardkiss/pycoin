@@ -63,7 +63,7 @@ def main():
 
     args = parser.parse_args()
 
-    TX_RE = re.compile(r"[0-9a-fA-F]{64}")
+    TX_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
     for p in args.tx_id_or_path:
         if TX_RE.match(p):

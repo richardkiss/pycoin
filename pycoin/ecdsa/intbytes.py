@@ -21,7 +21,7 @@ bytes_to_ints = (lambda x: (ord(c) for c in x)) if bytes == str else lambda x: x
 
 if hasattr(int, "to_bytes"):
     to_bytes = lambda v, length, byteorder="big": v.to_bytes(length, byteorder=byteorder)
-    from_bytes = lambda bytes, byteorder="big", *, signed=False: int.from_bytes(bytes, byteorder="big", signed=signed)
+    from_bytes = lambda bytes, byteorder="big", signed=False: int.from_bytes(bytes, byteorder="big", signed=signed)
 else:
     def to_bytes(v, length, byteorder="big"):
         l = bytearray()
@@ -33,7 +33,7 @@ else:
             l.reverse()
         return bytes(l)
 
-    def from_bytes(bytes, byteorder="big", *, signed=False):
+    def from_bytes(bytes, byteorder="big", signed=False):
         if byteorder != "big":
             bytes = reversed(bytes)
         v = 0
