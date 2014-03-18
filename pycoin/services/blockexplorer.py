@@ -21,7 +21,7 @@ def fetch_tx(tx_hash, is_testnet=False):
     txs_in = []
     for j_in in j.get("in"):
         if j_in.get("coinbase"):
-            txs_in.append(TxInGeneration(binascii.unhexlify(j_in["coinbase"])))
+            txs_in.append(TxIn.coinbase_tx_in(binascii.unhexlify(j_in["coinbase"])))
         else:
             txs_in.append(TxIn(h2b_rev(j_in["prev_out"]["hash"]), int(j_in["prev_out"]["n"]), tools.compile(j_in["scriptSig"])))
 
