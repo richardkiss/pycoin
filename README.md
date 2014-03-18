@@ -56,8 +56,79 @@ A private Wallet object can generate a subkey whose addresses CANNOT be derived 
 The command-line utility "genwallet" exposes a lot of this API on the command-line.
 
 
-Transaction Validation and Signing
-----------------------------------
+Transaction Viewing, Validation, Signing
+----------------------------------------
+
+There are several command-line tools for manipulating transactions.
+
+    $ fetch_tx -h
+    usage: fetch_tx [-h] [-o path-to-output-file] tx_hash [tx_hash ...]
+
+    Fetch a binary transaction from blockexplorer.com.
+
+    positional arguments:
+      tx_hash               The hash of the transaction.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -o path-to-output-file, --output-file path-to-output-file
+                            output file containing (more) signed transaction
+
+
+Fetch a transaction from blockexplorer.com and place it into local storage. It will also cache it locally (see below).
+
+
+    $ dump_tx -h
+    usage: dump_tx [-h] [-v] tx_id_or_path [tx_id_or_path ...]
+
+    Dump a transaction in human-readable form.
+
+    positional arguments:
+      tx_id_or_path   The transaction id or the path to the file containing the
+                      transaction.
+
+    optional arguments:
+      -h, --help      show this help message and exit
+      -v, --validate  fetch inputs and validate signatures (may fetch source
+                      transactions from blockexplorer
+
+
+For example, to see the "pizza" transaction:
+
+    $ dump_tx -v 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a
+    159 bytes   tx hash 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a
+    TxIn count: 1; TxOut count: 1
+    Lock time: 0 (valid anytime)
+    Input:
+      0:       (unknown, possibly coinbase) from 1e133f7de73ac7d074e2746a3d6717dfc99ecaa8e9f9fade2cb8b0b20a5e0441:0 10000000.00000 mBTC  sig ok
+    Output:
+      0: 1CZDM6oTttND6WPdt3D6bydo7DYKzd9Qik receives 10000000.00000 mBTC
+    Total input  10000000.00000 mBTC
+    Total output 10000000.00000 mBTC
+    Total fees        0.00000 mBTC
+
+You can also use this tool to dump transaction files by path on local storage, either fully or partially signed.
+
+
+    $ create_tx -h
+    usage: create_tx [-h] -o path-to-output-file txinfo [txinfo ...]
+
+    Create an unsigned Bitcoin transaction moving funds from one address to
+    another.
+
+    positional arguments:
+      txinfo                a 4-tuple tx_id/tx_out_idx/script_hex/satoshi_count as
+                            an input or a "bitcoin_address/satoshi_count" pair as
+                            an output. The fetch_unspent tool can help generate
+                            inputs.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -o path-to-output-file, --output-file path-to-output-file
+                            output file containing unsigned transaction
+
+    Files are binary by default unless they end with the suffix ".hex".
+
 
 The UnsignedTx transaction class makes it easy to generate and sign new transactions that reassign the incoming coins to new public keys. Look at the test code in build_tx_test.py or the spend.py script for examples.
 
@@ -66,12 +137,21 @@ You will need to create a "solver", and provide it with the private keys relevan
 The command-line utility "spend" provides sample code for generating transactions. Note that it doesn't post the transactions to the network, so you can mess around with relative impunity.
 
 
+Transaction Cache
+-----------------
+
+When a referenced transaction is required (as a source TxOut), the directories listed in ```PYCOIN_TX_DB_DIRS``` and PYCOIN_CACHE_DIR are searched. If the transaction cannot be located in any of these directories, it is fetched from blockexplorer.com and cached in ```PYCOIN_CACHE_DIR```.
+
+PYCOIN_CACHE_DIR defaults to "~/.pycoin_cache/txs/".
+
+
 Users
 -----
 
 Here's a partial list of users of pycoin:
 
 ChangeTip http://changetip.com/
+
 CoinSafe http://coinsafe.com/
 
 Email me at him@richardkiss.com to be added to this list.
