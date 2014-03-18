@@ -148,7 +148,7 @@ def main():
         # product output in the form:
         #  tx_hash_hex/tx_output_index_decimal/tx_out_val/tx_out_script_hex
         # which can be used as a fake input to a later transaction
-        print "/".join([tx_hash_hex, str(tx_output_index), tx_out_val, tx_out_script_hex])
+        print("/".join([tx_hash_hex, str(tx_output_index), tx_out_val, tx_out_script_hex]))
         return
 
     unsigned_tx = get_unsigned_tx(parser)

@@ -1,22 +1,21 @@
 import binascii
 import json
-import urllib.request
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
-from pycoin.tx.Tx import Tx, TxIn, TxInGeneration, TxOut
+from pycoin.convention import btc_to_satoshi
+from pycoin.serialize import b2h_rev, h2b_rev
+from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.script import tools
 
-def h2b_rev(h):
-    b = binascii.unhexlify(h)
-    return bytearray(reversed(b))
-
 def get_json_for_hash(the_hash):
-    try:
-        d = urllib.request.urlopen("http://blockexplorer.com/rawtx/%s" % the_hash).read()
-        return json.loads(d.decode("utf8"))
-    except urllib.error.HTTPError:
-        pass
+    d = urlopen("http://blockexplorer.com/rawtx/%s" % b2h_rev(the_hash)).read()
+    return json.loads(d.decode("utf8"))
 
 def fetch_tx(tx_hash, is_testnet=False):
+    # TODO: fix this
     assert is_testnet == False
     j = get_json_for_hash(tx_hash)
     txs_in = []
@@ -28,8 +27,8 @@ def fetch_tx(tx_hash, is_testnet=False):
 
     txs_out = []
     for j_out in j.get("out"):
-        txs_out.append(TxOut(int(float(j_out["value"]) * 1e8 + 0.5), tools.compile(j_out["scriptPubKey"])))
+        txs_out.append(TxOut(int(btc_to_satoshi(j_out["value"])), tools.compile(j_out["scriptPubKey"])))
 
     tx = Tx(int(j["ver"]), txs_in, txs_out, int(j["lock_time"]))
-    assert tx.id() == tx_hash
+    assert tx.hash() == tx_hash
     return tx

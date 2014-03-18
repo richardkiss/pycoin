@@ -5,6 +5,7 @@
 
 import argparse
 import binascii
+import codecs
 import decimal
 import sys
 
@@ -64,8 +65,7 @@ def get_unsigned_tx(parser):
     return unsigned_tx
 
 
-EPILOG = "If you generate an unsigned transaction, the output is a hex dump" \
-         " that can be used by this script on an air-gapped machine."
+EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
 
 
 def main():
@@ -75,9 +75,10 @@ def main():
 
     parser.add_argument('-o', "--output-file", help='output file containing '
                         'unsigned transaction', metavar="path-to-output-file",
-                        type=argparse.FileType('wb'))
-    parser.add_argument("txinfo", help='a 4-tuple from bu_unspent as an input'
-                        ' or a "bitcoin_address/value" pair as an output', nargs="+")
+                        type=argparse.FileType('wb'), required=True)
+    parser.add_argument("txinfo", help='a 4-tuple tx_id/tx_out_idx/script_hex/satoshi_count as an input'
+                        ' or a "bitcoin_address/satoshi_count" pair as an output. The fetch_unspent tool'
+                        ' can help generate inputs.', nargs="+")
 
     args = parser.parse_args()
 
@@ -88,11 +89,12 @@ def main():
     print("transaction fee: %s BTC" % satoshi_to_btc(actual_tx_fee))
 
     tx_bytes = stream_to_bytes(unsigned_tx.stream)
-    tx_hex = binascii.hexlify(tx_bytes).decode("utf8")
-    print(tx_hex)
-    if args.output_file:
-        args.output_file.write(tx_bytes)
-        args.output_file.close()
+    f = args.output_file
+    if f:
+        if f.name.endswith("hex"):
+            f = codecs.getwriter("hex_codec")(f)
+        f.write(tx_bytes)
+        f.close()
 
 if __name__ == '__main__':
     main()

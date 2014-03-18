@@ -33,7 +33,7 @@ from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 from .script.tools import disassemble
 from .script.solvers import bitcoin_address_for_script
 
-COIN_FACTOR = decimal.Decimal(100000000)
+from pycoin.convention import satoshi_to_mbtc
 
 class TxOut(object):
     """
@@ -51,7 +51,7 @@ class TxOut(object):
         return self(*parse_struct("QS", f))
 
     def __str__(self):
-        return 'TxOut<%s "%s">' % (decimal.Decimal(self.coin_value)/COIN_FACTOR, disassemble(self.script))
+        return 'TxOut<%s mbtc "%s">' % (satoshi_to_mbtc(self.coin_value), disassemble(self.script))
 
     def bitcoin_address(self, is_test=False):
         # attempt to return the destination address, or None on failure

@@ -5,6 +5,7 @@
 
 import argparse
 import binascii
+import codecs
 import io
 import itertools
 import sys
@@ -25,15 +26,15 @@ def roundrobin(*iterables):
     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
     # Recipe credited to George Sakkis
     pending = len(iterables)
-    nexts = itertools.cycle((lambda: advance_iterator(iter(it))) for it in iterables)
+    iterables = [iter(it) for it in iterables]
+    nexts = itertools.cycle((lambda: advance_iterator(it)) for it in iterables)
     while pending:
         try:
-            for next in nexts:
-                yield next()
+            for n in nexts:
+                yield n()
         except StopIteration:
             pending -= 1
             nexts = itertools.cycle(itertools.islice(nexts, pending))
-
 
 def secret_exponents_iterator(wif_files, private_keys):
     def private_key_iterator(pk):
@@ -80,15 +81,22 @@ def check_fee(unsigned_tx):
 
 def get_unsigned_tx(parser):
     args = parser.parse_args()
-    if args.input_file:
-        return UnsignedTx.parse(args.input_file)
+    f = args.input_file
+    if f:
+        if f.name.endswith("hex"):
+            f = codecs.getreader("hex_codec")(f)
+            f = io.BytesIO(f.read())
+    else:
+        try:
+            f = io.BytesIO(binascii.unhexlify(args.hex_input))
+        except Exception:
+            parser.error("can't parse %s as hex\n" % args.hex_input)
     try:
-        s = io.BytesIO(binascii.unhexlify(args.hex_input))
-        return UnsignedTx.parse(s)
+        return UnsignedTx.parse(f)
     except Exception:
-        parser.error("can't parse %s as hex\n" % args.hex_input)
+        parser.error("can't parse input")
 
-EPILOG = ""
+EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
 
 
 def main():
@@ -99,9 +107,11 @@ def main():
                         metavar="path-to-file-with-private-keys", type=argparse.FileType('r'))
     parser.add_argument('-p', "--private-key", help='WIF or BIP0032 private key',
                         metavar="private-key", type=str, nargs="+")
-    parser.add_argument("-i", "--input-file", help='a binary containing the unsigned transaction', type=argparse.FileType('rb'))
-    parser.add_argument('-o', "--output-file", help='output file containing (more) signed transaction', metavar="path-to-output-file", type=argparse.FileType('wb'))
     parser.add_argument("-H", "--hex-input", help='a hex dump of the unsigned transaction')
+    parser.add_argument("-i", "--input-file", help='path to the unsigned transaction',
+                        type=argparse.FileType('rb'), required=True)
+    parser.add_argument('-o', "--output-file", help='output file containing (more) signed transaction',
+                        metavar="path-to-output-file", type=argparse.FileType('wb'))
 
     args = parser.parse_args()
 
@@ -117,18 +127,24 @@ def main():
     new_tx = unsigned_tx.sign(solver)
     unsigned_after = unsigned_tx.unsigned_count()
 
-    print("%d newly signed TxOut object(s) (%d before and %d after)" % (unsigned_after-unsigned_before, unsigned_before, unsigned_after))
+    print("%d newly signed TxOut object(s) (%d before and %d after)" %
+            (unsigned_after-unsigned_before, unsigned_before, unsigned_after))
     if unsigned_after == len(new_tx.txs_in):
         print("signing complete")
 
     tx_bytes = stream_to_bytes(new_tx.stream)
-    tx_hex = binascii.hexlify(tx_bytes).decode("utf8")
-    print("copy the following hex to http://blockchain.info/pushtx"
-          " to put the transaction on the network:\n")
-    print(tx_hex)
-    if args.output_file:
-        args.output_file.write(tx_bytes)
-        args.output_file.close()
+    f = args.output_file
+    if f:
+        if f.name.endswith("hex"):
+            f = codecs.getwriter("hex_codec")(f)
+        f.write(tx_bytes)
+        f.close()
+    else:
+        tx_hex = binascii.hexlify(tx_bytes).decode("utf8")
+        if unsigned_after == len(new_tx.txs_in):
+            print("copy the following hex to http://blockchain.info/pushtx"
+                  " to put the transaction on the network:\n")
+        print(tx_hex)
 
 if __name__ == '__main__':
     main()

@@ -27,14 +27,14 @@ def main():
         public_key_sec = encoding.public_pair_to_sec(public_pair, compressed=compressed)
         coinbase_tx = Tx.coinbase_tx(public_key_sec, satoshi_amount)
 
-        tx_hash_hex = binascii.hexlify(coinbase_tx.hash())
+        tx_hash_hex = binascii.hexlify(coinbase_tx.hash()).decode("utf8")
         tx_output_index = 0
-        tx_out_val = str(satoshi_to_btc(coinbase_tx.txs_out[tx_output_index].coin_value)).rstrip('0').rstrip('.')
-        tx_out_script_hex = binascii.hexlify(coinbase_tx.txs_out[tx_output_index].script)
+        tx_out_val = str(coinbase_tx.txs_out[tx_output_index].coin_value)
+        tx_out_script_hex = binascii.hexlify(coinbase_tx.txs_out[tx_output_index].script).decode("utf8")
         # produce output in the form:
         #  tx_hash_hex/tx_output_index_decimal/tx_out_val/tx_out_script_hex
         # which can be used as a fake input to a later transaction
-        print "/".join([tx_hash_hex, str(tx_output_index), tx_out_script_hex, tx_out_val])
+        print("/".join([tx_hash_hex, str(tx_output_index), tx_out_script_hex, tx_out_val]))
 
 if __name__ == '__main__':
     main()

@@ -43,7 +43,8 @@ SIGHASH_NONE = 2
 SIGHASH_SINGLE = 3
 SIGHASH_ANYONECANPAY = 0x80
 
-class ValidationFailureError(Exception): pass
+class ValidationFailureError(Exception):
+    pass
 
 class Tx(object):
     @classmethod
@@ -195,3 +196,27 @@ class Tx(object):
 
     def __repr__(self):
         return "Tx [%s] (v:%d) [%s] [%s]" % (self.id(), self.version, ", ".join(str(t) for t in self.txs_in), ", ".join(str(t) for t in self.txs_out))
+
+    def tx_out_for_tx_in(self, tx_in, tx_db):
+        tx = tx_db.get(tx_in.previous_hash)
+        if tx:
+            return tx.txs_out[tx_in.previous_index]
+        return None
+
+    def is_signature_ok(self, tx_in_idx, tx_db):
+        tx_in = self.txs_in[tx_in_idx]
+        tx_out_script = self.tx_out_for_tx_in(tx_in, tx_db).script
+        signature_hash = self.signature_hash(tx_out_script, tx_in_idx, hash_type=SIGHASH_ALL)
+        return tx_in.verify(tx_out_script, signature_hash, hash_type=0)
+
+    def has_input(self, tx_in, tx_db):
+        return self.tx_out_for_tx_in(tx_in, tx_db) is not None
+
+    def has_all_inputs(self, tx_db):
+        return all(self.has_input(tx_in, tx_db) for tx_in in self.txs_in)
+
+    def total_in(self, tx_db):
+        return sum(self.tx_out_for_tx_in(tx_in, tx_db).coin_value for tx_in in self.txs_in)
+
+    def fee(self, tx_db):
+        return self.total_in(tx_db) - self.total_out()
