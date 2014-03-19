@@ -27,6 +27,7 @@ THE SOFTWARE.
 
 from .TxOut import TxOut
 
+
 def stream_minimal_tx_db_for_tx(tx_db, f, tx):
     """
     A minimal tx_db is a dictionary with TxOut lookups

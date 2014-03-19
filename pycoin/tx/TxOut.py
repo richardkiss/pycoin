@@ -26,8 +26,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import decimal
-
 from ..convention import satoshi_to_mbtc
 from ..encoding import bitcoin_address_to_hash160_sec
 from ..serialize import b2h

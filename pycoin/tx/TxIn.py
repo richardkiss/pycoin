@@ -38,6 +38,7 @@ from .script.vm import verify_script
 
 ZERO = b'\0' * 32
 
+
 class TxIn(object):
     """
     The part of a Tx that specifies where the Bitcoin comes from.
@@ -66,8 +67,8 @@ class TxIn(object):
         if len(opcodes) == 2 and opcodes[0].startswith("30"):
             # the second opcode is probably the public key as sec
             sec = binascii.unhexlify(opcodes[1])
-            is_compressed = encoding.is_sec_compressed(sec)
-            bitcoin_address = encoding.hash160_sec_to_bitcoin_address(encoding.hash160(sec), is_test=is_test)
+            bitcoin_address = encoding.hash160_sec_to_bitcoin_address(
+                encoding.hash160(sec), is_test=is_test)
             return bitcoin_address
         return "(unknown, possibly coinbase)"
 
@@ -83,4 +84,5 @@ class TxIn(object):
     def __str__(self):
         if self.previous_hash == ZERO:
             return 'TxIn<COINBASE: %s>' % b2h(self.script)
-        return 'TxIn<%s[%d] "%s">' % (b2h_rev(self.previous_hash), self.previous_index, disassemble(self.script))
+        return 'TxIn<%s[%d] "%s">' % (
+            b2h_rev(self.previous_hash), self.previous_index, disassemble(self.script))

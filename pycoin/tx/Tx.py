@@ -44,6 +44,7 @@ SIGHASH_NONE = 2
 SIGHASH_SINGLE = 3
 SIGHASH_ANYONECANPAY = 0x80
 
+
 class ValidationFailureError(Exception):
     pass
 
@@ -51,7 +52,9 @@ class ValidationFailureError(Exception):
 class Tx(object):
     @classmethod
     def coinbase_tx(class_, public_key_sec, coin_value, coinbase_bytes=b'', version=1, lock_time=0):
-        """Create a special "first in block" transaction that includes the bonus for mining and transaction fees."""
+        """
+        Create the special "first in block" transaction that includes the mining fees.
+        """
         tx_in = TxIn.coinbase_tx_in(script=coinbase_bytes)
         COINBASE_SCRIPT_OUT = "%s OP_CHECKSIG"
         script_text = COINBASE_SCRIPT_OUT % b2h(public_key_sec)
@@ -141,6 +144,7 @@ class Tx(object):
             txs_out.append(self.txs_out[unsigned_txs_out_idx])
 
             # Let the others update at will
+            ## BRAIN DAMAGE: tx_tmp unknown
             for i in range(len(tx_tmp.txs_in)):
                 if i != unsigned_txs_out_idx:
                     txs_in[i].sequence = 0
@@ -176,7 +180,9 @@ class Tx(object):
 
         tx_in.script = canonical_solver(tx_out_script, signature_hash, hash_type, hash160_lookup)
         if not tx_in.verify(tx_out_script, signature_hash, hash_type=0):
-            raise ValidationFailureError("just signed script Tx %s TxIn index %d did not verify" % (b2h_rev(tx_in.previous_hash), tx_in_idx))
+            raise ValidationFailureError(
+                "just signed script Tx %s TxIn index %d did not verify" % (
+                    b2h_rev(tx_in.previous_hash), tx_in_idx))
 
     def total_out(self):
         return sum(tx_out.coin_value for tx_out in self.txs_out)
@@ -185,7 +191,9 @@ class Tx(object):
         return "Tx [%s]" % self.id()
 
     def __repr__(self):
-        return "Tx [%s] (v:%d) [%s] [%s]" % (self.id(), self.version, ", ".join(str(t) for t in self.txs_in), ", ".join(str(t) for t in self.txs_out))
+        return "Tx [%s] (v:%d) [%s] [%s]" % (
+            self.id(), self.version, ", ".join(str(t) for t in self.txs_in),
+            ", ".join(str(t) for t in self.txs_out))
 
     def tx_out_for_tx_in(self, tx_in, tx_db):
         tx = tx_db.get(tx_in.previous_hash)
@@ -193,30 +201,34 @@ class Tx(object):
             return tx.txs_out[tx_in.previous_index]
         return None
 
-    def sign(self, hash160_lookup, tx_db, hash_type=SIGHASH_ALL):
-        """
-        Sign a standard transaction.
-        solver:
-            A function solver(tx_out_script, signature_hash, signature_type)
-            that accepts the tx_out_script, the signature hash, and a signature
-            type, and returns a script that "solves" the tx_out_script.
-            Normally you would use an instance of a SecretExponentSolver object
-            (which has a __call__ method declared).
-        """
-        for idx, tx_in in enumerate(self.txs_in):
-            tx_out = self.tx_out_for_tx_in(tx_in, tx_db)
-            try:
-                self.sign_tx_in(hash160_lookup, idx, tx_out.script)
-            except SolvingError:
-                pass
-
-        return self
-
     def is_signature_ok(self, tx_in_idx, tx_db):
         tx_in = self.txs_in[tx_in_idx]
         tx_out_script = self.tx_out_for_tx_in(tx_in, tx_db).script
         signature_hash = self.signature_hash(tx_out_script, tx_in_idx, hash_type=SIGHASH_ALL)
         return tx_in.verify(tx_out_script, signature_hash, hash_type=0)
+
+    def sign(self, hash160_lookup, tx_db, hash_type=SIGHASH_ALL):
+        """
+        Sign a standard transaction.
+        hash160_lookup:
+            An object with a get method that accepts a hash160 and returns the
+            corresponding (secret exponent, public_pair, is_compressed) tuple or
+            None if it's unknown (in which case the script will obviously not be signed).
+            A standard dictionary will do nicely here.
+        tx_db:
+            An object with a get method that accepts a transaction hash and
+            returns the transaction. Again, a dictionary.
+        """
+        for idx, tx_in in enumerate(self.txs_in):
+            if self.is_signature_ok(idx, tx_db):
+                continue
+            tx_out = self.tx_out_for_tx_in(tx_in, tx_db)
+            try:
+                self.sign_tx_in(hash160_lookup, idx, tx_out.script, hash_type=hash_type)
+            except SolvingError:
+                pass
+
+        return self
 
     def bad_signature_count(self, tx_db):
         count = 0
