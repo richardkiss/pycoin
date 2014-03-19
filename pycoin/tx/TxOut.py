@@ -28,12 +28,14 @@ THE SOFTWARE.
 
 import decimal
 
+from ..convention import satoshi_to_mbtc
+from ..encoding import bitcoin_address_to_hash160_sec
+from ..serialize import b2h
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
-from .script.tools import disassemble
+from .script import tools
 from .script.solvers import bitcoin_address_for_script
 
-from pycoin.convention import satoshi_to_mbtc
 
 class TxOut(object):
     """
@@ -51,8 +53,15 @@ class TxOut(object):
         return self(*parse_struct("QS", f))
 
     def __str__(self):
-        return 'TxOut<%s mbtc "%s">' % (satoshi_to_mbtc(self.coin_value), disassemble(self.script))
+        return 'TxOut<%s mbtc "%s">' % (satoshi_to_mbtc(self.coin_value), tools.disassemble(self.script))
 
     def bitcoin_address(self, is_test=False):
         # attempt to return the destination address, or None on failure
         return bitcoin_address_for_script(self.script, is_test=is_test)
+
+
+def standard_tx_out_script(bitcoin_address, is_test=False):
+    STANDARD_SCRIPT_OUT = "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG"
+    hash160 = bitcoin_address_to_hash160_sec(bitcoin_address, is_test=is_test)
+    script_text = STANDARD_SCRIPT_OUT % b2h(hash160)
+    return tools.compile(script_text)

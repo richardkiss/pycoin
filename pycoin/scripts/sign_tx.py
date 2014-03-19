@@ -13,7 +13,9 @@ import sys
 from pycoin import encoding
 from pycoin.convention import tx_fee, satoshi_to_btc
 from pycoin.serialize import stream_to_bytes
-from pycoin.tx import UnsignedTx, SecretExponentSolver
+from pycoin.tx import Tx
+from pycoin.tx.airgap import parse_minimal_tx_db_for_tx
+from pycoin.tx.script.solvers import build_hash160_lookup_db
 from pycoin.wallet import Wallet
 
 try:
@@ -61,8 +63,8 @@ def secret_exponents_iterator(wif_files, private_keys):
         yield v
 
 
-def check_fee(unsigned_tx):
-    actual_tx_fee = unsigned_tx.fee()
+def check_fee(unsigned_tx, tx_db):
+    actual_tx_fee = unsigned_tx.fee(tx_db)
     recommended_tx_fee = tx_fee.recommended_fee_for_tx(unsigned_tx)
     if actual_tx_fee > recommended_tx_fee:
         print("warning: transaction fee of exceeds expected value of %s BTC" %
@@ -92,7 +94,12 @@ def get_unsigned_tx(parser):
         except Exception:
             parser.error("can't parse %s as hex\n" % args.hex_input)
     try:
-        return UnsignedTx.parse(f)
+        tx = Tx.parse(f)
+        try:
+            tx_db = parse_minimal_tx_db_for_tx(f, tx)
+            return tx, tx_db
+        except Exception:
+            parser.error("can't parse extended info... is this an airgapped transaction?")
     except Exception:
         parser.error("can't parse input")
 
@@ -115,20 +122,37 @@ def main():
 
     args = parser.parse_args()
 
-    unsigned_tx = get_unsigned_tx(parser)
-    actual_tx_fee = check_fee(unsigned_tx)
+    unsigned_tx, tx_db = get_unsigned_tx(parser)
+    actual_tx_fee = check_fee(unsigned_tx, tx_db)
     if actual_tx_fee < 0:
         sys.exit(1)
     print("transaction fee: %s BTC" % satoshi_to_btc(actual_tx_fee))
 
     secret_exponents = secret_exponents_iterator(args.private_key_file, args.private_key)
-    solver = SecretExponentSolver(secret_exponents)
-    unsigned_before = unsigned_tx.unsigned_count()
-    new_tx = unsigned_tx.sign(solver)
-    unsigned_after = unsigned_tx.unsigned_count()
+
+    class Lookup(object):
+        def __init__(self, secret_exponents):
+            self.secret_exponents = secret_exponents
+            self.d = {}
+
+        def get(self, v):
+            while True:
+                if v in self.d:
+                    return self.d[v]
+                for s in self.secret_exponents:
+                    self.d.update(build_hash160_lookup_db([s]))
+                    break
+                else:
+                    break
+            return None
+
+    lookup = Lookup(secret_exponents)
+    unsigned_before = unsigned_tx.bad_signature_count(tx_db)
+    new_tx = unsigned_tx.sign(lookup, tx_db)
+    unsigned_after = unsigned_tx.bad_signature_count(tx_db)
 
     print("%d newly signed TxOut object(s) (%d before and %d after)" %
-            (unsigned_after-unsigned_before, unsigned_before, unsigned_after))
+            (unsigned_before-unsigned_after, unsigned_before, unsigned_after))
     if unsigned_after == len(new_tx.txs_in):
         print("signing complete")
 

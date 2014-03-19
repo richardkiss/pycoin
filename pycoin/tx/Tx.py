@@ -37,6 +37,7 @@ from .TxOut import TxOut
 
 from .script import opcodes
 from .script import tools
+from .script.solvers import canonical_solver, SolvingError
 
 SIGHASH_ALL = 1
 SIGHASH_NONE = 2
@@ -45,6 +46,7 @@ SIGHASH_ANYONECANPAY = 0x80
 
 class ValidationFailureError(Exception):
     pass
+
 
 class Tx(object):
     @classmethod
@@ -58,7 +60,7 @@ class Tx(object):
         return class_(version, [tx_in], [tx_out], lock_time)
 
     @classmethod
-    def parse(self, f, is_first_in_block=False):
+    def parse(self, f):
         """Parse a Bitcoin transaction Tx from the file-like object f."""
         version, count = parse_struct("LI", f)
         txs_in = []
@@ -150,31 +152,19 @@ class Tx(object):
         tmp_tx = Tx(self.version, txs_in, txs_out, self.lock_time)
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
-    def validate(self, tx_out_for_hash_index_f):
-        """Raise a ValidationFailureError if the transaction does not validate.
-
-        tx_out_for_hash_index_f must be a function that takes two parameters:
-            previous_hash and previous_index; and returns the
-            corresponding TxOut.
+    def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL):
         """
-        for idx, tx_in in enumerate(self.txs_in):
-            previous_hash, previous_index = tx_in.previous_hash, tx_in.previous_index
-            tx_out_script = tx_out_for_hash_index_f(previous_hash, previous_index).script
-            signature_hash = self.signature_hash(tx_out_script, idx, hash_type=SIGHASH_ALL)
-            if not tx_in.verify(tx_out_script, signature_hash, hash_type=0):
-                raise ValidationFailureError("Tx %s TxIn index %d script did not verify" %\
-                                             (b2h_rev(previous_hash), previous_index))
-
-    def sign_tx_in(self, solver, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL):
-        """Sign a standard transaction.
-        solver:
-            A function solver(tx_out_script, signature_hash, signature_type)
-            that accepts the tx_out_script, the signature hash, and a signature
-            type, and returns a script that "solves" the tx_out_script.
-            Normally you would use an instance of a SecretExponentSolver object
-            (which has a __call__ method declared).
-        tx_in_idx: the index of the tx_in we are currently signing
-        tx_out: the tx_out referenced by the given tx_in """
+        Sign a standard transaction.
+        hash160_lookup:
+            An object with a get method that accepts a hash160 and returns the
+            corresponding (secret exponent, public_pair, is_compressed) tuple or
+            None if it's unknown (in which case the script will obviously not be signed).
+            A standard dictionary will do nicely here.
+        tx_in_idx:
+            the index of the tx_in we are currently signing
+        tx_out:
+            the tx_out referenced by the given tx_in
+        """
 
         tx_in = self.txs_in[tx_in_idx]
 
@@ -184,7 +174,7 @@ class Tx(object):
         if tx_in.verify(tx_out_script, signature_hash, hash_type=0):
             return
 
-        tx_in.script = solver(tx_out_script, signature_hash, hash_type)
+        tx_in.script = canonical_solver(tx_out_script, signature_hash, hash_type, hash160_lookup)
         if not tx_in.verify(tx_out_script, signature_hash, hash_type=0):
             raise ValidationFailureError("just signed script Tx %s TxIn index %d did not verify" % (b2h_rev(tx_in.previous_hash), tx_in_idx))
 
@@ -203,11 +193,37 @@ class Tx(object):
             return tx.txs_out[tx_in.previous_index]
         return None
 
+    def sign(self, hash160_lookup, tx_db, hash_type=SIGHASH_ALL):
+        """
+        Sign a standard transaction.
+        solver:
+            A function solver(tx_out_script, signature_hash, signature_type)
+            that accepts the tx_out_script, the signature hash, and a signature
+            type, and returns a script that "solves" the tx_out_script.
+            Normally you would use an instance of a SecretExponentSolver object
+            (which has a __call__ method declared).
+        """
+        for idx, tx_in in enumerate(self.txs_in):
+            tx_out = self.tx_out_for_tx_in(tx_in, tx_db)
+            try:
+                self.sign_tx_in(hash160_lookup, idx, tx_out.script)
+            except SolvingError:
+                pass
+
+        return self
+
     def is_signature_ok(self, tx_in_idx, tx_db):
         tx_in = self.txs_in[tx_in_idx]
         tx_out_script = self.tx_out_for_tx_in(tx_in, tx_db).script
         signature_hash = self.signature_hash(tx_out_script, tx_in_idx, hash_type=SIGHASH_ALL)
         return tx_in.verify(tx_out_script, signature_hash, hash_type=0)
+
+    def bad_signature_count(self, tx_db):
+        count = 0
+        for idx, tx_in in enumerate(self.txs_in):
+            if not self.is_signature_ok(idx, tx_db):
+                count += 1
+        return count
 
     def has_input(self, tx_in, tx_db):
         return self.tx_out_for_tx_in(tx_in, tx_db) is not None

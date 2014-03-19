@@ -107,7 +107,7 @@ class Block(BlockHeader):
         version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, count = parse_struct("L##LLLI", f)
         txs = []
         for i in range(count):
-            txs.append(Tx.parse(f, is_first_in_block=(i==0)))
+            txs.append(Tx.parse(f))
         return self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs)
 
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs):
