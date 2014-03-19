@@ -43,6 +43,7 @@ import binascii
 import hashlib
 import hmac
 import struct
+import itertools
 
 from . import ecdsa
 
