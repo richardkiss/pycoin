@@ -30,11 +30,14 @@ def dump_tx(tx, tx_db={}, is_testnet=False):
     print("Input%s:" % ('s' if len(tx.txs_in) != 1 else ''))
     for idx, tx_in in enumerate(tx.txs_in):
         has_input = tx.has_input(tx_in, tx_db)
-        address = tx_in.bitcoin_address(is_test=is_testnet)
         suffix = ""
         if has_input:
+            tx_out = tx.tx_out_for_tx_in(tx_in, tx_db)
             sig_result = " sig ok" if tx.is_signature_ok(idx, tx_db) else " BAD SIG"
-            suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx.tx_out_for_tx_in(tx_in, tx_db).coin_value), sig_result)
+            suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
+            address = tx_out.bitcoin_address(is_test=is_testnet)
+        else:
+            address = tx_in.bitcoin_address(is_test=is_testnet)
         print("%3d: %34s from %s:%d%s" % (idx, address, b2h_rev(tx_in.previous_hash), tx_in.previous_index, suffix))
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.txs_out):
