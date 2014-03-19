@@ -130,19 +130,17 @@ You can also use this tool to dump transaction files by path on local storage, e
     Files are binary by default unless they end with the suffix ".hex".
 
 
-The UnsignedTx transaction class makes it easy to generate and sign new transactions that reassign the incoming coins to new public keys. Look at the test code in build_tx_test.py or the spend.py script for examples.
+The Tx transaction class makes it easy to generate and sign new transactions. Look at the test code in ```build_tx_test.py``` for examples.
 
-You will need to create a "solver", and provide it with the private keys relevant to the transaction, then pass it into the "sign" method.
-
-The command-line utility "spend" provides sample code for generating transactions. Note that it doesn't post the transactions to the network, so you can mess around with relative impunity.
+You will need to create a hash160 lookup. Look at ```build_hash160_lookup_db``` in  "solver", and provide it with the private keys relevant to the transaction, then pass it into the "sign" method.
 
 
 Transaction Cache
 -----------------
 
-When a referenced transaction is required (as a source TxOut), the directories listed in ```PYCOIN_TX_DB_DIRS``` and PYCOIN_CACHE_DIR are searched. If the transaction cannot be located in any of these directories, it is fetched from blockexplorer.com and cached in ```PYCOIN_CACHE_DIR```.
+When a referenced transaction is required (as a source TxOut), the directories listed in ```PYCOIN_TX_DB_DIRS``` and ```PYCOIN_CACHE_DIR``` are searched. If the transaction cannot be located in any of these directories, it is fetched from blockexplorer.com and cached in ```PYCOIN_CACHE_DIR``` to speed subsequent accesses.
 
-PYCOIN_CACHE_DIR defaults to "~/.pycoin_cache/txs/".
+```PYCOIN_CACHE_DIR``` defaults to "~/.pycoin_cache/txs/".
 
 
 Users
