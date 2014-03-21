@@ -24,6 +24,7 @@ setup(
                 'spend = pycoin.scripts.spend:main',
                 'bu = pycoin.scripts.bitcoin_utils:main',
                 'fetch_unspent = pycoin.scripts.fetch_unspent:main',
+                'check_tx = pycoin.scripts.check_tx:main',
                 'create_tx = pycoin.scripts.create_tx:main',
                 'dump_tx = pycoin.scripts.dump_tx:main',
                 'fetch_tx = pycoin.scripts.fetch_tx:main',
