@@ -16,24 +16,6 @@ from pycoin.tx.airgap import parse_minimal_tx_db_for_tx
 from pycoin.tx.script.solvers import build_hash160_lookup_db
 
 
-def check_fee(unsigned_tx, tx_db):
-    actual_tx_fee = unsigned_tx.fee(tx_db)
-    recommended_tx_fee = tx_fee.recommended_fee_for_tx(unsigned_tx)
-    if actual_tx_fee > recommended_tx_fee:
-        print("warning: transaction fee of exceeds expected value of %s mBTC" %
-              satoshi_to_mbtc(recommended_tx_fee))
-    elif actual_tx_fee < 0:
-        print("not enough source coins (%s mBTC) for destination (%s mBTC)."
-              " Short %s mBTC" % (
-                  satoshi_to_mbtc(unsigned_tx.total_in()),
-                  satoshi_to_mbtc(unsigned_tx.total_out()), satoshi_to_mbtc(-actual_tx_fee)))
-    elif actual_tx_fee < recommended_tx_fee:
-        print("warning: transaction fee lower than (casually calculated)"
-              " expected value of %s mBTC, transaction might not propogate" %
-              satoshi_to_mbtc(recommended_tx_fee))
-    return actual_tx_fee
-
-
 def get_unsigned_tx(f):
     if f.name.endswith("hex"):
         f = codecs.getreader("hex_codec")(f)
@@ -63,11 +45,6 @@ def main():
         parser.error("can't parse extended info... is this an airgapped transaction?")
 
     secret_exponent_lookup = build_hash160_lookup_db(wif_to_secret_exponent(pk) for pk in args.private_key)
-
-    actual_tx_fee = check_fee(unsigned_tx, tx_db)
-    if actual_tx_fee < 0:
-        sys.exit(1)
-    print("transaction fee: %s mBTC" % satoshi_to_mbtc(actual_tx_fee))
 
     unsigned_before = unsigned_tx.bad_signature_count(tx_db)
     new_tx = unsigned_tx.sign(secret_exponent_lookup, tx_db)
