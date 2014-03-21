@@ -13,7 +13,7 @@ def main():
 
     for address in args.bitcoin_address:
         print("looking up funds for %s from blockchain.info" % address)
-        coins_sources = blockchain_info.coin_sources_for_address(address)
+        coins_sources = blockchain_info.unspent_tx_outs_info_for_address(address)
         for tx_hash, tx_output_index, tx_out in coins_sources:
             s = "%s/%d/%s/%d" % (b2h_rev(tx_hash), tx_output_index, b2h(tx_out.script), tx_out.coin_value)
             print(s)

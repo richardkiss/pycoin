@@ -207,7 +207,7 @@ def get_unsigned_tx(parser):
                     parser.error("can't parse %s\n" % txinfo)
         else:
             print("looking up funds for %s from blockchain.info" % txinfo)
-            coins_sources = blockchain_info.coin_sources_for_address(txinfo)
+            coins_sources = blockchain_info.unspent_tx_outs_info_for_address(txinfo)
             coins_from.extend(coins_sources)
 
     unsigned_tx = UnsignedTx.standard_tx(coins_from, coins_to)

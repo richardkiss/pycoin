@@ -25,20 +25,19 @@ def payments_for_address(bitcoin_address):
             response.append((tx.get("hash"), total_out))
     return response
 
-def coin_sources_for_address(bitcoin_address):
+def unspent_tx_outs_info_for_address(bitcoin_address):
     """"
     return an array of elements of the form:
-        (tx_hash, tx_output_index, tx_out)
-        tx_out is a TxOut item with attrs "value" & "script"
+        (previous_hash, previous_index, tx_out)
     """
     URL = "http://blockchain.info/unspent?active=%s" % bitcoin_address
     r = json.loads(urlopen(URL).read().decode("utf8"))
-    coins_sources = []
+    unspent_tx_tuples = []
     for unspent_output in r["unspent_outputs"]:
         tx_out = TxOut(unspent_output["value"], binascii.unhexlify(unspent_output["script"].encode()))
-        coins_source = (binascii.unhexlify(unspent_output["tx_hash"].encode()), unspent_output["tx_output_n"], tx_out)
-        coins_sources.append(coins_source)
-    return coins_sources
+        unspent_tx_tuple = (binascii.unhexlify(unspent_output["tx_hash"].encode()), unspent_output["tx_output_n"], tx_out)
+        unspent_tx_tuples.append(unspent_tx_tuple)
+    return unspent_tx_tuples
 
 def send_tx(tx):
     s = io.BytesIO()
