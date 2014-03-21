@@ -6,9 +6,7 @@
 import argparse
 import codecs
 import io
-import sys
 
-from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.serialize import stream_to_bytes
 from pycoin.tx import Tx
@@ -21,9 +19,8 @@ def get_unsigned_tx(f):
         f = codecs.getreader("hex_codec")(f)
         f = io.BytesIO(f.read())
     tx = Tx.parse(f)
-    try:
-        tx_db = parse_minimal_tx_db_for_tx(f, tx)
-        return tx, tx_db
+    tx_db = parse_minimal_tx_db_for_tx(f, tx)
+    return tx, tx_db
 
 EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
 

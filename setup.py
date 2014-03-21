@@ -28,6 +28,8 @@ setup(
                 'dump_tx = pycoin.scripts.dump_tx:main',
                 'fetch_tx = pycoin.scripts.fetch_tx:main',
                 'sign_tx = pycoin.scripts.sign_tx:main',
+                'simple_create_tx = pycoin.scripts.simple_create_tx:main',
+                'simple_sign_tx = pycoin.scripts.simple_sign_tx:main',
             ]
         },
     author_email="him@richardkiss.com",

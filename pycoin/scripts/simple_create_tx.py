@@ -5,9 +5,8 @@
 
 import argparse
 import codecs
-import sys
 
-from pycoin.convention import tx_fee, satoshi_to_mbtc
+from pycoin.convention import tx_fee
 from pycoin.serialize import stream_to_bytes
 from pycoin.services.blokrio import unspent_for_address
 from pycoin.tx import Tx
@@ -16,7 +15,8 @@ from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
 
 
-EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
+EPILOG = 'Files are binary by default unless they end with the suffix ".hex".' \
+        ' Note that unsigned transactions are regular transactions followed by some additional data.'
 
 
 def main():
@@ -36,10 +36,11 @@ def main():
     unspents = unspent_for_address(args.src_bitcoin_address)
 
     txs_in = [TxIn(tx_out_info[0], tx_out_info[1]) for tx_out_info in unspents]
-    coin_value = sum(tx_out_info[-1].coin_value for tx_out_info in unspents)
+
+    total_coin_value = sum(tx_out_info[-1].coin_value for tx_out_info in unspents)
 
     script = standard_tx_out_script(args.dst_bitcoin_address)
-    txs_out = [TxOut(coin_value - args.fee, script)]
+    txs_out = [TxOut(total_coin_value - args.fee, script)]
 
     tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out)
 
