@@ -25,7 +25,7 @@ def payments_for_address(bitcoin_address):
             response.append((tx.get("hash"), total_out))
     return response
 
-def unspent_tx_outs_info_for_address(bitcoin_address):
+def unspent_for_address(bitcoin_address):
     """"
     return an array of elements of the form:
         (previous_hash, previous_index, tx_out)

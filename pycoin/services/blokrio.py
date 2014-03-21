@@ -12,7 +12,7 @@ from pycoin.tx import Tx, TxOut
 from pycoin.serialize import b2h_rev, h2b_rev
 
 
-def unspent_tx_outs_info_for_address(bitcoin_address):
+def unspent_for_address(bitcoin_address):
     """
     Return a list of tuples of the form:
       (previous_hash, previous_index, tx_out)

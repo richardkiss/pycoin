@@ -63,6 +63,10 @@ def minimal_tx_db_for_txs_out(tx, txs_out):
     return db
 
 
+def minimal_tx_db_for_unspents(tx, unspents):
+    return minimal_tx_db_for_txs_out(tx, [unspent[-1] for unspent in unspents])
+
+
 def parse_minimal_tx_db_for_tx(f, tx):
     """
     Attempt to load the minimal tx_db for a given transaction.
