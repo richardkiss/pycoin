@@ -25,7 +25,7 @@ The library declares some conversion utilities useful when dealing with Bitcoin.
 * Bitcoin hashes (double sha256, ripemd160/sha256, known as "hash160")
 * Bitcoin addresses
 * WIF (Wallet import format)
-* SEC (the gross internal format of public keys used by OpenSSL, both compressed and uncompressed)
+* SEC (the gross internal format of public keys used by OpenSSL), both compressed and uncompressed
 
 The command-line utility "bu" ("Bitcoin utility") exposes a lot of this API on the command-line.
 
@@ -54,6 +54,8 @@ A private Wallet object can yield a public Wallet object (which generates only t
 A private Wallet object can generate a subkey whose addresses CANNOT be derived from the corresponding public Wallet object (to generate change addresses, for example). Set ```is_prime=True```.
 
 The command-line utility "genwallet" exposes a lot of this API on the command-line.
+
+IMPORTANT WARNING: be extremely careful giving out public wallet keys. If someone has access to a private wallet key P, of course they have access to all descendent wallet keys of P. But if they also have access to a public wallet key K where P is a subkey of P, you can actually work your way up the tree to determine the private key that corresponds to the public wallet key K (unless private derivation was used at some point between the two keys)! Be sure you understand this warning before giving out public wallet keys!
 
 
 Transaction Viewing, Validation, Signing
