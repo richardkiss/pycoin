@@ -9,6 +9,7 @@ from pycoin.tx import Tx, ValidationFailureError
 from pycoin.tx.script import tools
 from pycoin.block import Block
 
+
 class ValidatingTest(unittest.TestCase):
     def test_validate(self):
         # block 80971
@@ -65,7 +66,8 @@ class ValidatingTest(unittest.TestCase):
             tools.disassemble(tx_to_validate.txs_out[0].script))
         self.assertEqual(tx_to_validate.id(), "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b")
 
-        self.assertEqual(tx_to_validate.bad_signature_count(tx_db), 0)
+        tx_to_validate.unspents_from_db(tx_db)
+        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
         # now, let's corrupt the Tx and see what happens
         tx_out = tx_to_validate.txs_out[1]
@@ -73,14 +75,14 @@ class ValidatingTest(unittest.TestCase):
         disassembly = tools.disassemble(tx_out.script)
         tx_out.script = tools.compile(disassembly)
 
-        self.assertEqual(tx_to_validate.bad_signature_count(tx_db), 0)
+        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
         disassembly = disassembly.replace("9661a79ae1f6d487af3420c13e649d6df3747fc2", "9661a79ae1f6d487af3420c13e649d6df3747fc3")
 
         tx_out.script = tools.compile(disassembly)
 
-        self.assertEqual(tx_to_validate.bad_signature_count(tx_db), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(0, tx_db))
+        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
+        self.assertFalse(tx_to_validate.is_signature_ok(0))
 
     def test_validate_two_inputs(self):
         def tx_from_b64(h):
@@ -127,24 +129,26 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
             tools.disassemble(tx_to_validate.txs_out[0].script))
         self.assertEqual(tx_to_validate.id(), "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d")
 
-        self.assertEqual(tx_to_validate.bad_signature_count(TX_DB), 0)
+        tx_to_validate.unspents_from_db(TX_DB)
+        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
         # now let's mess with signatures
         disassembly = tools.disassemble(tx_to_validate.txs_in[0].script)
         tx_to_validate.txs_in[0].script = tools.compile(disassembly)
-        self.assertEqual(tx_to_validate.bad_signature_count(TX_DB), 0)
+        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
         disassembly = disassembly.replace("353fb6fcfbce09", "353fb6fcfbce19")
         tx_to_validate.txs_in[0].script = tools.compile(disassembly)
-        self.assertEqual(tx_to_validate.bad_signature_count(TX_DB), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(0, TX_DB))
+        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
+        self.assertFalse(tx_to_validate.is_signature_ok(0))
 
         tx_to_validate = tx_from_b64(TX_0_HEX)
-        self.assertEqual(tx_to_validate.bad_signature_count(TX_DB), 0)
+        tx_to_validate.unspents_from_db(TX_DB)
+        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
         disassembly = tools.disassemble(tx_to_validate.txs_in[1].script)
         disassembly = disassembly.replace("960c258ffb494d2859f", "960d258ffb494d2859f")
         tx_to_validate.txs_in[1].script = tools.compile(disassembly)
-        self.assertEqual(tx_to_validate.bad_signature_count(TX_DB), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(1, TX_DB))
+        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
+        self.assertFalse(tx_to_validate.is_signature_ok(1))
 
         # futz with signature on tx_1
         tx_to_validate = tx_from_b64(TX_0_HEX)
@@ -153,12 +157,14 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
         disassembly = disassembly.replace("4cf9d8545548de0256f48c4b0726b14294619267", "4cf9d8545548de1256f48c4b0726b14294619267")
         tx_1.txs_out[0].script = tools.compile(disassembly)
         TX_DB[original_tx_hash] = tx_1
-        self.assertEqual(tx_to_validate.bad_signature_count(TX_DB), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(0, TX_DB))
+        tx_to_validate.unspents_from_db(TX_DB)
+        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
+        self.assertFalse(tx_to_validate.is_signature_ok(0, ))
 
         # fix it up again
         TX_DB[original_tx_hash] = tx_from_b64(TX_1_HEX)
-        self.assertEqual(tx_to_validate.bad_signature_count(TX_DB), 0)
+        tx_to_validate.unspents_from_db(TX_DB)
+        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
         # futz with signature on tx_2
         tx_to_validate = tx_from_b64(TX_0_HEX)
@@ -167,12 +173,14 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
         disassembly = disassembly.replace("a645d6ccbefe5f11b8050f5624b5a054f734135b", "a665d6ccbefe5f11b8050f5624b5a054f734135b")
         tx_2.txs_out[0].script = tools.compile(disassembly)
         TX_DB[original_tx_hash] = tx_2
-        self.assertEqual(tx_to_validate.bad_signature_count(TX_DB), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(1, TX_DB))
+        tx_to_validate.unspents_from_db(TX_DB)
+        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
+        self.assertFalse(tx_to_validate.is_signature_ok(1))
 
         # fix it up again
         TX_DB[original_tx_hash] = tx_from_b64(TX_2_HEX)
-        self.assertEqual(tx_to_validate.bad_signature_count(TX_DB), 0)
+        tx_to_validate.unspents_from_db(TX_DB)
+        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
 if __name__ == "__main__":
     unittest.main()

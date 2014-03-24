@@ -10,7 +10,6 @@ import io
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.serialize import stream_to_bytes
 from pycoin.tx import Tx
-from pycoin.tx.airgap import parse_minimal_tx_db_for_tx
 from pycoin.tx.script.solvers import build_hash160_lookup_db
 
 
@@ -19,8 +18,8 @@ def get_unsigned_tx(f):
         f = codecs.getreader("hex_codec")(f)
         f = io.BytesIO(f.read())
     tx = Tx.parse(f)
-    tx_db = parse_minimal_tx_db_for_tx(f, tx)
-    return tx, tx_db
+    tx.parse_unspents(f)
+    return tx
 
 EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
 
@@ -37,15 +36,15 @@ def main():
     args = parser.parse_args()
 
     try:
-        unsigned_tx, tx_db = get_unsigned_tx(args.input_file)
+        unsigned_tx = get_unsigned_tx(args.input_file)
     except Exception:
-        parser.error("can't parse extended info... is this an airgapped transaction?")
+        parser.error("can't parse extended info... does this transaction include unspents info?")
 
     secret_exponent_lookup = build_hash160_lookup_db(wif_to_secret_exponent(pk) for pk in args.private_key)
 
-    unsigned_before = unsigned_tx.bad_signature_count(tx_db)
-    new_tx = unsigned_tx.sign(secret_exponent_lookup, tx_db)
-    unsigned_after = unsigned_tx.bad_signature_count(tx_db)
+    unsigned_before = unsigned_tx.bad_signature_count()
+    new_tx = unsigned_tx.sign(secret_exponent_lookup)
+    unsigned_after = unsigned_tx.bad_signature_count()
 
     print("%d newly signed TxOut object(s) (%d unsigned before and %d unsigned now)" %
           (unsigned_before-unsigned_after, unsigned_before, unsigned_after))

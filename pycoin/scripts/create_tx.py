@@ -12,13 +12,12 @@ import sys
 from pycoin.convention import tx_fee, satoshi_to_btc
 from pycoin.serialize import stream_to_bytes, h2b_rev
 from pycoin.tx import Tx
-from pycoin.tx.airgap import minimal_tx_db_for_txs_out, stream_minimal_tx_db_for_tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
 
 
-def check_fees(unsigned_tx, tx_db):
-    total_in, total_out = unsigned_tx.total_in(tx_db), unsigned_tx.total_out()
+def check_fees(unsigned_tx):
+    total_in, total_out = unsigned_tx.total_in(), unsigned_tx.total_out()
     actual_tx_fee = total_in - total_out
     recommended_tx_fee = tx_fee.recommended_fee_for_tx(unsigned_tx)
     if actual_tx_fee > recommended_tx_fee:
@@ -66,8 +65,8 @@ def get_unsigned_tx(parser):
                     parser.error("can't parse %s\n" % txinfo)
 
     unsigned_tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out)
-    tx_db = minimal_tx_db_for_txs_out(unsigned_tx, outgoing_txs_out)
-    return unsigned_tx, tx_db
+    unsigned_tx.set_unspents(outgoing_txs_out)
+    return unsigned_tx
 
 
 EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
@@ -87,8 +86,8 @@ def main():
 
     args = parser.parse_args()
 
-    unsigned_tx, tx_db = get_unsigned_tx(parser)
-    actual_tx_fee = check_fees(unsigned_tx, tx_db)
+    unsigned_tx = get_unsigned_tx(parser)
+    actual_tx_fee = check_fees(unsigned_tx)
     if actual_tx_fee < 0:
         sys.exit(1)
     print("transaction fee: %s BTC" % satoshi_to_btc(actual_tx_fee))
@@ -99,7 +98,7 @@ def main():
         if f.name.endswith("hex"):
             f = codecs.getwriter("hex_codec")(f)
         f.write(tx_bytes)
-        stream_minimal_tx_db_for_tx(tx_db, f, unsigned_tx)
+        unsigned_tx.stream_unspents(f)
         f.close()
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ from pycoin.tx import Tx
 LOCKTIME_THRESHOLD = 500000000
 
 
-def dump_tx(tx, tx_db={}, is_testnet=False):
+def dump_tx(tx, is_testnet=False):
     tx_bin = stream_to_bytes(tx.stream)
     print("%d bytes   tx hash %s" % (len(tx_bin), tx.id()))
     print("TxIn count: %d; TxOut count: %d" % (len(tx.txs_in), len(tx.txs_out)))
@@ -28,12 +28,12 @@ def dump_tx(tx, tx_db={}, is_testnet=False):
         meaning = "valid on or after %s utc" % when.isoformat()
     print("Lock time: %d (%s)" % (tx.lock_time, meaning))
     print("Input%s:" % ('s' if len(tx.txs_in) != 1 else ''))
+    has_unspents = tx.has_unspents()
     for idx, tx_in in enumerate(tx.txs_in):
-        has_input = tx.has_input(tx_in, tx_db)
         suffix = ""
-        if has_input:
-            tx_out = tx.tx_out_for_tx_in(tx_in, tx_db)
-            sig_result = " sig ok" if tx.is_signature_ok(idx, tx_db) else " BAD SIG"
+        if has_unspents:
+            tx_out = tx.unspents[idx]
+            sig_result = " sig ok" if tx.is_signature_ok(idx) else " BAD SIG"
             suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
             address = tx_out.bitcoin_address(is_test=is_testnet)
         else:
@@ -44,11 +44,11 @@ def dump_tx(tx, tx_db={}, is_testnet=False):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
         address = tx_out.bitcoin_address(is_test=is_testnet)
         print("%3d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
-    if tx.has_all_inputs(tx_db):
-        print("Total input  %12.5f mBTC" % satoshi_to_mbtc(tx.total_in(tx_db)))
+    if tx.has_unspents():
+        print("Total input  %12.5f mBTC" % satoshi_to_mbtc(tx.total_in()))
     print(    "Total output %12.5f mBTC" % satoshi_to_mbtc(tx.total_out()))
-    if tx.has_all_inputs(tx_db):
-        print("Total fees   %12.5f mBTC" % satoshi_to_mbtc(tx.fee(tx_db)))
+    if tx.has_unspents():
+        print("Total fees   %12.5f mBTC" % satoshi_to_mbtc(tx.fee()))
 
 def tx_db_for_tx(tx):
     tx_db = {}
@@ -83,8 +83,8 @@ def main():
                 parser.error("can't parse %s" % f.name)
         tx_db = {}
         if args.validate:
-            tx_db = tx_db_for_tx(tx)
-        dump_tx(tx, tx_db, is_testnet=False)
+            tx.unspents_from_db(tx_db_for_tx(tx))
+        dump_tx(tx, is_testnet=False)
         print('')
 
 if __name__ == '__main__':

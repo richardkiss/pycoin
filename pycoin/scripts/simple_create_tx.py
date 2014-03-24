@@ -10,7 +10,6 @@ from pycoin.convention import tx_fee
 from pycoin.serialize import stream_to_bytes
 from pycoin.services.blokrio import unspent_for_address
 from pycoin.tx import Tx
-from pycoin.tx.airgap import minimal_tx_db_for_unspents, stream_minimal_tx_db_for_tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
 
@@ -44,7 +43,7 @@ def main():
 
     tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out)
 
-    tx_db = minimal_tx_db_for_unspents(tx, unspents)
+    tx.set_unspents([item[-1] for item in unspents])
 
     tx_bytes = stream_to_bytes(tx.stream)
     f = args.output_file
@@ -54,7 +53,7 @@ def main():
         # write the transaction
         f.write(tx_bytes)
         # write the info for the unspent TxOut, required for signing
-        stream_minimal_tx_db_for_tx(tx_db, f, tx)
+        tx.stream_unspents(f)
         f.close()
 
 if __name__ == '__main__':

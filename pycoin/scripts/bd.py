@@ -16,7 +16,7 @@ from pycoin import ecdsa
 from pycoin import encoding
 from pycoin.convention import tx_fee, btc_to_satoshi, satoshi_to_btc
 from pycoin.services import blockchain_info
-from pycoin.tx import Tx, UnsignedTx, TxOut, SecretExponentSolver
+from pycoin.tx import Tx, TxOut
 from pycoin.wallet import Wallet, PublicPrivateMismatchError
 
 def b2h(b):

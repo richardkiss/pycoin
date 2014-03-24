@@ -14,7 +14,6 @@ from pycoin import encoding
 from pycoin.convention import tx_fee, satoshi_to_btc
 from pycoin.serialize import stream_to_bytes
 from pycoin.tx import Tx
-from pycoin.tx.airgap import parse_minimal_tx_db_for_tx
 from pycoin.tx.script.solvers import build_hash160_lookup_db
 from pycoin.wallet import Wallet
 
@@ -63,8 +62,8 @@ def secret_exponents_iterator(wif_files, private_keys):
         yield v
 
 
-def check_fee(unsigned_tx, tx_db):
-    actual_tx_fee = unsigned_tx.fee(tx_db)
+def check_fee(unsigned_tx):
+    actual_tx_fee = unsigned_tx.fee()
     recommended_tx_fee = tx_fee.recommended_fee_for_tx(unsigned_tx)
     if actual_tx_fee > recommended_tx_fee:
         print("warning: transaction fee of exceeds expected value of %s BTC" %
@@ -95,13 +94,10 @@ def get_unsigned_tx(parser):
             parser.error("can't parse %s as hex\n" % args.hex_input)
     try:
         tx = Tx.parse(f)
-        try:
-            tx_db = parse_minimal_tx_db_for_tx(f, tx)
-            return tx, tx_db
-        except Exception:
-            parser.error("can't parse extended info... is this an airgapped transaction?")
+        tx.parse_unspents(f)
+        return tx
     except Exception:
-        parser.error("can't parse input")
+        parser.error("can't parse extended info... does this transaction include unspents info?")
 
 EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
 
@@ -122,8 +118,8 @@ def main():
 
     args = parser.parse_args()
 
-    unsigned_tx, tx_db = get_unsigned_tx(parser)
-    actual_tx_fee = check_fee(unsigned_tx, tx_db)
+    unsigned_tx = get_unsigned_tx(parser)
+    actual_tx_fee = check_fee(unsigned_tx)
     if actual_tx_fee < 0:
         sys.exit(1)
     print("transaction fee: %s BTC" % satoshi_to_btc(actual_tx_fee))
@@ -147,9 +143,9 @@ def main():
             return None
 
     lookup = Lookup(secret_exponents)
-    unsigned_before = unsigned_tx.bad_signature_count(tx_db)
-    new_tx = unsigned_tx.sign(lookup, tx_db)
-    unsigned_after = unsigned_tx.bad_signature_count(tx_db)
+    unsigned_before = unsigned_tx.bad_signature_count()
+    new_tx = unsigned_tx.sign(lookup)
+    unsigned_after = unsigned_tx.bad_signature_count()
 
     print("%d newly signed TxOut object(s) (%d before and %d after)" %
             (unsigned_before-unsigned_after, unsigned_before, unsigned_after))

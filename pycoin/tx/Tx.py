@@ -76,11 +76,12 @@ class Tx(object):
         lock_time, = parse_struct("L", f)
         return self(version, txs_in, txs_out, lock_time)
 
-    def __init__(self, version, txs_in, txs_out, lock_time=0):
+    def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[]):
         self.version = version
         self.txs_in = txs_in
         self.txs_out = txs_out
         self.lock_time = lock_time
+        self.unspents = []
 
     def stream(self, f):
         """Stream a Bitcoin transaction Tx to the file-like object f."""
@@ -195,56 +196,78 @@ class Tx(object):
             self.id(), self.version, ", ".join(str(t) for t in self.txs_in),
             ", ".join(str(t) for t in self.txs_out))
 
-    def tx_out_for_tx_in(self, tx_in, tx_db):
-        tx = tx_db.get(tx_in.previous_hash)
-        if tx:
-            return tx.txs_out[tx_in.previous_index]
-        return None
+    """
+    The functions below here deal with an optional additional parameter: "unspents".
+    This parameter is a list of tx_out objects that are referenced by the
+    list of self.tx_in objects.
+    """
 
-    def is_signature_ok(self, tx_in_idx, tx_db):
+    def unspents_from_db(self, tx_db):
+        unspents = []
+        for tx_in in self.txs_in:
+            tx = tx_db.get(tx_in.previous_hash)
+            unspents.append(tx.txs_out[tx_in.previous_index])
+        self.unspents = unspents
+
+    def set_unspents(self, unspents):
+        if len(unspents) != len(self.txs_in):
+            raise ValueError("wrong number of unspents")
+        self.unspents = unspents
+
+    def has_unspents(self):
+        return len(self.unspents) == len(self.txs_in)
+
+    def check_unspents(self):
+        if not self.has_unspents():
+            raise ValueError("wrong number of unspents")
+
+    def stream_unspents(self, f):
+        self.check_unspents()
+        for tx_out in self.unspents:
+            tx_out.stream(f)
+
+    def parse_unspents(self, f):
+        unspents = []
+        for i in enumerate(self.txs_in):
+            unspents.append(TxOut.parse(f))
+        self.set_unspents(unspents)
+
+    def is_signature_ok(self, tx_in_idx):
+        self.check_unspents()
         tx_in = self.txs_in[tx_in_idx]
-        tx_out_script = self.tx_out_for_tx_in(tx_in, tx_db).script
+        tx_out_script = self.unspents[tx_in_idx].script
         signature_hash = self.signature_hash(tx_out_script, tx_in_idx, hash_type=SIGHASH_ALL)
         return tx_in.verify(tx_out_script, signature_hash, hash_type=0)
 
-    def sign(self, hash160_lookup, tx_db, hash_type=SIGHASH_ALL):
+    def sign(self, hash160_lookup, hash_type=SIGHASH_ALL):
         """
         Sign a standard transaction.
         hash160_lookup:
-            An object with a get method that accepts a hash160 and returns the
-            corresponding (secret exponent, public_pair, is_compressed) tuple or
-            None if it's unknown (in which case the script will obviously not be signed).
-            A standard dictionary will do nicely here.
-        tx_db:
-            An object with a get method that accepts a transaction hash and
-            returns the transaction. Again, a dictionary.
+            A dictionary (or another object with .get) where keys are hash160 and
+            values are tuples (secret exponent, public_pair, is_compressed) or None
+            (in which case the script will obviously not be signed).
         """
+        self.check_unspents()
         for idx, tx_in in enumerate(self.txs_in):
-            if self.is_signature_ok(idx, tx_db):
+            if self.is_signature_ok(idx):
                 continue
-            tx_out = self.tx_out_for_tx_in(tx_in, tx_db)
             try:
-                self.sign_tx_in(hash160_lookup, idx, tx_out.script, hash_type=hash_type)
+                self.sign_tx_in(hash160_lookup, idx, self.unspents[idx].script, hash_type=hash_type)
             except SolvingError:
                 pass
 
         return self
 
-    def bad_signature_count(self, tx_db):
+    def bad_signature_count(self):
         count = 0
         for idx, tx_in in enumerate(self.txs_in):
-            if not self.is_signature_ok(idx, tx_db):
+            if not self.is_signature_ok(idx):
                 count += 1
         return count
 
-    def has_input(self, tx_in, tx_db):
-        return self.tx_out_for_tx_in(tx_in, tx_db) is not None
+    def total_in(self):
+        self.check_unspents()
+        return sum(tx_out.coin_value for tx_out in self.unspents)
 
-    def has_all_inputs(self, tx_db):
-        return all(self.has_input(tx_in, tx_db) for tx_in in self.txs_in)
-
-    def total_in(self, tx_db):
-        return sum(self.tx_out_for_tx_in(tx_in, tx_db).coin_value for tx_in in self.txs_in)
-
-    def fee(self, tx_db):
-        return self.total_in(tx_db) - self.total_out()
+    def fee(self):
+        return self.total_in() - self.total_out()
