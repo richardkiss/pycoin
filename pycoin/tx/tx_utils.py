@@ -50,8 +50,55 @@ class LazySecretExponentDB(object):
         return None
 
 
-def create_and_sign_tx(spendables, payables, wifs=[], fee="standard",
-                       lock_time=0, secret_exponent_db={}, is_test=False):
+def created_signed_tx(spendables, payables, wifs=[], fee="standard",
+                      lock_time=0, secret_exponent_db={}, is_test=False):
+    """
+    This function provides the easiest way to create and sign a transaction.
+
+    All coin values are in satoshis.
+
+    spendables: a list of Spendable objects, which act as inputs.
+    payables: a list where each entry is a bitcoin address, or a tuple of
+              (bitcoin address, coin_value). If the coin_value is missing or
+              zero, this address is thrown into a split pool, where the funds not
+              explicitly claimed by the fee or another address are shared as
+              equally as possible among the split pool. If the amount to be
+              split does not divide evenly, some of the earlier bitcoin addresses
+              will get an extra satoshi.
+    wifs:
+        the list of WIFs required to sign this transaction.
+    fee:
+        a value, or "standard" for it to be calculated.
+    lock_time:
+        the lock_time to use in the transaction. Normally 0.
+    secret_exponent_db:
+        an optional dictionary (or any object with a .get method) that contains
+        a bitcoin address => (secret_exponent, public_pair, is_compressed)
+        tuple. This will be built automatically lazily with the list of WIFs.
+        You can pass in an empty dictionary and as WIFs are processed, they
+        will be cached here. If you have multiple transactions to sign, each with
+        the same WIF list, passing a cache dictionary in may speed things up a bit.
+    is_test:
+        True for testnet, False for mainnet.
+
+    Returns the signed Tx transaction, or raises an exception.
+
+    At least one of "wifs" and "secret_exponent_db" must be included for there
+    to be any hope of signing the transaction.
+
+    Example:
+
+    tx = created_signed_tx(
+        spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH"),
+        ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"],
+        wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"],
+        fee=0)
+
+    This will move all available reported funds from 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+    to 1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP, with no transaction fees (which means it might
+    be slow to confirm, maybe never).
+
+    """
     txs_in = [spendable.tx_in() for spendable in spendables]
 
     txs_out = []

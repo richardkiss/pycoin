@@ -8,7 +8,7 @@ from pycoin.ecdsa import generator_secp256k1, public_pair_for_secret_exponent
 from pycoin.encoding import public_pair_to_bitcoin_address, secret_exponent_to_wif
 
 from pycoin.tx.TxOut import standard_tx_out_script
-from pycoin.tx.spend import create_and_sign_tx
+from pycoin.tx.tx_utils import created_signed_tx
 from pycoin.tx.Spendable import Spendable
 
 
@@ -32,7 +32,7 @@ class SpendTest(unittest.TestCase):
         spendables = [Spendable(COIN_VALUE, standard_tx_out_script(BITCOIN_ADDRESSES[0]), fake_hash(1), 0)]
 
         for count in range(1, 11):
-            tx = create_and_sign_tx(spendables, BITCOIN_ADDRESSES[1:count+1], wifs=WIFS[:1])
+            tx = created_signed_tx(spendables, BITCOIN_ADDRESSES[1:count+1], wifs=WIFS[:1])
             self.assertEqual(tx.bad_signature_count(), 0)
             self.assertEqual(tx.fee(), FEE)
             for i in range(count):
