@@ -1,30 +1,8 @@
-""" - create_and_sign(spendables, payables, wifs/secret_exponent_db, fee="standard", locktime=0)
-    - spendables:
-      - list of spendable
-      - see above
-    - payables:
-      - list of payables
-        - a 2-tuple of (bitcoin_address, amount)
-        - a bitcoin address
-        - reserve fees + given amounts
-        - if some amounts are missing, split unclaimed amounts equally
-    - wifs:
-      - an iterable that creates the DB
-    - secret_exponent_db:
-      - a dictionary or an interable
-        - if it supports __contains__, it's a dict
-      - if it's iterable, expand (lazily) to a dictionary
-  - return a Tx
-  - failures:
-    - ValueError for bad payable
-    - SecretExponentMissing for a given bitcoin address
-    - InsufficentFunds because of fees, payouts, or dust
-"""
 
 from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
-from .TxOut import TxOut, standard_tx_out_script
 from .Tx import Tx
+from .TxOut import TxOut, standard_tx_out_script
 from .script.solvers import build_hash160_lookup_db
 
 
@@ -60,11 +38,11 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
     spendables: a list of Spendable objects, which act as inputs.
     payables: a list where each entry is a bitcoin address, or a tuple of
               (bitcoin address, coin_value). If the coin_value is missing or
-              zero, this address is thrown into a split pool, where the funds not
-              explicitly claimed by the fee or another address are shared as
-              equally as possible among the split pool. If the amount to be
-              split does not divide evenly, some of the earlier bitcoin addresses
-              will get an extra satoshi.
+              zero, this address is thrown into the "split pool". Funds not
+              explicitly claimed by the fee or a bitcoin address are shared as
+              equally as possible among the split pool. Minor point: if the
+              amount to be split does not divide evenly, some of the earlier
+              bitcoin addresses will get an extra satoshi.
     wifs:
         the list of WIFs required to sign this transaction.
     fee:
@@ -96,13 +74,11 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
 
     This will move all available reported funds from 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
     to 1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP, with no transaction fees (which means it might
-    be slow to confirm, maybe never).
-
+    take a while to confirm, possibly never).
     """
     txs_in = [spendable.tx_in() for spendable in spendables]
 
     txs_out = []
-
     for payable in payables:
         if len(payable) == 2:
             bitcoin_address, coin_value = payable
@@ -138,7 +114,7 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
                 tx_out.coin_value = value_each + (1 if extra_count > 0 else 0)
                 extra_count -= 1
 
-    tx = tx.sign(LazySecretExponentDB(wifs, secret_exponent_db))
+    tx.sign(LazySecretExponentDB(wifs, secret_exponent_db))
 
     for idx, tx_out in enumerate(tx.txs_in):
         if not tx.is_signature_ok(idx):
