@@ -35,14 +35,16 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
 
     All coin values are in satoshis.
 
-    spendables: a list of Spendable objects, which act as inputs.
-    payables: a list where each entry is a bitcoin address, or a tuple of
-              (bitcoin address, coin_value). If the coin_value is missing or
-              zero, this address is thrown into the "split pool". Funds not
-              explicitly claimed by the fee or a bitcoin address are shared as
-              equally as possible among the split pool. Minor point: if the
-              amount to be split does not divide evenly, some of the earlier
-              bitcoin addresses will get an extra satoshi.
+    spendables:
+        a list of Spendable objects, which act as inputs.
+    payables:
+        a list where each entry is a bitcoin address, or a tuple of
+        (bitcoin address, coin_value). If the coin_value is missing or
+        zero, this address is thrown into the "split pool". Funds not
+        explicitly claimed by the fee or a bitcoin address are shared as
+        equally as possible among the split pool. [Minor point: if the
+        amount to be split does not divide evenly, some of the earlier
+        bitcoin addresses will get an extra satoshi.]
     wifs:
         the list of WIFs required to sign this transaction.
     fee:

@@ -8,8 +8,10 @@ class ScriptsTest(unittest.TestCase):
 
     def launch_tool(self, tool):
         script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts"))
+        cwd = os.getcwd()
         os.chdir(script_dir)
         r = os.system(tool)
+        os.chdir(cwd)
         assert r == 0
 
     def test_simple_tools(self):

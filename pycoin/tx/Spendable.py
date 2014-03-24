@@ -14,7 +14,7 @@ class Spendable(TxOut):
         self.tx_out_index = tx_out_index
 
     def stream(self, f, as_spendable=False):
-        self.stream(f)
+        super(Spendable, self).stream(f)
         if as_spendable:
             stream_struct("#L", f, self.previous_hash, self.previous_index)
 

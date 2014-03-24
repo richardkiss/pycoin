@@ -8,7 +8,7 @@ import codecs
 
 from pycoin.convention import tx_fee
 from pycoin.serialize import stream_to_bytes
-from pycoin.services.blokrio import unspent_for_address
+from pycoin.services.blokrio import spendables_for_address
 from pycoin.tx import Tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
@@ -32,18 +32,18 @@ def main():
 
     args = parser.parse_args()
 
-    unspents = unspent_for_address(args.src_bitcoin_address)
+    spendables = spendables_for_address(args.src_bitcoin_address)
 
-    txs_in = [TxIn(tx_out_info[0], tx_out_info[1]) for tx_out_info in unspents]
+    txs_in = [spendable.tx_in() for spendable in spendables]
 
-    total_coin_value = sum(tx_out_info[-1].coin_value for tx_out_info in unspents)
+    total_coin_value = sum(tx_out.coin_value for tx_out in spendables)
 
     script = standard_tx_out_script(args.dst_bitcoin_address)
     txs_out = [TxOut(total_coin_value - args.fee, script)]
 
     tx = Tx(version=1, txs_in=txs_in, txs_out=txs_out)
 
-    tx.set_unspents([item[-1] for item in unspents])
+    tx.set_unspents(spendables)
 
     tx_bytes = stream_to_bytes(tx.stream)
     f = args.output_file
