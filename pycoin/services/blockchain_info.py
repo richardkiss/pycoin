@@ -8,7 +8,8 @@ try:
 except ImportError:
     from urllib.request import urlopen
 
-from ..tx import TxOut
+from ..serialize import h2b_rev
+from ..tx import TxOut, Spendable
 
 def payments_for_address(bitcoin_address):
     "return an array of (TX ids, net_payment)"
@@ -25,19 +26,21 @@ def payments_for_address(bitcoin_address):
             response.append((tx.get("hash"), total_out))
     return response
 
-def unspent_for_address(bitcoin_address):
-    """"
-    return an array of elements of the form:
-        (previous_hash, previous_index, tx_out)
+def spendables_for_address(bitcoin_address):
+    """
+    Return a list of Spendable objects for the
+    given bitcoin address.
     """
     URL = "http://blockchain.info/unspent?active=%s" % bitcoin_address
     r = json.loads(urlopen(URL).read().decode("utf8"))
-    unspent_tx_tuples = []
-    for unspent_output in r["unspent_outputs"]:
-        tx_out = TxOut(unspent_output["value"], binascii.unhexlify(unspent_output["script"].encode()))
-        unspent_tx_tuple = (binascii.unhexlify(unspent_output["tx_hash"].encode()), unspent_output["tx_output_n"], tx_out)
-        unspent_tx_tuples.append(unspent_tx_tuple)
-    return unspent_tx_tuples
+    spendables = []
+    for u in r["unspent_outputs"]:
+        coin_value = u["value"]
+        script = binascii.unhexlify(u["script"])
+        previous_hash = h2b_rev(u["tx_hash"])
+        previous_index = u["tx_output_n"]
+        spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
+    return spendables
 
 def send_tx(tx):
     s = io.BytesIO()

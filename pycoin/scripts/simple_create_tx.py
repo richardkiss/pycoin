@@ -8,7 +8,7 @@ import codecs
 
 from pycoin.convention import tx_fee
 from pycoin.serialize import stream_to_bytes
-from pycoin.services.blokrio import spendables_for_address
+from pycoin.services.blockr_io import spendables_for_address
 from pycoin.tx import Tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script

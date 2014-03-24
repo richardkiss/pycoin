@@ -14,8 +14,8 @@ from pycoin.serialize import b2h_rev, h2b_rev
 
 def spendables_for_address(bitcoin_address):
     """
-    Return a list of tuples of the form:
-      (previous_hash, previous_index, tx_out)
+    Return a list of Spendable objects for the
+    given bitcoin address.
     """
     URL = "http://btc.blockr.io/api/v1/address/unspent/%s" % bitcoin_address
     r = json.loads(urlopen(URL).read().decode("utf8"))
