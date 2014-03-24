@@ -1,7 +1,5 @@
 import binascii
-import StringIO
 import io
-import codecs
 
 from pycoin.encoding import wif_to_secret_exponent
 from pycoin.convention import tx_fee, satoshi_to_btc
@@ -124,19 +122,9 @@ def tx_from_hex(tx_hex):
     '''
     Given a tx hex, return a Tx object.
 
-    This is a hideously ugly workaround, but it's the easiest way to do this
-    with how pycoin is structured.
-
-    TODO: make this not terrible
+    TODO: this should probably be a Tx classmethod called `from_hex`
     '''
-
-    # Make a fake file object which is just a tx_hex
-    temp = StringIO.StringIO()
-    temp.write(tx_hex)
-    temp.seek(0)
-
-    f = io.BytesIO(codecs.getreader("hex_codec")(temp).read())
-    return Tx.parse(f)
+    return Tx.parse(io.BytesIO(binascii.unhexlify(tx_hex)))
 
 
 def test_tx_online(tx_hex, bitcoind_url):
