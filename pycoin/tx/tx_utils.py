@@ -121,6 +121,49 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
     for idx, tx_out in enumerate(tx.txs_in):
         if not tx.is_signature_ok(idx):
             raise SecretExponentMissing("failed to sign spendable for %s" %
-                                        spendable[idx].bitcoin_address(is_test=False))
+                                        tx.unspents[idx].bitcoin_address(is_test=False))
 
     return tx
+
+
+class BadSpendableError(Exception):
+    pass
+
+def confirm_inputs(tx, tx_db):
+    """
+    Spendable objects returned from blockchain.info or
+    similar services contain coin_value information that must be trusted
+    on faith. Mistaken coin_value data can result in coins being wasted
+    to fees.
+
+    This function solves this problem by iterating over the incoming
+    transactions, fetching them from the tx_db in full, and verifying
+    that the coin_values are as expected.
+
+    Returns the fee for this transaction. If any of the spendables set by
+    tx.set_unspents do not match the authenticated transactions, a
+    BadSpendableError is raised.
+    """
+    tx_hashes = set((tx_in.previous_hash for tx_in in tx.txs_in))
+
+    # build a local copy of the DB
+    tx_lookup = {}
+    for h in tx_hashes:
+        the_tx = tx_db[h]
+        if the_tx.hash() != h:
+            raise ValueError("attempt to load Tx %s yield a Tx with id %s" % (h2b_rev(h), the_tx.id()))
+        tx_lookup[h] = the_tx
+
+    for idx, tx_in in enumerate(tx.txs_in):
+        from ..serialize import b2h, b2h_rev, h2b_rev
+        if tx_in.previous_hash not in tx_lookup:
+            raise KeyError("hash id %s not in tx_lookup" % b2h_rev(tx_in.previous_hash))
+        tx_out1 = tx_lookup[tx_in.previous_hash].txs_out[tx_in.previous_index]
+        tx_out2 = tx.unspents[idx]
+        if tx_out1.coin_value != tx_out2.coin_value:
+            raise BadSpendableError(
+                "unspents[%d] coin value mismatch (%d vs %d)" % (idx, tx_out1.coin_value, tx_out2.coin_value))
+        if tx_out1.script != tx_out2.script:
+            raise BadSpendableError("unspents[%d] script mismatch!" % idx)
+
+    return tx.fee()

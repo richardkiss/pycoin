@@ -28,12 +28,13 @@ THE SOFTWARE.
 
 import io
 
-from ..encoding import double_sha256, from_bytes_32
+from ..encoding import double_sha256, from_bytes_32, h2b
 from ..serialize import b2h, b2h_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .TxIn import TxIn
 from .TxOut import TxOut
+from .Spendable import Spendable
 
 from .script import opcodes
 from .script import tools
@@ -192,6 +193,11 @@ class Tx(object):
 
     def total_out(self):
         return sum(tx_out.coin_value for tx_out in self.txs_out)
+
+    def tx_outs_as_spendable(self):
+        h = self.hash()
+        return [Spendable(tx_out.coin_value, tx_out.script, h, tx_out_index)
+            for tx_out_index, tx_out in enumerate(self.txs_out)]
 
     def __str__(self):
         return "Tx [%s]" % self.id()

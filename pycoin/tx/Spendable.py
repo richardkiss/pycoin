@@ -1,11 +1,11 @@
 import binascii
 
+from ..convention import satoshi_to_mbtc
 from ..serialize import b2h, b2h_rev, h2b_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .TxIn import TxIn
 from .TxOut import TxOut
-
 
 class Spendable(TxOut):
     def __init__(self, coin_value, script, tx_hash, tx_out_index):
@@ -52,3 +52,10 @@ class Spendable(TxOut):
 
     def tx_in(self, script=b'', sequence=4294967295):
         return TxIn(self.tx_hash, self.tx_out_index, script, sequence)
+
+    def __str__(self):
+        return 'Spendable<%s mbtc "%s:%d">' % (
+            satoshi_to_mbtc(self.coin_value), b2h_rev(self.tx_hash), self.tx_out_index)
+
+    def __repr__(self):
+        return str(self)
