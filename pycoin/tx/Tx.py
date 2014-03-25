@@ -76,6 +76,11 @@ class Tx(object):
         lock_time, = parse_struct("L", f)
         return self(version, txs_in, txs_out, lock_time)
 
+    @classmethod
+    def tx_from_hex(class_, hex_string):
+        """Return the Tx for the given hex string."""
+        return class_.parse(io.BytesIO(h2b(hex_string)))
+
     def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[]):
         self.version = version
         self.txs_in = txs_in
