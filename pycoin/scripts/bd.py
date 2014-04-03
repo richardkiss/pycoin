@@ -207,8 +207,7 @@ def get_unsigned_tx(parser):
                     parser.error("can't parse %s\n" % txinfo)
         else:
             print("looking up funds for %s from blockchain.info" % txinfo)
-            coins_sources = blockchain_info.unspent_for_address(txinfo)
-            coins_from.extend(coins_sources)
+            coins_from.extend(blockchain_info.spendable_for_address(txinfo))
 
     unsigned_tx = UnsignedTx.standard_tx(coins_from, coins_to)
     return unsigned_tx
@@ -286,7 +285,7 @@ def main():
 
     parser.add_argument('-j', "--json", help='output as JSON', action='store_true')
 
-    parser.add_argument('-s', "--subkey", help='subkey path (example: 0p/2/15)')
+    parser.add_argument('-s', "--subkey", help='subkey path (example: 0p/2/15-20)')
     parser.add_argument('-t', "--test-network", help='use test network', action="store_true")
 
     parser.add_argument('item', help='a wallet key; a WIF; a bitcoin address; the literal string "create" to create a new wallet key using strong entropy sources; P:wallet passphrase (not recommended); p:value where value=a secret exponent; x,y where x,y form a public pair (y is a number or one of the strings "even" or "odd"); sec:SEC (as hex); h:value where value is a hash160 as hex', nargs="+")

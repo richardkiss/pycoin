@@ -99,6 +99,14 @@ class Tx(object):
             t.stream(f)
         stream_struct("L", f, self.lock_time)
 
+    def as_hex(self, include_unspents=False):
+        """Return the transaction as hex."""
+        f = io.BytesIO()
+        self.stream(f)
+        if include_unspents:
+            self.stream_unspents(f)
+        return b2h(f.getvalue())
+
     def hash(self, hash_type=None):
         """Return the hash for this Tx object."""
         s = io.BytesIO()
@@ -230,7 +238,7 @@ class Tx(object):
 
     def check_unspents(self):
         if not self.has_unspents():
-            raise ValueError("wrong number of unspents")
+            raise ValueError("wrong number of unspents. Call unspents_from_db or set_unspents.")
 
     def stream_unspents(self, f):
         self.check_unspents()

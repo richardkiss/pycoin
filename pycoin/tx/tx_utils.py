@@ -1,6 +1,8 @@
 
 from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
+from ..serialize import b2h_rev, h2b_rev
+
 from .Tx import Tx
 from .TxOut import TxOut, standard_tx_out_script
 from .script.solvers import build_hash160_lookup_db
@@ -129,7 +131,7 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
 class BadSpendableError(Exception):
     pass
 
-def confirm_inputs(tx, tx_db):
+def validate_unspents(tx, tx_db):
     """
     Spendable objects returned from blockchain.info or
     similar services contain coin_value information that must be trusted
@@ -149,16 +151,21 @@ def confirm_inputs(tx, tx_db):
     # build a local copy of the DB
     tx_lookup = {}
     for h in tx_hashes:
-        the_tx = tx_db[h]
+        the_tx = tx_db.get(h)
+        if the_tx is None:
+            raise KeyError("hash id %s not in tx_db" % b2h_rev(h))
         if the_tx.hash() != h:
             raise ValueError("attempt to load Tx %s yield a Tx with id %s" % (h2b_rev(h), the_tx.id()))
         tx_lookup[h] = the_tx
 
     for idx, tx_in in enumerate(tx.txs_in):
-        from ..serialize import b2h, b2h_rev, h2b_rev
         if tx_in.previous_hash not in tx_lookup:
             raise KeyError("hash id %s not in tx_lookup" % b2h_rev(tx_in.previous_hash))
-        tx_out1 = tx_lookup[tx_in.previous_hash].txs_out[tx_in.previous_index]
+        txs_out = tx_lookup[tx_in.previous_hash].txs_out
+        if tx_in.previous_index > len(txs_out):
+            raise ValueError("tx_out index %d is too big for Tx %s" %
+                (tx_in.previous_index, b2h_rev(tx_in.previous_hash)))
+        tx_out1 = txs_out[tx_in.previous_index]
         tx_out2 = tx.unspents[idx]
         if tx_out1.coin_value != tx_out2.coin_value:
             raise BadSpendableError(
