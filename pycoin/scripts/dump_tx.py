@@ -9,7 +9,7 @@ import re
 
 from pycoin.convention import satoshi_to_mbtc
 from pycoin.serialize import b2h_rev, h2b_rev, stream_to_bytes
-from pycoin.services.tx_cache import tx_for_hash
+from pycoin.services.tx_db import tx_db_from_env
 from pycoin.tx import Tx
 
 LOCKTIME_THRESHOLD = 500000000
@@ -50,14 +50,6 @@ def dump_tx(tx, is_testnet=False):
     if tx.has_unspents():
         print("Total fees   %12.5f mBTC" % satoshi_to_mbtc(tx.fee()))
 
-def tx_db_for_tx(tx):
-    tx_db = {}
-    for h in set([tx_in.previous_hash for tx_in in tx.txs_in]):
-        prior_tx = tx_for_hash(h)
-        if prior_tx:
-            tx_db[prior_tx.hash()] = prior_tx
-    return tx_db
-
 def main():
     parser = argparse.ArgumentParser(description="Dump a transaction in human-readable form.")
     parser.add_argument('-v', "--validate", action='store_true',
@@ -81,9 +73,9 @@ def main():
                 tx = Tx.parse(f)
             except Exception:
                 parser.error("can't parse %s" % f.name)
-        tx_db = {}
         if args.validate:
-            tx.unspents_from_db(tx_db_for_tx(tx))
+            tx_db = tx_db_from_env()
+            tx.unspents_from_db(tx_db)
         dump_tx(tx, is_testnet=False)
         print('')
 

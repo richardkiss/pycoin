@@ -1,6 +1,7 @@
 
 import os.path
 
+from pycoin.serialize import b2h_rev
 from pycoin.services import blockexplorer, blockr_io
 from pycoin.tx.Tx import Tx
 

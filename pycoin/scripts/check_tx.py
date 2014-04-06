@@ -6,7 +6,7 @@ import io
 import re
 
 from pycoin.serialize import h2b_rev
-from pycoin.services.tx_cache import tx_for_hash
+from pycoin.services.tx_db import tx_db_from_env
 from pycoin.services.bitcoind import bitcoind_agrees_on_transaction_validity
 from pycoin.tx import Tx
 from pycoin.tx.tx_utils import validate_unspents
@@ -29,9 +29,11 @@ def main():
 
     TX_RE = re.compile(r"[0-9a-fA-F]{64}")
 
+    tx_db = tx_db_from_env()
+
     for p in args.tx_path:
         if TX_RE.match(p):
-            tx = tx_for_hash(h2b_rev(p))
+            tx = tx_db.get(h2b_rev(p))
             if not tx:
                 parser.error("can't find Tx with id %s" % p)
         else:
