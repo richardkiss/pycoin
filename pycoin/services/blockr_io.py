@@ -30,6 +30,9 @@ def spendables_for_address(bitcoin_address):
 
 
 def get_tx(tx_hash):
+    """
+    Get a Tx by its hash.
+    """
     URL = "http://btc.blockr.io/api/v1/tx/raw/%s" % b2h_rev(tx_hash)
     r = json.loads(urlopen(URL).read().decode("utf8"))
     tx = Tx.parse(io.BytesIO(binascii.unhexlify(r.get("data").get("tx").get("hex"))))

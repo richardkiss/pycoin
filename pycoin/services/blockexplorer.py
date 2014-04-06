@@ -14,9 +14,11 @@ def get_json_for_hash(the_hash):
     d = urlopen("http://blockexplorer.com/rawtx/%s" % b2h_rev(the_hash)).read()
     return json.loads(d.decode("utf8"))
 
-def fetch_tx(tx_hash, is_testnet=False):
+def get_tx(tx_hash):
+    """
+    Get a Tx by its hash.
+    """
     # TODO: fix this
-    assert is_testnet == False
     j = get_json_for_hash(tx_hash)
     txs_in = []
     for j_in in j.get("in"):

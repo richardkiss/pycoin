@@ -1,15 +1,14 @@
 import binascii
 import io
 import json
-import logging
 
 try:
     from urllib2 import urlopen
 except ImportError:
     from urllib.request import urlopen
 
-from ..serialize import h2b_rev
-from ..tx import TxOut, Spendable
+from ..tx import Spendable
+
 
 def payments_for_address(bitcoin_address):
     "return an array of (TX ids, net_payment)"
@@ -26,6 +25,7 @@ def payments_for_address(bitcoin_address):
             response.append((tx.get("hash"), total_out))
     return response
 
+
 def spendables_for_address(bitcoin_address):
     """
     Return a list of Spendable objects for the
@@ -37,10 +37,11 @@ def spendables_for_address(bitcoin_address):
     for u in r["unspent_outputs"]:
         coin_value = u["value"]
         script = binascii.unhexlify(u["script"])
-        previous_hash = h2b_rev(u["tx_hash"])
+        previous_hash = binascii.unhexlify(u["tx_hash"])
         previous_index = u["tx_output_n"]
         spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
     return spendables
+
 
 def send_tx(tx):
     s = io.BytesIO()

@@ -3,6 +3,7 @@ from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
 from ..serialize import b2h_rev, h2b_rev
 
+from .Spendable import Spendable
 from .Tx import Tx
 from .TxOut import TxOut, standard_tx_out_script
 from .script.solvers import build_hash160_lookup_db
@@ -38,7 +39,10 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
     All coin values are in satoshis.
 
     spendables:
-        a list of Spendable objects, which act as inputs.
+        a list of Spendable objects, which act as inputs. These can
+        be either a Spendable or a Spendable.as_text or a Spendable.as_dict
+        if you prefer a non-object-based input (which might be easier for
+        airgapped transactions, for example).
     payables:
         a list where each entry is a bitcoin address, or a tuple of
         (bitcoin address, coin_value). If the coin_value is missing or
@@ -80,6 +84,15 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
     to 1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP, with no transaction fees (which means it might
     take a while to confirm, possibly never).
     """
+
+    def _fix_spendable(s):
+        if isinstance(s, Spendable):
+            return s
+        if isinstance(s, str):
+            return Spendable.from_text(s)
+        return Spendable.from_dict(s)
+
+    spendables = [_fix_spendable(s) for s in spendables]
     txs_in = [spendable.tx_in() for spendable in spendables]
 
     txs_out = []

@@ -8,7 +8,7 @@ from pycoin.ecdsa import generator_secp256k1, public_pair_for_secret_exponent
 from pycoin.encoding import public_pair_to_bitcoin_address, secret_exponent_to_wif
 
 from pycoin.tx.TxOut import standard_tx_out_script
-from pycoin.tx.tx_utils import created_signed_tx, confirm_inputs, BadSpendableError
+from pycoin.tx.tx_utils import created_signed_tx, validate_unspents, BadSpendableError
 from pycoin.tx.Spendable import Spendable
 
 
@@ -52,9 +52,15 @@ class SpendTest(unittest.TestCase):
         spendables = tx_1.tx_outs_as_spendable()
 
         tx_db = dict((tx.hash(), tx) for tx in [tx_1])
-        tx_2 = created_signed_tx(spendables, BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
 
-        confirm_inputs(tx_2, tx_db)
+        tx_2 = created_signed_tx(spendables, BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
+        validate_unspents(tx_2, tx_db)
+
+        tx_2 = created_signed_tx([s.as_dict() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
+        validate_unspents(tx_2, tx_db)
+
+        tx_2 = created_signed_tx([s.as_text() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
+        validate_unspents(tx_2, tx_db)
 
 
     def test_confirm_input_raises(self):
@@ -71,7 +77,7 @@ class SpendTest(unittest.TestCase):
         tx_db = dict((tx.hash(), tx) for tx in [tx_1])
         tx_2 = created_signed_tx(spendables, BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
 
-        self.assertRaises(BadSpendableError, confirm_inputs, tx_2, tx_db)
+        self.assertRaises(BadSpendableError, validate_unspents, tx_2, tx_db)
 
 
 if __name__ == "__main__":

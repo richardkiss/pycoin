@@ -64,7 +64,7 @@ class Tx(object):
         return class_(version, [tx_in], [tx_out], lock_time)
 
     @classmethod
-    def parse(self, f):
+    def parse(class_, f):
         """Parse a Bitcoin transaction Tx from the file-like object f."""
         version, count = parse_struct("LI", f)
         txs_in = []
@@ -75,7 +75,7 @@ class Tx(object):
         for i in range(count):
             txs_out.append(TxOut.parse(f))
         lock_time, = parse_struct("L", f)
-        return self(version, txs_in, txs_out, lock_time)
+        return class_(version, txs_in, txs_out, lock_time)
 
     @classmethod
     def tx_from_hex(class_, hex_string):
@@ -120,7 +120,8 @@ class Tx(object):
         return b2h_rev(self.hash())
 
     def signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
-        """Return the canonical hash for a transaction. We need to
+        """
+        Return the canonical hash for a transaction. We need to
         remove references to the signature, since it's a signature
         of the hash before the signature is applied.
 

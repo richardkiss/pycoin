@@ -28,8 +28,8 @@ class Spendable(TxOut):
         return dict(
             coin_value=self.coin_value,
             script_hex=binascii.hexlify(self.script),
-            tx_hash_hex=binascii.hexlify(self.previous_hash),
-            tx_out_index=self.previous_index
+            tx_hash_hex=binascii.hexlify(self.tx_hash),
+            tx_out_index=self.tx_out_index
         )
 
     @classmethod
