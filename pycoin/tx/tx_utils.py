@@ -14,6 +14,12 @@ class SecretExponentMissing(Exception):
 
 
 class LazySecretExponentDB(object):
+    """
+    The pycoin pure python implementation that converts secret exponents
+    into public pairs is very slow, so this class does the conversion lazily
+    and caches the results to optimize for the case of a large number
+    of secret exponents.
+    """
     def __init__(self, wif_iterable, secret_exponent_db_cache):
         self.wif_iterable = iter(wif_iterable)
         self.secret_exponent_db_cache = secret_exponent_db_cache
@@ -31,10 +37,9 @@ class LazySecretExponentDB(object):
         return None
 
 
-def created_signed_tx(spendables, payables, wifs=[], fee="standard",
-                      lock_time=0, secret_exponent_db={}, is_test=False):
+def create_tx(spendables, payables, fee="standard", lock_time=0, is_test=False):
     """
-    This function provides the easiest way to create and sign a transaction.
+    This function provides the easiest way to create an unsigned transaction.
 
     All coin values are in satoshis.
 
@@ -51,33 +56,21 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
         equally as possible among the split pool. [Minor point: if the
         amount to be split does not divide evenly, some of the earlier
         bitcoin addresses will get an extra satoshi.]
-    wifs:
-        the list of WIFs required to sign this transaction.
     fee:
         a value, or "standard" for it to be calculated.
     lock_time:
         the lock_time to use in the transaction. Normally 0.
-    secret_exponent_db:
-        an optional dictionary (or any object with a .get method) that contains
-        a bitcoin address => (secret_exponent, public_pair, is_compressed)
-        tuple. This will be built automatically lazily with the list of WIFs.
-        You can pass in an empty dictionary and as WIFs are processed, they
-        will be cached here. If you have multiple transactions to sign, each with
-        the same WIF list, passing a cache dictionary in may speed things up a bit.
     is_test:
         True for testnet, False for mainnet.
 
-    Returns the signed Tx transaction, or raises an exception.
-
-    At least one of "wifs" and "secret_exponent_db" must be included for there
-    to be any hope of signing the transaction.
+    Returns the unsigned Tx transaction. Note that unspents are set, so the
+    transaction can be immediately signed.
 
     Example:
 
-    tx = created_signed_tx(
+    tx = create_tx(
         spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH"),
         ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"],
-        wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"],
         fee=0)
 
     This will move all available reported funds from 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
@@ -130,14 +123,72 @@ def created_signed_tx(spendables, payables, wifs=[], fee="standard",
             if tx_out.coin_value == 0:
                 tx_out.coin_value = value_each + (1 if extra_count > 0 else 0)
                 extra_count -= 1
+    return tx
 
+
+def sign_tx(tx, wifs=[], secret_exponent_db={}):
+    """
+    This function provides an convenience method to sign a transaction.
+
+    The transaction must have "unspents" set by, for example,
+    calling tx.unspents_from_db.
+
+    wifs:
+        the list of WIFs required to sign this transaction.
+    secret_exponent_db:
+        an optional dictionary (or any object with a .get method) that contains
+        a bitcoin address => (secret_exponent, public_pair, is_compressed)
+        tuple. This will be built automatically lazily with the list of WIFs.
+        You can pass in an empty dictionary and as WIFs are processed, they
+        will be cached here. If you have multiple transactions to sign, each with
+        the same WIF list, passing a cache dictionary in may speed things up a bit.
+
+    Returns the signed Tx transaction, or raises an exception.
+
+    At least one of "wifs" and "secret_exponent_db" must be included for there
+    to be any hope of signing the transaction.
+
+    Example:
+
+    sign_tx(wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
+    """
     tx.sign(LazySecretExponentDB(wifs, secret_exponent_db))
-
     for idx, tx_out in enumerate(tx.txs_in):
         if not tx.is_signature_ok(idx):
             raise SecretExponentMissing("failed to sign spendable for %s" %
                                         tx.unspents[idx].bitcoin_address(is_test=False))
 
+
+def create_signed_tx(spendables, payables, wifs=[], fee="standard",
+                     lock_time=0, secret_exponent_db={}, is_test=False):
+    """
+    This function provides an easy way to create and sign a transaction.
+
+    All coin values are in satoshis.
+
+    spendables, payables, fee, lock_time, is_test are as in create_tx, above.
+    wifs, secret_exponent_db are as in sign_tx, above.
+
+    Returns the signed Tx transaction, or raises an exception.
+
+    At least one of "wifs" and "secret_exponent_db" must be included for there
+    to be any hope of signing the transaction.
+
+    Example:
+
+    tx = create_signed_tx(
+        spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH"),
+        ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"],
+        wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"],
+        fee=0)
+
+    This will move all available reported funds from 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+    to 1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP, with no transaction fees (which means it might
+    take a while to confirm, possibly never).
+    """
+
+    tx = create_tx(spendables, payables, fee=fee, lock_time=lock_time, is_test=is_test)
+    sign_tx(tx, wifs=wifs, secret_exponent_db=secret_exponent_db)
     return tx
 
 
