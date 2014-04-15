@@ -73,6 +73,8 @@ def sign(generator, secret_exponent, val, k=None, entropy_generator=os.urandom):
     s = ( numbertheory.inverse_mod( k, n ) * \
           ( val + ( secret_exponent * r ) % n ) ) % n
     if s == 0: raise RuntimeError("amazingly unlucky random number s")
+    if s > G.order() / 2:
+        s = G.order() - s
     return (r, s)
 
 def public_pair_for_secret_exponent(generator, secret_exponent):
