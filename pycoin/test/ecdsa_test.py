@@ -12,6 +12,9 @@ class ECDSATestCase(unittest.TestCase):
             for v in val_list:
                 signature = sign(generator_secp256k1, secret_exponent, v)
                 r = verify(generator_secp256k1, public_point, v, signature)
+                # Check that the 's' value is 'low', to prevent possible transaction malleability as per
+                # https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki#low-s-values-in-signatures
+                assert signature[1] <= 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0
                 assert r == True
                 signature = signature[0],signature[1]+1
                 r = verify(generator_secp256k1, public_point, v, signature)
