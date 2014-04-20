@@ -27,6 +27,7 @@ THE SOFTWARE.
 """
 
 import binascii
+import hashlib
 
 from ... import ecdsa
 from ...encoding import public_pair_to_sec, is_sec_compressed, sec_to_public_pair,\
@@ -36,6 +37,7 @@ from ...encoding import public_pair_to_sec, is_sec_compressed, sec_to_public_pai
 from . import der
 from . import opcodes
 from . import tools
+from ...ecdsa import rfc6979
 
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 
@@ -92,10 +94,11 @@ class SecretExponentSolver(object):
     """This is an sample solver that, with a list of secret exponents, can be used
     as a solver to be passed to the "sign" method of an UnsignedTx.
     """
-    def __init__(self, secret_exponent_iterator):
+    def __init__(self, secret_exponent_iterator, deterministic_k = False):
         self.secret_exponent_iterator = iter(secret_exponent_iterator)
         self.secret_exponent_for_public_pair_lookup = {}
         self.public_pair_compressed_for_hash160_lookup = {}
+        self.deterministic_k = deterministic_k
 
     def add_secret_exponent(self, secret_exponent):
         public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, secret_exponent)
@@ -154,7 +157,20 @@ class SecretExponentSolver(object):
             else:
                 raise SolvingError("can't determine how to sign this script")
             secret_exponent = self.secret_exponent_for_public_pair(public_pair, compressed=compressed)
-            r,s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, signature_hash)
+            
+            if self.deterministic_k == True:
+                # Use deterministic values of 'k' to avoid poor RNG quality - see RFC 6979
+                k = rfc6979.generate_k(ecdsa.generator_secp256k1, secret_exponent, hashlib.sha256, signature_hash.to_bytes(32, 'big'))
+            
+                r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, signature_hash, k)
+            
+                # Ensure that 's' is even to prevent attacks - see https://bitcointalk.org/index.php?topic=285142.msg3295518#msg3295518
+                if s > (ecdsa.generator_secp256k1.order() / 2):
+                    s = ecdsa.generator_secp256k1.order() - s
+                   
+            else:
+                r,s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, signature_hash)
+           
             sig = der.sigencode_der(r, s) + bytes_from_int(signature_type)
             ba += tools.compile(binascii.hexlify(sig).decode("utf8"))
             if opcode == opcodes.OP_PUBKEYHASH:
