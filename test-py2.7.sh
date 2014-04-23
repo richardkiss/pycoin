@@ -8,4 +8,4 @@ python -m unittest pycoin.test.key_translation_test
 python -m unittest pycoin.test.parse_block_test
 python -m unittest pycoin.test.signature_test
 python -m unittest pycoin.test.validate_tx_test
-python -m unittest pycoin.test.wallet_test
+python -m unittest pycoin.test.bip32_test

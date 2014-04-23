@@ -29,7 +29,7 @@ THE SOFTWARE.
 import binascii
 
 from ... import ecdsa
-from ...encoding import public_pair_to_sec, is_sec_compressed, sec_to_public_pair,\
+from ...encoding import public_pair_to_sec, hash160, is_sec_compressed, sec_to_public_pair,\
     hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address,\
     public_pair_to_hash160_sec
 
@@ -71,93 +71,61 @@ def match_script_to_templates(script1):
                 break
     raise SolvingError("don't recognize output script")
 
-def bitcoin_address_for_script(script, is_test=False):
+def hash160_for_script(script):
     try:
         r = match_script_to_templates(script)
         if len(r) != 1 or len(r[0]) != 2:
             return None
         if r[0][0] == opcodes.OP_PUBKEYHASH:
-            return hash160_sec_to_bitcoin_address(r[0][1], is_test=is_test)
+            return r[0][1]
         if r[0][0] == opcodes.OP_PUBKEY:
-            sec = r[0][1]
-            return public_pair_to_bitcoin_address(
-                sec_to_public_pair(sec),
-                compressed=is_sec_compressed(sec),
-                is_test=is_test)
+            return hash160(r[0][1])
     except SolvingError:
         pass
     return None
 
-class SecretExponentSolver(object):
-    """This is an sample solver that, with a list of secret exponents, can be used
-    as a solver to be passed to the "sign" method of an UnsignedTx.
-    """
-    def __init__(self, secret_exponent_iterator):
-        self.secret_exponent_iterator = iter(secret_exponent_iterator)
-        self.secret_exponent_for_public_pair_lookup = {}
-        self.public_pair_compressed_for_hash160_lookup = {}
 
-    def add_secret_exponent(self, secret_exponent):
+def canonical_solver(tx_out_script, signature_hash, signature_type, hash160_lookup):
+    """
+    Figure out how to create a signature for the incoming transaction, and sign it.
+
+    tx_out_script: the tx_out script that needs to be "solved"
+    signature_hash: the bignum hash value of the new transaction reassigning the coins
+    signature_type: always SIGHASH_ALL (1)
+    """
+
+    if signature_hash == 0:
+        raise SolvingError("signature_hash can't be 0")
+
+    opcode_value_list = match_script_to_templates(tx_out_script)
+
+    ba = bytearray()
+
+    compressed = True
+    for opcode, v in opcode_value_list:
+        if opcode == opcodes.OP_PUBKEY:
+            v = hash160(v)
+        elif opcode != opcodes.OP_PUBKEYHASH:
+            raise SolvingError("can't determine how to sign this script")
+        result = hash160_lookup.get(v)
+        if result is None:
+            bitcoin_address = hash160_sec_to_bitcoin_address(v)
+            raise SolvingError("can't determine private key for %s" % bitcoin_address)
+        secret_exponent, public_pair, compressed = result
+        r,s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, signature_hash)
+        sig = der.sigencode_der(r, s) + bytes_from_int(signature_type)
+        ba += tools.compile(binascii.hexlify(sig).decode("utf8"))
+        if opcode == opcodes.OP_PUBKEYHASH:
+            ba += tools.compile(binascii.hexlify(public_pair_to_sec(public_pair, compressed=compressed)).decode("utf8"))
+
+    return bytes(ba)
+
+
+def build_hash160_lookup_db(secret_exponents):
+    d = {}
+    for secret_exponent in secret_exponents:
         public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, secret_exponent)
-        self.secret_exponent_for_public_pair_lookup[public_pair] = secret_exponent
         for compressed in (True, False):
             hash160 = public_pair_to_hash160_sec(public_pair, compressed=compressed)
-            self.public_pair_compressed_for_hash160_lookup[hash160] = (public_pair, compressed)
-
-    def add_secret_exponents(self, secret_exponents):
-        """Increase the space of known secret keys."""
-        for secret_exponent in secret_exponents:
-            self.add_secret_exponent(secret_exponent)
-
-    def next_secret_exponent(self):
-        self.add_secret_exponent(next(self.secret_exponent_iterator))
-
-    def secret_exponent_for_public_pair(self, public_pair, compressed):
-        while not public_pair in self.secret_exponent_for_public_pair_lookup:
-            try:
-                self.next_secret_exponent()
-            except StopIteration:
-                bitcoin_address = public_pair_to_bitcoin_address(public_pair, compressed=compressed)
-                raise SolvingError("can't determine private key for %s" % bitcoin_address)
-        return self.secret_exponent_for_public_pair_lookup[public_pair]
-
-    def public_pair_for_hash160(self, hash160):
-        while not hash160 in self.public_pair_compressed_for_hash160_lookup:
-            try:
-                self.next_secret_exponent()
-            except StopIteration:
-                bitcoin_address = hash160_sec_to_bitcoin_address(hash160)
-                raise SolvingError("can't determine private key for %s" % bitcoin_address)
-        return self.public_pair_compressed_for_hash160_lookup.get(hash160)
-
-    def __call__(self, tx_out_script, signature_hash, signature_type):
-        """Figure out how to create a signature for the incoming transaction, and sign it.
-
-        tx_out_script: the tx_out script that needs to be "solved"
-        signature_hash: the bignum hash value of the new transaction reassigning the coins
-        signature_type: always SIGHASH_ALL (1)
-        """
-
-        if signature_hash == 0:
-            raise SolvingError("signature_hash can't be 0")
-
-        opcode_value_list = match_script_to_templates(tx_out_script)
-
-        ba = bytearray()
-
-        compressed = True
-        for opcode, v in opcode_value_list:
-            if opcode == opcodes.OP_PUBKEY:
-                public_pair = sec_to_public_pair(v)
-            elif opcode == opcodes.OP_PUBKEYHASH:
-                public_pair, compressed = self.public_pair_for_hash160(v)
-            else:
-                raise SolvingError("can't determine how to sign this script")
-            secret_exponent = self.secret_exponent_for_public_pair(public_pair, compressed=compressed)
-            r,s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, signature_hash)
-            sig = der.sigencode_der(r, s) + bytes_from_int(signature_type)
-            ba += tools.compile(binascii.hexlify(sig).decode("utf8"))
-            if opcode == opcodes.OP_PUBKEYHASH:
-                ba += tools.compile(binascii.hexlify(public_pair_to_sec(public_pair, compressed=compressed)).decode("utf8"))
-
-        return bytes(ba)
+            d[hash160] = (secret_exponent, public_pair, compressed)
+    return d

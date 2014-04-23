@@ -8,8 +8,11 @@ from pycoin.block import Block
 from pycoin import ecdsa
 from pycoin.encoding import h2b, public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 
-from pycoin.tx import Tx, UnsignedTx
-from pycoin.tx.script.solvers import SecretExponentSolver
+from pycoin.tx import Tx, SIGHASH_ALL
+from pycoin.tx.TxIn import TxIn
+from pycoin.tx.TxOut import TxOut, standard_tx_out_script
+from pycoin.tx.script.solvers import build_hash160_lookup_db
+
 
 # block 80971
 block_80971_cs = h2b('00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC')
@@ -41,14 +44,50 @@ COINBASE_PUB_KEY_FROM_80971 = h2b("04cb6b6b4eadc96c7d08b21b29d0ada5f29f9378978ca
     "f5abd59889bac704925942dd77a2116d10e0274cad944c71d3d1a670570")
 COINBASE_BYTES_FROM_80971 = h2b("04ed66471b02c301")
 
+def standard_tx(coins_from, coins_to):
+    txs_in = []
+    unspents = []
+    for h, idx, tx_out in coins_from:
+        txs_in.append(TxIn(h, idx))
+        unspents.append(tx_out)
+
+    txs_out = []
+    for coin_value, bitcoin_address in coins_to:
+        txs_out.append(TxOut(coin_value, standard_tx_out_script(bitcoin_address)))
+
+    version, lock_time = 1, 0
+    tx = Tx(version, txs_in, txs_out, lock_time)
+    tx.set_unspents(unspents)
+    return tx
+
 class BuildTxTest(unittest.TestCase):
+
+    def test_signature_hash(self):
+        compressed = False
+        exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
+        bitcoin_address_2 = public_pair_to_bitcoin_address(
+                ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent_2),
+                compressed=compressed)
+        exponent = wif_to_secret_exponent("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+
+        public_key_sec = public_pair_to_sec(ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent), compressed=compressed)
+
+        the_coinbase_tx = Tx.coinbase_tx(public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
+        coins_from = [(the_coinbase_tx.hash(), 0, the_coinbase_tx.txs_out[0])]
+        coins_to = [(int(50 * 1e8), bitcoin_address_2)]
+        unsigned_coinbase_spend_tx = standard_tx(coins_from, coins_to)
+
+        tx_out_script_to_check = the_coinbase_tx.txs_out[0].script
+        idx = 0
+        actual_hash = unsigned_coinbase_spend_tx.signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
+        self.assertEqual(actual_hash, 29819170155392455064899446505816569230970401928540834591675173488544269166940)
 
     def test_standard_tx_out(self):
         coin_value = 10
         recipient_bc_address = '1BcJRKjiwYQ3f37FQSpTYM7AfnXurMjezu'
-        tx_out = UnsignedTx.standard_tx([], [(coin_value, recipient_bc_address)]).new_txs_out[0]
+        tx_out = standard_tx([], [(coin_value, recipient_bc_address)]).txs_out[0]
         s = str(tx_out)
-        self.assertEqual('TxOut<1E-7 "OP_DUP OP_HASH160 745e5b81fd30ca1e90311b012badabaa4411ae1a OP_EQUALVERIFY OP_CHECKSIG">', s)
+        self.assertEqual('TxOut<0.0001 mbtc "OP_DUP OP_HASH160 745e5b81fd30ca1e90311b012badabaa4411ae1a OP_EQUALVERIFY OP_CHECKSIG">', s)
 
     def test_coinbase_tx(self):
         coinbase_bytes = h2b("04ed66471b02c301")
@@ -69,10 +108,6 @@ class BuildTxTest(unittest.TestCase):
     def test_build_spends(self):
         # first, here is the tx database
         TX_DB = {}
-
-        def tx_out_for_hash_index_f(tx_hash, tx_out_idx):
-            tx = TX_DB.get(tx_hash)
-            return tx.txs_out[tx_out_idx]
 
         # create a coinbase Tx where we know the public & private key
 
@@ -97,12 +132,13 @@ class BuildTxTest(unittest.TestCase):
 
         coins_from = [(the_coinbase_tx.hash(), 0, the_coinbase_tx.txs_out[0])]
         coins_to = [(int(50 * 1e8), bitcoin_address_2)]
-        unsigned_coinbase_spend_tx = UnsignedTx.standard_tx(coins_from, coins_to)
-        solver = SecretExponentSolver([exponent])
+        unsigned_coinbase_spend_tx = standard_tx(coins_from, coins_to)
+        solver = build_hash160_lookup_db([exponent])
+
         coinbase_spend_tx = unsigned_coinbase_spend_tx.sign(solver)
 
         # now check that it validates
-        coinbase_spend_tx.validate(tx_out_for_hash_index_f)
+        self.assertEqual(coinbase_spend_tx.bad_signature_count(), 0)
 
         TX_DB[coinbase_spend_tx.hash()] = coinbase_spend_tx
 
@@ -117,12 +153,13 @@ class BuildTxTest(unittest.TestCase):
 
         self.assertEqual("13zzEHPCH2WUZJzANymow3ZrxcZ8iFBrY5", bitcoin_address_3)
 
-        unsigned_spend_tx = UnsignedTx.standard_tx([(coinbase_spend_tx.hash(), 0, coinbase_spend_tx.txs_out[0])], [(int(50 * 1e8), bitcoin_address_3)])
-        solver.add_secret_exponents([exponent_2])
+        coins_from = [(coinbase_spend_tx.hash(), 0, coinbase_spend_tx.txs_out[0])]
+        unsigned_spend_tx = standard_tx(coins_from, [(int(50 * 1e8), bitcoin_address_3)])
+        solver.update(build_hash160_lookup_db([exponent_2]))
         spend_tx = unsigned_spend_tx.sign(solver)
 
         # now check that it validates
-        spend_tx.validate(tx_out_for_hash_index_f)
+        self.assertEqual(spend_tx.bad_signature_count(), 0)
 
 if __name__ == '__main__':
     unittest.main()

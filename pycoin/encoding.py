@@ -30,12 +30,16 @@ THE SOFTWARE.
 import binascii
 import hashlib
 
+from .serialize import h2b
+
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 byte_to_int = ord if bytes == str else lambda x: x
 
 BASE58_ALPHABET = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 BASE58_BASE = len(BASE58_ALPHABET)
 BASE58_LOOKUP = dict((c, i) for i, c in enumerate(BASE58_ALPHABET))
+
+
 
 class EncodingError(Exception): pass
 
@@ -51,13 +55,6 @@ except Exception:
     #   version: "latest"
     # to the "libraries" section of your app.yaml
     from Crypto.Hash.RIPEMD import RIPEMD160Hash as ripemd160
-
-def h2b(h):
-    """
-    A version of binascii.unhexlify that accepts unicode. This is
-    no longer necessary as of Python 3.3. But it doesn't hurt.
-    """
-    return binascii.unhexlify(h.encode("ascii"))
 
 def to_long(base, lookup_f, s):
     """Convert an array to a (possibly bignum) integer, along with a prefix value of how many prefixed zeros there are.
@@ -162,15 +159,7 @@ def is_hashed_base58_valid(base58):
         return False
     return True
 
-def private_byte_prefix(is_test):
-    """WIF prefix. Returns b'\x80' for main network and b'\xef' for testnet"""
-    return b'\xef' if is_test else b'\x80'
-
-def public_byte_prefix(is_test):
-    """Address prefix. Returns b'\0' for main network and b'\x6f' for testnet"""
-    return b'\x6f' if is_test else b'\0'
-
-def wif_to_tuple_of_secret_exponent_compressed(wif, is_test=False):
+def wif_to_tuple_of_secret_exponent_compressed(wif, wif_prefix=b'\x80'):
     """Convert a WIF string to the corresponding secret exponent. Private key manipulation.
     Returns a tuple: the secret exponent, as a bignum integer, and a boolean indicating if the
     WIF corresponded to a compressed key or not.
@@ -178,8 +167,8 @@ def wif_to_tuple_of_secret_exponent_compressed(wif, is_test=False):
     Not that it matters, since we can use the secret exponent to generate both the compressed
     and uncompressed Bitcoin address."""
     decoded = a2b_hashed_base58(wif)
-    header80, private_key = decoded[:1], decoded[1:]
-    if header80 != private_byte_prefix(is_test):
+    actual_prefix, private_key = decoded[:1], decoded[1:]
+    if actual_prefix != wif_prefix:
         raise EncodingError("unexpected first byte of WIF %s" % wif)
     compressed = len(private_key) > 32
     return from_bytes_32(private_key[:32]), compressed
@@ -196,9 +185,9 @@ def is_valid_wif(wif):
         return False
     return True
 
-def secret_exponent_to_wif(secret_exp, compressed=True, is_test=False):
+def secret_exponent_to_wif(secret_exp, compressed=True, wif_prefix=b'\x80'):
     """Convert a secret exponent (correspdong to a private key) to WIF format."""
-    d = private_byte_prefix(is_test) + to_bytes_32(secret_exp)
+    d = wif_prefix + to_bytes_32(secret_exp)
     if compressed: d += b'\01'
     return b2a_hashed_base58(d)
 
@@ -238,41 +227,38 @@ def public_pair_to_hash160_sec(public_pair, compressed=True):
     the corresponding Bitcoin address."""
     return hash160(public_pair_to_sec(public_pair, compressed=compressed))
 
-def hash160_sec_to_bitcoin_address(hash160_sec, is_test=False):
+def hash160_sec_to_bitcoin_address(hash160_sec, address_prefix=b'\0'):
     """Convert the hash160 of a sec version of a public_pair to a Bitcoin address."""
-    return b2a_hashed_base58(public_byte_prefix(is_test) + hash160_sec)
+    return b2a_hashed_base58(address_prefix + hash160_sec)
 
-def bitcoin_address_to_hash160_sec_with_network(bitcoin_address):
+def bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address):
     """
     Convert a Bitcoin address back to the hash160_sec format and
-    make a note of the network (returning either "main" or "test")
+    also return the prefix.
     """
     blob = a2b_hashed_base58(bitcoin_address)
     if len(blob) != 21:
         raise EncodingError("incorrect binary length (%d) for Bitcoin address %s" % (len(blob), bitcoin_address))
     if blob[:1] not in [b'\x6f', b'\0']:
         raise EncodingError("incorrect first byte (%s) for Bitcoin address %s" % (blob[0], bitcoin_address))
-    network = 'main' if blob[:1] == b'\0' else 'test'
-    return blob[1:], network
+    return blob[1:], blob[:1]
 
-def bitcoin_address_to_hash160_sec(bitcoin_address, is_test=False):
+def bitcoin_address_to_hash160_sec(bitcoin_address, address_prefix=b'\0'):
     """Convert a Bitcoin address back to the hash160_sec format of the public key.
     Since we only know the hash of the public key, we can't get the full public key back."""
-    hash160, network = bitcoin_address_to_hash160_sec_with_network(bitcoin_address)
-    if (network == 'main') == (not is_test):
+    hash160, actual_prefix = bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address)
+    if (address_prefix == actual_prefix):
         return hash160
-    raise EncodingError("Bitcoin address %s for wrong network (%s)" % (bitcoin_address, network))
+    raise EncodingError("Bitcoin address %s for wrong network" % bitcoin_address)
 
-def public_pair_to_bitcoin_address(public_pair, compressed=True, is_test=False):
+def public_pair_to_bitcoin_address(public_pair, compressed=True, address_prefix=b'\0'):
     """Convert a public_pair (corresponding to a public key) to a Bitcoin address."""
-    return hash160_sec_to_bitcoin_address(public_pair_to_hash160_sec(public_pair, compressed=compressed), is_test=is_test)
+    return hash160_sec_to_bitcoin_address(public_pair_to_hash160_sec(public_pair, compressed=compressed), address_prefix=address_prefix)
 
-def is_valid_bitcoin_address(bitcoin_address, allow_main=True, allow_test=False):
+def is_valid_bitcoin_address(bitcoin_address, allowable_prefixes=b'\0'):
     """Return True if and only if bitcoin_address is valid."""
     try:
-        hash160, network = bitcoin_address_to_hash160_sec_with_network(bitcoin_address)
+        hash160, prefix = bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address)
     except EncodingError:
         return False
-    if network == 'main':
-        return allow_main
-    return allow_test
+    return prefix in allowable_prefixes

@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+import binascii
+import unittest
+import os
+import sys
+import tempfile
+
+# binary data with GPG-encrypted WIF KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn for secret exponent 1
+WIF_1_GPG = binascii.unhexlify(
+    "8c0d040303026c3030b7518a94eb60c950bc87ab26f0604a37f247f74f88deda10b180bb8072879b728b8f056808baea0c8e511e7cf2"
+    "eba77cce937d2f69a67a79e163bf70b57113d27cb6a1c2390a1e8069b447c34a7c9b5ba268c2beedd85b50")
+
+class ScriptsTest(unittest.TestCase):
+
+    def launch_tool(self, tool):
+        # set
+        python_path = sys.executable
+        script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts"))
+        cwd = os.getcwd()
+        os.chdir(script_dir)
+        tool = "%s %s" % (python_path, tool)
+        os.environ["PYCOIN_SERVICE_PROVIDERS"] = "BLOCKR_IO:BLOCKCHAIN_INFO:BITEASY:BLOCKEXPLORER"
+        r = os.system(tool)
+        os.chdir(cwd)
+        assert r == 0
+
+    def test_fetch_unspent(self):
+        self.launch_tool("fetch_unspent.py 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T")
+
+    def test_ku(self):
+        self.launch_tool("ku.py 1")
+        self.launch_tool("ku.py 2")
+
+    def test_tx_fetch(self):
+        self.launch_tool("tx.py 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098")
+
+    def test_tx_build(self):
+        self.launch_tool("tx.py 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098/0/410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac/5000000000 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T")
+
+    def test_tx_sign(self):
+        self.launch_tool("tx.py 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098/0/210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac/5000000000 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn")
+
+    def test_tx_from_hex(self):
+        # this hex represents a coinbase Tx to KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+        self.launch_tool("tx.py 01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff0100f2052a0100000023210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac00000000")
+
+    def test_tx_with_gpg(self):
+        #gpg_dir = tempfile.mkdtemp()
+        #import pdb; pdb.set_trace()
+        #os.environ["GNUPGHOME"] = gpg_dir
+        ##f = open(os.path.join(gpg_dir, "gpg.conf"), "w")
+        #f.write("use-agent\n")
+        #f.close()
+        gpg_wif = tempfile.NamedTemporaryFile(suffix=".gpg")
+        gpg_wif.write(WIF_1_GPG)
+        gpg_wif.flush()
+        self.launch_tool("tx.py 5564224b6c01dbc2bfad89bfd8038bc2f4ca6c55eb660511d7151d71e4b94b6d/0/210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac/5000000000 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T -f %s -g'--passphrase foo'" % gpg_wif.name)
+
+    def test_genwallet(self):
+        self.launch_tool("genwallet.py -g")
+
+    def test_cache_tx(self):
+        self.launch_tool("cache_tx.py 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098")
+
+def main():
+    unittest.main()
+
+if __name__ == "__main__":
+    main()

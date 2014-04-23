@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from .Spendable import Spendable
 from .Tx import Tx, ValidationFailureError
+from .Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
 from .TxOut import TxOut
-from .UnsignedTx import UnsignedTx
-from .script.solvers import SecretExponentSolver

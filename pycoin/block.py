@@ -38,7 +38,15 @@ from .serialize import b2h, b2h_rev
 
 from .tx import Tx
 
-class BadMerkleRootError(Exception): pass
+class BadMerkleRootError(Exception):
+    pass
+
+
+def difficulty_max_mask_for_bits(bits):
+    prefix = bits >> 24
+    mask = (bits & 0x7ffff) << (8 * (prefix - 3))
+    return mask
+
 
 class BlockHeader(object):
     """A BlockHeader is a block with the transaction data removed. With a
@@ -107,7 +115,7 @@ class Block(BlockHeader):
         version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, count = parse_struct("L##LLLI", f)
         txs = []
         for i in range(count):
-            txs.append(Tx.parse(f, is_first_in_block=(i==0)))
+            txs.append(Tx.parse(f))
         return self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs)
 
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs):

@@ -63,7 +63,7 @@ def parse_as_address(s):
         pass
 
 def main():
-    parser = argparse.ArgumentParser(description="Bitcoin utilities.")
+    parser = argparse.ArgumentParser(description="Bitcoin utilities. WARNING: obsolete. Use ku instead.")
 
     parser.add_argument('-a', "--address", help='show as Bitcoin address', action='store_true')
     parser.add_argument('-1', "--hash160", help='show as hash 160', action='store_true')

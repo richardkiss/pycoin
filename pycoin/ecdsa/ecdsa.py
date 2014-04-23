@@ -28,25 +28,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 Portions written in 2005 by Peter Pearson and placed in the public domain.
 """
 
+import hashlib
 import os
 
-from . import ellipticcurve, numbertheory
-
-def random_exponent_from_entropy(entropy_generator, order):
-    byte_count = 0
-    while 1:
-        if order == 0:
-            break
-        byte_count += 1
-        order >>= 8
-    random_bytes = entropy_generator(byte_count)
-    k = 0
-    idx = 0
-    while idx < len(random_bytes):
-        k <<= 8
-        k |= ord(random_bytes[idx:idx+1])
-        idx += 1
-    return k
+from . import ellipticcurve, intbytes, numbertheory
 
 def sign(generator, secret_exponent, val, k=None, entropy_generator=os.urandom):
     """Return a signature for the provided hash, using the provided
@@ -65,7 +50,17 @@ def sign(generator, secret_exponent, val, k=None, entropy_generator=os.urandom):
     G = generator
     n = G.order()
     if k is None:
-        k = random_exponent_from_entropy(entropy_generator, n)
+        # generate k using entropy plus the secret exponent plus the value
+        # as inputs.
+        # OpenSSL uses an algorithm similar to this.
+        # The idea is that even if the entropy generator is predictable,
+        # the secret exponent is not.
+        byte_count = (n.bit_length() + 7) // 8
+        h = hashlib.sha512(b'\0' * 4)
+        h.update(intbytes.to_bytes(secret_exponent, length=byte_count))
+        h.update(intbytes.to_bytes(val, length=byte_count))
+        h.update(entropy_generator(64))
+        k = intbytes.from_bytes(h.digest()[:byte_count])
     k = k % n
     p1 = k * G
     r = p1.x()
