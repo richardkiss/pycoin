@@ -56,7 +56,10 @@ class TxOut(object):
 
     def bitcoin_address(self, address_prefix=b'\0'):
         # attempt to return the destination address, or None on failure
-        return hash160_sec_to_bitcoin_address(self.hash160(), address_prefix=address_prefix)
+        hash160 = self.hash160()
+        if hash160:
+            return hash160_sec_to_bitcoin_address(hash160, address_prefix=address_prefix)
+        return None
 
     def hash160(self):
         # attempt to return the destination address, or None on failure
