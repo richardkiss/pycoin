@@ -1,7 +1,7 @@
 pycoin -- Python Cryptocoin Utilities
 =====================================
 
-This is an implementation of a bunch of utility routines that may be useful when dealing with bitcoin and some alt-coins. It has been tested with Python 2.7, 3.2 and 3.3.
+This is an implementation of a bunch of utility routines that may be useful when dealing with bitcoin and some alt-coins. It has been tested with Python 2.7, 3.3 and 3.4.
 
 
 High Level
@@ -30,7 +30,7 @@ Or
 
 pycoin.bip32.Wallet (formerly pycoin.wallet.Wallet) provides a BIP32 hierarchical wallet.
 
-Much of this API is exposed in the ```ku``` command-line utility.
+Much of this API is exposed in the ```ku``` command-line utility. See also COMMAND-LINE-TOOLS.md.
 
 See ```BIP32.txt``` for more information.
 
@@ -40,9 +40,9 @@ Transactions
 
 pycoin.tx.Tx is a class that wraps a bitcoin transaction. You can create, edit, sign, or validate a transaction using methods in this class.
 
-You can also use ```pycoin.tx.tx_utils``` which has ```create_tx``` and ```create_signed_tx```, which gives you a very easy way to create transactions.
+You can also use ```pycoin.tx.tx_utils``` which has ```create_tx``` and ```create_signed_tx```, which gives you a very easy way to create signed transactions.
 
-The command-line utility ```tx``` is a Swiss Army knife of transaction utilities.
+The command-line utility ```tx``` is a Swiss Army knife of transaction utilities. See also COMMAND-LINE-TOOLS.md.
 
 
 Services
@@ -56,7 +56,7 @@ When signing or verifying signatures on a transaction, the source transactions a
 
 and then ```tx``` will automatically fetch transactions from the web sites listed and cache the results in ```PYCOIN_CACHE_DIR``` when they are needed.
 
-The module pycoin.services includes two functions ```spendables_for_address```, ```get_tx_db``` that look at the environment variables set to determine which web sites to use to fetch the underlying information. (The sites are polled in the order they are listed in the environment variable.)
+The module pycoin.services includes two functions ```spendables_for_address```, ```get_tx_db``` that look at the environment variables set to determine which web sites to use to fetch the underlying information. The sites are polled in the order they are listed in the environment variable.
 
 
 Blocks
@@ -92,16 +92,6 @@ The ```pycoin.encoding``` module declares some conversion utilities useful when 
 * SEC (the gross internal format of public keys used by OpenSSL), both compressed and uncompressed
 
 
-
-
-Transaction Cache
------------------
-
-When a referenced transaction is required (as a source TxOut), the directories listed in ```PYCOIN_TX_DB_DIRS``` and ```PYCOIN_CACHE_DIR``` are searched. If the transaction cannot be located in any of these directories, it is fetched from blockexplorer.com and cached in ```PYCOIN_CACHE_DIR``` to speed subsequent accesses.
-
-```PYCOIN_CACHE_DIR``` defaults to "~/.pycoin_cache/txs/".
-
-
 Users
 -----
 
@@ -118,7 +108,7 @@ Donate
 ------
 
 Want to donate? Feel free. Send to 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T.
-Or hire me to do bitcoin consulting... him@richardkiss.com.
+I'm also available for bitcoin consulting... him@richardkiss.com.
 
 
 [BIP0032]: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
