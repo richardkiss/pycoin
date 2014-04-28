@@ -3,7 +3,7 @@
 import unittest
 
 from pycoin.key import bip32
-from pycoin.encoding import h2b
+from pycoin.serialize import h2b
 
 class Bip0032TestCase(unittest.TestCase):
 

@@ -5,6 +5,7 @@ import argparse
 from pycoin.services import spendables_for_address
 from pycoin.services.providers import message_about_spendables_for_address_env
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Create a hex dump of unspent TxOut items for Bitcoin addresses.")

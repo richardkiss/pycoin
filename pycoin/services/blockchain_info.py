@@ -3,9 +3,11 @@ import io
 import json
 
 try:
-    from urllib2 import urlopen
+    from urllib2 import urlopen, HTTPError
+    from urllib import urlencode
 except ImportError:
-    from urllib.request import urlopen
+    from urllib.request import urlopen, HTTPError
+    from urllib.parse import urlencode
 
 from pycoin.tx import Spendable
 
@@ -47,12 +49,11 @@ def send_tx(tx):
     s = io.BytesIO()
     tx.stream(s)
     tx_as_hex = binascii.hexlify(s.getvalue()).decode("utf8")
-    data = urllib.parse.urlencode(dict(tx=tx_as_hex)).encode("utf8")
+    data = urlencode(dict(tx=tx_as_hex)).encode("utf8")
     URL = "http://blockchain.info/pushtx"
     try:
         d = urlopen(URL, data=data).read()
         return d
-    except urllib.error.HTTPError as ex:
+    except HTTPError as ex:
         d = ex.read()
-        import pdb; pdb.set_trace()
         print(ex)

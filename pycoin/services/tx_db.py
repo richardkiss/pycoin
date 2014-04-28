@@ -13,7 +13,7 @@ class TxDb(object):
         self.lookup_methods = lookup_methods
         self.read_only_paths = read_only_paths
         if writable_cache_path:
-             self.read_only_paths.append(writable_cache_path)
+            self.read_only_paths.append(writable_cache_path)
         self.writable_cache_path = writable_cache_path
         if self.writable_cache_path and not os.path.exists(self.writable_cache_path):
             os.makedirs(self.writable_cache_path)

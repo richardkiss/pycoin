@@ -1,5 +1,4 @@
 import importlib
-import os
 import random
 
 from .env import main_cache_dir, service_providers_for_env, tx_read_cache_dirs, tx_writable_cache_dir

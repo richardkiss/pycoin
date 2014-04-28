@@ -3,6 +3,7 @@ import io
 
 TX_FEE_PER_THOUSAND_BYTES = 10000
 
+
 def recommended_fee_for_tx(tx):
     """
     Return the recommended transaction fee in satoshis.

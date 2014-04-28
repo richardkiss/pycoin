@@ -1,6 +1,6 @@
 
 import io
-import struct
+
 
 class Streamer(object):
     def __init__(self):

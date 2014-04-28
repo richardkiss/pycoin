@@ -39,12 +39,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import binascii
 import hashlib
 import hmac
 import itertools
 import struct
-import itertools
 
 from .. import ecdsa
 
@@ -57,9 +55,14 @@ from ..encoding import a2b_hashed_base58, b2a_hashed_base58
 from ..networks import address_prefix_for_netcode, netcode_and_type_for_data,\
     wif_prefix_for_netcode, prv32_prefix_for_netcode, pub32_prefix_for_netcode
 
-class PublicPrivateMismatchError(Exception): pass
 
-class InvalidKeyGeneratedError(Exception): pass
+class PublicPrivateMismatchError(Exception):
+    pass
+
+
+class InvalidKeyGeneratedError(Exception):
+    pass
+
 
 def wallet_iterator_for_wallet_key_path(wallet_key_path):
     subkey_paths = ""
@@ -84,7 +87,7 @@ class Wallet(object):
     @classmethod
     def from_wallet_key(class_, b58_str, allow_subkey_suffix=True):
         """Generate a Wallet from a base58 string in a standard way."""
-        ## TODO: support subkey suffixes
+        # TODO: support subkey suffixes
 
         data = a2b_hashed_base58(b58_str)
         netcode, key_type = netcode_and_type_for_data(data)
@@ -95,7 +98,8 @@ class Wallet(object):
         is_private = (key_type == 'prv32')
         parent_fingerprint, child_number = struct.unpack(">4sL", data[5:13])
 
-        d = dict(is_private=is_private, netcode=netcode, chain_code=data[13:45], depth=ord(data[4:5]), parent_fingerprint=parent_fingerprint, child_number=child_number)
+        d = dict(is_private=is_private, netcode=netcode, chain_code=data[13:45],
+                 depth=ord(data[4:5]), parent_fingerprint=parent_fingerprint, child_number=child_number)
 
         if is_private:
             if data[45:46] != b'\0':
@@ -106,7 +110,8 @@ class Wallet(object):
 
         return class_(**d)
 
-    def __init__(self, is_private, netcode, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0', child_number=0, secret_exponent_bytes=None, public_pair=None):
+    def __init__(self, is_private, netcode, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
+                 child_number=0, secret_exponent_bytes=None, public_pair=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
         if is_private:
             if public_pair:
@@ -121,8 +126,10 @@ class Wallet(object):
             self.secret_exponent_bytes = secret_exponent_bytes
             self.secret_exponent = from_bytes_32(self.secret_exponent_bytes)
             if self.secret_exponent > ecdsa.generator_secp256k1.order():
-                raise InvalidKeyGeneratedError("this key would produce an invalid secret exponent; please skip it")
-            self.public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, self.secret_exponent)
+                raise InvalidKeyGeneratedError(
+                    "this key would produce an invalid secret exponent; please skip it")
+            self.public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1,
+                                                                     self.secret_exponent)
         else:
             self.public_pair = public_pair
         # validate public_pair is on the curve
@@ -171,15 +178,19 @@ class Wallet(object):
         """Yield the WIF corresponding to this node."""
         if not self.is_private:
             raise PublicPrivateMismatchError("can't generate WIF for public key")
-        return secret_exponent_to_wif(self.secret_exponent, compressed=compressed, wif_prefix=wif_prefix_for_netcode(self.netcode))
+        return secret_exponent_to_wif(self.secret_exponent, compressed=compressed,
+                                      wif_prefix=wif_prefix_for_netcode(self.netcode))
 
     def bitcoin_address(self, compressed=True):
         """Yield the Bitcoin address corresponding to this node."""
-        return public_pair_to_bitcoin_address(self.public_pair, compressed=compressed, address_prefix=address_prefix_for_netcode(self.netcode))
+        return public_pair_to_bitcoin_address(self.public_pair, compressed=compressed,
+                                              address_prefix=address_prefix_for_netcode(self.netcode))
 
     def public_copy(self):
         """Yield the corresponding public node for this node."""
-        return self.__class__(is_private=False, netcode=self.netcode, chain_code=self.chain_code, depth=self.depth, parent_fingerprint=self.parent_fingerprint, child_number=self.child_number, public_pair=self.public_pair)
+        return self.__class__(is_private=False, netcode=self.netcode, chain_code=self.chain_code,
+                              depth=self.depth, parent_fingerprint=self.parent_fingerprint,
+                              child_number=self.child_number, public_pair=self.public_pair)
 
     def _subkey(self, i, is_hardened, as_private):
         """Yield a child node for this node.
@@ -191,9 +202,9 @@ class Wallet(object):
 
         Note that setting i<0 uses private key derivation, no matter the
         value for is_hardened."""
-        if i>0xffffffff:
+        if i > 0xffffffff:
             raise ValueError("i is too big: %d" % i)
-        if i<0:
+        if i < 0:
             is_hardened = True
             i_as_bytes = struct.pack(">l", i)
         else:
@@ -211,19 +222,22 @@ class Wallet(object):
             data = public_pair_to_sec(self.public_pair, compressed=True) + i_as_bytes
         I64 = hmac.HMAC(key=self.chain_code, msg=data, digestmod=hashlib.sha512).digest()
         I_left_as_exponent = from_bytes_32(I64[:32])
-        d = dict(is_private=as_private, netcode=self.netcode, chain_code=I64[32:], depth=self.depth+1, parent_fingerprint=self.fingerprint(), child_number=i)
+        d = dict(is_private=as_private, netcode=self.netcode, chain_code=I64[32:],
+                 depth=self.depth+1, parent_fingerprint=self.fingerprint(), child_number=i)
 
         if as_private:
             exponent = (I_left_as_exponent + self.secret_exponent) % ecdsa.generator_secp256k1.order()
             d["secret_exponent_bytes"] = to_bytes_32(exponent)
         else:
             x, y = self.public_pair
-            the_point = I_left_as_exponent * ecdsa.generator_secp256k1 + ecdsa.Point(ecdsa.generator_secp256k1.curve(), x, y, ecdsa.generator_secp256k1.order())
+            the_point = I_left_as_exponent * ecdsa.generator_secp256k1 +\
+                ecdsa.Point(ecdsa.generator_secp256k1.curve(), x, y, ecdsa.generator_secp256k1.order())
             d["public_pair"] = the_point.pair()
         return self.__class__(**d)
 
     def subkey(self, i=0, is_hardened=False, as_private=None):
-        if as_private is None: as_private = self.is_private
+        if as_private is None:
+            as_private = self.is_private
         is_hardened = not not is_hardened
         as_private = not not as_private
         lookup = (i, is_hardened, as_private)
@@ -254,7 +268,8 @@ class Wallet(object):
             invocations = path.split("/")
             for v in invocations:
                 is_hardened = v[-1] in ("'pH")
-                if is_hardened: v = v[:-1]
+                if is_hardened:
+                    v = v[:-1]
                 v = int(v)
                 key = key.subkey(i=v, is_hardened=is_hardened, as_private=key.is_private)
         if force_public and key.is_private:
@@ -286,8 +301,10 @@ class Wallet(object):
             # examples:
             #   0/1H/0-4 => ['0/1H/0', '0/1H/1', '0/1H/2', '0/1H/3', '0/1H/4']
             #   0/2,5,9-11 => ['0/2', '0/5', '0/9', '0/10', '0/11']
-            #   3H/2/5/15-20p => ['3H/2/5/15p', '3H/2/5/16p', '3H/2/5/17p', '3H/2/5/18p', '3H/2/5/19p', '3H/2/5/20p']
-            #   5-6/7-8p,15/1-2 => ['5/7H/1', '5/7H/2', '5/8H/1', '5/8H/2', '5/15/1', '5/15/2', '6/7H/1', '6/7H/2', '6/8H/1', '6/8H/2', '6/15/1', '6/15/2']
+            #   3H/2/5/15-20p => ['3H/2/5/15p', '3H/2/5/16p', '3H/2/5/17p', '3H/2/5/18p',
+            #          '3H/2/5/19p', '3H/2/5/20p']
+            #   5-6/7-8p,15/1-2 => ['5/7H/1', '5/7H/2', '5/8H/1', '5/8H/2',
+            #         '5/15/1', '5/15/2', '6/7H/1', '6/7H/2', '6/8H/1', '6/8H/2', '6/15/1', '6/15/2']
 
             components = subkey_paths.split("/")
             iterators = [range_iterator(c) for c in components]
@@ -311,4 +328,3 @@ class Wallet(object):
         if self.is_private:
             return "private_for <%s>" % r
         return "<%s>" % r
-

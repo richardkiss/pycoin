@@ -7,6 +7,7 @@ from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 from .TxIn import TxIn
 from .TxOut import TxOut
 
+
 class Spendable(TxOut):
     def __init__(self, coin_value, script, tx_hash, tx_out_index):
         self.coin_value = int(coin_value)

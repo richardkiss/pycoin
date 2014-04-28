@@ -27,10 +27,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import binascii
 import hashlib
-
-from .serialize import h2b
 
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 byte_to_int = ord if bytes == str else lambda x: x
@@ -40,7 +37,9 @@ BASE58_BASE = len(BASE58_ALPHABET)
 BASE58_LOOKUP = dict((c, i) for i, c in enumerate(BASE58_ALPHABET))
 
 
-class EncodingError(Exception): pass
+class EncodingError(Exception):
+    pass
+
 
 def ripemd160(data):
     return hashlib.new("ripemd160", data)
@@ -55,12 +54,18 @@ except Exception:
     # to the "libraries" section of your app.yaml
     from Crypto.Hash.RIPEMD import RIPEMD160Hash as ripemd160
 
-def to_long(base, lookup_f, s):
-    """Convert an array to a (possibly bignum) integer, along with a prefix value of how many prefixed zeros there are.
 
-    base: the source base
-    lookup_f: a function to convert an element of s to a value between 0 and base-1.
-    s: the value to convert
+def to_long(base, lookup_f, s):
+    """
+    Convert an array to a (possibly bignum) integer, along with a prefix value
+    of how many prefixed zeros there are.
+
+    base:
+        the source base
+    lookup_f:
+        a function to convert an element of s to a value between 0 and base-1.
+    s:
+        the value to convert
     """
     prefix = 0
     v = 0
@@ -73,6 +78,7 @@ def to_long(base, lookup_f, s):
         if v == 0:
             prefix += 1
     return v, prefix
+
 
 def from_long(v, prefix, base, charset):
     """The inverse of to_long. Convert an integer to an arbitrary base.
@@ -93,6 +99,7 @@ def from_long(v, prefix, base, charset):
     l.reverse()
     return bytes(l)
 
+
 def to_bytes_32(v):
     v = from_long(v, 0, 256, lambda x: x)
     if len(v) > 32:
@@ -102,6 +109,7 @@ def to_bytes_32(v):
 if hasattr(int, "to_bytes"):
     to_bytes_32 = lambda v: v.to_bytes(32, byteorder="big")
 
+
 def from_bytes_32(v):
     if len(v) != 32:
         raise ValueError("input to from_bytes_32 is wrong length")
@@ -110,13 +118,16 @@ def from_bytes_32(v):
 if hasattr(int, "from_bytes"):
     from_bytes_32 = lambda v: int.from_bytes(v, byteorder="big")
 
+
 def double_sha256(data):
     """A standard compound hash."""
     return hashlib.sha256(hashlib.sha256(data).digest()).digest()
 
+
 def hash160(data):
     """A standard compound hash."""
     return ripemd160(hashlib.sha256(data).digest()).digest()
+
 
 def b2a_base58(s):
     """Convert binary to base58 using BASE58_ALPHABET. Like Bitcoin addresses."""
@@ -124,10 +135,12 @@ def b2a_base58(s):
     s = from_long(v, prefix, BASE58_BASE, lambda v: BASE58_ALPHABET[v])
     return s.decode("utf8")
 
+
 def a2b_base58(s):
     """Convert base58 to binary using BASE58_ALPHABET."""
     v, prefix = to_long(BASE58_BASE, lambda c: BASE58_LOOKUP[c], s.encode("utf8"))
     return from_long(v, prefix, 256, lambda x: x)
+
 
 def b2a_hashed_base58(data):
     """
@@ -138,6 +151,7 @@ def b2a_hashed_base58(data):
     This function turns data (of type "bytes") into its hashed_base58 equivalent.
     """
     return b2a_base58(data + double_sha256(data)[:4])
+
 
 def a2b_hashed_base58(s):
     """
@@ -150,6 +164,7 @@ def a2b_hashed_base58(s):
         return data
     raise EncodingError("hashed base58 has bad checksum %s" % s)
 
+
 def is_hashed_base58_valid(base58):
     """Return True if and only if base58 is valid hashed_base58."""
     try:
@@ -157,6 +172,7 @@ def is_hashed_base58_valid(base58):
     except EncodingError:
         return False
     return True
+
 
 def wif_to_tuple_of_secret_exponent_compressed(wif, wif_prefix=b'\x80'):
     """Convert a WIF string to the corresponding secret exponent. Private key manipulation.
@@ -172,9 +188,11 @@ def wif_to_tuple_of_secret_exponent_compressed(wif, wif_prefix=b'\x80'):
     compressed = len(private_key) > 32
     return from_bytes_32(private_key[:32]), compressed
 
+
 def wif_to_secret_exponent(wif):
     """Convert a WIF string to the corresponding secret exponent."""
     return wif_to_tuple_of_secret_exponent_compressed(wif)[0]
+
 
 def is_valid_wif(wif):
     """Return a boolean indicating if the WIF is valid."""
@@ -184,11 +202,14 @@ def is_valid_wif(wif):
         return False
     return True
 
+
 def secret_exponent_to_wif(secret_exp, compressed=True, wif_prefix=b'\x80'):
     """Convert a secret exponent (correspdong to a private key) to WIF format."""
     d = wif_prefix + to_bytes_32(secret_exp)
-    if compressed: d += b'\01'
+    if compressed:
+        d += b'\01'
     return b2a_hashed_base58(d)
+
 
 def public_pair_to_sec(public_pair, compressed=True):
     """Convert a public pair (a pair of bignums corresponding to a public key) to the
@@ -198,6 +219,7 @@ def public_pair_to_sec(public_pair, compressed=True):
         return bytes_from_int((2 + (public_pair[1] & 1))) + x_str
     y_str = to_bytes_32(public_pair[1])
     return b'\4' + x_str + y_str
+
 
 def sec_to_public_pair(sec):
     """Convert a public key in sec binary format to a public pair."""
@@ -213,12 +235,14 @@ def sec_to_public_pair(sec):
         return public_pair
     if sec0 in (b'\2', b'\3'):
         from .ecdsa import public_pair_for_x, generator_secp256k1
-        return public_pair_for_x(generator_secp256k1, x, is_even=(sec0==b'\2'))
+        return public_pair_for_x(generator_secp256k1, x, is_even=(sec0 == b'\2'))
     raise EncodingError("bad sec encoding for public key")
+
 
 def is_sec_compressed(sec):
     """Return a boolean indicating if the sec represents a compressed public key."""
     return sec[:1] in (b'\2', b'\3')
+
 
 def public_pair_to_hash160_sec(public_pair, compressed=True):
     """Convert a public_pair (corresponding to a public key) to hash160_sec format.
@@ -226,9 +250,11 @@ def public_pair_to_hash160_sec(public_pair, compressed=True):
     the corresponding Bitcoin address."""
     return hash160(public_pair_to_sec(public_pair, compressed=compressed))
 
+
 def hash160_sec_to_bitcoin_address(hash160_sec, address_prefix=b'\0'):
     """Convert the hash160 of a sec version of a public_pair to a Bitcoin address."""
     return b2a_hashed_base58(address_prefix + hash160_sec)
+
 
 def bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address):
     """
@@ -237,10 +263,12 @@ def bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address):
     """
     blob = a2b_hashed_base58(bitcoin_address)
     if len(blob) != 21:
-        raise EncodingError("incorrect binary length (%d) for Bitcoin address %s" % (len(blob), bitcoin_address))
+        raise EncodingError("incorrect binary length (%d) for Bitcoin address %s" %
+                            (len(blob), bitcoin_address))
     if blob[:1] not in [b'\x6f', b'\0']:
         raise EncodingError("incorrect first byte (%s) for Bitcoin address %s" % (blob[0], bitcoin_address))
     return blob[1:], blob[:1]
+
 
 def bitcoin_address_to_hash160_sec(bitcoin_address, address_prefix=b'\0'):
     """Convert a Bitcoin address back to the hash160_sec format of the public key.
@@ -250,9 +278,12 @@ def bitcoin_address_to_hash160_sec(bitcoin_address, address_prefix=b'\0'):
         return hash160
     raise EncodingError("Bitcoin address %s for wrong network" % bitcoin_address)
 
+
 def public_pair_to_bitcoin_address(public_pair, compressed=True, address_prefix=b'\0'):
     """Convert a public_pair (corresponding to a public key) to a Bitcoin address."""
-    return hash160_sec_to_bitcoin_address(public_pair_to_hash160_sec(public_pair, compressed=compressed), address_prefix=address_prefix)
+    return hash160_sec_to_bitcoin_address(public_pair_to_hash160_sec(
+        public_pair, compressed=compressed), address_prefix=address_prefix)
+
 
 def is_valid_bitcoin_address(bitcoin_address, allowable_prefixes=b'\0'):
     """Return True if and only if bitcoin_address is valid."""

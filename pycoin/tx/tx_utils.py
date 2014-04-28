@@ -1,7 +1,6 @@
 
 from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
-from ..serialize import b2h_rev, h2b_rev
 
 from .Spendable import Spendable
 from .Tx import Tx
@@ -121,7 +120,7 @@ def distribute_from_split_pool(tx, fee):
 
     # calculate fees
     if fee == 'standard':
-        ## TODO: improve this
+        # TODO: improve this
         # 1: the tx is not fully built out, so it will actually be larger than implied at this point
         # 2: recommended_fee_for_tx gives estimates that are too high
         fee = tx_fee.recommended_fee_for_tx(tx)

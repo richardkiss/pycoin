@@ -26,7 +26,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import decimal
 import struct
 
 import io
@@ -37,6 +36,7 @@ from .serialize.bitcoin_streamer import parse_struct, stream_struct
 from .serialize import b2h, b2h_rev
 
 from .tx import Tx
+
 
 class BadMerkleRootError(Exception):
     pass
@@ -58,7 +58,8 @@ class BlockHeader(object):
         """Parse the BlockHeader from the file-like object in the standard way
         that blocks are sent in the network (well, except we ignore the
         transaction information)."""
-        version, previous_block_hash, merkle_root, timestamp, difficulty, nonce = struct.unpack("<L32s32sLLL", f.read(4+32+32+4*3))
+        (version, previous_block_hash, merkle_root,
+            timestamp, difficulty, nonce) = struct.unpack("<L32s32sLLL", f.read(4+32+32+4*3))
         return self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
 
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce):
@@ -81,7 +82,8 @@ class BlockHeader(object):
 
     def stream_header(self, f):
         """Stream the block header in the standard way to the file-like object f."""
-        stream_struct("L##LLL", f, self.version, self.previous_block_hash, self.merkle_root, self.timestamp, self.difficulty, self.nonce)
+        stream_struct("L##LLL", f, self.version, self.previous_block_hash,
+                      self.merkle_root, self.timestamp, self.difficulty, self.nonce)
 
     def stream(self, f):
         """Stream the block header in the standard way to the file-like object f.
@@ -104,6 +106,7 @@ class BlockHeader(object):
     def __repr__(self):
         return "BlockHeader [%s] (previous %s)" % (self.id(), self.previous_block_id())
 
+
 class Block(BlockHeader):
     """A Block is an element of the Bitcoin chain. Generating a block
     yields a reward!"""
@@ -112,7 +115,8 @@ class Block(BlockHeader):
     def parse(self, f):
         """Parse the Block from the file-like object in the standard way
         that blocks are sent in the network."""
-        version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, count = parse_struct("L##LLLI", f)
+        (version, previous_block_hash, merkle_root, timestamp,
+            difficulty, nonce, count) = parse_struct("L##LLLI", f)
         txs = []
         for i in range(count):
             txs.append(Tx.parse(f))
@@ -129,7 +133,8 @@ class Block(BlockHeader):
 
     def stream(self, f):
         """Stream the block in the standard way to the file-like object f."""
-        stream_struct("L##LLLI", f, self.version, self.previous_block_hash, self.merkle_root, self.timestamp, self.difficulty, self.nonce, len(self.txs))
+        stream_struct("L##LLLI", f, self.version, self.previous_block_hash,
+                      self.merkle_root, self.timestamp, self.difficulty, self.nonce, len(self.txs))
         for t in self.txs:
             t.stream(f)
 
@@ -138,10 +143,13 @@ class Block(BlockHeader):
         transactions does not match the Merkle hash included in the block."""
         calculated_hash = merkle([tx.hash() for tx in self.txs], double_sha256)
         if calculated_hash != self.merkle_root:
-            raise BadMerkleRootError("calculated %s but block contains %s" % (b2h(calculated_hash), b2h(self.merkle_root)))
+            raise BadMerkleRootError(
+                "calculated %s but block contains %s" % (b2h(calculated_hash), b2h(self.merkle_root)))
 
     def __str__(self):
-        return "Block [%s] (previous %s) [tx count: %d]" % (self.id(), self.previous_block_id(), len(self.txs))
+        return "Block [%s] (previous %s) [tx count: %d]" % (
+            self.id(), self.previous_block_id(), len(self.txs))
 
     def __repr__(self):
-        return "Block [%s] (previous %s) [tx count: %d] %s" % (self.id(), self.previous_block_id(), len(self.txs), self.txs)
+        return "Block [%s] (previous %s) [tx count: %d] %s" % (
+            self.id(), self.previous_block_id(), len(self.txs), self.txs)

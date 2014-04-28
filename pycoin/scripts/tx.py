@@ -141,8 +141,8 @@ def main():
     parser.add_argument('-t', "--transaction-version", type=int,
                         help='Transaction version, either 1 (default) or 3 (not yet supported).')
 
-    parser.add_argument('-l', "--lock-time", type=parse_locktime,
-                        help='Lock time; either a block index, or a date/time (example: "2014-01-01T15:00:00"')
+    parser.add_argument('-l', "--lock-time", type=parse_locktime, help='Lock time; either a block'
+                        'index, or a date/time (example: "2014-01-01T15:00:00"')
 
     parser.add_argument('-n', "--network", default="M",
                         help='Define network code (M=Bitcoin mainnet, T=Bitcoin testnet).')
@@ -215,7 +215,7 @@ def main():
 
     if args.private_key_file:
         wif_re = re.compile(r"[1-9a-km-zA-LMNP-Z]{51,111}")
-        #address_re = re.compile(r"[1-9a-kmnp-zA-KMNP-Z]{27-31}")
+        # address_re = re.compile(r"[1-9a-kmnp-zA-KMNP-Z]{27-31}")
         for f in args.private_key_file:
             if f.name.endswith(".gpg"):
                 gpg_args = ["gpg", "-d"]
@@ -323,7 +323,7 @@ def main():
         parser.error("can't parse %s" % arg)
 
     if args.fetch_spendables:
-        spendables_warning = message_about_spendables_for_address_env()
+        warning_spendables = message_about_spendables_for_address_env()
         for address in args.fetch_spendables:
             spendables.extend(spendables_for_address(address))
 
@@ -457,7 +457,8 @@ def main():
         except BadSpendableError as ex:
             print("\n**** ERROR: FEES INCORRECTLY STATED: %s" % ex.args[0], file=sys.stderr)
         except Exception as ex:
-            print("\n*** can't validate source transactions as untampered: %s" % ex.args[0], file=sys.stderr)
+            print("\n*** can't validate source transactions as untampered: %s" %
+                  ex.args[0], file=sys.stderr)
 
     # print warnings
     for m in [warning_tx_cache, warning_get_tx, warning_spendables]:

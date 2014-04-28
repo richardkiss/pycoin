@@ -4,10 +4,10 @@ import binascii
 import io
 import unittest
 
-from pycoin.encoding import h2b
+from pycoin.block import Block
+from pycoin.serialize import h2b
 from pycoin.tx import Tx, ValidationFailureError
 from pycoin.tx.script import tools
-from pycoin.block import Block
 
 
 class ValidatingTest(unittest.TestCase):

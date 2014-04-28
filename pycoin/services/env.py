@@ -19,5 +19,5 @@ def tx_read_cache_dirs():
 def tx_writable_cache_dir():
     p = main_cache_dir()
     if p:
-         p = os.path.join(main_cache_dir(), "txs")
+        p = os.path.join(main_cache_dir(), "txs")
     return p

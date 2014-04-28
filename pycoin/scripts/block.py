@@ -26,7 +26,8 @@ def dump_block(block, network):
 
 def main():
     parser = argparse.ArgumentParser(description="Dump a block in human-readable form.")
-    parser.add_argument("block_bin", help='The file containing the binary block.', nargs="+", type=argparse.FileType('rb'))
+    parser.add_argument("block_bin", nargs="+", type=argparse.FileType('rb'),
+                        help='The file containing the binary block.')
 
     args = parser.parse_args()
 

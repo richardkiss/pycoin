@@ -29,7 +29,7 @@ class Key(object):
         """
         if [hierarchical_wallet, secret_exponent, public_pair, hash160].count(None) != 3:
             raise ValueError("exactly one of hierarchical_wallet, secret_exponent, public_pair, hash160"
-                " must be passed.")
+                             " must be passed.")
         if prefer_uncompressed is None:
             prefer_uncompressed = not is_compressed
         self._prefer_uncompressed = prefer_uncompressed
@@ -213,7 +213,8 @@ class Key(object):
 
     def subkeys(self, path_to_subkeys):
         """
-        Return an iterator yielding Keys corresponding to the hierarchical wallet's subkey path (or just this key).
+        Return an iterator yielding Keys corresponding to the
+        hierarchical wallet's subkey path (or just this key).
         """
         if self._hierarchical_wallet:
             for subwallet in self._hierarchical_wallet.subkeys_for_path(path_to_subkeys):

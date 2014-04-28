@@ -33,7 +33,8 @@ from . import ScriptError
 
 from .opcodes import OPCODE_TO_INT
 from .tools import bytes_to_int, int_to_bytes
-from ...encoding import hash160, h2b, double_sha256, ripemd160
+from ...encoding import hash160, double_sha256, ripemd160
+from ...serialize import h2b
 
 bytes_from_ints = (lambda x: ''.join(chr(c) for c in x)) if bytes == str else bytes
 bytes_to_ints = (lambda x: (ord(c) for c in x)) if bytes == str else lambda x: x

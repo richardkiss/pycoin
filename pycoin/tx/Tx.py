@@ -28,8 +28,8 @@ THE SOFTWARE.
 
 import io
 
-from ..encoding import double_sha256, from_bytes_32, h2b
-from ..serialize import b2h, b2h_rev
+from ..encoding import double_sha256, from_bytes_32
+from ..serialize import b2h, b2h_rev, h2b, h2b_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .TxIn import TxIn
@@ -373,12 +373,13 @@ class Tx(object):
             txs_out = tx_lookup[tx_in.previous_hash].txs_out
             if tx_in.previous_index > len(txs_out):
                 raise BadSpendableError("tx_out index %d is too big for Tx %s" %
-                    (tx_in.previous_index, b2h_rev(tx_in.previous_hash)))
+                                        (tx_in.previous_index, b2h_rev(tx_in.previous_hash)))
             tx_out1 = txs_out[tx_in.previous_index]
             tx_out2 = self.unspents[idx]
             if tx_out1.coin_value != tx_out2.coin_value:
                 raise BadSpendableError(
-                    "unspents[%d] coin value mismatch (%d vs %d)" % (idx, tx_out1.coin_value, tx_out2.coin_value))
+                    "unspents[%d] coin value mismatch (%d vs %d)" % (
+                        idx, tx_out1.coin_value, tx_out2.coin_value))
             if tx_out1.script != tx_out2.script:
                 raise BadSpendableError("unspents[%d] script mismatch!" % idx)
 

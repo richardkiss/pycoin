@@ -1,4 +1,5 @@
 from .serialize import h2b
+from .encoding import EncodingError
 
 # (network_name, network_code, wif_prefix, address_prefix, bip32_priv_prefix, bip32_pub_prefix)
 
@@ -64,4 +65,3 @@ def netcode_and_type_for_data(data):
                 return ni[CODE_INDEX], name
 
     raise EncodingError("unknown prefix")
-

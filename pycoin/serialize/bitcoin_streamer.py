@@ -3,6 +3,7 @@ import struct
 
 from .streamer import Streamer
 
+
 def parse_bc_int(f):
     v = ord(f.read(1))
     if v == 253:
@@ -13,9 +14,11 @@ def parse_bc_int(f):
         v = struct.unpack("<Q", f.read(8))[0]
     return v
 
+
 def parse_bc_string(f):
     size = parse_bc_int(f)
     return f.read(size)
+
 
 def stream_bc_int(f, v):
     if v < 253:
@@ -27,18 +30,19 @@ def stream_bc_int(f, v):
     else:
         f.write(b'\xff' + struct.pack("<Q", v))
 
+
 def stream_bc_string(f, v):
     stream_bc_int(f, len(v))
     f.write(v)
 
 STREAMER_FUNCTIONS = {
-    "I" : (parse_bc_int, stream_bc_int),
-    "S" : (parse_bc_string, stream_bc_string),
-    "h" : (lambda f: struct.unpack("!H", f.read(2))[0], lambda f, v: f.write(struct.pack("!H", v))),
-    "L" : (lambda f: struct.unpack("<L", f.read(4))[0], lambda f, v: f.write(struct.pack("<L", v))),
-    "Q" : (lambda f: struct.unpack("<Q", f.read(8))[0], lambda f, v: f.write(struct.pack("<Q", v))),
-    "#" : (lambda f: f.read(32), lambda f, v: f.write(v[:32])),
-    "@" : (lambda f: f.read(16), lambda f, v: f.write(v[:16])),
+    "I": (parse_bc_int, stream_bc_int),
+    "S": (parse_bc_string, stream_bc_string),
+    "h": (lambda f: struct.unpack("!H", f.read(2))[0], lambda f, v: f.write(struct.pack("!H", v))),
+    "L": (lambda f: struct.unpack("<L", f.read(4))[0], lambda f, v: f.write(struct.pack("<L", v))),
+    "Q": (lambda f: struct.unpack("<Q", f.read(8))[0], lambda f, v: f.write(struct.pack("<Q", v))),
+    "#": (lambda f: f.read(32), lambda f, v: f.write(v[:32])),
+    "@": (lambda f: f.read(16), lambda f, v: f.write(v[:16])),
 }
 
 BITCOIN_STREAMER = Streamer()

@@ -4,8 +4,7 @@ import io
 import unittest
 
 from pycoin.block import Block
-from pycoin.encoding import h2b
-from pycoin.serialize import b2h_rev
+from pycoin.serialize import b2h_rev, h2b
 
 class BlockTest(unittest.TestCase):
     def test_block(self):
