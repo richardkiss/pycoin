@@ -1,13 +1,77 @@
-pycoin -- Python Bitcoin Utilities
-==================================
+pycoin -- Python Cryptocoin Utilities
+=====================================
 
-This is an implementation of a bunch of utility routines that may be useful when dealing with Bitcoin stuff. It has been tested with Python 2.7, 3.2 and 3.3.
+This is an implementation of a bunch of utility routines that may be useful when dealing with bitcoin and some alt-coins. It has been tested with Python 2.7, 3.2 and 3.3.
 
+
+High Level
+==========
+
+Keys & BIP32
+------------
+
+The class pycoin.key.Key contains a convenience Key class that will parse the base58 representation of a BIP 32 wallet [BIP0032] or a WIF or a bitcoin (or altcoin) address, and convert downwards.
+
+WARNING: be extremely careful giving out public wallet keys. If someone has access to a private wallet key P, of course they have access to all descendent wallet keys of P. But if they also have access to a public wallet key K where P is a subkey of P, you can actually work your way up the tree to determine the private key that corresponds to the public wallet key K (unless private derivation was used at some point between the two keys)! Be sure you understand this warning before giving out public wallet keys!
+
+pycoin.key.Key:
+
+```Key(hierarchical_wallet=None, secret_exponent=None,
+                 public_pair=None, hash160=None, prefer_uncompressed=None, is_compressed=True, netcode)```
+
+Specify one of "hierarchical_wallet, secret_exponent, public_pair or hash160" to create a ```Key```.
+
+Or
+
+```Key.from_text(b58_text)``` accepts an address (bitcoin or other), a WIF, or a BIP32 wallet string and yield a Key.
+
+```Key.from_sec(sec)``` creates a Key from the SEC bytestream encoding of a public pair.
+
+
+pycoin.bip32.Wallet (formerly pycoin.wallet.Wallet) provides a BIP32 hierarchical wallet.
+
+Much of this API is exposed in the ```ku``` command-line utility.
+
+See ```BIP32.txt``` for more information.
+
+
+Transactions
+------------
+
+pycoin.tx.Tx is a class that wraps a bitcoin transaction. You can create, edit, sign, or validate a transaction using methods in this class.
+
+You can also use ```pycoin.tx.tx_utils``` which has ```create_tx``` and ```create_signed_tx```, which gives you a very easy way to create transactions.
+
+The command-line utility ```tx``` is a Swiss Army knife of transaction utilities.
+
+
+Services
+--------
+
+When signing or verifying signatures on a transaction, the source transactions are generally needed. If you set two environment variables in your ```.profile``` like this:
+
+    PYCOIN_CACHE_DIR=~/.pycoin_cache
+    PYCOIN_SERVICE_PROVIDERS=BLOCKR_IO:BITEASY:BLOCKCHAIN_INFO:BLOCKEXPLORER
+    export PYCOIN_CACHE_DIR PYCOIN_SERVICE_PROVIDERS
+
+and then ```tx``` will automatically fetch transactions from the web sites listed and cache the results in ```PYCOIN_CACHE_DIR``` when they are needed.
+
+The module pycoin.services includes two functions ```spendables_for_address```, ```get_tx_db``` that look at the environment variables set to determine which web sites to use to fetch the underlying information. (The sites are polled in the order they are listed in the environment variable.)
+
+
+Blocks
+------
+
+The command-line utility ```block``` will dump a block in a human-readable format. For further information, look at ```pycoin.block```, which includes the object ```Block``` which will parse and stream the binary format of a block.
+
+
+Low Level
+=========
 
 ECDSA Signing and Verification
 ------------------------------
 
-Instead of hiding behind a bunch of opaque abstraction, the library deals with ECDSA keys directly. Important structures include:
+The module ```pycoin.ecdsa``` deals with ECDSA keys directly. Important structures include:
 
 - the ```secret_exponent``` (a large integer that represents a private key)
 - the ```public_pair``` (a pair of large integers x and y that represent a public key)
@@ -18,7 +82,7 @@ There are a handful of functions: you can do things like create a signature, ver
 Encoding
 --------
 
-The library declares some conversion utilities useful when dealing with Bitcoin. Important structures include:
+The ```pycoin.encoding``` module declares some conversion utilities useful when dealing with Bitcoin. Important structures include:
 
 * base58 (the encoding used for Bitcoin addresses)
 * hashed base58 (with a standard checksum)
@@ -27,45 +91,15 @@ The library declares some conversion utilities useful when dealing with Bitcoin.
 * WIF (Wallet import format)
 * SEC (the gross internal format of public keys used by OpenSSL), both compressed and uncompressed
 
-The command-line utility "bu" ("Bitcoin utility") exposes a lot of this API on the command-line.
 
 
-Wallets
--------
 
-The library implements a deterministic wallet that will securly generate Bitcoin addresses compliant with [BIP0032].
+Transaction Cache
+-----------------
 
-This includes creating and parsing standard wallet keys.
+When a referenced transaction is required (as a source TxOut), the directories listed in ```PYCOIN_TX_DB_DIRS``` and ```PYCOIN_CACHE_DIR``` are searched. If the transaction cannot be located in any of these directories, it is fetched from blockexplorer.com and cached in ```PYCOIN_CACHE_DIR``` to speed subsequent accesses.
 
-Using this method, you can create a wallet that generates as many public keys as you need while keeping the private keys offline. For example,
-
-xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8
-
-is the public wallet the corresponds to the the private wallet
-
-xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi
-
-First, you generate a Wallet object from either a master secret (so a pass phrase of some kind) or a wallet key, like one of the above.
-
-A Wallet object can generate a subkey using the "subkey" method, which is a child key that can be derived from the parent easily if you know the value for i (which usually ranges from 1 to as high as you want).
-
-A private Wallet object can yield a public Wallet object (which generates only the corresponding public keys), but not the other way around.
-
-A private Wallet object can generate a subkey whose addresses CANNOT be derived from the corresponding public Wallet object (to generate change addresses, for example). Set ```is_prime=True```.
-
-The command-line utility "genwallet" exposes a lot of this API on the command-line.
-
-IMPORTANT WARNING: be extremely careful giving out public wallet keys. If someone has access to a private wallet key P, of course they have access to all descendent wallet keys of P. But if they also have access to a public wallet key K where P is a subkey of P, you can actually work your way up the tree to determine the private key that corresponds to the public wallet key K (unless private derivation was used at some point between the two keys)! Be sure you understand this warning before giving out public wallet keys!
-
-
-Transaction Validation and Signing
-----------------------------------
-
-The UnsignedTx transaction class makes it easy to generate and sign new transactions that reassign the incoming coins to new public keys. Look at the test code in build_tx_test.py or the spend.py script for examples.
-
-You will need to create a "solver", and provide it with the private keys relevant to the transaction, then pass it into the "sign" method.
-
-The command-line utility "spend" provides sample code for generating transactions. Note that it doesn't post the transactions to the network, so you can mess around with relative impunity.
+```PYCOIN_CACHE_DIR``` defaults to "~/.pycoin_cache/txs/".
 
 
 Users
@@ -87,4 +121,4 @@ Want to donate? Feel free. Send to 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T.
 Or hire me to do bitcoin consulting... him@richardkiss.com.
 
 
-[BIP0032]: https://en.bitcoin.it/wiki/BIP_0032
+[BIP0032]: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki

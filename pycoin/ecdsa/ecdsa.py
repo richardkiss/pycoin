@@ -29,11 +29,49 @@ Portions written in 2005 by Peter Pearson and placed in the public domain.
 """
 
 import hashlib
-import os
+import hmac
 
 from . import ellipticcurve, intbytes, numbertheory
 
-def sign(generator, secret_exponent, val, k=None, entropy_generator=os.urandom):
+def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashlib.sha256):
+    """
+    Generate K value according to https://tools.ietf.org/html/rfc6979
+    """
+    n = generator_order
+    order_size = (n.bit_length() + 7) // 8
+    hash_size = hash_f().digest_size
+    v = b'\x01' * hash_size
+    k = b'\x00' * hash_size
+    priv = intbytes.to_bytes(secret_exponent, length=order_size)
+    shift = 8 * hash_size - n.bit_length()
+    if shift > 0:
+        val >>= shift
+    if val > n:
+        val -= n
+    h1 = intbytes.to_bytes(val, length=order_size)
+    k = hmac.new(k, v + b'\x00' + priv + h1, hash_f).digest()
+    v = hmac.new(k, v, hash_f).digest()
+    k = hmac.new(k, v + b'\x01' + priv + h1, hash_f).digest()
+    v = hmac.new(k, v, hash_f).digest()
+
+    while 1:
+        t = bytearray()
+
+        while len(t) < order_size:
+            v = hmac.new(k, v, hash_f).digest()
+            t.extend(v)
+
+        k1 = intbytes.from_bytes(bytes(t))
+
+        k1 >>= (len(t)*8 - n.bit_length())
+        if k1 >= 1 and k1 < n:
+            return k1
+
+        k = hmac.new(k, v + b'\x00', hash_f).digest()
+        v = hmac.new(k, v, hash_f).digest()
+
+
+def sign(generator, secret_exponent, val):
     """Return a signature for the provided hash, using the provided
     random nonce.  It is absolutely vital that random_k be an unpredictable
     number in the range [1, self.public_key.point.order()-1].  If
@@ -49,27 +87,13 @@ def sign(generator, secret_exponent, val, k=None, entropy_generator=os.urandom):
     """
     G = generator
     n = G.order()
-    if k is None:
-        # generate k using entropy plus the secret exponent plus the value
-        # as inputs.
-        # OpenSSL uses an algorithm similar to this.
-        # The idea is that even if the entropy generator is predictable,
-        # the secret exponent is not.
-        byte_count = (n.bit_length() + 7) // 8
-        h = hashlib.sha512(b'\0' * 4)
-        h.update(intbytes.to_bytes(secret_exponent, length=byte_count))
-        h.update(intbytes.to_bytes(val, length=byte_count))
-        h.update(entropy_generator(64))
-        k = intbytes.from_bytes(h.digest()[:byte_count])
-    k = k % n
+    k = deterministic_generate_k(n, secret_exponent, val)
     p1 = k * G
     r = p1.x()
     if r == 0: raise RuntimeError("amazingly unlucky random number r")
     s = ( numbertheory.inverse_mod( k, n ) * \
           ( val + ( secret_exponent * r ) % n ) ) % n
     if s == 0: raise RuntimeError("amazingly unlucky random number s")
-    if s > G.order() / 2:
-        s = G.order() - s
     return (r, s)
 
 def public_pair_for_secret_exponent(generator, secret_exponent):

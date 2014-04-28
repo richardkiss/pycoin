@@ -1,3 +1,66 @@
+Version 0.40
+------------
+
+This is a pretty major overhaul... sorry for broken API!
+
+* added MANIFEST.in
+* initial support for Litecoin and Dogecoin addresses
+
+New Scripts:
+* ku (keys & BIP32 manipulation), replaces bu/bitcoin_utils and genwallet
+* tx (transaction manipulation), replaces spend
+* fetch_unspent command-line tool
+* cache_tx to add a transaction to local cache
+* block (to dump contents of a block)
+
+Keys:
+* added Key class with alt coin support
+* renamed Wallet.py to bip32.py
+
+Tx:
+* massive overhaul of Tx class
+* remove UnsignedTx class, folding functionality into Tx
+* partial signing supported by Tx
+* added Spendable class
+* Tx objects can now optionally be augmented with data about source coins ("unspents")
+  * if this data is set, many new methods can be called related to signing or verifying
+  * easy integration with TxDB class to set unspents
+* deterministic signing of TxIn according to RFC6979
+* limit S values in preparation for version 3 transactions
+* tx_utils helper to make it dead simple to create new, signed transactions
+  * create_tx and create_signed_tx
+
+Services:
+* new support for blockr.io and biteasy.com
+* services now integrated with environment variables:
+   * PYCOIN_SERVICE_PROVIDERS
+   * PYCOIN_CACHE_DIR
+* a new TxDB class
+   * looks like a dictionary
+   * transparently uses configured services
+   * caches fetched transactions
+
+
+Version 0.26
+------------
+
+* fixed Block.repr
+* more testnet support
+
+Version 0.25
+------------
+
+* improve display in satoshi_to_btc
+* add TxOut.bitcoin_address
+* allow UnsignedTx to be streamed and parsed
+
+Version 0.24
+------------
+
+* add some support for testnet
+* add support for ripemd160 in Google App Engine
+* add a BIP32 wallet subkey cache
+
 Version 0.23
 ------------
 

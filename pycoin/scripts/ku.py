@@ -90,8 +90,9 @@ def create_output(item, key, subkey_path=None):
             output_dict[json_key.strip().lower()] = value
         output_order.append((json_key.lower(), human_readable_key))
 
+    network_name = network_name_for_netcode(key._netcode)
     add_output("input", item)
-    add_output("network", network_name_for_netcode(key._netcode))
+    add_output("network", network_name)
 
     hw = key.hierarchical_wallet()
     if hw:
@@ -142,7 +143,7 @@ def create_output(item, key, subkey_path=None):
         add_output("hash160_uncompressed", b2h(hash160_u), " uncompressed")
 
     if hash160_c:
-        add_output("Bitcoin_address", key.address(use_uncompressed=False))
+        add_output("Bitcoin_address", key.address(use_uncompressed=False), "%s address" % network_name)
     if hash160_u:
         add_output("Bitcoin_address_uncompressed", key.address(use_uncompressed=True), " uncompressed")
 

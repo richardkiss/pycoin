@@ -1,0 +1,5 @@
+include CHANGES
+include CREDITS
+include LICENSE
+include README.md
+include *.txt

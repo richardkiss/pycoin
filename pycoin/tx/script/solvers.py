@@ -101,6 +101,8 @@ def canonical_solver(tx_out_script, signature_hash, signature_type, hash160_look
 
     ba = bytearray()
 
+    order = ecdsa.generator_secp256k1.order()
+
     compressed = True
     for opcode, v in opcode_value_list:
         if opcode == opcodes.OP_PUBKEY:
@@ -113,6 +115,8 @@ def canonical_solver(tx_out_script, signature_hash, signature_type, hash160_look
             raise SolvingError("can't determine private key for %s" % bitcoin_address)
         secret_exponent, public_pair, compressed = result
         r,s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, signature_hash)
+        if s + s > order:
+            s = order - s
         sig = der.sigencode_der(r, s) + bytes_from_int(signature_type)
         ba += tools.compile(binascii.hexlify(sig).decode("utf8"))
         if opcode == opcodes.OP_PUBKEYHASH:

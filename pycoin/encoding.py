@@ -40,7 +40,6 @@ BASE58_BASE = len(BASE58_ALPHABET)
 BASE58_LOOKUP = dict((c, i) for i, c in enumerate(BASE58_ALPHABET))
 
 
-
 class EncodingError(Exception): pass
 
 def ripemd160(data):

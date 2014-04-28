@@ -8,8 +8,9 @@ import tempfile
 
 # binary data with GPG-encrypted WIF KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn for secret exponent 1
 WIF_1_GPG = binascii.unhexlify(
-    "8c0d040303026c3030b7518a94eb60c950bc87ab26f0604a37f247f74f88deda10b180bb8072879b728b8f056808baea0c8e511e7cf2"
-    "eba77cce937d2f69a67a79e163bf70b57113d27cb6a1c2390a1e8069b447c34a7c9b5ba268c2beedd85b50")
+    "8c0d040303026c3030b7518a94eb60c950bc87ab26f0604a37f247f74f88deda10b180bb807"
+    "2879b728b8f056808baea0c8e511e7cf2eba77cce937d2f69a67a79e163bf70b57113d27cb6"
+    "a1c2390a1e8069b447c34a7c9b5ba268c2beedd85b50")
 
 class ScriptsTest(unittest.TestCase):
 
@@ -24,6 +25,11 @@ class ScriptsTest(unittest.TestCase):
         r = os.system(tool)
         os.chdir(cwd)
         assert r == 0
+
+    def set_cache_dir(self):
+        temp_dir = tempfile.mkdtemp()
+        os.environ["PYCOIN_CACHE_DIR"] = temp_dir
+        return temp_dir
 
     def test_fetch_unspent(self):
         self.launch_tool("fetch_unspent.py 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T")
@@ -61,7 +67,10 @@ class ScriptsTest(unittest.TestCase):
         self.launch_tool("genwallet.py -g")
 
     def test_cache_tx(self):
-        self.launch_tool("cache_tx.py 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098")
+        the_dir = self.set_cache_dir()
+        tx_id = "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098"
+        self.launch_tool("cache_tx.py %s" % tx_id)
+        self.assertTrue(os.path.exists(os.path.join(the_dir, "txs", "%s_tx.bin" % tx_id)))
 
 def main():
     unittest.main()

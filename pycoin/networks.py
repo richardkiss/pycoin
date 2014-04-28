@@ -3,7 +3,7 @@ from .serialize import h2b
 # (network_name, network_code, wif_prefix, address_prefix, bip32_priv_prefix, bip32_pub_prefix)
 
 NETWORKS = (
-    ("M", b'\x80', b'\0', h2b("0488ADE4"), h2b("0488B21E"), "Bitcoin mainnet"),
+    ("M", b'\x80', b'\0', h2b("0488ADE4"), h2b("0488B21E"), "Bitcoin"),
     ("T", b'\xef', b'\x6f', h2b("04358394"), h2b("043587CF"), "Bitcoin testnet"),
     ("L", b'\xb0', b'0', None, None, "Litecoin"),
     ("D", b'\x9e', b'\x1e', h2b("02fda4e8"), h2b("02fda923"), "Dogecoin", ),

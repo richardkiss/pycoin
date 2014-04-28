@@ -198,7 +198,6 @@ def main():
     # defaults
 
     txs = []
-    unspents = []
     spendables = []
     payables = []
 
@@ -206,15 +205,13 @@ def main():
 
     TX_ID_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
-    if args.augment:
-        for m in [message_about_get_tx_env(), message_about_tx_cache_env()]:
-            if m:
-                print("warning: %s" % m, file=sys.stderr)
+    # there are a few warnings we might optionally print out, but only if
+    # they are relevant. We don't want to print them out multiple times, so we
+    # collect them here and print them at the end if they ever kick in.
 
-    if args.fetch_spendables:
-        m = message_about_spendables_for_address_env()
-        if m:
-            print("warning: %s" % m, file=sys.stderr)
+    warning_tx_cache = None
+    warning_get_tx = None
+    warning_spendables = None
 
     if args.private_key_file:
         wif_re = re.compile(r"[1-9a-km-zA-LMNP-Z]{51,111}")
@@ -249,13 +246,22 @@ def main():
                 #    # we have exactly 1 WIF. Let's look for an address
                 #   potential_addresses = address_re.findall(line)
 
+    # we create the tx_db lazily
+    tx_db = None
+
     for arg in args.argument:
-        tx_db = get_tx_db()
 
         # hex transaction id
         if TX_ID_RE.match(arg):
+            if tx_db is None:
+                warning_tx_cache = message_about_tx_cache_env()
+                warning_get_tx = message_about_get_tx_env()
+                tx_db = get_tx_db()
             tx = tx_db.get(h2b_rev(arg))
             if not tx:
+                for m in [warning_tx_cache, warning_get_tx, warning_spendables]:
+                    if m:
+                        print("warning: %s" % m, file=sys.stderr)
                 parser.error("can't find Tx with id %s" % arg)
             txs.append(tx)
             continue
@@ -287,6 +293,10 @@ def main():
                         f = io.BytesIO(codecs.getreader("hex_codec")(f).read())
                     tx = Tx.parse(f)
                     txs.append(tx)
+                    try:
+                        tx.parse_unspents(f)
+                    except Exception as ex:
+                        pass
                     continue
             except Exception:
                 pass
@@ -313,11 +323,16 @@ def main():
         parser.error("can't parse %s" % arg)
 
     if args.fetch_spendables:
+        spendables_warning = message_about_spendables_for_address_env()
         for address in args.fetch_spendables:
             spendables.extend(spendables_for_address(address))
 
     for tx in txs:
         if tx.missing_unspents() and args.augment:
+            if tx_db is None:
+                warning_tx_cache = message_about_tx_cache_env()
+                warning_get_tx = message_about_get_tx_env()
+                tx_db = get_tx_db()
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
     txs_in = []
@@ -325,12 +340,12 @@ def main():
     unspents = []
     # we use a clever trick here to keep each tx_in corresponding with its tx_out
     for tx in txs:
-        smaller = min(len(v) for v in (tx.txs_in, tx.txs_out))
+        smaller = min(len(tx.txs_in), len(tx.txs_out))
         txs_in.extend(tx.txs_in[:smaller])
         txs_out.extend(tx.txs_out[:smaller])
         unspents.extend(tx.unspents[:smaller])
     for tx in txs:
-        smaller = min(len(v) for v in (tx.txs_in, tx.txs_out))
+        smaller = min(len(tx.txs_in), len(tx.txs_out))
         txs_in.extend(tx.txs_in[smaller:])
         txs_out.extend(tx.txs_out[smaller:])
         unspents.extend(tx.unspents[smaller:])
@@ -344,11 +359,14 @@ def main():
     lock_time = args.lock_time
     version = args.transaction_version
 
+    # if no lock_time is explicitly set, inherit from the first tx or use default
     if lock_time is None:
         if txs:
             lock_time = txs[0].lock_time
         else:
             lock_time = DEFAULT_LOCK_TIME
+
+    # if no version is explicitly set, inherit from the first tx or use default
     if version is None:
         if txs:
             version = txs[0].version
@@ -390,14 +408,14 @@ def main():
     if unsigned_after > 0 and key_iters:
         print("warning: %d TxIn items still unsigned" % unsigned_after, file=sys.stderr)
 
-    include_unspents = (unsigned_after > 0)
-    tx_as_hex = tx.as_hex(include_unspents=include_unspents)
-
     if len(tx.txs_in) == 0:
         print("warning: transaction has no inputs", file=sys.stderr)
 
     if len(tx.txs_out) == 0:
         print("warning: transaction has no outputs", file=sys.stderr)
+
+    include_unspents = (unsigned_after > 0)
+    tx_as_hex = tx.as_hex(include_unspents=include_unspents)
 
     if args.output_file:
         f = args.output_file
@@ -415,19 +433,36 @@ def main():
         if not tx.missing_unspents():
             check_fees(tx)
         dump_tx(tx, args.network)
-        if unsigned_after > 0:
+        if include_unspents:
             print("including unspents in hex dump since transaction not fully signed")
         print(tx_as_hex)
 
     if args.bitcoind_url:
+        if tx_db is None:
+            warning_tx_cache = message_about_tx_cache_env()
+            warning_get_tx = message_about_get_tx_env()
+            tx_db = get_tx_db()
         validate_bitcoind(tx, tx_db, args.bitcoind_url)
 
-    try:
-        tx.validate_unspents(tx_db)
-    except BadSpendableError as ex:
-        print("\n**** ERROR: FEES INCORRECTLY STATED: %s" % ex.args[0], file=sys.stderr)
-    except Exception as ex:
-        print("\n*** can't validate source transactions as untampered: %s" % ex.args[0], file=sys.stderr)
+    if tx.missing_unspents():
+        print("\n** can't validate transaction as source transactions missing", file=sys.stderr)
+    else:
+        try:
+            if tx_db is None:
+                warning_tx_cache = message_about_tx_cache_env()
+                warning_get_tx = message_about_get_tx_env()
+                tx_db = get_tx_db()
+            tx.validate_unspents(tx_db)
+            print('all incoming transaction values validated')
+        except BadSpendableError as ex:
+            print("\n**** ERROR: FEES INCORRECTLY STATED: %s" % ex.args[0], file=sys.stderr)
+        except Exception as ex:
+            print("\n*** can't validate source transactions as untampered: %s" % ex.args[0], file=sys.stderr)
+
+    # print warnings
+    for m in [warning_tx_cache, warning_get_tx, warning_spendables]:
+        if m:
+            print("warning: %s" % m, file=sys.stderr)
 
 if __name__ == '__main__':
     main()

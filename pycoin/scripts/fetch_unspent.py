@@ -3,6 +3,7 @@
 import argparse
 
 from pycoin.services import spendables_for_address
+from pycoin.services.providers import message_about_spendables_for_address_env
 
 def main():
     parser = argparse.ArgumentParser(
@@ -10,6 +11,10 @@ def main():
     parser.add_argument("bitcoin_address", help='a bitcoin address', nargs="+")
 
     args = parser.parse_args()
+
+    m = message_about_spendables_for_address_env()
+    if m:
+        print("warning: %s" % m)
 
     for address in args.bitcoin_address:
         spendables = spendables_for_address(address, format="text")
