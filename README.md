@@ -101,6 +101,8 @@ ChangeTip http://changetip.com/
 
 CoinSafe http://coinsafe.com/
 
+GreenAddress https://greenaddress.it/
+
 Email me at him@richardkiss.com to be added to this list.
 
 
