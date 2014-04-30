@@ -43,6 +43,8 @@ Creating a key uses the default entropy sources of GPG and /dev/random.
 
 Create a BIP32 key from a passphrase:
 
+*THE PASSPHRASE IN THIS EXAMPLE IS WAY TOO EASY TO GUESS.*
+
       $ ku P:foo
 
       input           : P:foo
@@ -73,8 +75,6 @@ Create a BIP32 key from a passphrase:
        uncompressed   : e5bd3a7e6cb62b4c820e51200fb1c148d79e67da
       Bitcoin address : 19Vqc8uLTfUonmxUEZac7fz1M5c5ZZbAii
        uncompressed   : 1MwkRkogzBRMehBntgcq2aJhXCXStJTXHT
-
-*THE PASSPHRASE IN THIS EXAMPLE IS WAY TOO EASY TO GUESS.*
 
 Get info as JSON:
 
@@ -124,7 +124,7 @@ WIF:
 
 Address:
 
-    $ ku -a P:foo                                                                                                           
+    $ ku -a P:foo
     19Vqc8uLTfUonmxUEZac7fz1M5c5ZZbAii
 
 Generate a bunch of subkeys:
@@ -265,7 +265,7 @@ Examples:
 
 View the famous "pizza" transaction [PIZZA]:
 
-    $ $ tx 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a
+    $ tx 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a
     warning: consider setting environment variable PYCOIN_CACHE_DIR=~/.pycoin_cache to cache transactions fetched via web services
     warning: no service providers found for get_tx; consider setting environment variable PYCOIN_SERVICE_PROVIDERS=BLOCKR_IO:BLOCKCHAIN_INFO:BITEASY:BLOCKEXPLORER
     usage: tx [-h] [-t TRANSACTION_VERSION] [-l LOCK_TIME] [-n NETWORK] [-a]
@@ -379,7 +379,7 @@ We see a transaction that sends most of the 50 BTC to a new address. The signatu
     warning: 1 TxIn items still unsigned
     all incoming transaction values validated
 
-Yep, if the file passed to -f ends with ```.gpg```, ```gpg -d``` is automatically invoked, and you can type your GPG passphrase. So ```tx``` plus gpg is actually a pretty reasonably secure solution! And if you keep your WIF.gpg file on an airgapped machine, this solves the problem of cold storage!
+Yep, if the file passed to -f ends with ```.gpg```, then ```gpg -d``` is automatically invoked, and you can type your GPG passphrase. So ```tx``` plus ```gpg``` is actually a pretty reasonably secure solution! And if you keep your WIF.gpg file on an airgapped machine, this solves the problem of cold storage!
 
     $ shasum tx.bin signed_tx.bin
     3ba7db8417e0fe1aeb7b4a1cbf13880bf84f38bc  tx.bin
@@ -426,7 +426,7 @@ OK, let's try actually signing a transaction. Let's use the WIF for secret expon
     $ bu -a -u 1
     1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm
 
-Investigation on blockchain.info show a transaction with id d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a.
+Investigation on blockchain.info show a transaction payable to this bitcoin address with id d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a.
 
     $ tx -u d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a
     d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a/0/76a9149b92770a85b1252448ec69900e77f1371d6a620188ac/70594320

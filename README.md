@@ -97,9 +97,9 @@ Users
 
 Here's a partial list of users of pycoin:
 
-ChangeTip http://changetip.com/
+ChangeTip https://changetip.com/
 
-CoinSafe http://coinsafe.com/
+CoinSafe https://coinsafe.com/
 
 GreenAddress https://greenaddress.it/
 
