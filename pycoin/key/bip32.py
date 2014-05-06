@@ -77,7 +77,7 @@ class Wallet(object):
     https://en.bitcoin.it/wiki/BIP_0032
     """
     @classmethod
-    def from_master_secret(class_, master_secret, netcode='M'):
+    def from_master_secret(class_, master_secret, netcode='BTC'):
         """Generate a Wallet from a master password."""
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
         return class_(

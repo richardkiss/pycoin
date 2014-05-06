@@ -13,7 +13,7 @@ from pycoin.ecdsa import is_public_pair_valid, generator_secp256k1, public_pair_
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
 from pycoin.key.bip32 import Wallet
-from pycoin.networks import network_name_for_netcode
+from pycoin.networks import network_name_for_netcode, NETWORK_NAMES
 
 
 SEC_RE = re.compile(r"^(0[23][0-9a-fA-F]{64})|(04[0-9a-fA-F]{128})$")
@@ -93,6 +93,7 @@ def create_output(item, key, subkey_path=None):
     network_name = network_name_for_netcode(key._netcode)
     add_output("input", item)
     add_output("network", network_name)
+    add_output("netcode", key._netcode)
 
     hw = key.hierarchical_wallet()
     if hw:
@@ -143,9 +144,12 @@ def create_output(item, key, subkey_path=None):
         add_output("hash160_uncompressed", b2h(hash160_u), " uncompressed")
 
     if hash160_c:
-        add_output("Bitcoin_address", key.address(use_uncompressed=False), "%s address" % network_name)
+        add_output("%s_address" % key._netcode,
+                key.address(use_uncompressed=False), "%s address" % network_name)
+
     if hash160_u:
-        add_output("Bitcoin_address_uncompressed", key.address(use_uncompressed=True), " uncompressed")
+        add_output("%s_address_uncompressed" % key._netcode,
+                key.address(use_uncompressed=True), "%s uncompressed" % network_name)
 
     return output_dict, output_order
 
@@ -168,7 +172,10 @@ def main():
     networks = "MTLD"
     parser = argparse.ArgumentParser(
         description='Crypto coin utility ku ("key utility") to show'
-        ' information about Bitcoin or other cryptocoin data structures.')
+        ' information about Bitcoin or other cryptocoin data structures.',
+        epilog='Known networks codes:\n  ' \
+                + ', '.join(['%s (%s)'%(i, network_name_for_netcode(i)) for i in NETWORK_NAMES])
+    )
     parser.add_argument('-w', "--wallet", help='show just Bitcoin wallet key', action='store_true')
     parser.add_argument('-W', "--wif", help='show just Bitcoin WIF', action='store_true')
     parser.add_argument('-a', "--address", help='show just Bitcoin address', action='store_true')
@@ -182,7 +189,10 @@ def main():
     parser.add_argument('-j', "--json", help='output as JSON', action='store_true')
 
     parser.add_argument('-s', "--subkey", help='subkey path (example: 0H/2/15-20)')
-    parser.add_argument('-n', "--network", help='specify network (one of %s)' % networks, default='M')
+    parser.add_argument('-n', "--network", help='specify network (default: BTC = Bitcoin)',
+                                default='BTC', choices=NETWORK_NAMES)
+    parser.add_argument("--override-network", help='override detected network type',
+                                default=None, choices=NETWORK_NAMES)
 
     parser.add_argument(
         'item', nargs="+", help='a BIP0032 wallet key string;'
@@ -197,6 +207,10 @@ def main():
         ' hash160 (as 40 hex characters)')
 
     args = parser.parse_args()
+
+    if args.override_network:
+        # force network arg to match override, but also will override decoded data below.
+        args.network = args.override_network
 
     PREFIX_TRANSFORMS = (
         ("P:", lambda s:
@@ -240,6 +254,13 @@ def main():
         if key is None:
             print("can't parse %s" % item, file=sys.stderr)
             continue
+
+        if args.override_network:
+            # Override the network value, so we can take the same xpubkey and view what
+            # the values would be on each other network type.
+            # XXX public interface for this is needed...
+            key._netcode = args.override_network
+            key._hierarchical_wallet.netcode = args.override_network
 
         for key in key.subkeys(args.subkey or ""):
             if args.public:

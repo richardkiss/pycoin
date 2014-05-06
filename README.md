@@ -119,6 +119,8 @@ CoinSafe https://coinsafe.com/
 
 GreenAddress https://greenaddress.it/
 
+Coinkite https://coinkite.com/
+
 Email me at him@richardkiss.com to be added to this list.
 
 
