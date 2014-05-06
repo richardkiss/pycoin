@@ -106,7 +106,7 @@ class Bip0032TestCase(unittest.TestCase):
 
     def test_testnet(self):
         # WARNING: these values have not been verified independently. TODO: do so
-        master = bip32.Wallet.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"), netcode='T')
+        master = bip32.Wallet.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"), netcode='XTN')
         self.assertEqual(master.wallet_key(as_private=True), "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5khqjWaWSFhN3YcCUUdiKH6isR4Pwy3U5y5egddBr16m")
         self.assertEqual(master.bitcoin_address(), "mkHGce7dctSxHgaWSSbmmrRWsZfzz7MxMk")
         self.assertEqual(master.wif(), "cVPXTF2TnozE1PenpP3x9huctiATZmp27T9Ue1d8nqLSExoPwfN5")

@@ -1,67 +1,72 @@
 from .serialize import h2b
 from .encoding import EncodingError
+from collections import namedtuple
 
-# (network_name, network_code, wif_prefix, address_prefix, bip32_priv_prefix, bip32_pub_prefix)
+NetworkValues = namedtuple('NetworkValues', 
+    ('code', 'wif_prefix', 'address_prefix',
+        'bip32_priv_prefix', 'bip32_pub_prefix', 'network_name'))
 
 NETWORKS = (
-    ("M", b'\x80', b'\0', h2b("0488ADE4"), h2b("0488B21E"), "Bitcoin"),
-    ("T", b'\xef', b'\x6f', h2b("04358394"), h2b("043587CF"), "Bitcoin testnet"),
-    ("L", b'\xb0', b'0', None, None, "Litecoin"),
-    ("D", b'\x9e', b'\x1e', h2b("02fda4e8"), h2b("02fda923"), "Dogecoin", ),
+    # Bitcoin
+    NetworkValues("BTC", b'\x80', b'\0', h2b("0488ADE4"), h2b("0488B21E"), "Bitcoin"),
+
+    # Bitcoin Textnet3
+    NetworkValues("XTN", b'\xef', b'\x6f', h2b("04358394"), h2b("043587CF"), "Bitcoin testnet"),
+
+    # Litecoin
+    NetworkValues("LTC", b'\xb0', b'\x30', None, None, "Litecoin"),
+
+    # Dogecoin
+    NetworkValues("DOGE", b'\x9e', b'\x1e', h2b("02fda4e8"), h2b("02fda923"), "Dogecoin"),
+
+    # BlackCoin: unsure about bip32 prefixes; assuming will use Bitcoin's
+    NetworkValues("BLK", b'\x99', b'\x19', h2b("0488ADE4"), h2b("0488B21E"), "Blackcoin"),
 )
 
-CODE_INDEX = 0
-WIF_INDEX = 1
-ADDRESS_INDEX = 2
-PRV_32_INDEX = 3
-PUB_32_INDEX = 4
-NAME_INDEX = -1
+# Map from short code to details about that network.
+NETWORK_NAME_LOOKUP = dict((i.code, i) for i in NETWORKS)
 
-NETWORK_INDEX_LOOKUP = dict((n[CODE_INDEX], k) for k, n in enumerate(NETWORKS))
+# All network names, return in same order as list above: for UI purposes.
+NETWORK_NAMES = [i.code for i in NETWORKS]
 
-
+#
+# Lookup a specific value needed for a specific network
+#
 def network_name_for_netcode(netcode):
-    idx = NETWORK_INDEX_LOOKUP.get(netcode)
-    return NETWORKS[idx][NAME_INDEX]
-
+    return NETWORK_NAME_LOOKUP[netcode].network_name
 
 def wif_prefix_for_netcode(netcode):
-    idx = NETWORK_INDEX_LOOKUP.get(netcode)
-    return NETWORKS[idx][WIF_INDEX]
-
+    return NETWORK_NAME_LOOKUP[netcode].wif_prefix
 
 def address_prefix_for_netcode(netcode):
-    idx = NETWORK_INDEX_LOOKUP.get(netcode)
-    return NETWORKS[idx][ADDRESS_INDEX]
-
+    return NETWORK_NAME_LOOKUP[netcode].address_prefix
 
 def prv32_prefix_for_netcode(netcode):
-    idx = NETWORK_INDEX_LOOKUP.get(netcode)
-    return NETWORKS[idx][PRV_32_INDEX]
-
+    return NETWORK_NAME_LOOKUP[netcode].bip32_priv_prefix
 
 def pub32_prefix_for_netcode(netcode):
-    idx = NETWORK_INDEX_LOOKUP.get(netcode)
-    return NETWORKS[idx][PUB_32_INDEX]
+    return NETWORK_NAME_LOOKUP[netcode].bip32_pub_prefix
 
 
 def netcode_and_type_for_data(data):
     """
-    Return (N, T) where N is the network code ("M" or "T") and
-    T is the key type ("wif", "address", "prv32", "pub32"), bin_data is the decoded binary
-    data for the given text. May also raise EncodingError.
+    Given some already-decoded raw data from a base58 string, 
+    return (N, T) where N is the network code ("BTC" or "LTC") and
+    T is the data type ("wif", "address", "prv32", "pub32").
+    May also raise EncodingError.
     """
+    # TODO: check the data length is within correct range for data type
     INDEX_LIST = [
-        (WIF_INDEX, "wif"),
-        (ADDRESS_INDEX, "address"),
-        (PUB_32_INDEX, "pub32"),
-        (PRV_32_INDEX, "prv32"),
+        ('wif_prefix', "wif"),
+        ('address_prefix', "address"),
+        ('bip32_pub_prefix', "pub32"),
+        ('bip32_priv_prefix', "prv32"),
     ]
     for ni in NETWORKS:
-        for idx, name in INDEX_LIST:
-            if ni[idx] is None:
+        for attr, name in INDEX_LIST:
+            if getattr(ni, attr, None) is None:
                 continue
-            if data.startswith(ni[idx]):
-                return ni[CODE_INDEX], name
+            if data.startswith(getattr(ni, attr)):
+                return ni.code, name
 
     raise EncodingError("unknown prefix")
