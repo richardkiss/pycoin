@@ -12,7 +12,7 @@ from .bip32 import Wallet
 
 class Key(object):
     def __init__(self, hierarchical_wallet=None, secret_exponent=None,
-                 public_pair=None, hash160=None, prefer_uncompressed=None, is_compressed=True, netcode='M'):
+                 public_pair=None, hash160=None, prefer_uncompressed=None, is_compressed=True, netcode='BTC'):
         """
         hierarchical_wallet:
             a bip32 wallet

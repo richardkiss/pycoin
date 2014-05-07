@@ -40,7 +40,7 @@ def main():
     if args.inputfile == sys.stdin:
         args.inputfile = sys.stdin.buffer
 
-    network = 'T' if args.t else 'M'
+    network = 'XTN' if args.t else 'BTC'
 
     entropy = bytearray()
     if args.gpg:

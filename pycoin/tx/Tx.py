@@ -27,6 +27,7 @@ THE SOFTWARE.
 """
 
 import io
+from time import time as unix_time
 
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
@@ -56,7 +57,7 @@ class BadSpendableError(Exception):
 
 class Tx(object):
     @classmethod
-    def coinbase_tx(class_, public_key_sec, coin_value, coinbase_bytes=b'', version=1, lock_time=0):
+    def coinbase_tx(cls, public_key_sec, coin_value, coinbase_bytes=b'', version=1, lock_time=0):
         """
         Create the special "first in block" transaction that includes the mining fees.
         """
@@ -65,12 +66,21 @@ class Tx(object):
         script_text = COINBASE_SCRIPT_OUT % b2h(public_key_sec)
         script_bin = tools.compile(script_text)
         tx_out = TxOut(coin_value, script_bin)
-        return class_(version, [tx_in], [tx_out], lock_time)
+        return cls(version, [tx_in], [tx_out], lock_time)
 
     @classmethod
-    def parse(class_, f):
+    def parse_header(cls, f):
+        # returns: (version, count), dict(of extra args for constructor)
+        return parse_struct("LI", f), {}
+
+    def stream_header(self, f):
+        # writes: version, count of inputs
+        stream_struct("LI", f, self.version, len(self.txs_in))
+
+    @classmethod
+    def parse(cls, f, netcode='BTC'):
         """Parse a Bitcoin transaction Tx from the file-like object f."""
-        version, count = parse_struct("LI", f)
+        (version, count), extras = cls.parse_header(f)
         txs_in = []
         for i in range(count):
             txs_in.append(TxIn.parse(f))
@@ -79,23 +89,24 @@ class Tx(object):
         for i in range(count):
             txs_out.append(TxOut.parse(f))
         lock_time, = parse_struct("L", f)
-        return class_(version, txs_in, txs_out, lock_time)
+        return cls(version, txs_in, txs_out, lock_time, netcode=netcode, **extras)
 
     @classmethod
-    def tx_from_hex(class_, hex_string):
+    def tx_from_hex(cls, hex_string):
         """Return the Tx for the given hex string."""
-        return class_.parse(io.BytesIO(h2b(hex_string)))
+        return cls.parse(io.BytesIO(h2b(hex_string)))
 
-    def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[]):
+    def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[], netcode='BTC'):
         self.version = version
         self.txs_in = txs_in
         self.txs_out = txs_out
         self.lock_time = lock_time
         self.unspents = unspents
+        self.netcode = netcode
 
     def stream(self, f):
         """Stream a Bitcoin transaction Tx to the file-like object f."""
-        stream_struct("LI", f, self.version, len(self.txs_in))
+        self.stream_header(f)
         for t in self.txs_in:
             t.stream(f)
         stream_struct("I", f, len(self.txs_out))
@@ -384,3 +395,30 @@ class Tx(object):
                 raise BadSpendableError("unspents[%d] script mismatch!" % idx)
 
         return self.fee()
+
+
+class ProofOfStakeTx(Tx):
+    """A transaction for Proof-of-Stake (at least for altcoins derived from PPCoin??): 
+       - has an extra signature over the block (see block.py), appended after
+         the array of transactions.
+       - has nTime value inserted after version number of txn, before vin array
+     """
+    def __init__(self, *args, **kws):
+        # Capture the transaction time ("nTime") value, so we can
+        # restore on serialization. For newly constructed transactions,
+        # it's the usual time_t value.
+        self.mined_time = kws.pop('mined_time', int(unix_time()))
+
+        super(ProofOfStakeTx, self).__init__(*args, **kws)
+
+    @classmethod
+    def parse_header(cls, f):
+        # returns: (version, count), extra_args_for_init
+        version, mined_time, count = parse_struct("LLI", f)
+        return (version, count), dict(mined_time = mined_time)
+
+    def stream_header(self, f):
+        # insert extra "nTime" value, labeled as "mined time" on blackcha.in
+        stream_struct("LLI", f, self.version, self.mined_time, len(self.txs_in))
+
+

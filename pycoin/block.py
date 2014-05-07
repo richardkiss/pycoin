@@ -26,16 +26,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import struct
-
-import io
+import struct, io
 
 from .encoding import double_sha256
 from .merkle import merkle
 from .serialize.bitcoin_streamer import parse_struct, stream_struct
 from .serialize import b2h, b2h_rev
 
-from .tx import Tx
+from .tx import Tx, ProofOfStakeTx
 
 
 class BadMerkleRootError(Exception):
@@ -53,22 +51,27 @@ class BlockHeader(object):
     complete Merkle tree database, it can be reconstructed from the
     merkle_root."""
 
+    # Which class to use for the transactions inside this block
+    txn_class = Tx
+
     @classmethod
-    def parse(self, f):
+    def parse(cls, f):
         """Parse the BlockHeader from the file-like object in the standard way
         that blocks are sent in the network (well, except we ignore the
         transaction information)."""
         (version, previous_block_hash, merkle_root,
             timestamp, difficulty, nonce) = struct.unpack("<L32s32sLLL", f.read(4+32+32+4*3))
-        return self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
+        return cls(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
 
-    def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce):
+    def __init__(self, version, previous_block_hash, merkle_root, timestamp,
+                        difficulty, nonce, txs=None):
         self.version = version
         self.previous_block_hash = previous_block_hash
         self.merkle_root = merkle_root
         self.timestamp = timestamp
         self.difficulty = difficulty
         self.nonce = nonce
+        self.txs = txs or []
 
     def hash(self):
         """Calculate the hash for the block header. Note that this has the bytes
@@ -110,26 +113,31 @@ class BlockHeader(object):
 class Block(BlockHeader):
     """A Block is an element of the Bitcoin chain. Generating a block
     yields a reward!"""
+    netcode = 'BTC'
 
     @classmethod
-    def parse(self, f):
+    def parse(cls, f, instance_class=None):
         """Parse the Block from the file-like object in the standard way
         that blocks are sent in the network."""
         (version, previous_block_hash, merkle_root, timestamp,
             difficulty, nonce, count) = parse_struct("L##LLLI", f)
-        txs = []
-        for i in range(count):
-            txs.append(Tx.parse(f))
-        return self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs)
 
-    def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs):
-        self.version = version
-        self.previous_block_hash = previous_block_hash
-        self.merkle_root = merkle_root
-        self.timestamp = timestamp
-        self.difficulty = difficulty
-        self.nonce = nonce
-        self.txs = txs
+        instance_class = instance_class or cls
+        rv = instance_class(version, previous_block_hash, merkle_root,
+                                    timestamp, difficulty, nonce)
+
+        rv._parse_transactions(f, count)
+
+        return rv
+
+    def _parse_transactions(self, f, count):
+        """Parse just the transactions themselves. They immediately follow the header.
+           This method can and should be overriden in subclasses to construct txn of
+           a different type, based on the needs of the specific altcoin network.
+        """
+        self.txs = []
+        for i in range(count):
+            self.txs.append(self.txn_class.parse(f, netcode=self.netcode))
 
     def stream(self, f):
         """Stream the block in the standard way to the file-like object f."""
@@ -147,9 +155,78 @@ class Block(BlockHeader):
                 "calculated %s but block contains %s" % (b2h(calculated_hash), b2h(self.merkle_root)))
 
     def __str__(self):
-        return "Block [%s] (previous %s) [tx count: %d]" % (
+        return "%s Block [%s] (previous %s) [tx count: %d]" % (self.netcode,
             self.id(), self.previous_block_id(), len(self.txs))
 
     def __repr__(self):
-        return "Block [%s] (previous %s) [tx count: %d] %s" % (
+        return "%s Block [%s] (previous %s) [tx count: %d] %s" % (self.netcode,
             self.id(), self.previous_block_id(), len(self.txs), self.txs)
+
+
+class SCryptMixin(object):
+    """ Switch to scrypt-based block hash (instead of SHA256).
+        Typically for Litecoin and similar altcoins.
+    """
+    def hash(self):
+        """Calculate the scrypt-hash for the block header. Note that this has the bytes
+        in the opposite order from how the header is usually displayed."""
+        if not hasattr(self, "__hash"):
+            s = io.BytesIO()
+            self.stream_header(s)
+            content = s.getvalue()
+
+            import ltc_scrypt
+            self.__hash = ltc_scrypt.getPoWHash(content)
+
+        return self.__hash
+
+    
+class ProofOfStakeBlock(SCryptMixin, Block):
+    """A Proof-of-Stake Block (at least for BlackCoin): 
+       - has an extra signature over the block, appended after
+         the array of transactions. Seems to have been introduced in PPC first?
+       - has nTime value inserted after version number of txn, before vin array
+     """
+    txn_class = ProofOfStakeTx
+
+    @classmethod
+    def parse(cls, f):
+        # Parse the block normally, and also capture a signature that follows it.
+        rv = super(ProofOfStakeBlock, cls).parse(f, instance_class=cls)
+        rv.block_sig = parse_struct("S", f)[0]
+        return rv
+
+    def __init__(self, *args, **kws):
+        # We track an extra signature over the block, which is appended to
+        # block on serialization.
+        self.block_sig = None
+        super(ProofOfStakeBlock, self).__init__(*args, **kws)
+
+    def stream(self, f):
+        # Stream the block, including an extra signature that follows it.
+
+        if self.block_sig is None:
+            # To calculate this, we'd need the private key for the second txn in the block,
+            # second txo (self.txs[1].txos[1]), and we'd use it to sign the hash of
+            # the block. Generally only possible if you built the block yourself.
+            raise NotImplementedError("Cannot generate the block signature")
+
+        Block.stream(self, f)
+
+        # always append the block signature; very last thing
+        stream_struct("S", f, self.block_sig)
+
+
+class BitcoinBlock(Block):
+    # fowards compatibility
+    pass
+
+class BitcoinTestNetBlock(Block):
+    netcode = 'XTN'
+
+class LitecoinBlock(Block):
+    netcode = 'LTC'
+
+class BlackcoinBlock(ProofOfStakeBlock):
+    netcode = 'BLK'
+
