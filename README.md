@@ -1,7 +1,8 @@
 pycoin -- Python Cryptocoin Utilities
 =====================================
 
-This is an implementation of a bunch of utility routines that may be useful when dealing with bitcoin and some alt-coins. It has been tested with Python 2.7, 3.3 and 3.4.
+This is an implementation of a bunch of utility routines that may be useful when dealing with bitcoin and some
+alt-coins. It has been tested with Python 2.7, 3.3 and 3.4.
 
 
 High Level
@@ -10,9 +11,14 @@ High Level
 Keys & BIP32
 ------------
 
-The class pycoin.key.Key contains a convenience Key class that will parse the base58 representation of a BIP 32 wallet [BIP0032] or a WIF or a bitcoin (or altcoin) address, and convert downwards.
+The class pycoin.key.Key contains a convenience Key class that will parse the base58 representation of a BIP 32
+wallet [BIP0032] or a WIF or a bitcoin (or altcoin) address, and convert downwards.
 
-WARNING: be extremely careful giving out public wallet keys. If someone has access to a private wallet key P, of course they have access to all descendent wallet keys of P. But if they also have access to a public wallet key K where P is a subkey of P, you can actually work your way up the tree to determine the private key that corresponds to the public wallet key K (unless private derivation was used at some point between the two keys)! Be sure you understand this warning before giving out public wallet keys!
+WARNING: be extremely careful giving out public wallet keys. If someone has access to a private wallet key P, of
+course they have access to all descendent wallet keys of P. But if they also have access to a public wallet key K
+where P is a subkey of P, you can actually work your way up the tree to determine the private key that corresponds
+to the public wallet key K (unless private derivation was used at some point between the two keys)! Be sure you
+understand this warning before giving out public wallet keys!
 
 pycoin.key.Key:
 
@@ -38,9 +44,11 @@ See ```BIP32.txt``` for more information.
 Transactions
 ------------
 
-pycoin.tx.Tx is a class that wraps a bitcoin transaction. You can create, edit, sign, or validate a transaction using methods in this class.
+pycoin.tx.Tx is a class that wraps a bitcoin transaction. You can create, edit, sign, or validate a transaction using
+methods in this class.
 
-You can also use ```pycoin.tx.tx_utils``` which has ```create_tx``` and ```create_signed_tx```, which gives you a very easy way to create signed transactions.
+You can also use ```pycoin.tx.tx_utils``` which has ```create_tx``` and ```create_signed_tx```, which gives you a
+very easy way to create signed transactions.
 
 The command-line utility ```tx``` is a Swiss Army knife of transaction utilities. See also COMMAND-LINE-TOOLS.md.
 
@@ -48,21 +56,26 @@ The command-line utility ```tx``` is a Swiss Army knife of transaction utilities
 Services
 --------
 
-When signing or verifying signatures on a transaction, the source transactions are generally needed. If you set two environment variables in your ```.profile``` like this:
+When signing or verifying signatures on a transaction, the source transactions are generally needed. If you set two
+environment variables in your ```.profile``` like this:
 
     PYCOIN_CACHE_DIR=~/.pycoin_cache
     PYCOIN_SERVICE_PROVIDERS=BLOCKR_IO:BITEASY:BLOCKCHAIN_INFO:BLOCKEXPLORER
     export PYCOIN_CACHE_DIR PYCOIN_SERVICE_PROVIDERS
 
-and then ```tx``` will automatically fetch transactions from the web sites listed and cache the results in ```PYCOIN_CACHE_DIR``` when they are needed.
+and then ```tx``` will automatically fetch transactions from the web sites listed and cache the results in
+```PYCOIN_CACHE_DIR``` when they are needed.
 
-The module pycoin.services includes two functions ```spendables_for_address```, ```get_tx_db``` that look at the environment variables set to determine which web sites to use to fetch the underlying information. The sites are polled in the order they are listed in the environment variable.
+The module pycoin.services includes two functions ```spendables_for_address```, ```get_tx_db``` that look at the
+environment variables set to determine which web sites to use to fetch the underlying information. The sites are
+polled in the order they are listed in the environment variable.
 
 
 Blocks
 ------
 
-The command-line utility ```block``` will dump a block in a human-readable format. For further information, look at ```pycoin.block```, which includes the object ```Block``` which will parse and stream the binary format of a block.
+The command-line utility ```block``` will dump a block in a human-readable format. For further information, look at
+```pycoin.block```, which includes the object ```Block``` which will parse and stream the binary format of a block.
 
 
 Low Level
@@ -76,13 +89,16 @@ The module ```pycoin.ecdsa``` deals with ECDSA keys directly. Important structur
 - the ```secret_exponent``` (a large integer that represents a private key)
 - the ```public_pair``` (a pair of large integers x and y that represent a public key)
 
-There are a handful of functions: you can do things like create a signature, verify a signature, generate the public pair from the secret exponent, and flush out the public pair from just the x value (there are two possible values for y of opposite even/odd parity, so you include a flag indicating which value for y you want).
+There are a handful of functions: you can do things like create a signature, verify a signature, generate the public
+pair from the secret exponent, and flush out the public pair from just the x value (there are two possible values
+for y of opposite even/odd parity, so you include a flag indicating which value for y you want).
 
 
 Encoding
 --------
 
-The ```pycoin.encoding``` module declares some conversion utilities useful when dealing with Bitcoin. Important structures include:
+The ```pycoin.encoding``` module declares some conversion utilities useful when dealing with Bitcoin. Important
+structures include:
 
 * base58 (the encoding used for Bitcoin addresses)
 * hashed base58 (with a standard checksum)
