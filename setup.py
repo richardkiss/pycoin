@@ -21,7 +21,7 @@ setup(
     author="Richard Kiss",
     entry_points = { 'console_scripts':
             [
-                'block = pycoin.scripts.dump_block:main',
+                'block = pycoin.scripts.block:main',
                 'ku = pycoin.scripts.ku:main',
                 'tx = pycoin.scripts.tx:main',
                 'cache_tx = pycoin.scripts.cache_tx:main',
