@@ -42,7 +42,7 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
         print("warning: can't talk to bitcoind due to missing library")
 
 
-def dump_tx(tx, netcode='M'):
+def dump_tx(tx, netcode='BTC'):
     address_prefix = address_prefix_for_netcode(netcode)
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes   " % (tx.version, tx.id(), len(tx_bin)))
@@ -144,7 +144,7 @@ def main():
     parser.add_argument('-l', "--lock-time", type=parse_locktime, help='Lock time; either a block'
                         'index, or a date/time (example: "2014-01-01T15:00:00"')
 
-    parser.add_argument('-n', "--network", default="M",
+    parser.add_argument('-n', "--network", default="BTC",
                         help='Define network code (M=Bitcoin mainnet, T=Bitcoin testnet).')
 
     parser.add_argument('-a', "--augment", action='store_true',
