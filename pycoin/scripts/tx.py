@@ -74,7 +74,7 @@ def dump_tx(tx, netcode='BTC'):
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.txs_out):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
-        address = tx_out.bitcoin_address(address_prefix=address_prefix)
+        address = tx_out.bitcoin_address(address_prefix=address_prefix) or "(unknown)"
         print("%3d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
     if not missing_unspents:
         print("Total input  %12.5f mBTC" % satoshi_to_mbtc(tx.total_in()))
