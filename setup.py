@@ -35,7 +35,7 @@ setup(
     author_email="him@richardkiss.com",
     url="https://github.com/richardkiss/pycoin",
     license="http://opensource.org/licenses/MIT",
-    description="Utilities for Bitcoin and altcoin addresses and transaction manipulation."
+    description="Utilities for Bitcoin and altcoin addresses and transaction manipulation.",
     classifiers=[
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
