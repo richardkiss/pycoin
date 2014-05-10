@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from pycoin.key.bip32 import Wallet, PublicPrivateMismatchError
+from pycoin.networks import full_network_name_for_netcode
 
 def gpg_entropy():
     output = subprocess.Popen(["gpg", "--gen-random", "2", "64"], stdout=subprocess.PIPE).communicate()[0]
@@ -95,10 +96,7 @@ def main():
             print(json.dumps(d, indent=3))
         elif args.info:
             print(wallet.wallet_key(as_private=wallet.is_private))
-            if wallet.is_test:
-                print("test network")
-            else:
-                print("main network")
+            print(full_network_name_for_netcode(wallet.netcode))
             if wallet.is_private:
                 print("private key")
                 print("secret exponent: %d" % wallet.secret_exponent)
