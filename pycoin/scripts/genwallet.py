@@ -38,7 +38,7 @@ def main():
     args = parser.parse_args()
 
     # args.inputfile doesn't like binary when "-" is passed in. Deal with this.
-    if args.inputfile == sys.stdin:
+    if args.inputfile == sys.stdin and hasattr(sys.stdin, "buffer"):
         args.inputfile = sys.stdin.buffer
 
     network = 'XTN' if args.t else 'BTC'
