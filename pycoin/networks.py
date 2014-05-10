@@ -77,15 +77,16 @@ def netcode_and_type_for_data(data):
     INDEX_LIST = [
         ('wif_prefix', "wif"),
         ('address_prefix', "address"),
-        ('pay_to_script_prefix', "p2script"),
+        ('pay_to_script_prefix', "pay_to_script"),
         ('bip32_pub_prefix', "pub32"),
         ('bip32_priv_prefix', "prv32"),
     ]
     for ni in NETWORKS:
         for attr, name in INDEX_LIST:
-            if getattr(ni, attr, None) is None:
+            v = getattr(ni, attr, None)
+            if v is None:
                 continue
-            if data.startswith(getattr(ni, attr)):
+            if data.startswith(v):
                 return ni.code, name
 
     raise EncodingError("unknown prefix")
