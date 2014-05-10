@@ -6,7 +6,7 @@ KU
 
 The command-line utility ```ku``` ("key utility") is Swiss Army knife for manipulating keys. It supports BIP32 keys, WIF, and address (bitcoin and alt coins). Here are some examples.
 
-Create a BIP32 Key:
+Create a BIP32 Key using the default entropy sources of GPG and /dev/random:
 
     $ ku create
 
@@ -39,7 +39,6 @@ Create a BIP32 Key:
     Bitcoin address : 1FNNRQ5fSv1wBi5gyfVBs2rkNheMGt86sp
      uncompressed   : 1DSS5isnH4FsVaLVjeVXewVSpfqktdiQAM
 
-Creating a key uses the default entropy sources of GPG and /dev/random.
 
 Create a BIP32 key from a passphrase:
 
@@ -477,7 +476,7 @@ Now, let's sign it.
     01000000012a6ca22af83bc447f74b1f475c9bd2e99ccef7347144572a9de5bcf5a5a21ad6010000008b48304502210084fd73b302520381dea1885efda58bc446653998864db7a2cd04906fc6d5536302206325303c8e50f84d25c95eff2849441382d4aafb2f678f636a6d164b721bf0f101410479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8ffffffff013e3abc00000000001976a914cd5dc792f0abb0aa8ba4ca36c9fe5eda8e495ff988ac00000000
     all incoming transaction values validated
 
-Wow! It worked! (It wrote hex output as hex because suffix.)
+Wow! It worked! (It wrote the output as hex because of the ".hex" suffix.)
 
 So why not just broadcast this transaction and collect our winnings? Well, the coins have already been spent. Oh well.
 
