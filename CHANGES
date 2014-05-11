@@ -1,3 +1,15 @@
+Version 0.41
+------------
+
+* fix version number in setup.py so this is actually the latest version sent by pypi
+* allow alternate networks when parsing WIFs
+* move to three or four letter netcodes, like BTC
+* add pycoin/key/validate.py for methods that validate addresses (including pay-to-script addresses)
+  NOTE: we can't yet create or parse transactions with pay-to-script addresses
+* get block script working
+* fix a few other bugs
+
+
 Version 0.40
 ------------
 
