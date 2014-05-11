@@ -255,19 +255,27 @@ def hash160_sec_to_bitcoin_address(hash160_sec, address_prefix=b'\0'):
     """Convert the hash160 of a sec version of a public_pair to a Bitcoin address."""
     return b2a_hashed_base58(address_prefix + hash160_sec)
 
+def pubkey_address_to_hash160_sec_with_prefix(coin_address):
+    """
+    Convert a (typically) Bitcoin address back to the hash160_sec format and
+    also return the prefix byte, but do not check it. Useful for all cryptocoins.
+    """
+    blob = a2b_hashed_base58(coin_address)
+    if len(blob) != 21:
+        raise EncodingError("incorrect binary length (%d) for pubkey address %s" %
+                            (len(blob), coin_address))
+
+    return blob[1:], blob[:1]
 
 def bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address):
     """
     Convert a Bitcoin address back to the hash160_sec format and
     also return the prefix.
     """
-    blob = a2b_hashed_base58(bitcoin_address)
-    if len(blob) != 21:
-        raise EncodingError("incorrect binary length (%d) for Bitcoin address %s" %
-                            (len(blob), bitcoin_address))
-    if blob[:1] not in [b'\x6f', b'\0']:
+    blob, prefix = pubkey_address_to_hash160_sec_with_prefix(bitcoin_address)
+    if prefix not in [b'\x6f', b'\0']:
         raise EncodingError("incorrect first byte (%s) for Bitcoin address %s" % (blob[0], bitcoin_address))
-    return blob[1:], blob[:1]
+    return blob, prefix
 
 
 def bitcoin_address_to_hash160_sec(bitcoin_address, address_prefix=b'\0'):

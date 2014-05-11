@@ -77,9 +77,14 @@ class Tx(object):
         # writes: version, count of inputs
         stream_struct("LI", f, self.version, len(self.txs_in))
 
-    @classmethod
-    def parse(cls, f, netcode='BTC'):
-        """Parse a Bitcoin transaction Tx from the file-like object f."""
+    @staticmethod
+    def parse(f, netcode='BTC'):
+        """Parse a (Bitcoin) transaction Tx from the file-like object f."""
+
+        # need to delay this import due to import loops
+        from ..networks import transaction_class_for_netcode
+        cls = transaction_class_for_netcode(netcode)
+
         (version, count), extras = cls.parse_header(f)
         txs_in = []
         for i in range(count):
@@ -184,7 +189,7 @@ class Tx(object):
         if hash_type & SIGHASH_ANYONECANPAY:
             txs_in = [txs_in[unsigned_txs_out_idx]]
 
-        tmp_tx = Tx(self.version, txs_in, txs_out, self.lock_time)
+        tmp_tx = self.__class__(self.version, txs_in, txs_out, self.lock_time)
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
     def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL):

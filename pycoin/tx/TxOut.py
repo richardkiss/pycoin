@@ -27,7 +27,7 @@ THE SOFTWARE.
 """
 
 from ..convention import satoshi_to_mbtc
-from ..encoding import bitcoin_address_to_hash160_sec_with_prefix, hash160_sec_to_bitcoin_address
+from ..encoding import pubkey_address_to_hash160_sec_with_prefix, hash160_sec_to_bitcoin_address
 
 from ..serialize import b2h
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
@@ -63,8 +63,8 @@ class TxOut(object):
         return hash160_for_script(self.script)
 
 
-def standard_tx_out_script(bitcoin_address):
+def standard_tx_out_script(coin_address):
     STANDARD_SCRIPT_OUT = "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG"
-    hash160, prefix = bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address)
+    hash160, prefix = pubkey_address_to_hash160_sec_with_prefix(coin_address)
     script_text = STANDARD_SCRIPT_OUT % b2h(hash160)
     return tools.compile(script_text)
