@@ -52,8 +52,9 @@ from ..encoding import public_pair_to_sec, sec_to_public_pair,\
     public_pair_to_hash160_sec, EncodingError
 
 from ..encoding import a2b_hashed_base58, b2a_hashed_base58
-from ..networks import address_prefix_for_netcode, netcode_and_type_for_data,\
-    wif_prefix_for_netcode, prv32_prefix_for_netcode, pub32_prefix_for_netcode
+from ..networks import address_prefix_for_netcode, wif_prefix_for_netcode,\
+    prv32_prefix_for_netcode, pub32_prefix_for_netcode
+from .validate import netcode_and_type_for_data
 
 
 class PublicPrivateMismatchError(Exception):

@@ -1,6 +1,6 @@
 from pycoin import ecdsa
-from pycoin.networks import address_prefix_for_netcode,\
-    netcode_and_type_for_data, wif_prefix_for_netcode
+from pycoin.key.validate import netcode_and_type_for_data
+from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 
 from pycoin.encoding import a2b_hashed_base58, secret_exponent_to_wif,\
     public_pair_to_sec, hash160,\
@@ -11,8 +11,8 @@ from .bip32 import Wallet
 
 
 class Key(object):
-    def __init__(self, hierarchical_wallet=None, secret_exponent=None,
-                 public_pair=None, hash160=None, prefer_uncompressed=None, is_compressed=True, netcode='BTC'):
+    def __init__(self, hierarchical_wallet=None, secret_exponent=None, public_pair=None, hash160=None,
+                 prefer_uncompressed=None, is_compressed=True, netcode='BTC'):
         """
         hierarchical_wallet:
             a bip32 wallet

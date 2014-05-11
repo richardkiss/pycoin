@@ -9,7 +9,6 @@ from pycoin.key.bip32 import Wallet
 from pycoin.networks import pay_to_script_prefix_for_netcode, prv32_prefix_for_netcode, NETWORK_NAMES
 from pycoin.serialize import b2h_rev, h2b
 
-
 from pycoin.key.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 
 def change_prefix(address, new_prefix):
