@@ -1,26 +1,29 @@
 from .serialize import h2b
 from .encoding import EncodingError
 from collections import namedtuple
+from .block import Block, BitcoinBlock, BitcoinTestNetBlock, LitecoinBlock, BlackcoinBlock
 
 NetworkValues = namedtuple('NetworkValues', 
-    ('code', 'wif_prefix', 'address_prefix',
-        'bip32_priv_prefix', 'bip32_pub_prefix', 'network_name'))
+    ('code', 'network_name',
+        'wif_prefix', 'address_prefix',
+        'bip32_priv_prefix', 'bip32_pub_prefix',
+        'block_class'))
 
 NETWORKS = (
     # Bitcoin
-    NetworkValues("BTC", b'\x80', b'\0', h2b("0488ADE4"), h2b("0488B21E"), "Bitcoin"),
+    NetworkValues("BTC", "Bitcoin", b'\x80', b'\0', h2b("0488ADE4"), h2b("0488B21E"), BitcoinBlock),
 
     # Bitcoin Textnet3
-    NetworkValues("XTN", b'\xef', b'\x6f', h2b("04358394"), h2b("043587CF"), "Bitcoin testnet"),
+    NetworkValues("XTN", "Bitcoin testnet", b'\xef', b'\x6f', h2b("04358394"), h2b("043587CF"), BitcoinTestNetBlock),
 
     # Litecoin
-    NetworkValues("LTC", b'\xb0', b'\x30', None, None, "Litecoin"),
+    NetworkValues("LTC", "Litecoin", b'\xb0', b'\x30', None, None, LitecoinBlock),
 
     # Dogecoin
-    NetworkValues("DOGE", b'\x9e', b'\x1e', h2b("02fda4e8"), h2b("02fda923"), "Dogecoin"),
+    NetworkValues("DOGE", "Dogecoin", b'\x9e', b'\x1e', h2b("02fda4e8"), h2b("02fda923"), Block),
 
     # BlackCoin: unsure about bip32 prefixes; assuming will use Bitcoin's
-    NetworkValues("BLK", b'\x99', b'\x19', h2b("0488ADE4"), h2b("0488B21E"), "Blackcoin"),
+    NetworkValues("BLK", "Blackcoin", b'\x99', b'\x19', h2b("0488ADE4"), h2b("0488B21E"), BlackcoinBlock),
 )
 
 # Map from short code to details about that network.
@@ -46,6 +49,16 @@ def prv32_prefix_for_netcode(netcode):
 
 def pub32_prefix_for_netcode(netcode):
     return NETWORK_NAME_LOOKUP[netcode].bip32_pub_prefix
+
+def transaction_class_for_netcode(netcode):
+    # We need to know what class to use for the 
+    # transaction for some networks, but most can just use normal Tx
+    return NETWORK_NAME_LOOKUP[netcode].block_class.txn_class
+
+def block_class_for_netcode(netcode):
+    # We need to know what class to use for the blocks.
+    return NETWORK_NAME_LOOKUP[netcode].block_class
+
 
 
 def netcode_and_type_for_data(data):
