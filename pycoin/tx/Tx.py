@@ -28,6 +28,7 @@ THE SOFTWARE.
 
 import io
 from time import time as unix_time
+from copy import deepcopy
 
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
@@ -189,7 +190,11 @@ class Tx(object):
         if hash_type & SIGHASH_ANYONECANPAY:
             txs_in = [txs_in[unsigned_txs_out_idx]]
 
-        tmp_tx = self.__class__(self.version, txs_in, txs_out, self.lock_time)
+        # Because we don't know what metadata subclasses may be storing for this
+        # transaction, do not construct a new instance here. Instead, do a deepcopy
+        # and change the parts we need... then use that to calculate a hash.
+        tmp_tx = deepcopy(self)
+        tmp_tx.txs_in, tmp_tx.txs_out = txs_in, txs_out
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
     def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL):
