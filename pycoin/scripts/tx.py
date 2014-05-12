@@ -15,7 +15,7 @@ import sys
 from pycoin import encoding
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.key import Key
-from pycoin.networks import address_prefix_for_netcode
+from pycoin.networks import address_prefix_for_netcode, NETWORK_NAMES, transaction_class_for_netcode
 from pycoin.serialize import b2h_rev, h2b_rev, stream_to_bytes
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
@@ -42,7 +42,7 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
         print("warning: can't talk to bitcoind due to missing library")
 
 
-def dump_tx(tx, netcode='M'):
+def dump_tx(tx, netcode='BTC'):
     address_prefix = address_prefix_for_netcode(netcode)
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes   " % (tx.version, tx.id(), len(tx_bin)))
@@ -144,8 +144,8 @@ def main():
     parser.add_argument('-l', "--lock-time", type=parse_locktime, help='Lock time; either a block'
                         'index, or a date/time (example: "2014-01-01T15:00:00"')
 
-    parser.add_argument('-n', "--network", default="M",
-                        help='Define network code (M=Bitcoin mainnet, T=Bitcoin testnet).')
+    parser.add_argument('-n', "--network", default="BTC", choices=NETWORK_NAMES,
+                        help='Define network code (default: BTC=Bitcoin mainnet).')
 
     parser.add_argument('-a', "--augment", action='store_true',
                         help='augment tx by adding any missing spendable metadata by fetching'
@@ -291,7 +291,7 @@ def main():
                 with open(arg, "rb") as f:
                     if f.name.endswith("hex"):
                         f = io.BytesIO(codecs.getreader("hex_codec")(f).read())
-                    tx = Tx.parse(f)
+                    tx = Tx.parse(f, netcode=args.network)
                     txs.append(tx)
                     try:
                         tx.parse_unspents(f)
@@ -381,7 +381,9 @@ def main():
         s = set(args.remove_tx_out)
         txs_out = [tx_out for idx, tx_out in enumerate(txs_out) if idx not in s]
 
-    tx = Tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
+    tx_class = transaction_class_for_netcode(args.network)
+    tx = tx_class(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time,
+                    version=version, unspents=unspents)
 
     fee = args.fee
     try:
