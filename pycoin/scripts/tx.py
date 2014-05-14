@@ -68,13 +68,13 @@ def dump_tx(tx, netcode='BTC'):
                 tx_out = tx.unspents[idx]
                 sig_result = " sig ok" if tx.is_signature_ok(idx) else " BAD SIG"
                 suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
-                address = tx_out.bitcoin_address(address_prefix=address_prefix)
+                address = tx_out.bitcoin_address(netcode=netcode)
             print("%3d: %34s from %s:%d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
                   tx_in.previous_index, suffix))
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.txs_out):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
-        address = tx_out.bitcoin_address(address_prefix=address_prefix) or "(unknown)"
+        address = tx_out.bitcoin_address(netcode=netcode) or "(unknown)"
         print("%3d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
     if not missing_unspents:
         print("Total input  %12.5f mBTC" % satoshi_to_mbtc(tx.total_in()))

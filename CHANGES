@@ -1,3 +1,11 @@
+Version 0.42
+------------
+
+* switch TxOut.bitcoin_address to taking netcode, sorry for API thrash
+* get pay-to-script addresses recognized in existing transactions
+  * still can't create or sign them
+
+
 Version 0.41
 ------------
 

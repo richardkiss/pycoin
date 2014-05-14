@@ -27,13 +27,13 @@ THE SOFTWARE.
 """
 
 from ..convention import satoshi_to_mbtc
-from ..encoding import bitcoin_address_to_hash160_sec_with_prefix, hash160_sec_to_bitcoin_address
+from ..encoding import bitcoin_address_to_hash160_sec_with_prefix
 
 from ..serialize import b2h
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .script import tools
-from .script.solvers import hash160_for_script
+from .script.solvers import payable_address_for_script, script_type_and_hash160
 
 
 class TxOut(object):
@@ -54,20 +54,20 @@ class TxOut(object):
     def __str__(self):
         return 'TxOut<%s mbtc "%s">' % (satoshi_to_mbtc(self.coin_value), tools.disassemble(self.script))
 
-    def bitcoin_address(self, address_prefix=b'\0'):
+    def bitcoin_address(self, netcode="BTC"):
         # attempt to return the destination address, or None on failure
-        hash160 = self.hash160()
-        if hash160:
-            return hash160_sec_to_bitcoin_address(hash160, address_prefix=address_prefix)
-        return None
+        return payable_address_for_script(self.script, netcode)
 
     def hash160(self):
-        # attempt to return the destination address, or None on failure
-        return hash160_for_script(self.script)
+        # attempt to return the destination hash160, or None on failure
+        r = script_type_and_hash160(self.script)
+        if r:
+            return r[1]
+        return None
 
 
 def standard_tx_out_script(bitcoin_address):
-    STANDARD_SCRIPT_OUT = "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG"
     hash160, prefix = bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address)
+    STANDARD_SCRIPT_OUT = "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG"
     script_text = STANDARD_SCRIPT_OUT % b2h(hash160)
     return tools.compile(script_text)

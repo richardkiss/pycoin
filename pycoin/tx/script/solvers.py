@@ -29,6 +29,7 @@ THE SOFTWARE.
 import binascii
 
 from ... import ecdsa
+from ... import networks
 from ...encoding import public_pair_to_sec, hash160, is_sec_compressed, sec_to_public_pair,\
     hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address,\
     public_pair_to_hash160_sec
@@ -39,25 +40,33 @@ from . import tools
 
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 
+
 TEMPLATES = [
-    tools.compile("OP_PUBKEY OP_CHECKSIG"),
-    tools.compile("OP_DUP OP_HASH160 OP_PUBKEYHASH OP_EQUALVERIFY OP_CHECKSIG"),
+    ("coinbase", tools.compile("OP_PUBKEY OP_CHECKSIG")),
+    ("standard", tools.compile("OP_DUP OP_HASH160 OP_PUBKEYHASH OP_EQUALVERIFY OP_CHECKSIG")),
+    ("pay_to_script", tools.compile("OP_HASH160 OP_PUBKEYHASH OP_EQUAL"))
 ]
 
-class SolvingError(Exception): pass
 
-def match_script_to_templates(script1):
-    """Examine the script passed in by tx_out_script and see if it
+class SolvingError(Exception):
+    pass
+
+
+def match_script_to_templates(script):
+    """
+    Examine the script passed in by tx_out_script and see if it
     matches the form of one of the templates in TEMPLATES. If so,
-    return the form it matches; otherwise, return None."""
-    for script2 in TEMPLATES:
+    return the form it matches; otherwise, return None.
+    """
+
+    for name, template in TEMPLATES:
         r = []
         pc1 = pc2 = 0
         while 1:
-            if pc1 == len(script1) and pc2 == len(script2):
-                return r
-            opcode1, data1, pc1 = tools.get_opcode(script1, pc1)
-            opcode2, data2, pc2 = tools.get_opcode(script2, pc2)
+            if pc1 == len(script) and pc2 == len(template):
+                return name, r
+            opcode1, data1, pc1 = tools.get_opcode(script, pc1)
+            opcode2, data2, pc2 = tools.get_opcode(template, pc2)
             if opcode2 == opcodes.OP_PUBKEY:
                 l1 = len(data1)
                 if l1 < 33 or l1 > 120:
@@ -71,18 +80,31 @@ def match_script_to_templates(script1):
                 break
     raise SolvingError("don't recognize output script")
 
-def hash160_for_script(script):
+
+def script_type_and_hash160(script):
+    name, r = match_script_to_templates(script)
+    if r[0][0] == opcodes.OP_PUBKEYHASH:
+        return name, r[0][1]
+    if r[0][0] == opcodes.OP_PUBKEY:
+        return name, hash160(r[0][1])
+    raise SolvingError("don't recognize output script")
+
+
+def payable_address_for_script(script, netcode="BTC"):
+    """
+    Return the payment type and the hash160 for a given script.
+    The payment type is one of "coinbase", "standard", "pay_to_script".
+    """
     try:
-        r = match_script_to_templates(script)
-        if len(r) != 1 or len(r[0]) != 2:
-            return None
-        if r[0][0] == opcodes.OP_PUBKEYHASH:
-            return r[0][1]
-        if r[0][0] == opcodes.OP_PUBKEY:
-            return hash160(r[0][1])
+        name, the_hash160 = script_type_and_hash160(script)
     except SolvingError:
-        pass
-    return None
+        return None
+
+    if name == "pay_to_script":
+        address_prefix = networks.pay_to_script_prefix_for_netcode(netcode)
+    else:
+        address_prefix = networks.address_prefix_for_netcode(netcode)
+    return hash160_sec_to_bitcoin_address(the_hash160, address_prefix=address_prefix)
 
 
 def canonical_solver(tx_out_script, signature_hash, signature_type, hash160_lookup):
@@ -97,7 +119,7 @@ def canonical_solver(tx_out_script, signature_hash, signature_type, hash160_look
     if signature_hash == 0:
         raise SolvingError("signature_hash can't be 0")
 
-    opcode_value_list = match_script_to_templates(tx_out_script)
+    name, opcode_value_list = match_script_to_templates(tx_out_script)
 
     ba = bytearray()
 
