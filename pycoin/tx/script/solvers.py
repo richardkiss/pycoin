@@ -65,6 +65,8 @@ def match_script_to_templates(script):
         while 1:
             if pc1 == len(script) and pc2 == len(template):
                 return name, r
+            if pc1 >= len(script) or pc2 >= len(template):
+                break
             opcode1, data1, pc1 = tools.get_opcode(script, pc1)
             opcode2, data2, pc2 = tools.get_opcode(template, pc2)
             if opcode2 == opcodes.OP_PUBKEY:
