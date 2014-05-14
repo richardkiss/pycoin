@@ -33,17 +33,26 @@ import hmac
 
 from . import ellipticcurve, intbytes, numbertheory
 
+
+def bit_length(self):
+    # Make this library compatible with python < 2.7
+    # https://docs.python.org/3.5/library/stdtypes.html#int.bit_length
+    s = bin(self)  # binary representation:  bin(-37) --> '-0b100101'
+    s = s.lstrip('-0b')  # remove leading zeros and minus sign
+    return len(s)  # len('100101') --> 6
+
+
 def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashlib.sha256):
     """
     Generate K value according to https://tools.ietf.org/html/rfc6979
     """
     n = generator_order
-    order_size = (n.bit_length() + 7) // 8
+    order_size = (bit_length(n) + 7) // 8
     hash_size = hash_f().digest_size
     v = b'\x01' * hash_size
     k = b'\x00' * hash_size
     priv = intbytes.to_bytes(secret_exponent, length=order_size)
-    shift = 8 * hash_size - n.bit_length()
+    shift = 8 * hash_size - bit_length(n)
     if shift > 0:
         val >>= shift
     if val > n:
@@ -63,7 +72,7 @@ def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashl
 
         k1 = intbytes.from_bytes(bytes(t))
 
-        k1 >>= (len(t)*8 - n.bit_length())
+        k1 >>= (len(t)*8 - bit_length(n))
         if k1 >= 1 and k1 < n:
             return k1
 
