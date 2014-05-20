@@ -11,7 +11,7 @@ from pycoin.serialize import h2b
 
 from pycoin.tx import Tx, SIGHASH_ALL
 from pycoin.tx.TxIn import TxIn
-from pycoin.tx.TxOut import TxOut, standard_tx_out_script
+from pycoin.tx.TxOut import TxOut, standard_tx_out_script, p2sh_tx_out_script
 from pycoin.tx.script.solvers import build_hash160_lookup_db
 
 
@@ -161,6 +161,14 @@ class BuildTxTest(unittest.TestCase):
 
         # now check that it validates
         self.assertEqual(spend_tx.bad_signature_count(), 0)
+
+    def test_p2sh_tx_out(self):
+        # from https://people.xiph.org/~greg/escrowexample.txt
+        coin_value = 30
+        recipient_p2sh = '2MxKEf2su6FGAUfCEAHreGFQvEYrfYNHvL7'
+        tx_out = TxOut(coin_value, p2sh_tx_out_script(recipient_p2sh))
+        s = str(tx_out)
+        self.assertEqual('TxOut<0.0003 mbtc "OP_HASH160 379ad9b7ba73bdc1e29e286e014d4e2e1f6884e3 OP_EQUAL">', s)
 
 if __name__ == '__main__':
     unittest.main()

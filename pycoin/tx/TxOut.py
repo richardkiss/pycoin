@@ -68,3 +68,11 @@ def standard_tx_out_script(coin_address):
     hash160, prefix = pubkey_address_to_hash160_sec_with_prefix(coin_address)
     script_text = STANDARD_SCRIPT_OUT % b2h(hash160)
     return tools.compile(script_text)
+
+def p2sh_tx_out_script(p2sh_address):
+    # See BIP0016: https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki
+    P2SH_SCRIPT_OUT = "OP_HASH160 %s OP_EQUAL"
+    hash160, prefix = pubkey_address_to_hash160_sec_with_prefix(p2sh_address)
+    script_text = P2SH_SCRIPT_OUT % b2h(hash160)
+    return tools.compile(script_text)
+
