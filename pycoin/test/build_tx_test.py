@@ -169,6 +169,8 @@ class BuildTxTest(unittest.TestCase):
         tx_out = TxOut(coin_value, p2sh_tx_out_script(recipient_p2sh))
         s = str(tx_out)
         self.assertEqual('TxOut<0.0003 mbtc "OP_HASH160 379ad9b7ba73bdc1e29e286e014d4e2e1f6884e3 OP_EQUAL">', s)
+        # test decode of script, back into (testnet) P2SH address
+        self.assertEqual(tx_out.bitcoin_address(chr(196)), recipient_p2sh)
 
 if __name__ == '__main__':
     unittest.main()

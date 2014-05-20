@@ -42,6 +42,7 @@ bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 TEMPLATES = [
     tools.compile("OP_PUBKEY OP_CHECKSIG"),
     tools.compile("OP_DUP OP_HASH160 OP_PUBKEYHASH OP_EQUALVERIFY OP_CHECKSIG"),
+    tools.compile("OP_HASH160 OP_PUBKEYHASH OP_EQUAL"),
 ]
 
 class SolvingError(Exception): pass
