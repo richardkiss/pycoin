@@ -34,12 +34,15 @@ import hmac
 from . import ellipticcurve, intbytes, numbertheory
 
 
-def bit_length(self):
-    # Make this library compatible with python < 2.7
-    # https://docs.python.org/3.5/library/stdtypes.html#int.bit_length
-    s = bin(self)  # binary representation:  bin(-37) --> '-0b100101'
-    s = s.lstrip('-0b')  # remove leading zeros and minus sign
-    return len(s)  # len('100101') --> 6
+if hasattr(1, "bit_length"):
+    bit_length = int.bit_length
+else:
+    def bit_length(self):
+        # Make this library compatible with python < 2.7
+        # https://docs.python.org/3.5/library/stdtypes.html#int.bit_length
+        s = bin(self)  # binary representation:  bin(-37) --> '-0b100101'
+        s = s.lstrip('-0b')  # remove leading zeros and minus sign
+        return len(s)  # len('100101') --> 6
 
 
 def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashlib.sha256):
