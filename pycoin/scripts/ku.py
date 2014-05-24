@@ -275,8 +275,8 @@ def main():
             elif args.wif:
                 print(output_dict["wif_uncompressed" if args.uncompressed else "wif"])
             elif args.address:
-                print(output_dict[
-                    "bitcoin_address_uncompressed" if args.uncompressed else "bitcoin_address"])
+                print(output_dict[ args.network.lower() + "_address" +
+                    ("_uncompressed" if args.uncompressed else "")])
             else:
                 dump_output(output_dict, output_order)
 
