@@ -37,6 +37,13 @@ class ScriptsTest(unittest.TestCase):
     def test_ku(self):
         self.launch_tool("ku.py 1")
         self.launch_tool("ku.py 2")
+        self.launch_tool("ku.py -a 1")
+        self.launch_tool("ku.py -W 1")
+        self.launch_tool("ku.py P:foo")
+        self.launch_tool("ku.py -w P:foo -s 5-10")
+        self.launch_tool("ku.py -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n DOGE -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n BLK -j -w P:foo -s 5-10")
 
     def test_tx_fetch(self):
         self.launch_tool("tx.py 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098")
