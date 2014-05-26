@@ -422,7 +422,7 @@ Note that 12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX was explicitly budgeted 50 satoshis
 
 OK, let's try actually signing a transaction. Let's use the WIF for secret exponent 1.
 
-    $ bu -a -u 1
+    $ ku -a -u 1
     1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm
 
 Investigation on blockchain.info show a transaction payable to this bitcoin address with id d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a.
