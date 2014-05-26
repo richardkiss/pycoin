@@ -96,6 +96,11 @@ def write_push_data(data_list, f):
         # BRAIN DAMAGE: if len(t) is too much, we need a different opcode
         # This will never be used in practice as it makes the scripts too long.
 
+def bin_script(data_list):
+    f = io.BytesIO()
+    write_push_data(data_list, f)
+    return f.getvalue()
+
 def compile(s):
     """Compile the given script. Returns a bytes object with the compiled script."""
     f = io.BytesIO()
