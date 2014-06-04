@@ -45,11 +45,11 @@ class TxOut(object):
         self.script = script
 
     def stream(self, f):
-        stream_struct("QS", f, self.coin_value, self.script)
+        stream_struct("qS", f, self.coin_value, self.script)
 
     @classmethod
     def parse(self, f):
-        return self(*parse_struct("QS", f))
+        return self(*parse_struct("qS", f))
 
     def __str__(self):
         return 'TxOut<%s mbtc "%s">' % (satoshi_to_mbtc(self.coin_value), tools.disassemble(self.script))

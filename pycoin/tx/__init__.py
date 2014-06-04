@@ -29,4 +29,5 @@ THE SOFTWARE.
 from .Spendable import Spendable
 from .Tx import Tx, ValidationFailureError
 from .Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
+from .TxIn import TxIn
 from .TxOut import TxOut

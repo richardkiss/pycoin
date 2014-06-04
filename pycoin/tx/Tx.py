@@ -131,7 +131,8 @@ class Tx(object):
 
         tx_out_script: the script the coins for unsigned_txs_out_idx are coming from
         unsigned_txs_out_idx: where to put the tx_out_script
-        hash_type: always seems to be SIGHASH_ALL
+        hash_type: one of SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ALL,
+        optionally bitwise or'ed with SIGHASH_ANYONECANPAY
         """
 
         # In case concatenating two scripts ends up with two codeseparators,
@@ -158,13 +159,26 @@ class Tx(object):
                     txs_in[i].sequence = 0
 
         elif (hash_type & 0x1f) == SIGHASH_SINGLE:
-            # Only lockin the txout payee at same index as txin
-            # BRAIN DAMAGE: this probably doesn't work right
+            # This preserves the ability to validate existing legacy
+            # transactions which followed a buggy path in Satoshi's
+            # original code; note that higher level functions for signing
+            # new transactions (e.g., is_signature_ok and sign_tx_in)
+            # check to make sure we never get here (or at least they
+            # should)
+            if unsigned_txs_out_idx >= len(txs_out):
+                # This should probably be moved to a constant, but the
+                # likelihood of ever getting here is already really small
+                # and getting smaller
+                return h2b_rev('0000000000000000000000000000000000000000000000000000000000000001')
+
+            # Only lock in the txout payee at same index as txin; delete
+            # any outputs after this one and set all outputs before this
+            # one to "null" (where "null" means an empty script and a
+            # value of -1)
             txs_out = [TxOut(-1, b'')] * unsigned_txs_out_idx
             txs_out.append(self.txs_out[unsigned_txs_out_idx])
 
             # Let the others update at will
-            # BRAIN DAMAGE: this probably doesn't work
             for i in range(len(self.txs_in)):
                 if i != unsigned_txs_out_idx:
                     txs_in[i].sequence = 0
