@@ -175,7 +175,7 @@ class Tx(object):
             # any outputs after this one and set all outputs before this
             # one to "null" (where "null" means an empty script and a
             # value of -1)
-            txs_out = [TxOut(-1, b'')] * unsigned_txs_out_idx
+            txs_out = [TxOut(0xffffffffffffffff, b'')] * unsigned_txs_out_idx
             txs_out.append(self.txs_out[unsigned_txs_out_idx])
 
             # Let the others update at will
