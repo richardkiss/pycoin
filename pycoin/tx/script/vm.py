@@ -53,8 +53,6 @@ def check_signature(script, signature_hash, public_key_blob, sig_blob, hash_type
     hash_type: expected signature_type (or 0 for wild card)
     """
     signature_type = ord(sig_blob[-1:])
-    if signature_type != 1:
-        raise ScriptError("unknown signature type %d" % signature_type)
     sig_pair = der.sigdecode_der(sig_blob[:-1])
     if hash_type == 0:
         hash_type = signature_type
