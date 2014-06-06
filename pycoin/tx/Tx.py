@@ -301,20 +301,6 @@ class Tx(object):
             unspents.append(tx_out)
         self.set_unspents(unspents)
 
-    # In theory, we should be able to deduce the hash_type from the
-    # signature itself, but we would have to know which position in which
-    # script the signature was in; there are brute force ways to guess
-    # (e.g., try to decode each non-opcode within a range of certain
-    # lengths as a DER [leaving off the last byte], and if that was
-    # successful, assume that was the signature, then grab the last byte
-    # as the hash_type; alternately try all six hash_type combinations,
-    # and if one succeeds, assume that was it), but for right now, that is
-    # left up to the caller, who hopefully knows more about the structure
-    # of the script than we do at this level:
-    #
-    # >>> hash_types = ( SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ALL )
-    # >>> hash_types = hash_types + tuple(( ht | SIGHASH_ANYONECANPAY for ht in hash_types ))
-    # >>> any(( tx.is_signature_ok(in_idx, ht) for ht in hash_types ))
     def is_signature_ok(self, tx_in_idx):
         tx_in = self.txs_in[tx_in_idx]
         if tx_in.is_coinbase():
