@@ -208,12 +208,13 @@ class Tx(object):
 
         # Leave out the signature from the hash, since a signature can't sign itself.
         # The checksig op will also drop the signatures from its hash.
-        signature_hash = self.signature_hash(tx_out_script, tx_in_idx, hash_type=hash_type)
-        if tx_in.verify(tx_out_script, signature_hash, hash_type=0):
+        signature_for_hash_type_f = lambda hash_type: self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+        if tx_in.verify(tx_out_script, signature_for_hash_type_f):
             return
 
+        signature_hash = signature_for_hash_type_f(hash_type)
         tx_in.script = canonical_solver(tx_out_script, signature_hash, hash_type, hash160_lookup)
-        if not tx_in.verify(tx_out_script, signature_hash, hash_type=0):
+        if not tx_in.verify(tx_out_script, signature_for_hash_type_f):
             raise ValidationFailureError(
                 "just signed script Tx %s TxIn index %d did not verify" % (
                     b2h_rev(tx_in.previous_hash), tx_in_idx))
@@ -314,7 +315,7 @@ class Tx(object):
     # >>> hash_types = ( SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ALL )
     # >>> hash_types = hash_types + tuple(( ht | SIGHASH_ANYONECANPAY for ht in hash_types ))
     # >>> any(( tx.is_signature_ok(in_idx, ht) for ht in hash_types ))
-    def is_signature_ok(self, tx_in_idx, hash_type=SIGHASH_ALL):
+    def is_signature_ok(self, tx_in_idx):
         tx_in = self.txs_in[tx_in_idx]
         if tx_in.is_coinbase():
             return True
@@ -324,8 +325,8 @@ class Tx(object):
         if unspent is None:
             return False
         tx_out_script = self.unspents[tx_in_idx].script
-        signature_hash = self.signature_hash(tx_out_script, tx_in_idx, hash_type=hash_type)
-        return tx_in.verify(tx_out_script, signature_hash, hash_type=0)
+        signature_for_hash_type_f = lambda hash_type: self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+        return tx_in.verify(tx_out_script, signature_for_hash_type_f)
 
     def sign(self, hash160_lookup, hash_type=SIGHASH_ALL):
         """
@@ -341,7 +342,7 @@ class Tx(object):
                 continue
             try:
                 if self.unspents[idx]:
-                    self.sign_tx_in(hash160_lookup, idx, self.unspents[idx].script, hash_type=hash_type)
+                    self.sign_tx_in(hash160_lookup, idx, self.unspents[idx].script)
             except SolvingError:
                 pass
 
