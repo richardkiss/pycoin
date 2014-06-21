@@ -5,8 +5,7 @@ from ..convention import tx_fee
 from .Spendable import Spendable
 from .Tx import Tx
 from .TxOut import TxOut, standard_tx_out_script
-from .script.solvers import build_hash160_lookup_db
-
+from .pay_to import build_hash160_lookup
 
 class SecretExponentMissing(Exception):
     pass
@@ -28,7 +27,7 @@ class LazySecretExponentDB(object):
             return self.secret_exponent_db_cache[v]
         for wif in self.wif_iterable:
             secret_exponent = wif_to_secret_exponent(wif)
-            d = build_hash160_lookup_db([secret_exponent])
+            d = build_hash160_lookup([secret_exponent])
             self.secret_exponent_db_cache.update(d)
             if v in self.secret_exponent_db_cache:
                 return self.secret_exponent_db_cache[v]

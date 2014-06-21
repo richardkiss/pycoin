@@ -3,8 +3,8 @@ from collections import namedtuple
 from .serialize import h2b
 
 NetworkValues = namedtuple('NetworkValues',
-                           ('network_name', 'subnet_name', 'code', 'wif_prefix', 'address_prefix',
-                            'pay_to_script_prefix', 'bip32_priv_prefix', 'bip32_pub_prefix'))
+                           ('network_name', 'subnet_name', 'code', 'wif', 'address',
+                            'pay_to_script', 'prv32', 'pub32'))
 
 NETWORKS = (
     NetworkValues("Bitcoin", "mainnet", "BTC", b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E")),
@@ -22,6 +22,8 @@ NETWORK_NAME_LOOKUP = dict((i.code, i) for i in NETWORKS)
 
 # All network names, return in same order as list above: for UI purposes.
 NETWORK_NAMES = [i.code for i in NETWORKS]
+
+DEFAULT_NETCODES = NETWORK_NAMES
 
 
 def _lookup(netcode, property):
@@ -47,20 +49,20 @@ def full_network_name_for_netcode(netcode):
 
 
 def wif_prefix_for_netcode(netcode):
-    return _lookup(netcode, "wif_prefix")
+    return _lookup(netcode, "wif")
 
 
 def address_prefix_for_netcode(netcode):
-    return _lookup(netcode, "address_prefix")
+    return _lookup(netcode, "address")
 
 
 def pay_to_script_prefix_for_netcode(netcode):
-    return _lookup(netcode, "pay_to_script_prefix")
+    return _lookup(netcode, "pay_to_script")
 
 
 def prv32_prefix_for_netcode(netcode):
-    return _lookup(netcode, "bip32_priv_prefix")
+    return _lookup(netcode, "prv32")
 
 
 def pub32_prefix_for_netcode(netcode):
-    return _lookup(netcode, "bip32_pub_prefix")
+    return _lookup(netcode, "pub32")

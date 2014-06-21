@@ -79,6 +79,23 @@ def get_opcode(script, pc):
         pc += size
     return opcode, data, pc
 
+def write_push_data(data_list, f):
+    # return bytes that causes the given data to be pushed onto the stack
+    for t in data_list:
+        if len(t) == 1 and bytes_to_ints(t)[0] < 16:
+            f.write(bytes_from_int(OPCODE_TO_INT["OP_%d" % t]))
+        elif len(t) <= 255:
+            if len(t) > 75:
+                f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA1"]))
+            f.write(int_to_bytes(len(t)))
+            f.write(t)
+        elif len(t) <= 65535:
+            f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA2"]))
+            f.write(int_to_bytes(len(t)))
+            f.write(t)
+        # BRAIN DAMAGE: if len(t) is too much, we need a different opcode
+        # This will never be used in practice as it makes the scripts too long.
+
 def compile(s):
     """Compile the given script. Returns a bytes object with the compiled script."""
     f = io.BytesIO()
@@ -93,13 +110,7 @@ def compile(s):
             if len(t) == 1:
                 t = "0" + t
             t = binascii.unhexlify(t.encode("utf8"))
-            if len(t) == 1 and bytes_to_ints(t)[0] < 16:
-                f.write(OPCODE_TO_INT["OP_%d" % t])
-            elif len(t) <= 75:
-                f.write(bytes_from_int(len(t)))
-                f.write(t)
-            # BRAIN DAMAGE: if len(t) is too much, we need a different opcode
-            # This will never be used in practice as it makes the scripts too long.
+            write_push_data([t], f)
     return f.getvalue()
 
 def opcode_list(script):

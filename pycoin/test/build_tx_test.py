@@ -12,7 +12,7 @@ from pycoin.serialize import h2b
 from pycoin.tx import Tx, SIGHASH_ALL
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
-from pycoin.tx.script.solvers import build_hash160_lookup_db
+from pycoin.tx.pay_to import build_hash160_lookup, SolvingError
 
 
 # block 80971
@@ -134,7 +134,7 @@ class BuildTxTest(unittest.TestCase):
         coins_from = [(the_coinbase_tx.hash(), 0, the_coinbase_tx.txs_out[0])]
         coins_to = [(int(50 * 1e8), bitcoin_address_2)]
         unsigned_coinbase_spend_tx = standard_tx(coins_from, coins_to)
-        solver = build_hash160_lookup_db([exponent])
+        solver = build_hash160_lookup([exponent])
 
         coinbase_spend_tx = unsigned_coinbase_spend_tx.sign(solver)
 
@@ -156,7 +156,7 @@ class BuildTxTest(unittest.TestCase):
 
         coins_from = [(coinbase_spend_tx.hash(), 0, coinbase_spend_tx.txs_out[0])]
         unsigned_spend_tx = standard_tx(coins_from, [(int(50 * 1e8), bitcoin_address_3)])
-        solver.update(build_hash160_lookup_db([exponent_2]))
+        solver.update(build_hash160_lookup([exponent_2]))
         spend_tx = unsigned_spend_tx.sign(solver)
 
         # now check that it validates

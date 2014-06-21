@@ -29,7 +29,7 @@ THE SOFTWARE.
 import logging
 
 from ... import ecdsa
-from ...encoding import sec_to_public_pair
+from ...encoding import sec_to_public_pair, EncodingError
 
 from . import der
 from . import opcodes
@@ -42,12 +42,12 @@ VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_NUMEQUALVERIFY OP_
 
 INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split()))
 
-def check_signature(script, signature_for_hash_type_f, public_key_blob, sig_blob, expected_hash_type=None):
+def check_signature(signature_for_hash_type_f, public_key_blob, sig_blob, expected_hash_type=None):
     """Ensure the given transaction has the correct signature. Invoked by the VM.
     Adapted from official Bitcoin-QT client.
 
-    script: the script that is claimed to unlock the coins used in this transaction
-    signature_hash: the signature hash of the transaction being verified
+    signature_for_hash_type_f: a function returning the signature hash of the transaction
+        being verified given a hash type
     public_key_blob: the blob representing the SEC-encoded public pair
     sig_blob: the blob representing the DER-encoded signature
     expected_hash_type: expected signature_type (or 0 for wild card)
@@ -56,9 +56,12 @@ def check_signature(script, signature_for_hash_type_f, public_key_blob, sig_blob
     sig_pair = der.sigdecode_der(sig_blob[:-1])
     if expected_hash_type not in (None, signature_type):
         raise ScriptError("wrong hash type")
-    public_pair = sec_to_public_pair(public_key_blob)
-    signature_hash = signature_for_hash_type_f(signature_type)
-    v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair)
+    try:
+        public_pair = sec_to_public_pair(public_key_blob)
+        signature_hash = signature_for_hash_type_f(signature_type)
+        v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair)
+    except EncodingError:
+        v = 0
     return make_bool(v)
 
 def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stack=[]):
@@ -69,6 +72,8 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
     pc = 0
     begin_code_hash = pc
     if_condition = None # or True or False
+    op_count = 0
+    # TODO: set op_count
 
     try:
         while pc < len(script):
@@ -126,11 +131,35 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
             if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
                 public_key_blob = stack.pop()
                 sig_blob = stack.pop()
-                v = check_signature(script, signature_for_hash_type_f, public_key_blob, sig_blob, expected_hash_type)
+                v = check_signature(
+                    signature_for_hash_type_f, public_key_blob, sig_blob, expected_hash_type)
                 stack.append(v)
                 if opcode == opcodes.OP_CHECKSIGVERIFY:
                     if stack.pop() != VCH_TRUE:
                         raise ScriptError("VERIFY failed at %d" % pc-1)
+                continue
+
+            if opcode == opcodes.OP_CHECKMULTISIG:
+                key_count = stack.pop()
+                public_key_blobs = []
+                for i in range(key_count):
+                    public_key_blobs.append(stack.pop())
+
+                signature_count = stack.pop()
+                sig_blobs = []
+                for i in range(signature_count):
+                    sig_blobs.append(stack.pop())
+
+                for sig_blob in sig_blobs:
+                    for public_key_blob in public_key_blobs:
+                        sig_ok = check_signature(
+                            signature_for_hash_type_f, public_key_blob, sig_blob, expected_hash_type)
+                        if sig_ok == VCH_TRUE:
+                            break
+                    if sig_ok != VCH_TRUE:
+                        break
+                should_be_zero_bug = stack.pop()
+                stack.append(sig_ok)
                 continue
 
             # BRAIN DAMAGE -- does it always get down here for each verify op? I think not
@@ -141,18 +170,38 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
             logging.error("can't execute opcode %s", opcode)
 
-    except Exception:
+    except Exception as ex:
         logging.exception("script failed")
 
     return len(stack) != 0
 
 def verify_script(script_signature, script_public_key, signature_for_hash_type_f, expected_hash_type=None):
     stack = []
+
+    is_p2h = (len(script_public_key) == 23 and script_public_key[0] == opcodes.OP_HASH160
+                and script_public_key[-1] == opcodes.OP_EQUAL)
+
     if not eval_script(script_signature, signature_for_hash_type_f, expected_hash_type, stack):
         logging.debug("script_signature did not evaluate")
         return False
+
+    if is_p2h:
+        signatures, alt_script_public_key = stack[:-1], stack[-1]
+        from pycoin.tx.script import tools
+        from pycoin import serialize
+        def sub(x):
+            if x == '00':
+                return '0'
+            return x
+        s1 = [sub(serialize.b2h(s)) for s in signatures]
+        alt_script_signature = tools.compile(" ".join(s1))
+
     if not eval_script(script_public_key, signature_for_hash_type_f, expected_hash_type, stack):
         logging.debug("script_public_key did not evaluate")
         return False
+
+    if is_p2h and stack[-1] == VCH_TRUE:
+        return verify_script(alt_script_signature, alt_script_public_key,
+                             signature_for_hash_type_f, expected_hash_type=expected_hash_type)
 
     return stack[-1] == VCH_TRUE

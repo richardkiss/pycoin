@@ -1,33 +1,39 @@
 
 from .. import encoding
-from .. import networks
+from ..networks import DEFAULT_NETCODES, NETWORK_NAMES, NETWORKS
 
-DEFAULT_NETCODES = ["BTC"]
 DEFAULT_ADDRESS_TYPES = ["address", "pay_to_script"]
 
+def _generate_network_prefixes():
+    d = {}
+    for n in NETWORKS:
+        for prop in "wif address pay_to_script prv32 pub32".split():
+            v = getattr(n, prop, None)
+            if v:
+                if v not in d:
+                    d[v] = []
+                d[v].append((n, prop))
+    return d
 
-def netcode_and_type_for_data(data):
+
+NETWORK_PREFIXES = _generate_network_prefixes()
+
+
+def netcode_and_type_for_data(data, netcodes=NETWORK_NAMES):
     """
     Given some already-decoded raw data from a base58 string,
     return (N, T) where N is the network code ("BTC" or "LTC") and
     T is the data type ("wif", "address", "prv32", "pub32").
     May also raise EncodingError.
     """
-    # TODO: check the data length is within correct range for data type
-    INDEX_LIST = [
-        ('wif_prefix', "wif"),
-        ('address_prefix', "address"),
-        ('pay_to_script_prefix', "pay_to_script"),
-        ('bip32_pub_prefix', "pub32"),
-        ('bip32_priv_prefix', "prv32"),
-    ]
-    for ni in networks.NETWORKS:
-        for attr, name in INDEX_LIST:
-            v = getattr(ni, attr, None)
-            if v is None:
-                continue
-            if data.startswith(v):
-                return ni.code, name
+    d = {}
+    for length in (4, 1):
+        for network, the_type in NETWORK_PREFIXES.get(data[:length], []):
+            d[network.code] = the_type
+    for netcode in netcodes:
+        v = d.get(netcode)
+        if v:
+            return netcode, v
 
     raise encoding.EncodingError("unknown prefix")
 

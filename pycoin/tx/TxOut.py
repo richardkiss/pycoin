@@ -32,8 +32,9 @@ from ..encoding import bitcoin_address_to_hash160_sec_with_prefix
 from ..serialize import b2h
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
+from .pay_to import script_obj_from_address, script_obj_from_script
 from .script import tools
-from .script.solvers import payable_address_for_script, script_type_and_hash160
+from ..networks import DEFAULT_NETCODES
 
 
 class TxOut(object):
@@ -56,18 +57,17 @@ class TxOut(object):
 
     def bitcoin_address(self, netcode="BTC"):
         # attempt to return the destination address, or None on failure
-        return payable_address_for_script(self.script, netcode)
+        info = script_obj_from_script(self.script).info(netcode=netcode)
+        return info.get("address")
 
     def hash160(self):
         # attempt to return the destination hash160, or None on failure
-        r = script_type_and_hash160(self.script)
-        if r:
-            return r[1]
-        return None
+        info = script_obj_from_script(self.script).info(netcode=netcode)
+        return info.get("hash160")
 
 
-def standard_tx_out_script(bitcoin_address):
-    hash160, prefix = bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address)
-    STANDARD_SCRIPT_OUT = "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG"
-    script_text = STANDARD_SCRIPT_OUT % b2h(hash160)
-    return tools.compile(script_text)
+def standard_tx_out_script(address, netcodes=DEFAULT_NETCODES):
+    script_obj = script_obj_from_address(address, netcodes=DEFAULT_NETCODES)
+    if script_obj is None:
+        raise ValueError("can't parse address %s" % address)
+    return script_obj.script()
