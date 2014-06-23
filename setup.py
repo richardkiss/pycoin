@@ -13,6 +13,7 @@ setup(
         "pycoin.ecdsa",
         "pycoin.key",
         "pycoin.tx",
+        "pycoin.tx.pay_to",
         "pycoin.tx.script",
         "pycoin.serialize",
         "pycoin.services",
