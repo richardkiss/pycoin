@@ -1,9 +1,12 @@
 language: python
-python:
-  - "2.7"
-  - "3.3"
-  - "pypy"
-# command to install dependencies
-install: "pip install pytest tox"
-# command to run tests
-script: tox
+python: 2.7
+env:
+    - TOX_ENV=py26
+    - TOX_ENV=py27
+    - TOX_ENV=py32
+    - TOX_ENV=py33
+    - TOX_ENV=pypy
+    - TOX_ENV=docs
+    - TOX_ENV=pep8
+script:
+    - tox -e $TOX_ENV
