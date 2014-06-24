@@ -6,3 +6,4 @@ build
 files.txt
 *egg-info
 .DS_STORE
+.tox

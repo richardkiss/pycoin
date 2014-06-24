@@ -4,6 +4,6 @@ python:
   - "3.3"
   - "pypy"
 # command to install dependencies
-install: "pip install pytest"
+install: "pip install pytest tox"
 # command to run tests
-script: PYTHONPATH=`pwd` py.test pycoin/test/
+script: tox
