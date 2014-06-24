@@ -2,12 +2,11 @@ language: python
 python: 2.7
 install: "pip install pytest tox"
 env:
-    - TOX_ENV=py26
     - TOX_ENV=py27
     - TOX_ENV=py32
     - TOX_ENV=py33
+    - TOX_ENV=py34
     - TOX_ENV=pypy
     - TOX_ENV=docs
-    - TOX_ENV=pep8
 script:
     - tox -e $TOX_ENV
