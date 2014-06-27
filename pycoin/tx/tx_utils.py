@@ -79,7 +79,7 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1):
     def _fix_spendable(s):
         if isinstance(s, Spendable):
             return s
-        if isinstance(s, (type(b''), type(u''))):
+        if not hasattr(s, "keys"):
             return Spendable.from_text(s)
         return Spendable.from_dict(s)
 

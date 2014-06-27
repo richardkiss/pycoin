@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-import binascii
 import unittest
 
 from pycoin.key import Key
+from pycoin.serialize import h2b
 
 class KeyTest(unittest.TestCase):
 
@@ -11,8 +11,8 @@ class KeyTest(unittest.TestCase):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
 
             secret_exponent = int(exp_hex, 16)
-            sec = binascii.unhexlify(public_pair_sec)
-            c_sec = binascii.unhexlify(c_public_pair_sec)
+            sec = h2b(public_pair_sec)
+            c_sec = h2b(c_public_pair_sec)
 
             keys_wif = [
                 Key(secret_exponent=secret_exponent),

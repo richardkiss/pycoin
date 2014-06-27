@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-import binascii
 import unittest
 import os
 import sys
 import tempfile
 
+from pycoin.serialize import h2b
+
 # binary data with GPG-encrypted WIF KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn for secret exponent 1
-WIF_1_GPG = binascii.unhexlify(
+WIF_1_GPG = h2b(
     "8c0d040303026c3030b7518a94eb60c950bc87ab26f0604a37f247f74f88deda10b180bb807"
     "2879b728b8f056808baea0c8e511e7cf2eba77cce937d2f69a67a79e163bf70b57113d27cb6"
     "a1c2390a1e8069b447c34a7c9b5ba268c2beedd85b50")
