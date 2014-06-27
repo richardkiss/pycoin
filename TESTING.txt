@@ -1,0 +1,10 @@
+The pycoin library uses tox https://testrun.org/tox/latest/ to test rapidly on different versions of python.
+
+Although pycoin has no dependencies, if you want to hack on it, it's recommended that you to install py.test and tox in your development virtualenv.
+
+$ pip install tox pytest
+
+To run just a subset of tests for features under development do something like:
+
+$ cd (project_root_dir)
+$ PYTHONPATH=`pwd` py.test tests/scripts_test.py

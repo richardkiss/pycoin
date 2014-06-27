@@ -8,6 +8,4 @@ cd $THIS_DIR
 PYTHONPATH=$THIS_DIR
 export PYTHONPATH
 
-PYTEST=`which py.test`
-
-python $PYTEST pycoin
+tox
