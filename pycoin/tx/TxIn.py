@@ -26,11 +26,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import binascii
-
 from .. import encoding
 
-from ..serialize import b2h, b2h_rev
+from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .script.tools import disassemble, opcode_list
@@ -71,7 +69,7 @@ class TxIn(object):
         opcodes = opcode_list(self.script)
         if len(opcodes) == 2 and opcodes[0].startswith("30"):
             # the second opcode is probably the public key as sec
-            sec = binascii.unhexlify(opcodes[1])
+            sec = h2b(opcodes[1])
             bitcoin_address = encoding.hash160_sec_to_bitcoin_address(
                 encoding.hash160(sec), address_prefix=address_prefix)
             return bitcoin_address

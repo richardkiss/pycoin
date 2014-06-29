@@ -4,7 +4,6 @@
 # ./spend.py `./spend.py -c KxwGdpvzjzD5r6Qwg5Ev7gAv2Wn53tmSFfingBThhJEThQFcWPdj/20` 19TKi9Mv8AVLguAVYyCTY5twy5PKoEqrRf/19.9999 -p KxwGdpvzjzD5r6Qwg5Ev7gAv2Wn53tmSFfingBThhJEThQFcWPdj
 
 import argparse
-import binascii
 import decimal
 import io
 import itertools
@@ -13,6 +12,7 @@ import sys
 from pycoin import ecdsa
 from pycoin import encoding
 from pycoin.convention import tx_fee, btc_to_satoshi, satoshi_to_btc
+from pycoin.serialize import b2h, h2b
 from pycoin.services import blockchain_info
 from pycoin.tx import Tx, UnsignedTx, TxOut, SecretExponentSolver
 from pycoin.wallet import Wallet
@@ -75,7 +75,7 @@ def get_unsigned_tx(parser):
     # if there is only one item passed, it's assumed to be hex
     if len(args.txinfo) == 1:
         try:
-            s = io.BytesIO(binascii.unhexlify(args.txinfo[0].decode("utf8")))
+            s = io.BytesIO(h2b(args.txinfo[0]))
             return UnsignedTx.parse(s)
         except Exception:
             parser.error("can't parse %s as hex\n" % args.txinfo[0])
@@ -95,10 +95,10 @@ def get_unsigned_tx(parser):
                     # we assume it's an input of the form
                     #  tx_hash_hex/tx_output_index_decimal/tx_out_val/tx_out_script_hex
                     tx_hash_hex, tx_output_index_decimal, tx_out_val, tx_out_script_hex = parts
-                    tx_hash = binascii.unhexlify(tx_hash_hex)
+                    tx_hash = h2b(tx_hash_hex)
                     tx_output_index = int(tx_output_index_decimal)
                     tx_out_val = btc_to_satoshi(decimal.Decimal(tx_out_val))
-                    tx_out_script = binascii.unhexlify(tx_out_script_hex)
+                    tx_out_script = h2b(tx_out_script_hex)
                     tx_out = TxOut(tx_out_val, tx_out_script)
                     coins_source = (tx_hash, tx_output_index, tx_out)
                     coins_from.append(coins_source)
@@ -141,10 +141,10 @@ def main():
     args = parser.parse_args()
     if args.coinbase:
         new_tx = create_coinbase_tx(parser)
-        tx_hash_hex = binascii.hexlify(new_tx.hash())
+        tx_hash_hex = b2h(new_tx.hash())
         tx_output_index = 0
         tx_out_val = str(satoshi_to_btc(new_tx.txs_out[tx_output_index].coin_value))
-        tx_out_script_hex = binascii.hexlify(new_tx.txs_out[tx_output_index].script)
+        tx_out_script_hex = b2h(new_tx.txs_out[tx_output_index].script)
         # product output in the form:
         #  tx_hash_hex/tx_output_index_decimal/tx_out_val/tx_out_script_hex
         # which can be used as a fake input to a later transaction
@@ -161,7 +161,7 @@ def main():
         s = io.BytesIO()
         unsigned_tx.stream(s)
         tx_bytes = s.getvalue()
-        tx_hex = binascii.hexlify(tx_bytes).decode("utf8")
+        tx_hex = b2h(tx_bytes)
         print(tx_hex)
         sys.exit(0)
 
@@ -171,7 +171,7 @@ def main():
     s = io.BytesIO()
     new_tx.stream(s)
     tx_bytes = s.getvalue()
-    tx_hex = binascii.hexlify(tx_bytes).decode("utf8")
+    tx_hex = b2h(tx_bytes)
     print("copy the following hex to http://blockchain.info/pushtx to put the transaction on the network:\n")
     print(tx_hex)
 

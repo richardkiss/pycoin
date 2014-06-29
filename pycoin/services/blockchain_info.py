@@ -1,4 +1,3 @@
-import binascii
 import io
 import json
 
@@ -9,6 +8,7 @@ except ImportError:
     from urllib.request import urlopen, HTTPError
     from urllib.parse import urlencode
 
+from pycoin.serialize import b2h, h2b
 from pycoin.tx import Spendable
 
 
@@ -38,8 +38,8 @@ def spendables_for_address(bitcoin_address):
     spendables = []
     for u in r["unspent_outputs"]:
         coin_value = u["value"]
-        script = binascii.unhexlify(u["script"])
-        previous_hash = binascii.unhexlify(u["tx_hash"])
+        script = h2b(u["script"])
+        previous_hash = h2b(u["tx_hash"])
         previous_index = u["tx_output_n"]
         spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
     return spendables
@@ -48,7 +48,7 @@ def spendables_for_address(bitcoin_address):
 def send_tx(tx):
     s = io.BytesIO()
     tx.stream(s)
-    tx_as_hex = binascii.hexlify(s.getvalue()).decode("utf8")
+    tx_as_hex = b2h(s.getvalue())
     data = urlencode(dict(tx=tx_as_hex)).encode("utf8")
     URL = "http://blockchain.info/pushtx"
     try:

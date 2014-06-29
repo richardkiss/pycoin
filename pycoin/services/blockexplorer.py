@@ -1,4 +1,3 @@
-import binascii
 import json
 try:
     from urllib.request import urlopen
@@ -6,7 +5,7 @@ except ImportError:
     from urllib2 import urlopen
 
 from pycoin.convention import btc_to_satoshi
-from pycoin.serialize import b2h_rev, h2b_rev
+from pycoin.serialize import b2h_rev, h2b, h2b_rev
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.script import tools
 
@@ -25,7 +24,7 @@ def get_tx(tx_hash):
     txs_in = []
     for j_in in j.get("in"):
         if j_in.get("coinbase"):
-            txs_in.append(TxIn.coinbase_tx_in(binascii.unhexlify(j_in["coinbase"])))
+            txs_in.append(TxIn.coinbase_tx_in(h2b(j_in["coinbase"])))
         else:
             txs_in.append(TxIn(
                 h2b_rev(j_in["prev_out"]["hash"]),
