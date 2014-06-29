@@ -5,13 +5,8 @@ import binascii
 import sys
 
 from pycoin import ecdsa, encoding
+from pycoin.serialize import b2h, h2b
 from pycoin.ecdsa import secp256k1
-
-def b2h(b):
-    return binascii.hexlify(b).decode("utf8")
-
-def h2b(h):
-    return binascii.unhexlify(h)
 
 def parse_as_number(s):
     try:
