@@ -10,6 +10,9 @@ from pycoin.ecdsa import secp256k1
 def b2h(b):
     return binascii.hexlify(b).decode("utf8")
 
+def h2b(h):
+    return binascii.unhexlify(h)
+
 def parse_as_number(s):
     try:
         return int(s)
@@ -33,7 +36,7 @@ def parse_as_private_key(s):
 def parse_as_public_pair(s):
     try:
         if s[:2] in (["02", "03", "04"]):
-            return encoding.sec_to_public_pair(encoding.h2b(s))
+            return encoding.sec_to_public_pair(h2b(s))
     except (encoding.EncodingError, binascii.Error):
         pass
     for c in ",/":
@@ -56,7 +59,7 @@ def parse_as_address(s):
     except encoding.EncodingError:
         pass
     try:
-        v = encoding.h2b(s)
+        v = h2b(s)
         if len(v) == 20:
             return v
     except binascii.Error:
