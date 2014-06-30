@@ -209,7 +209,7 @@ class Key(object):
         Return the Key corresponding to the hierarchical wallet's subkey (or None).
         """
         if self._hierarchical_wallet:
-            return Key(hierarchical_wallet=self._hierarchical_wallet.subkey_for_path(path_to_subkey))
+            return Key(hierarchical_wallet=self._hierarchical_wallet.subkey_for_path(str(path_to_subkey)))
 
     def subkeys(self, path_to_subkeys):
         """

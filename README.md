@@ -17,7 +17,7 @@ wallet [BIP0032] or a WIF or a bitcoin (or altcoin) address, and convert downwar
 
 WARNING: be extremely careful giving out public wallet keys. If someone has access to a private wallet key P, of
 course they have access to all descendent wallet keys of P. But if they also have access to a public wallet key K
-where P is a subkey of P, you can actually work your way up the tree to determine the private key that corresponds
+where P is a subkey of K, you can actually work your way up the tree to determine the private key that corresponds
 to the public wallet key K (unless private derivation was used at some point between the two keys)! Be sure you
 understand this warning before giving out public wallet keys!
 
@@ -35,7 +35,7 @@ Or
 ```Key.from_sec(sec)``` creates a Key from the SEC bytestream encoding of a public pair.
 
 
-pycoin.bip32.Wallet (formerly pycoin.wallet.Wallet) provides a BIP32 hierarchical wallet.
+pycoin.key.bip32.Wallet (formerly pycoin.wallet.Wallet) provides a BIP32 hierarchical wallet.
 
 Much of this API is exposed in the ```ku``` command-line utility. See also COMMAND-LINE-TOOLS.md.
 
