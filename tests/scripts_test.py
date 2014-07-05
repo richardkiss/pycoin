@@ -43,8 +43,16 @@ class ScriptsTest(unittest.TestCase):
         self.launch_tool("ku.py P:foo")
         self.launch_tool("ku.py -w P:foo -s 5-10")
         self.launch_tool("ku.py -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n BTC -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n XTN -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n LTC -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n XLT -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n VIA -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n TVI -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n DRK -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n MEC -j -w P:foo -s 5-10")
         self.launch_tool("ku.py -n DOGE -j -w P:foo -s 5-10")
-        self.launch_tool("ku.py -n BLK -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n BC -j -w P:foo -s 5-10")
 
     def test_tx_fetch(self):
         self.launch_tool("tx.py 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098")
