@@ -22,6 +22,8 @@ class ScriptMultisig(ScriptType):
     def from_script(cls, script):
         #TEMPLATE = m {pubkey}...{pubkey} n OP_CHECKMULTISIG
         pc = 0
+        if len(script) == 0:
+            raise ValueError("blank script")
         opcode, data, pc = tools.get_opcode(script, pc)
 
         if not opcodes.OP_1 <= opcode < opcodes.OP_16:

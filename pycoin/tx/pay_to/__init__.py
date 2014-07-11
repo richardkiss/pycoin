@@ -10,8 +10,9 @@ from .ScriptPayToAddress import ScriptPayToAddress
 from .ScriptPayToPublicKey import ScriptPayToPublicKey
 from .ScriptPayToScript import ScriptPayToScript
 from .ScriptMultisig import ScriptMultisig
+from .ScriptUnknown import ScriptUnknown
 
-SUBCLASSES = [ScriptPayToAddress, ScriptPayToPublicKey, ScriptPayToScript, ScriptMultisig]
+SUBCLASSES = [ScriptPayToAddress, ScriptPayToPublicKey, ScriptPayToScript, ScriptMultisig, ScriptUnknown]
 
 
 def script_obj_from_address(text, netcodes=DEFAULT_NETCODES):

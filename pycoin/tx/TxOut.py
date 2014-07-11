@@ -62,7 +62,7 @@ class TxOut(object):
 
     def hash160(self):
         # attempt to return the destination hash160, or None on failure
-        info = script_obj_from_script(self.script).info(netcode=netcode)
+        info = script_obj_from_script(self.script).info()
         return info.get("hash160")
 
 
