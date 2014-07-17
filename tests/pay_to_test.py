@@ -152,5 +152,10 @@ class ScriptTypesTest(unittest.TestCase):
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_signature_count(), 0)
 
+    def test_weird_tx(self):
+        # this is from tx 12a8d1d62d12307eac6e62f2f14d7e826604e53c320a154593845aa7c8e59fbf
+        st = script_obj_from_script(b'Q')
+        self.assertNotEqual(st, None)
+
 if __name__ == "__main__":
     unittest.main()
