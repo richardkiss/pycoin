@@ -13,7 +13,7 @@ def dump_block(block, network):
     print("%d bytes   block hash %s" % (len(blob), block.id()))
     print("version %d" % block.version)
     print("prior block hash %s" % b2h_rev(block.previous_block_hash))
-    print("merkle root %s" % b2h(block.merkle_root)
+    print("merkle root %s" % b2h(block.merkle_root))
     print("timestamp %s" % datetime.datetime.utcfromtimestamp(block.timestamp).isoformat())
     print("difficulty %d" % block.difficulty)
     print("nonce %s" % block.nonce)
