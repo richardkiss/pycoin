@@ -47,7 +47,8 @@ Create a BIP32 key from a passphrase:
       $ ku P:foo
 
       input           : P:foo
-      network         : Bitcoin
+      network         : Bitcoin mainnet
+      netcode         : BTC
       wallet key      : xprv9s21ZrQH143K31AgNK5pyVvW23gHnkBq2wh5aEk6g1s496M8ZMjxncCKZKgb5j\
                           ZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtq
       public version  : xpub661MyMwAqRbcFVF9ULcqLdsEa5WnCCugQAcgNd9iEMQ31tgH6u4DLQWoQayvtS\
@@ -79,26 +80,27 @@ Get info as JSON:
 
     $ ku P:foo -P -j
     {
-       "y_parity": "even", 
-       "public_pair_y_hex": "826d8b4d3010aea16ff4c1c1d3ae68541d9a04df54a2c48cc241c2983544de52", 
-       "private_key": "no", 
-       "parent_fingerprint": "00000000", 
-       "tree_depth": "0", 
-       "network": "Bitcoin", 
-       "btc_address_uncompressed": "1MwkRkogzBRMehBntgcq2aJhXCXStJTXHT", 
-       "key_pair_as_sec_uncompressed": "04b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f826d8b4d3010aea16ff4c1c1d3ae68541d9a04df54a2c48cc241c2983544de52", 
-       "public_pair_x_hex": "b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f", 
-       "wallet_key": "xpub661MyMwAqRbcFVF9ULcqLdsEa5WnCCugQAcgNd9iEMQ31tgH6u4DLQWoQayvtSVYFvXz2vPPpbXE1qpjoUFidhjFj82pVShWu9curWmb2zy", 
-       "chain_code": "5eeb1023fd6dd1ae52a005ce0e73420821e1d90e08be980a85e9111fd7646bbc", 
-       "child_index": "0", 
-       "hash160_uncompressed": "e5bd3a7e6cb62b4c820e51200fb1c148d79e67da", 
-       "btc_address": "19Vqc8uLTfUonmxUEZac7fz1M5c5ZZbAii", 
-       "fingerprint": "5d353a2e", 
-       "hash160": "5d353a2ecdb262477172852d57a3f11de0c19286", 
-       "input": "P:foo", 
-       "public_pair_x": "81821982719381104061777349269130419024493616650993589394553404347774393168191", 
-       "public_pair_y": "58994218069605424278320703250689780154785099509277691723126325051200459038290", 
-       "key_pair_as_sec": "02b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f"
+       "btc_address": "19Vqc8uLTfUonmxUEZac7fz1M5c5ZZbAii",
+       "btc_address_uncompressed": "1MwkRkogzBRMehBntgcq2aJhXCXStJTXHT",
+       "chain_code": "5eeb1023fd6dd1ae52a005ce0e73420821e1d90e08be980a85e9111fd7646bbc",
+       "child_index": "0",
+       "fingerprint": "5d353a2e",
+       "hash160": "5d353a2ecdb262477172852d57a3f11de0c19286",
+       "hash160_uncompressed": "e5bd3a7e6cb62b4c820e51200fb1c148d79e67da",
+       "input": "P:foo",
+       "key_pair_as_sec": "02b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f",
+       "key_pair_as_sec_uncompressed": "04b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f826d8b4d3010aea16ff4c1c1d3ae68541d9a04df54a2c48cc241c2983544de52",
+       "netcode": "BTC",
+       "network": "Bitcoin mainnet",
+       "parent_fingerprint": "00000000",
+       "private_key": "no",
+       "public_pair_x": "81821982719381104061777349269130419024493616650993589394553404347774393168191",
+       "public_pair_x_hex": "b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f",
+       "public_pair_y": "58994218069605424278320703250689780154785099509277691723126325051200459038290",
+       "public_pair_y_hex": "826d8b4d3010aea16ff4c1c1d3ae68541d9a04df54a2c48cc241c2983544de52",
+       "tree_depth": "0",
+       "wallet_key": "xpub661MyMwAqRbcFVF9ULcqLdsEa5WnCCugQAcgNd9iEMQ31tgH6u4DLQWoQayvtSVYFvXz2vPPpbXE1qpjoUFidhjFj82pVShWu9curWmb2zy",
+       "y_parity": "even"
     }
 
 Public BIP32 Key:
@@ -170,7 +172,8 @@ From secret exponent:
     $ ku 1
 
     input           : 1
-    network         : Bitcoin
+    network         : Bitcoin mainnet
+    netcode         : BTC
     secret exponent : 1
      hex            : 1
     wif             : KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
@@ -190,10 +193,11 @@ From secret exponent:
 
 Litecoin version:
 
-    $ ku -nL 1
+    $ ku -nLTC 1
 
     input            : 1
-    network          : Litecoin
+    network          : Litecoin mainnet
+    netcode          : LTC
     secret exponent  : 1
      hex             : 1
     wif              : T33ydQRKp4FCW5LCLLUB7deioUMoveiwekdwUwyfRDeGZm76aUjV
@@ -213,44 +217,48 @@ Litecoin version:
 
 Dogecoin WIF:
 
-    $ ku -nD -W 1
+    $ ku -nDOGE -W 1
     QNcdLVw8fHkixm6NNyN6nVwxKek4u7qrioRbQmjxac5TVoTtZuot
 
 From public pair (on Testnet):
 
-    $ ku -nT 55066263022277343669578718895168534326250603453777594175500187360389116729240,even
+    $ ku -nXTN 55066263022277343669578718895168534326250603453777594175500187360389116729240,even
 
-    input                   : 550662630222773436695787188951685343262506034537775941755001873603\
-                                89116729240,even
-    network                 : Bitcoin testnet
-    public pair x           : 55066263022277343669578718895168534326250603453777594175500187360389116729240
-    public pair y           : 32670510020758816978083085130507043184471273380659243275938904335757337482424
-     x as hex               : 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
-     y as hex               : 483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
-    y parity                : even
-    key pair as sec         : 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
-     uncompressed           : 0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798\
-                                483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
-    hash160                 : 751e76e8199196d454941c45d1b3a323f1433bd6
-     uncompressed           : 91b24bf9f5288532960ac687abb035127b1d28a5
-    Bitcoin testnet address : mrCDrCybB6J1vRfbwM5hemdJz73FwDBC8r
-     uncompressed           : mtoKs9V381UAhUia3d7Vb9GNak8Qvmcsme
+    input           : 550662630222773436695787188951685343262506034537775941755001873603\
+                        89116729240,even
+    network         : Bitcoin testnet3
+    netcode         : XTN
+    public pair x   : 55066263022277343669578718895168534326250603453777594175500187360389116729240
+    public pair y   : 32670510020758816978083085130507043184471273380659243275938904335757337482424
+     x as hex       : 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+     y as hex       : 483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
+    y parity        : even
+    key pair as sec : 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+     uncompressed   : 0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798\
+                        483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
+    hash160         : 751e76e8199196d454941c45d1b3a323f1433bd6
+     uncompressed   : 91b24bf9f5288532960ac687abb035127b1d28a5
+    Bitcoin address : mrCDrCybB6J1vRfbwM5hemdJz73FwDBC8r
+     uncompressed   : mtoKs9V381UAhUia3d7Vb9GNak8Qvmcsme
+
 
 From hash160:
 
     $ ku 751e76e8199196d454941c45d1b3a323f1433bd6
 
     input           : 751e76e8199196d454941c45d1b3a323f1433bd6
-    network         : Bitcoin
+    network         : Bitcoin mainnet
+    netcode         : BTC
     hash160         : 751e76e8199196d454941c45d1b3a323f1433bd6
     Bitcoin address : 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
 
 As a Dogecoin address:
 
-    $ ku -nD 751e76e8199196d454941c45d1b3a323f1433bd6
+    $ ku -nDOGE 751e76e8199196d454941c45d1b3a323f1433bd6
 
     input            : 751e76e8199196d454941c45d1b3a323f1433bd6
-    network          : Dogecoin
+    network          : Dogecoin mainnet
+    netcode          : DOGE
     hash160          : 751e76e8199196d454941c45d1b3a323f1433bd6
     Dogecoin address : DFpN6QqFfUm3gKNaxN6tNcab1FArL9cZLE
 

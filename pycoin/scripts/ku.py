@@ -13,7 +13,7 @@ from pycoin.ecdsa import is_public_pair_valid, generator_secp256k1, public_pair_
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
 from pycoin.key.bip32 import Wallet
-from pycoin.networks import full_network_name_for_netcode, NETWORK_NAMES
+from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, NETWORK_NAMES
 
 
 SEC_RE = re.compile(r"^(0[23][0-9a-fA-F]{64})|(04[0-9a-fA-F]{128})$")
@@ -90,9 +90,10 @@ def create_output(item, key, subkey_path=None):
             output_dict[json_key.strip().lower()] = value
         output_order.append((json_key.lower(), human_readable_key))
 
-    network_name = full_network_name_for_netcode(key._netcode)
+    network_name = network_name_for_netcode(key._netcode)
+    full_network_name = full_network_name_for_netcode(key._netcode)
     add_output("input", item)
-    add_output("network", network_name)
+    add_output("network", full_network_name)
     add_output("netcode", key._netcode)
 
     hw = key.hierarchical_wallet()
@@ -149,7 +150,7 @@ def create_output(item, key, subkey_path=None):
 
     if hash160_u:
         add_output("%s_address_uncompressed" % key._netcode,
-                key.address(use_uncompressed=True), "%s uncompressed" % network_name)
+                key.address(use_uncompressed=True), " uncompressed")
 
     return output_dict, output_order
 
@@ -269,7 +270,7 @@ def main():
             output_dict, output_order = create_output(item, key)
 
             if args.json:
-                print(json.dumps(output_dict, indent=3))
+                print(json.dumps(output_dict, indent=3, sort_keys=True))
             elif args.wallet:
                 print(output_dict["wallet_key"])
             elif args.wif:
