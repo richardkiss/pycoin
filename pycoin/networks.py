@@ -10,12 +10,14 @@ NETWORKS = (
     NetworkValues("Bitcoin", "mainnet", "BTC", b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E")),
     NetworkValues("Bitcoin", "testnet3", "XTN", b'\xef', b'\x6f', b'\xc4',
                   h2b("04358394"), h2b("043587CF")),
-    NetworkValues("Litecoin", "mainnet", "LTC", b'\xb0', b'\x30', None, None, None),
+    NetworkValues("Litecoin", "mainnet", "LTC", b'\xb0', b'\x30', None, h2b('019d9cfe'), h2b('019da462')),
+    NetworkValues("Litecoin", "testnet", "XLT", b'\xb1', b'\x31', None, h2b('0436ef7d'), h2b('0436f6e1')),
     NetworkValues("Dogecoin", "mainnet", "DOGE", b'\x9e', b'\x1e', b'\x16',
                   h2b("02fda4e8"), h2b("02fda923")),
     # BlackCoin: unsure about bip32 prefixes; assuming will use Bitcoin's
     NetworkValues("Blackcoin", "mainnet", "BLK", b'\x99', b'\x19', None, h2b("0488ADE4"), h2b("0488B21E")),
 )
+
 
 # Map from short code to details about that network.
 NETWORK_NAME_LOOKUP = dict((i.code, i) for i in NETWORKS)
