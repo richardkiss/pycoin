@@ -176,6 +176,9 @@ def main():
                         'is used; otherwise, the fee is automatically set to the unclaimed funds.',
                         default="standard", metavar="transaction-fee", type=parse_fee)
 
+    parser.add_argument('-C', "--cache", help='force the resultant transaction into the transaction cache.'
+                        ' Mostly for testing.', action='store_true'),
+
     parser.add_argument('-u', "--show-unspents", action='store_true',
                         help='show TxOut items for this transaction in Spendable form.')
 
@@ -420,7 +423,7 @@ def main():
     if args.output_file:
         f = args.output_file
         if f.name.endswith(".hex"):
-            f.write(tx_as_hex)
+            f.write(tx_as_hex.encode("utf8"))
         else:
             tx.stream(f)
             if include_unspents:
@@ -436,6 +439,13 @@ def main():
         if include_unspents:
             print("including unspents in hex dump since transaction not fully signed")
         print(tx_as_hex)
+
+    if args.cache:
+        if tx_db is None:
+            warning_tx_cache = message_about_tx_cache_env()
+            warning_get_tx = message_about_get_tx_env()
+            tx_db = get_tx_db()
+        tx_db.put(tx)
 
     if args.bitcoind_url:
         if tx_db is None:

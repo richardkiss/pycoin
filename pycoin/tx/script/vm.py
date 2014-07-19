@@ -35,34 +35,18 @@ from . import der
 from . import opcodes
 from . import ScriptError
 
-from .microcode import MICROCODE_LOOKUP, VCH_TRUE, make_bool
+from .microcode import MICROCODE_LOOKUP, VCH_TRUE, VCH_FALSE, make_bool
 from .tools import get_opcode
 
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split()))
 
 INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split()))
 
-def check_signature(signature_for_hash_type_f, public_key_blob, sig_blob, expected_hash_type=None):
-    """Ensure the given transaction has the correct signature. Invoked by the VM.
-    Adapted from official Bitcoin-QT client.
-
-    signature_for_hash_type_f: a function returning the signature hash of the transaction
-        being verified given a hash type
-    public_key_blob: the blob representing the SEC-encoded public pair
-    sig_blob: the blob representing the DER-encoded signature
-    expected_hash_type: expected signature_type (or 0 for wild card)
-    """
-    signature_type = ord(sig_blob[-1:])
+def parse_signature_blob(sig_blob):
     sig_pair = der.sigdecode_der(sig_blob[:-1])
-    if expected_hash_type not in (None, signature_type):
-        raise ScriptError("wrong hash type")
-    try:
-        public_pair = sec_to_public_pair(public_key_blob)
-        signature_hash = signature_for_hash_type_f(signature_type)
-        v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair)
-    except EncodingError:
-        v = 0
-    return make_bool(v)
+    signature_type = ord(sig_blob[-1:])
+    return sig_pair, signature_type
+
 
 def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stack=[]):
     altstack = []
@@ -129,11 +113,15 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
                 raise ScriptError("%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode])
 
             if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
-                public_key_blob = stack.pop()
-                sig_blob = stack.pop()
-                v = check_signature(
-                    signature_for_hash_type_f, public_key_blob, sig_blob, expected_hash_type)
-                stack.append(v)
+                public_pair = sec_to_public_pair(stack.pop())
+                sig_pair, signature_type = parse_signature_blob(stack.pop())
+                if expected_hash_type not in (None, signature_type):
+                    raise ScriptError("wrong hash type")
+                signature_hash = signature_for_hash_type_f(signature_type)
+                if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair):
+                    stack.append(VCH_TRUE)
+                else:
+                    stack.append(VCH_FALSE)
                 if opcode == opcodes.OP_CHECKSIGVERIFY:
                     if stack.pop() != VCH_TRUE:
                         raise ScriptError("VERIFY failed at %d" % pc-1)
@@ -141,24 +129,41 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
             if opcode == opcodes.OP_CHECKMULTISIG:
                 key_count = stack.pop()
-                public_key_blobs = []
+                public_pairs = []
                 for i in range(key_count):
-                    public_key_blobs.append(stack.pop())
+                    the_sec = stack.pop()
+                    try:
+                        public_pairs.append(sec_to_public_pair(the_sec))
+                    except EncodingError:
+                        # we must ignore badly encoded public pairs
+                        # the transaction 70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a
+                        # is in a block and requires this hack
+                        pass
 
                 signature_count = stack.pop()
                 sig_blobs = []
                 for i in range(signature_count):
                     sig_blobs.append(stack.pop())
 
-                for sig_blob in sig_blobs:
-                    for public_key_blob in public_key_blobs:
-                        sig_ok = check_signature(
-                            signature_for_hash_type_f, public_key_blob, sig_blob, expected_hash_type)
-                        if sig_ok == VCH_TRUE:
-                            break
-                    if sig_ok != VCH_TRUE:
-                        break
                 should_be_zero_bug = stack.pop()
+
+                sig_ok = VCH_TRUE
+                for sig_blob in sig_blobs:
+                    sig_pair, signature_type = parse_signature_blob(sig_blob)
+                    signature_hash = signature_for_hash_type_f(signature_type)
+
+                    ppp = ecdsa.possible_public_pairs_for_signature(
+                        ecdsa.generator_secp256k1, signature_hash, sig_pair)
+
+                    ppp.intersection_update(public_pairs)
+                    if len(ppp) == 0:
+                        sig_ok = VCH_FALSE
+                        break
+
+                    matching_pair = ppp.pop()
+                    idx = public_pairs.index(matching_pair)
+                    public_pairs = public_pairs[:idx] + public_pairs[idx+1:]
+
                 stack.append(sig_ok)
                 continue
 

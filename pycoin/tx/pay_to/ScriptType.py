@@ -4,11 +4,8 @@ from pycoin import ecdsa
 
 from ..script import der, opcodes, tools
 
+
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
-
-
-class SolvingError(Exception):
-    pass
 
 
 class ScriptType(object):

@@ -2,11 +2,10 @@ from ..script import tools
 
 from ... import encoding
 
-from ...key.validate import netcode_and_type_for_data
 from ...networks import pay_to_script_prefix_for_netcode
 from ...serialize import b2h
 
-from .ScriptType import ScriptType, SolvingError
+from .ScriptType import ScriptType
 
 
 class ScriptPayToScript(ScriptType):

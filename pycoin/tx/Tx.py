@@ -218,7 +218,7 @@ class Tx(object):
         the_script = script_obj_from_script(tx_out_script)
         solution = the_script.solve(
             hash160_lookup=hash160_lookup, sign_value=sign_value, signature_type=hash_type,
-            exiting_script=self.txs_in[tx_in_idx].script, **kwargs)
+            existing_script=self.txs_in[tx_in_idx].script, **kwargs)
         tx_in.script = solution
 
     def verify_tx_in(self, tx_in_idx, tx_out_script, expected_hash_type=None):

@@ -1,12 +1,14 @@
 from ..script import opcodes, tools
+from ..script.vm import parse_signature_blob
+from ..script.microcode import VCH_TRUE
 
+from ... import ecdsa
 from ... import encoding
 
-from ...key.validate import netcode_and_type_for_data
 from ...networks import address_prefix_for_netcode
 from ...serialize import b2h
 
-from .ScriptType import ScriptType, SolvingError
+from .ScriptType import ScriptType
 
 
 # see BIP11 https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki
@@ -20,7 +22,6 @@ class ScriptMultisig(ScriptType):
 
     @classmethod
     def from_script(cls, script):
-        #TEMPLATE = m {pubkey}...{pubkey} n OP_CHECKMULTISIG
         pc = 0
         if len(script) == 0:
             raise ValueError("blank script")
@@ -59,7 +60,7 @@ class ScriptMultisig(ScriptType):
     def script(self):
         if self._script is None:
             # create the script
-            #TEMPLATE = m {pubkey}...{pubkey} n OP_CHECKMULTISIG
+            # TEMPLATE = m {pubkey}...{pubkey} n OP_CHECKMULTISIG
             public_keys = [b2h(sk) for sk in self.sec_keys]
             script_source = "%d %s %d OP_CHECKMULTISIG" % (self.n, " ".join(public_keys), len(public_keys))
             self._script = tools.compile(script_source)
@@ -85,22 +86,32 @@ class ScriptMultisig(ScriptType):
         sign_value = kwargs.get("sign_value")
         signature_type = kwargs.get("signature_type")
 
+        secs_solved = set()
         existing_signatures = []
         existing_script = kwargs.get("existing_script")
         if existing_script:
             pc = 0
-            opcode, data, pc = tools.get_opcode(script, pc)
+            opcode, data, pc = tools.get_opcode(existing_script, pc)
             # ignore the first opcode
-            while pc < len(data):
-                opcode, data, pc = tools.get_opcode(script, pc)
+            while pc < len(existing_script):
+                opcode, data, pc = tools.get_opcode(existing_script, pc)
+                sig_pair, actual_signature_type = parse_signature_blob(data)
                 for sec_key in self.sec_keys:
-                    sig_ok = check_signature(sign_value, sec_key, data, signature_type)
-                    if sig_ok:
-                        break
-                else:
-                    existing_signatures.append(data)
+                    try:
+                        public_pair = encoding.sec_to_public_pair(sec_key)
+                        sig_pair, signature_type = parse_signature_blob(data)
+                        v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
+                        if v:
+                            existing_signatures.append(data)
+                            secs_solved.add(sec_key)
+                            break
+                    except encoding.EncodingError:
+                        # if public_pair is invalid, we just ignore it
+                        pass
 
         for sec_key in self.sec_keys:
+            if sec_key in secs_solved:
+                continue
             if len(existing_signatures) >= self.n:
                 break
             hash160 = encoding.hash160(sec_key)
@@ -121,9 +132,11 @@ class ScriptMultisig(ScriptType):
     def info(self, netcode='BTC'):
         address_prefix = address_prefix_for_netcode(netcode)
         hash160s = [encoding.hash160(sk) for sk in self.sec_keys]
-        addresses = [encoding.hash160_sec_to_bitcoin_address(h1, address_prefix=address_prefix) for h1 in hash160s]
-        return dict(type="multisig m of n", m=len(self.sec_keys), n=self.n, addresses=addresses, hash160s=hash160s,
-                    script=self._script, address_prefix=address_prefix, summary="%d of %s" % (self.n, addresses))
+        addresses = [encoding.hash160_sec_to_bitcoin_address(h1, address_prefix=address_prefix)
+                     for h1 in hash160s]
+        return dict(type="multisig m of n", m=len(self.sec_keys), n=self.n, addresses=addresses,
+                    hash160s=hash160s, script=self._script, address_prefix=address_prefix,
+                    summary="%d of %s" % (self.n, addresses))
 
     def __repr__(self):
         info = self.info()

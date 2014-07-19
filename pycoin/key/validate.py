@@ -23,7 +23,7 @@ def netcode_and_type_for_data(data, netcodes=NETWORK_NAMES):
     """
     Given some already-decoded raw data from a base58 string,
     return (N, T) where N is the network code ("BTC" or "LTC") and
-    T is the data type ("wif", "address", "prv32", "pub32").
+    T is the data type ("wif", "address", "public_pair", "prv32", "pub32").
     May also raise EncodingError.
     """
     d = {}

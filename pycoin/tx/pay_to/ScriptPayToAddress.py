@@ -5,7 +5,7 @@ from ... import encoding
 from ...networks import address_prefix_for_netcode
 from ...serialize import b2h
 
-from .ScriptType import ScriptType, SolvingError
+from .ScriptType import ScriptType
 
 
 class ScriptPayToAddress(ScriptType):

@@ -5,7 +5,6 @@ from ... import encoding
 from ...networks import DEFAULT_NETCODES, pay_to_script_prefix_for_netcode
 from ...key.validate import netcode_and_type_for_data
 
-from .ScriptType import ScriptType, SolvingError
 from .ScriptPayToAddress import ScriptPayToAddress
 from .ScriptPayToPublicKey import ScriptPayToPublicKey
 from .ScriptPayToScript import ScriptPayToScript
@@ -13,6 +12,10 @@ from .ScriptMultisig import ScriptMultisig
 from .ScriptUnknown import ScriptUnknown
 
 SUBCLASSES = [ScriptPayToAddress, ScriptPayToPublicKey, ScriptPayToScript, ScriptMultisig, ScriptUnknown]
+
+
+class SolvingError(Exception):
+    pass
 
 
 def script_obj_from_address(text, netcodes=DEFAULT_NETCODES):
