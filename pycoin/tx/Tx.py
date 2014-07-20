@@ -95,11 +95,11 @@ class Tx(object):
         self.lock_time = lock_time
         self.unspents = unspents
 
-    def stream(self, f):
+    def stream(self, f, blank_solutions=False):
         """Stream a Bitcoin transaction Tx to the file-like object f."""
         stream_struct("LI", f, self.version, len(self.txs_in))
         for t in self.txs_in:
-            t.stream(f)
+            t.stream(f, blank_solutions=blank_solutions)
         stream_struct("I", f, len(self.txs_out))
         for t in self.txs_out:
             t.stream(f)
@@ -119,6 +119,17 @@ class Tx(object):
         self.stream(s)
         if hash_type:
             stream_struct("L", s, hash_type)
+        return double_sha256(s.getvalue())
+
+    def blanked_hash(self):
+        """
+        Return the hash for this Tx object with solution scripts blanked.
+        Useful for determining if two Txs might be equivalent modulo
+        malleability. (That is, even if tx1 is morphed into tx2 using the malleability
+        weakness, they will still have the same blanked hash.)
+        """
+        s = io.BytesIO()
+        self.stream(s, blank_solutions=True)
         return double_sha256(s.getvalue())
 
     def id(self):

@@ -52,8 +52,9 @@ class TxIn(object):
         tx = TxIn(previous_hash=ZERO, previous_index=4294967295, script=script)
         return tx
 
-    def stream(self, f):
-        stream_struct("#LSL", f, self.previous_hash, self.previous_index, self.script, self.sequence)
+    def stream(self, f, blank_solutions=False):
+        script = b'' if blank_solutions else self.script
+        stream_struct("#LSL", f, self.previous_hash, self.previous_index, script, self.sequence)
 
     @classmethod
     def parse(self, f):

@@ -2,6 +2,7 @@
 
 import unittest
 
+from pycoin.serialize import b2h
 from pycoin.tx.Tx import Tx
 
 TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX = ("0100000001a8f57056b016d7d243fc0fc2a73f9146e7e4c7766ec6033b5ac4cb89c"
@@ -18,9 +19,22 @@ class TxTest(unittest.TestCase):
         # this transaction is a pay-to-hash transaction
         self.assertEqual(tx.id(), "e1a18b843fc420734deeb68ff6df041a2585e1a0d7dbf3b82aab98291a6d9952")
         self.assertEqual(tx.txs_out[0].bitcoin_address(), "19LemzJ3XPdUxp113uynqCAivDbXZBdBy3")
-        # TODO: fix this when pay-to-hash properly parsed
         self.assertEqual(tx.txs_out[1].bitcoin_address(), "3KmkA7hvqG2wKkWUGz1BySioUywvcmdPLR")
 
+    def test_blanked_hash(self):
+        tx = Tx.tx_from_hex(TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX)
+        self.assertEqual(tx.id(), "e1a18b843fc420734deeb68ff6df041a2585e1a0d7dbf3b82aab98291a6d9952")
+        self.assertEqual(b2h(tx.blanked_hash()), "909579526c4c2c441687c7478d3f96249724d2ff071d2272b44500d6cf70d5d6")
+        tx.txs_in[0].script = b"foo"
+        self.assertEqual(b2h(tx.blanked_hash()), "909579526c4c2c441687c7478d3f96249724d2ff071d2272b44500d6cf70d5d6")
+        tx.txs_out[0].coin_value += 1
+        self.assertEqual(b2h(tx.blanked_hash()), "10d4e87f7bf35f2949e7693e7a4a84189aad8631f0b2b0999e88f7261066cbe5")
+        tx.txs_in[0].script = b"bar"
+        self.assertEqual(b2h(tx.blanked_hash()), "10d4e87f7bf35f2949e7693e7a4a84189aad8631f0b2b0999e88f7261066cbe5")
+        tx.txs_in[0].script = b""
+        self.assertEqual(b2h(tx.hash()), "10d4e87f7bf35f2949e7693e7a4a84189aad8631f0b2b0999e88f7261066cbe5")
+        tx.txs_in[0].script = b"foo"
+        self.assertEqual(b2h(tx.hash()), "c91910058722f1c0f52fc5c734939053c9b87882a9c72b609f21632e0bd13751")
 
 if __name__ == "__main__":
     unittest.main()
