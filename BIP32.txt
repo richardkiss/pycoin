@@ -32,7 +32,7 @@ object (to generate change addresses, for example). Set ```is_hardened=True```.
 
 WARNING: be extremely careful giving out public wallet keys. If someone has access to a private wallet key P, of course
 they have access to all descendent wallet keys of P. But if they also have access to a public wallet key K where P is a
-subkey of P, you can actually work your way up the tree to determine the private key that corresponds to the public
+subkey of K, you can actually work your way up the tree to determine the private key that corresponds to the public
 wallet key K (unless private derivation was used at some point between the two keys)! Be sure you understand this warning
 before giving out public wallet keys!
 
