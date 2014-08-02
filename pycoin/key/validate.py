@@ -41,7 +41,7 @@ def netcode_and_type_for_data(data, netcodes=NETWORK_NAMES):
 def _check_against(text, expected_type, allowable_netcodes):
     try:
         data = encoding.a2b_hashed_base58(text)
-        netcode, the_type = netcode_and_type_for_data(data)
+        netcode, the_type = netcode_and_type_for_data(data, netcodes=allowable_netcodes)
         if the_type in expected_type and netcode in allowable_netcodes:
             return netcode
     except encoding.EncodingError:
