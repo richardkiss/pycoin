@@ -8,7 +8,7 @@ from pycoin.scripts.tx import dump_tx
 from pycoin.serialize import b2h, b2h_rev, stream_to_bytes
 
 
-def dump_block(block, network):
+def dump_block(block, network="BTC"):
     blob = stream_to_bytes(block.stream)
     print("%d bytes   block hash %s" % (len(blob), block.id()))
     print("version %d" % block.version)
