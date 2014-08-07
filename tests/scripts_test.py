@@ -72,7 +72,7 @@ class ScriptsTest(unittest.TestCase):
         self.launch_tool("tx.py 5564224b6c01dbc2bfad89bfd8038bc2f4ca6c55eb660511d7151d71e4b94b6d/0/210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac/5000000000 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T -f %s -g'--passphrase foo'" % gpg_wif.name)
 
     def test_genwallet(self):
-        self.launch_tool("genwallet.py -g")
+        self.launch_tool("genwallet.py -u")
 
     def test_cache_tx(self):
         the_dir = self.set_cache_dir()
