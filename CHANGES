@@ -1,3 +1,18 @@
+Version 0.50
+------------
+
+* use tox for testing (see TESTING.txt for more info)
+* move blockchain utilities from pycoinnet to pycoin
+* completely rework how scripts are identified and solved in an easier-to-extend way
+* add fields to Spendable that will work better with wallets (coming soon)
+* add Tx.blanked_hash to assist in identifying transactions subject to malleability
+* can now sign M of N transactions
+* signing just one signature in an M of N transaction supported
+* VM improved so multisig validation now supported
+* pay-to-script validation now supported
+* pay-to-script signing now supported
+
+
 Version 0.42
 ------------
 
