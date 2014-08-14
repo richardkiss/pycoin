@@ -1,3 +1,9 @@
+Version 0.51
+------------
+
+* add pycoin.blockchain (which was in github but not setup.py)
+
+
 Version 0.50
 ------------
 

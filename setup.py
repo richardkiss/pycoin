@@ -2,13 +2,14 @@
 
 from setuptools import setup
 
-version = "0.50"
+version = "0.51"
 
 setup(
     name="pycoin",
     version=version,
     packages = [
         "pycoin",
+        "pycoin.blockchain",
         "pycoin.convention",
         "pycoin.ecdsa",
         "pycoin.key",
