@@ -6,7 +6,7 @@ import json
 import subprocess
 import sys
 
-from pycoin.key.bip32 import Wallet, PublicPrivateMismatchError
+from pycoin.key.BIP32Node import BIP32Node, PublicPrivateMismatchError
 from pycoin.networks import full_network_name_for_netcode
 
 def gpg_entropy():
@@ -57,19 +57,19 @@ def main():
     if args.wallet_key and len(entropy) > 0:
         parser.error("don't specify both entropy and a wallet key")
     if args.wallet_key_file:
-        wallet = Wallet.from_wallet_key(args.wallet_key_file.readline()[:-1])
+        wallet = BIP32Node.from_wallet_key(args.wallet_key_file.readline()[:-1])
     elif args.wallet_key:
-        wallet = Wallet.from_wallet_key(args.wallet_key)
+        wallet = BIP32Node.from_wallet_key(args.wallet_key)
     else:
-        wallet = Wallet.from_master_secret(bytes(entropy), netcode=network)
+        wallet = BIP32Node.from_master_secret(bytes(entropy), netcode=network)
     try:
         if args.subkey:
             wallet = wallet.subkey_for_path(args.subkey)
-        if wallet.child_number >= 0x80000000:
-            wc = wallet.child_number - 0x80000000
-            child_index = "%dp (%d)" % (wc, wallet.child_number)
+        if wallet.child_index() >= 0x80000000:
+            wc = wallet.child_index() - 0x80000000
+            child_index = "%dp (%d)" % (wc, wallet.child_index())
         else:
-            child_index = "%d" % wallet.child_number
+            child_index = "%d" % wallet.child_index()
         if args.json:
             d = dict(
                 wallet_key=wallet.wallet_key(as_private=wallet.is_private),

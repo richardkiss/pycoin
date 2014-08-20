@@ -41,291 +41,76 @@ THE SOFTWARE.
 
 import hashlib
 import hmac
-import itertools
 import struct
 
 from .. import ecdsa
 
-from ..encoding import public_pair_to_sec, sec_to_public_pair,\
-    secret_exponent_to_wif, public_pair_to_bitcoin_address,\
-    from_bytes_32, to_bytes_32,\
-    public_pair_to_hash160_sec, EncodingError
+from ..encoding import public_pair_to_sec, from_bytes_32, to_bytes_32
 
-from ..encoding import a2b_hashed_base58, b2a_hashed_base58
-from ..networks import address_prefix_for_netcode, wif_prefix_for_netcode,\
-    prv32_prefix_for_netcode, pub32_prefix_for_netcode
-from .validate import netcode_and_type_for_data
+ORDER = ecdsa.generator_secp256k1.order()
 
 
-class PublicPrivateMismatchError(Exception):
-    pass
-
-
-class InvalidKeyGeneratedError(Exception):
-    pass
-
-
-def wallet_iterator_for_wallet_key_path(wallet_key_path):
-    subkey_paths = ""
-    if "/" in wallet_key_path:
-        wallet_key_path, subkey_paths = wallet_key_path.split("/", 1)
-    return Wallet.from_wallet_key(wallet_key_path).subkeys_for_path(subkey_paths)
-
-
-class Wallet(object):
+def subkey_secret_exponent_chain_code_pair(
+        secret_exponent, chain_code_bytes, i, is_hardened, public_pair=None):
     """
-    This is a deterministic wallet that complies with BIP0032
-    https://en.bitcoin.it/wiki/BIP_0032
+    Yield info for a child node for this node.
+
+    secret_exponent:
+        base secret exponent
+    chain_code:
+        base chain code
+    i:
+        the index for this node.
+    is_hardened:
+        use "hardened key derivation". The public version of this node cannot calculate this child.
+    public_pair:
+        the public_pair for the given secret exponent. If you leave it None, it's calculated for you
+        (but then it's slower)
+
+    Returns a pair (new_secret_exponent, new_chain_code)
     """
-    @classmethod
-    def from_master_secret(class_, master_secret, netcode='BTC'):
-        """Generate a Wallet from a master password."""
-        I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
-        return class_(
-            is_private=True, netcode=netcode,
-            chain_code=I64[32:], secret_exponent_bytes=I64[:32])
+    i_as_bytes = struct.pack(">L", i)
 
-    @classmethod
-    def from_wallet_key(class_, b58_str, allow_subkey_suffix=True):
-        """Generate a Wallet from a base58 string in a standard way."""
-        # TODO: support subkey suffixes
+    if is_hardened:
+        data = b'\0' + to_bytes_32(secret_exponent) + i_as_bytes
+    else:
+        if public_pair is None:
+            public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, secret_exponent)
+        sec = public_pair_to_sec(public_pair, compressed=True)
+        data = sec + i_as_bytes
 
-        data = a2b_hashed_base58(b58_str)
-        netcode, key_type = netcode_and_type_for_data(data)
+    I64 = hmac.HMAC(key=chain_code_bytes, msg=data, digestmod=hashlib.sha512).digest()
+    I_left_as_exponent = from_bytes_32(I64[:32])
+    new_secret_exponent = (I_left_as_exponent + secret_exponent) % ORDER
+    new_chain_code = I64[32:]
+    return new_secret_exponent, new_chain_code
 
-        if key_type not in ("pub32", "prv32"):
-            raise EncodingError("bad wallet key header")
 
-        is_private = (key_type == 'prv32')
-        parent_fingerprint, child_number = struct.unpack(">4sL", data[5:13])
+def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
+    """
+    Yield info for a child node for this node.
 
-        d = dict(is_private=is_private, netcode=netcode, chain_code=data[13:45],
-                 depth=ord(data[4:5]), parent_fingerprint=parent_fingerprint, child_number=child_number)
+    public_pair:
+        base public pair
+    chain_code:
+        base chain code
+    i:
+        the index for this node.
 
-        if is_private:
-            if data[45:46] != b'\0':
-                raise EncodingError("private key encoded wrong")
-            d["secret_exponent_bytes"] = data[46:]
-        else:
-            d["public_pair"] = sec_to_public_pair(data[45:])
+    Returns a pair (new_public_pair, new_chain_code)
+    """
+    i_as_bytes = struct.pack(">l", i)
+    sec = public_pair_to_sec(public_pair, compressed=True)
+    data = sec + i_as_bytes
 
-        return class_(**d)
+    I64 = hmac.HMAC(key=chain_code_bytes, msg=data, digestmod=hashlib.sha512).digest()
 
-    def __init__(self, is_private, netcode, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
-                 child_number=0, secret_exponent_bytes=None, public_pair=None):
-        """Don't use this. Use a classmethod to generate from a string instead."""
-        if is_private:
-            if public_pair:
-                raise PublicPrivateMismatchError("can't include public_pair for private key")
-        elif secret_exponent_bytes:
-            raise PublicPrivateMismatchError("can't include secret_exponent_bytes for public key")
-        self.is_private = is_private
-        self.netcode = netcode
-        if is_private:
-            if len(secret_exponent_bytes) != 32:
-                raise EncodingError("private key encoding wrong length")
-            self.secret_exponent_bytes = secret_exponent_bytes
-            self.secret_exponent = from_bytes_32(self.secret_exponent_bytes)
-            if self.secret_exponent > ecdsa.generator_secp256k1.order():
-                raise InvalidKeyGeneratedError(
-                    "this key would produce an invalid secret exponent; please skip it")
-            self.public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1,
-                                                                     self.secret_exponent)
-        else:
-            self.public_pair = public_pair
-        # validate public_pair is on the curve
-        if not ecdsa.is_public_pair_valid(ecdsa.generator_secp256k1, self.public_pair):
-            raise InvalidKeyGeneratedError("this key would produce an invalid public pair; please skip it")
-        if not isinstance(chain_code, bytes):
-            raise ValueError("chain code must be bytes")
-        if len(chain_code) != 32:
-            raise EncodingError("chain code wrong length")
-        self.chain_code = chain_code
-        self.depth = depth
-        if len(parent_fingerprint) != 4:
-            raise EncodingError("parent_fingerprint wrong length")
-        self.parent_fingerprint = parent_fingerprint
-        self.child_number = child_number
-        self.subkey_cache = dict()
+    I_left_as_exponent = from_bytes_32(I64[:32])
+    x, y = public_pair
+    the_point = I_left_as_exponent * ecdsa.generator_secp256k1 + \
+        ecdsa.Point(ecdsa.generator_secp256k1.curve(), x, y, ORDER)
 
-    def serialize(self, as_private=None):
-        """Yield a 78-byte binary blob corresponding to this node."""
-        if as_private is None:
-            as_private = self.is_private
-        if not self.is_private and as_private:
-            raise PublicPrivateMismatchError("public key has no private parts")
-
-        ba = bytearray()
-        if as_private:
-            ba.extend(prv32_prefix_for_netcode(self.netcode))
-        else:
-            ba.extend(pub32_prefix_for_netcode(self.netcode))
-        ba.extend([self.depth])
-        ba.extend(self.parent_fingerprint + struct.pack(">L", self.child_number) + self.chain_code)
-        if as_private:
-            ba += b'\0' + self.secret_exponent_bytes
-        else:
-            ba += public_pair_to_sec(self.public_pair, compressed=True)
-        return bytes(ba)
-
-    def fingerprint(self):
-        return public_pair_to_hash160_sec(self.public_pair, compressed=True)[:4]
-
-    def wallet_key(self, as_private=False):
-        """Yield a 111-byte string corresponding to this node."""
-        return b2a_hashed_base58(self.serialize(as_private=as_private))
-
-    def wif(self, compressed=True):
-        """Yield the WIF corresponding to this node."""
-        if not self.is_private:
-            raise PublicPrivateMismatchError("can't generate WIF for public key")
-        return secret_exponent_to_wif(self.secret_exponent, compressed=compressed,
-                                      wif_prefix=wif_prefix_for_netcode(self.netcode))
-
-    def bitcoin_address(self, compressed=True):
-        """Yield the Bitcoin address corresponding to this node."""
-        return public_pair_to_bitcoin_address(self.public_pair, compressed=compressed,
-                                              address_prefix=address_prefix_for_netcode(self.netcode))
-
-    def public_copy(self):
-        """Yield the corresponding public node for this node."""
-        return self.__class__(is_private=False, netcode=self.netcode, chain_code=self.chain_code,
-                              depth=self.depth, parent_fingerprint=self.parent_fingerprint,
-                              child_number=self.child_number, public_pair=self.public_pair)
-
-    def _subkey(self, i, is_hardened, as_private):
-        """Yield a child node for this node.
-
-        i: the index for this node.
-        is_hardened: use "hardened key derivation". That is, the public version
-            of this node cannot calculate this child.
-        as_private: set to True to get a private subkey.
-
-        Note that setting i<0 uses private key derivation, no matter the
-        value for is_hardened."""
-        if i > 0xffffffff:
-            raise ValueError("i is too big: %d" % i)
-        if i < 0:
-            is_hardened = True
-            i_as_bytes = struct.pack(">l", i)
-        else:
-            if i >= 0x80000000:
-                raise ValueError("subkey index 0x%x too large" % i)
-            i &= 0x7fffffff
-            if is_hardened:
-                i |= 0x80000000
-            i_as_bytes = struct.pack(">L", i)
-        if is_hardened:
-            if not self.is_private:
-                raise PublicPrivateMismatchError("can't derive a private key from a public key")
-            data = b'\0' + self.secret_exponent_bytes + i_as_bytes
-        else:
-            data = public_pair_to_sec(self.public_pair, compressed=True) + i_as_bytes
-        I64 = hmac.HMAC(key=self.chain_code, msg=data, digestmod=hashlib.sha512).digest()
-        I_left_as_exponent = from_bytes_32(I64[:32])
-        d = dict(is_private=as_private, netcode=self.netcode, chain_code=I64[32:],
-                 depth=self.depth+1, parent_fingerprint=self.fingerprint(), child_number=i)
-
-        if as_private:
-            exponent = (I_left_as_exponent + self.secret_exponent) % ecdsa.generator_secp256k1.order()
-            d["secret_exponent_bytes"] = to_bytes_32(exponent)
-        else:
-            x, y = self.public_pair
-            the_point = I_left_as_exponent * ecdsa.generator_secp256k1 +\
-                ecdsa.Point(ecdsa.generator_secp256k1.curve(), x, y, ecdsa.generator_secp256k1.order())
-            d["public_pair"] = the_point.pair()
-        return self.__class__(**d)
-
-    def subkey(self, i=0, is_hardened=False, as_private=None):
-        if as_private is None:
-            as_private = self.is_private
-        is_hardened = not not is_hardened
-        as_private = not not as_private
-        lookup = (i, is_hardened, as_private)
-        if lookup not in self.subkey_cache:
-            self.subkey_cache[lookup] = self._subkey(i, is_hardened, as_private)
-        return self.subkey_cache[lookup]
-
-    def subkey_for_path(self, path):
-        """
-        path: a path of subkeys denoted by numbers and slashes. Use
-            H or i<0 for private key derivation. End with .pub to force
-            the key public.
-
-        Examples:
-            1H/-5/2/1 would call subkey(i=1, is_hardened=True).subkey(i=-5).
-                subkey(i=2).subkey(i=1) and then yield the private key
-            0/0/458.pub would call subkey(i=0).subkey(i=0).subkey(i=458) and
-                then yield the public key
-
-        You should choose one of the p or the negative number convention for private key
-        derivation and stick with it.
-        """
-        force_public = (path[-4:] == '.pub')
-        if force_public:
-            path = path[:-4]
-        key = self
-        if path:
-            invocations = path.split("/")
-            for v in invocations:
-                is_hardened = v[-1] in ("'pH")
-                if is_hardened:
-                    v = v[:-1]
-                v = int(v)
-                key = key.subkey(i=v, is_hardened=is_hardened, as_private=key.is_private)
-        if force_public and key.is_private:
-            key = key.public_copy()
-        return key
-
-    def subkeys_for_path(self, path):
-        """
-        A generalized form that can return multiple subkeys.
-        """
-        if path == '':
-            yield self
-            return
-
-        def range_iterator(the_range):
-            for r in the_range.split(","):
-                is_hardened = r[-1] in "'pH"
-                if is_hardened:
-                    r = r[:-1]
-                hardened_char = "H" if is_hardened else ''
-                if '-' in r:
-                    low, high = [int(x) for x in r.split("-", 1)]
-                    for t in range(low, high+1):
-                        yield "%d%s" % (t, hardened_char)
-                else:
-                    yield "%s%s" % (r, hardened_char)
-
-        def subkey_iterator(subkey_paths):
-            # examples:
-            #   0/1H/0-4 => ['0/1H/0', '0/1H/1', '0/1H/2', '0/1H/3', '0/1H/4']
-            #   0/2,5,9-11 => ['0/2', '0/5', '0/9', '0/10', '0/11']
-            #   3H/2/5/15-20p => ['3H/2/5/15p', '3H/2/5/16p', '3H/2/5/17p', '3H/2/5/18p',
-            #          '3H/2/5/19p', '3H/2/5/20p']
-            #   5-6/7-8p,15/1-2 => ['5/7H/1', '5/7H/2', '5/8H/1', '5/8H/2',
-            #         '5/15/1', '5/15/2', '6/7H/1', '6/7H/2', '6/8H/1', '6/8H/2', '6/15/1', '6/15/2']
-
-            components = subkey_paths.split("/")
-            iterators = [range_iterator(c) for c in components]
-            for v in itertools.product(*iterators):
-                yield '/'.join(v)
-
-        for subkey in subkey_iterator(path):
-            yield self.subkey_for_path(subkey)
-
-    def children(self, max_level=50, start_index=0, include_hardened=True):
-        for i in range(start_index, max_level+start_index+1):
-            yield self.subkey(i)
-            if include_hardened:
-                yield self.subkey(i, is_hardened=True)
-
-    def __repr__(self):
-        if self.child_number == 0:
-            r = self.wallet_key(as_private=False)
-        else:
-            r = self.bitcoin_address()
-        if self.is_private:
-            return "private_for <%s>" % r
-        return "<%s>" % r
+    I_left_as_exponent = from_bytes_32(I64[:32])
+    new_public_pair = the_point.pair()
+    new_chain_code = I64[32:]
+    return new_public_pair, new_chain_code

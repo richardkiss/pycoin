@@ -12,7 +12,7 @@ from pycoin import encoding
 from pycoin.ecdsa import is_public_pair_valid, generator_secp256k1, public_pair_for_x, secp256k1
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
-from pycoin.key.bip32 import Wallet
+from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, NETWORK_NAMES
 
 
@@ -96,27 +96,27 @@ def create_output(item, key, subkey_path=None):
     add_output("network", full_network_name)
     add_output("netcode", key._netcode)
 
-    hw = key.hierarchical_wallet()
-    if hw:
+    if hasattr(key, "wallet_key"):
         if subkey_path:
             add_output("subkey_path", subkey_path)
 
-        add_output("wallet_key", hw.wallet_key(as_private=hw.is_private))
-        if hw.is_private:
-            add_output("public_version", hw.wallet_key(as_private=False))
+        add_output("wallet_key", key.wallet_key(as_private=key.is_private()))
+        if key.is_private():
+            add_output("public_version", key.wallet_key(as_private=False))
 
-        if hw.child_number >= 0x80000000:
-            wc = hw.child_number - 0x80000000
-            child_index = "%dH (%d)" % (wc, hw.child_number)
+        child_number = key.child_index()
+        if child_number >= 0x80000000:
+            wc = child_number - 0x80000000
+            child_index = "%dH (%d)" % (wc, child_number)
         else:
-            child_index = "%d" % hw.child_number
-        add_output("tree_depth", "%d" % hw.depth)
-        add_output("fingerprint", b2h(hw.fingerprint()))
-        add_output("parent_fingerprint", b2h(hw.parent_fingerprint), "parent f'print")
+            child_index = "%d" % child_number
+        add_output("tree_depth", "%d" % key.tree_depth())
+        add_output("fingerprint", b2h(key.fingerprint()))
+        add_output("parent_fingerprint", b2h(key.parent_fingerprint()), "parent f'print")
         add_output("child_index", child_index)
-        add_output("chain_code", b2h(hw.chain_code))
+        add_output("chain_code", b2h(key.chain_code()))
 
-        add_output("private_key", "yes" if hw.is_private else "no")
+        add_output("private_key", "yes" if key.is_private() else "no")
 
     secret_exponent = key.secret_exponent()
     if secret_exponent:
@@ -215,11 +215,11 @@ def main():
 
     PREFIX_TRANSFORMS = (
         ("P:", lambda s:
-            Key(hierarchical_wallet=Wallet.from_master_secret(s.encode("utf8"), netcode=args.network))),
+            BIP32Node.from_master_secret(s.encode("utf8"), netcode=args.network)),
         ("H:", lambda s:
-            Key(hierarchical_wallet=Wallet.from_master_secret(h2b(s), netcode=args.network))),
+            BIP32Node.from_master_secret(h2b(s), netcode=args.network)),
         ("create", lambda s:
-            Key(hierarchical_wallet=Wallet.from_master_secret(get_entropy(), netcode=args.network))),
+            BIP32Node.from_master_secret(get_entropy(), netcode=args.network)),
     )
 
     for item in args.item:

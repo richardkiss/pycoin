@@ -5,6 +5,14 @@ import unittest
 from pycoin.key import bip32
 from pycoin.serialize import h2b
 
+from pycoin.key.BIP32Node import BIP32Node
+
+def Wallet(*args, **kwargs):
+    return BIP32Node(*args, **kwargs)
+Wallet.from_master_secret = lambda *args, **kwargs: BIP32Node.from_master_secret(*args, **kwargs)
+Wallet.from_wallet_key = lambda *args, **kwargs: BIP32Node.from_wallet_key(*args, **kwargs)
+bip32.Wallet = Wallet
+
 class Bip0032TestCase(unittest.TestCase):
 
     def test_vector_1(self):
