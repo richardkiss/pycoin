@@ -59,7 +59,7 @@ class ScriptPayToAddress(ScriptType):
         binary_signature = self._create_script_signature(secret_exponent, sign_value, signature_type)
         binary_public_pair_sec = encoding.public_pair_to_sec(public_pair, compressed=compressed)
 
-        solution = b''.join(tools.compile(b2h(s)) for s in [binary_signature, binary_public_pair_sec])
+        solution = tools.bin_script([binary_signature, binary_public_pair_sec])
         return solution
 
     def info(self, netcode='BTC'):

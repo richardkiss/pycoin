@@ -82,9 +82,12 @@ def get_opcode(script, pc):
 def write_push_data(data_list, f):
     # return bytes that causes the given data to be pushed onto the stack
     for t in data_list:
-        if len(t) == 1 and bytes_to_ints(t)[0] < 16:
-            f.write(bytes_from_int(OPCODE_TO_INT["OP_%d" % t]))
-        elif len(t) <= 255:
+        if len(t) == 1:
+            v = bytes_to_ints(t)[0]
+            if v <= 16:
+                f.write(bytes_from_int(OPCODE_TO_INT["OP_%d" % v]))
+                continue
+        if len(t) <= 255:
             if len(t) > 75:
                 f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA1"]))
             f.write(int_to_bytes(len(t)))

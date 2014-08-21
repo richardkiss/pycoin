@@ -36,7 +36,7 @@ from . import opcodes
 from . import ScriptError
 
 from .microcode import MICROCODE_LOOKUP, VCH_TRUE, VCH_FALSE, make_bool
-from .tools import get_opcode
+from .tools import get_opcode, bin_script
 
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split()))
 
@@ -192,14 +192,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
 
     if is_p2h:
         signatures, alt_script_public_key = stack[:-1], stack[-1]
-        from pycoin.tx.script import tools
-        from pycoin import serialize
-        def sub(x):
-            if x == '00':
-                return '0'
-            return x
-        s1 = [sub(serialize.b2h(s)) for s in signatures]
-        alt_script_signature = tools.compile(" ".join(s1))
+        alt_script_signature = bin_script(signatures)
 
     if not eval_script(script_public_key, signature_for_hash_type_f, expected_hash_type, stack):
         logging.debug("script_public_key did not evaluate")

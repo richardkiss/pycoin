@@ -67,8 +67,8 @@ class ScriptPayToPublicKey(ScriptType):
 
         secret_exponent, public_pair, compressed = result
 
-        solution = tools.compile(b2h(self._create_script_signature(
-            secret_exponent, sign_value, signature_type)))
+        solution = tools.bin_script([self._create_script_signature(
+            secret_exponent, sign_value, signature_type)])
         return solution
 
     def info(self, netcode="BTC"):
