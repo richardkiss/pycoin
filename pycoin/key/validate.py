@@ -1,6 +1,9 @@
 
+import binascii
+import re
 from .. import encoding
 from ..networks import DEFAULT_NETCODES, NETWORK_NAMES, NETWORKS
+from ..serialize import h2b
 
 DEFAULT_ADDRESS_TYPES = ["address", "pay_to_script"]
 
@@ -36,6 +39,29 @@ def netcode_and_type_for_data(data, netcodes=NETWORK_NAMES):
             return netcode, v
 
     raise encoding.EncodingError("unknown prefix")
+
+
+def netcode_and_type_for_text(text):
+    # check for "public pair"
+    try:
+        LENGTH_LOOKUP = {
+            33: "public_pair",
+            65: "public_pair",
+            16: "elc_seed",
+            32: "elc_prv",
+            64: "elc_pub",
+        }
+        as_bin = h2b(text)
+        l = len(as_bin)
+        if l in LENGTH_LOOKUP:
+            return None, LENGTH_LOOKUP[l], as_bin
+    except (binascii.Error, TypeError):
+        pass
+
+    data = encoding.a2b_hashed_base58(text)
+    netcode, the_type = netcode_and_type_for_data(data)
+    length = 1 if the_type in ["wif", "address"] else 4
+    return netcode, the_type, data[length:]
 
 
 def _check_against(text, expected_type, allowable_netcodes):
