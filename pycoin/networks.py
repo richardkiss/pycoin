@@ -7,17 +7,37 @@ NetworkValues = namedtuple('NetworkValues',
                             'pay_to_script', 'prv32', 'pub32'))
 
 NETWORKS = (
+
+    # BTC bitcoin mainnet : xprv/xpub
     NetworkValues("Bitcoin", "mainnet", "BTC", b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E")),
+    # BTC bitcoin testnet : tprv/tpub
     NetworkValues("Bitcoin", "testnet3", "XTN", b'\xef', b'\x6f', b'\xc4',
                   h2b("04358394"), h2b("043587CF")),
+
+    # LTC litecoin mainnet : Ltpv/Ltub
     NetworkValues("Litecoin", "mainnet", "LTC", b'\xb0', b'\x30', b'\5', h2b('019d9cfe'), h2b('019da462')),
-    NetworkValues("Litecoin", "testnet", "XLT", b'\xef', b'\x6f', b'\xc4', h2b('0436ef7d'), h2b('0436f6e1')),
-    NetworkValues("Dogecoin", "mainnet", "DOGE", b'\x9e', b'\x1e', b'\x16',
-                  h2b("02fda4e8"), h2b("02fda923")),
-    # BlackCoin: unsure about bip32 prefixes; assuming will use Bitcoin's
-    NetworkValues("Blackcoin", "mainnet", "BLK", b'\x99', b'\x19', None, h2b("0488ADE4"), h2b("0488B21E")),
+    # LTC litecoin testnet : ttpv/ttub
+    NetworkValues("Litecoin", "testnet", "XLT", b'\xef', b'\x6f', b'\xc4',
+                  h2b('0436ef7d'), h2b('0436f6e1')),
+
+    # VIA viacoin mainnet : xprv/xpub
     NetworkValues("Viacoin", "mainnet", "VIA", b'\xc7', b'\x47', b'\x21', h2b('0488ADE4'), h2b('0488B21E')),
+    # VIA viacoin testnet : tprv/tpub
     NetworkValues("Viacoin", "testnet", "TVI", b'\xff', b'\x7f', b'\xc4', h2b('04358394'), h2b('043587CF')),
+
+    # DOGE Dogecoin mainnet : dogv/dogp
+    NetworkValues("Dogecoin", "mainnet", "DOGE", b'\x9e', b'\x1e', b'\x16',
+                  h2b("02fd3955"), h2b("02fd3929")),
+
+    # BC BlackCoin mainnet : bcpv/bcpb
+    NetworkValues("Blackcoin", "mainnet", "BC", b'\x99', b'\x19', None, h2b("02cfbf60"), h2b("02cfbede")),
+
+    # DRK Darkcoin mainnet : drkv/drkp
+    NetworkValues("Darkcoin", "mainnet", "DRK", b'\xcc', b'\x4c', None, h2b("02fe52f8"), h2b("02fe52cc")),
+
+    # MEC Megacoin mainnet : mecv/mecp
+    NetworkValues("Megacoin", "mainnet", "MEC", b'\xb2', b'\x32', None, h2b("03a04db7"), h2b("03a04d8b")),
+
 )
 
 
