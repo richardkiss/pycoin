@@ -18,6 +18,8 @@ NETWORKS = (
     NetworkValues("Blackcoin", "mainnet", "BLK", b'\x99', b'\x19', None, h2b("0488ADE4"), h2b("0488B21E")),
     NetworkValues("Viacoin", "mainnet", "VIA", b'\xc7', b'\x47', b'\x21', h2b('0488ADE4'), h2b('0488B21E')),
     NetworkValues("Viacoin", "testnet", "TVI", b'\xff', b'\x7f', b'\xc4', h2b('04358394'), h2b('043587CF')),
+    NetworkValues("Myriadcoin", "mainnet", "MYR", b'\xb2', b'\x32', b'\x09', h2b('0488ADE4'), h2b('0488B21E')),
+
 )
 
 
