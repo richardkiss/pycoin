@@ -13,6 +13,7 @@ setup(
         "pycoin.convention",
         "pycoin.ecdsa",
         "pycoin.key",
+        "pycoin.network",
         "pycoin.tx",
         "pycoin.tx.pay_to",
         "pycoin.tx.script",
