@@ -38,6 +38,8 @@ NETWORKS = (
     # MEC Megacoin mainnet : mecv/mecp
     NetworkValues("Megacoin", "mainnet", "MEC", b'\xb2', b'\x32', None, h2b("03a04db7"), h2b("03a04d8b")),
 
+    NetworkValues("Myriadcoin", "mainnet", "MYR", b'\xb2', b'\x32', b'\x09', h2b('0488ADE4'), h2b('0488B21E')),
+
 )
 
 
