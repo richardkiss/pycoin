@@ -1,3 +1,10 @@
+Version 0.52
+------------
+
+* more networks
+* moved some (untested) network code from pycoinnet
+* fix a bug in Key which affected ku, and add a unit test (thanks to Michael Perklin for the report)
+
 Version 0.51
 ------------
 

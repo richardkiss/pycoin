@@ -35,7 +35,7 @@ class Key(object):
         netcode:
             the code for the network (as defined in pycoin.networks)
 
-        Include at most one of hierarchical_wallet, secret_exponent, public_pair or hash160.
+        Include at most one of secret_exponent, public_pair or hash160.
         prefer_uncompressed, is_compressed (booleans) are optional.
         """
 
@@ -68,8 +68,9 @@ class Key(object):
         data = data[1:]
 
         if key_type in ("pub32", "prv32"):
-            hw = Wallet.from_wallet_key(text)
-            return Key(hierarchical_wallet=hw, netcode=netcode)
+            # TODO: fix this... it doesn't belong here
+            from pycoin.key.BIP32Node import BIP32Node
+            return BIP32Node.from_wallet_key(text)
 
         if key_type == 'wif':
             is_compressed = (len(data) > 32)
