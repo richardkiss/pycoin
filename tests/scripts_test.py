@@ -54,6 +54,8 @@ class ScriptsTest(unittest.TestCase):
         self.launch_tool("ku.py -n DOGE -j -w P:foo -s 5-10")
         self.launch_tool("ku.py -n BC -j -w P:foo -s 5-10")
         self.launch_tool("ku.py xprv9s21ZrQH143K31AgNK5pyVvW23gHnkBq2wh5aEk6g1s496M8ZMjxncCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtq")
+        self.launch_tool("ku.py -n XTN -s 0/0-2 ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaymFLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm -a")
+        self.launch_tool("ku.py --override-network XTN -s 0/0-2 ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaymFLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm -a")
 
     def test_tx_fetch(self):
         self.launch_tool("tx.py 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098")
