@@ -146,6 +146,11 @@ class Bip0032TestCase(unittest.TestCase):
                 self.assertEqual(k.wallet_key(), k4.wallet_key())
                 print("   %s %s" % (k.bitcoin_address(), k.wif()))
 
+    def test_public_subkey(self):
+        my_prv = BIP32Node.from_master_secret(b"foo")
+        uag = my_prv.subkey(i=0, is_hardened=True, as_private=True)
+        self.assertEqual(None, uag.subkey(i=0, as_private=False).secret_exponent())
+
 if __name__ == '__main__':
     unittest.main()
 
