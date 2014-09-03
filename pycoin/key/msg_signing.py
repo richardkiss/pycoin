@@ -1,4 +1,4 @@
-import io, os, hashlib, hmac
+import io, os, hashlib, hmac, re
 from binascii import b2a_base64, a2b_base64
 from pycoin import ecdsa
 from pycoin.ecdsa import ellipticcurve, intbytes, numbertheory
@@ -29,18 +29,19 @@ def parse_signed_message(msg_in):
     # convert to unix line feeds from DOS, if any
     msg_in = msg_in.replace('\r\n', '\n')
 
-    parts = msg_in.split('-----\n')
-    #print repr(parts)
+    try:
+        _, body = msg_in.split('SIGNED MESSAGE-----\n', 1)
+    except:
+        raise ValueError("expecting text SIGNED MESSSAGE somewhere")
 
-    if len(parts) < 3:
-        raise ValueError("expecting 3 parts separated by BEGIN blah -----")
+    try:
+        # sometimes middle is BEGIN BITCOIN SIGNATURE, other times just BEGIN SIGNATURE
+        msg, hdr = re.split('\n-----BEGIN [A-Z ]*SIGNATURE-----\n', body, maxsplit=1)
+    except:
+        raise ValueError("expected BEGIN SIGNATURE line", body)
 
-    if 'SIGNED MESSAGE' not in parts[0]:
-        raise ValueError("expecting text SIGNED MESSSAGE on first line")
-
-    msg = parts[1].split('\n-----BEGIN',1)[0]
-    hdr = parts[2].strip().split('\n')
-
+    # after message, expect something like an email/http headers 
+    hdr = filter(None, [i.strip() for i in hdr.split('\n')])
     #print repr(hdr)
 
     if '-----END' not in hdr[-1]:
@@ -51,6 +52,8 @@ def parse_signed_message(msg_in):
     for l in hdr:
         l = l.strip()
         if not l: continue
+
+        if l.startswith('-----END'): break
 
         if ':' in l:
             label, value = [i.strip() for i in l.split(':', 1)]
@@ -73,7 +76,7 @@ def parse_signed_message(msg_in):
 class MsgSigningMixin(object):
     # Use this with Key object, only? Needs lots of
 
-    def sign_message(self, msg, verbose=False, use_uncompressed=None):
+    def sign_message(self, message, verbose=False, use_uncompressed=None):
         """
         Return a signature, encoded in Base64, which can be verified by anyone using the
         public key.
@@ -82,7 +85,7 @@ class MsgSigningMixin(object):
         if not secret_exponent:
             raise TypeError("Private key is required to sign a message")
 
-        mhash = _hash_for_signing(msg, self.netcode)
+        mhash = _hash_for_signing(message, self.netcode)
         
         # Use a deterministic K so our signatures are deterministic.
         try:
@@ -112,26 +115,25 @@ class MsgSigningMixin(object):
 
         addr = self.address()
 
-        return signature_template.format(msg=msg, sig=sig, addr=addr,
+        return signature_template.format(msg=message, sig=sig, addr=addr,
                             net_name=network_name_for_netcode(self.netcode).upper())
-    
 
 
-    def verify_message(self, msg, signature):
+    def verify_message(self, message, signature):
         """
         Take a signature, encoded in Base64, and verify it against ourself as the public key.
         """
         try:
             # Decode base64 and a bitmask in first byte.
-            is_compressed, recid, r, s = decode_signature(signature)
+            is_compressed, recid, r, s = _decode_signature(signature)
         except ValueError:
             return False
 
         # Calculate hash of message used in signature
-        mhash = _hash_for_signing(msg, self.netcode)
+        mhash = _hash_for_signing(message, self.netcode)
 
         # Calculate the specific public key used to sign this message.
-        pair = extract_public_pair(ecdsa.generator_secp256k1, recid, r, s, mhash)
+        pair = _extract_public_pair(ecdsa.generator_secp256k1, recid, r, s, mhash)
 
         # Check signing public pair is the one expected for the signature. It must be an
         # exact match for this key's public pair... or else we are looking at a validly
@@ -149,7 +151,7 @@ class MsgSigningMixin(object):
             ta = public_pair_to_bitcoin_address(pair, compressed=is_compressed, address_prefix=prefix) 
             return ta == addr
 
-def verify_message(msg, addr, signature, netcode='BTC'):
+def verify_message(message, addr, signature, netcode='BTC'):
     """
     A wrapper that extracts pubkey from and does everything at once.
     """
@@ -159,7 +161,7 @@ def verify_message(msg, addr, signature, netcode='BTC'):
     h160, pubpre = pubkey_address_to_hash160_sec_with_prefix(addr)
     k = Key(hash160=h160, netcode=netcode)
 
-    return k.verify_message(msg, signature)
+    return k.verify_message(message, signature)
     
             
 
@@ -174,10 +176,14 @@ def msg_magic_for_netcode(netcode):
     if netcode in ('BLK', 'BC'):
         name = "BlackCoin"     # Note: need this particular HumpCase
 
+    # testnet, the first altcoin, didn't change header
+    if netcode == 'XTN':
+        name = "Bitcoin"       
+
     return '%s Signed Message:\n' % name
 
 
-def decode_signature(signature):
+def _decode_signature(signature):
     """
     Decode the fields of the base64-encoded signature.
     """
@@ -212,7 +218,7 @@ def decode_signature(signature):
 
     return is_compressed, (first&0x3), r, s
 
-def extract_public_pair(generator, recid, r, s, value):
+def _extract_public_pair(generator, recid, r, s, value):
     """
     Using the already-decoded parameters of the bitcoin signature, 
     return the specific public key pair used to sign this message.
@@ -379,6 +385,10 @@ def test_self():
             assert vk2.verify_message(msg, sig2)
 
 def test_msg_parse():
+    """
+    Test against real-world signatures from the wild.
+    """
+
     # Output from brainwallet in "multibit" mode.
     multibit = '''
 
@@ -398,8 +408,9 @@ HCT1esk/TWlF/o9UNzLDANqsPXntkMErf7erIrjH5IBOZP98cNcmWmnW0GpSAi3wbr6CwpUAN4ctNn1T
     assert s == \
         'HCT1esk/TWlF/o9UNzLDANqsPXntkMErf7erIrjH5IBOZP98cNcmWmnW0GpSAi3wbr6CwpUAN4ctNn1T71UBwSc='
     ok = verify_message(m, a, s, netcode='BTC')
+    assert ok
 
-    # Sampled from from https://www.bitrated.com/u/Bit2c.txt, on Sep 3/2014
+    # Sampled from: https://www.bitrated.com/u/Bit2c.txt on Sep 3/2014
     bit2c = '''\
 Username: Bit2c
 Public key: 0396267072e597ad5d043db7c73e13af84a77a7212871f1aade607fb0f2f96e1a8
@@ -419,5 +430,47 @@ H2utKkquLbyEJamGwUfS9J0kKT4uuMTEr2WX2dPU9YImg4LeRpyjBelrqEqfM4QC8pJ+hVlQgZI5IPpL
     assert a == '15etuU8kwLFCBbCNRsgQTvWgrGWY9829ej'
     assert s == 'H2utKkquLbyEJamGwUfS9J0kKT4uuMTEr2WX2dPU9YImg4LeRpyjBelrqEqfM4QC8pJ+hVlQgZI5IPpLyRNxvK8='
     ok = verify_message(m, a, s, netcode='BTC')
+    assert ok
+
+    # testnet example
+    # Sampled from: http://testnet.bitrated.com/u/bearbin.txt on Sep 3/2014
+    # NOTE: Testnet3
+    bearbin = '''\
+Username: bearbin
+Public key: 03fc594c16779054fc5e119c309215c1f40f2ce104b0169cddeb6d20445bd28f67
+Public key address: n2D9XsQX1mDpFGgYqsfmePTy61LJFQnXQM
+URL: http://testnet.bitrated.com/u/bearbin
+
+-----BEGIN BITCOIN SIGNED MESSAGE-----
+Contact
+-----------
+
+bearbin@gmail.com - Email or hangouts (text only).
+
+/u/bearbin on reddit (slow response, not preferred for use with the service, just for contact).
+
+Resolution Guidelines:
+-----------------------------
+
+ * Evidence is needed. (e.g. pictures w/ proof that it's you).
+ * If anybody fails to respond, money goes to the other person after 2 weeks.
+ * Additional terms available on request.
+
+Pricing
+----------
+
+ * 0.7% Min 0.003 Max 0.15
+ * Payment in advance.
+-----BEGIN SIGNATURE-----
+n2D9XsQX1mDpFGgYqsfmePTy61LJFQnXQM
+IEackZgifpBJs3SqQQ6leUwzvakTZgUKTDuCCn6rVMOQgHlIEzWSYZGQu2H+1chvu68uutzt04cGmsHy/kRIaEc=
+-----END BITCOIN SIGNED MESSAGE-----
+'''
+    m,a,s = parse_signed_message(bearbin)
+    assert a == 'n2D9XsQX1mDpFGgYqsfmePTy61LJFQnXQM'
+    assert s == 'IEackZgifpBJs3SqQQ6leUwzvakTZgUKTDuCCn6rVMOQgHlIEzWSYZGQu2H+1chvu68uutzt04cGmsHy/kRIaEc='
+    ok = verify_message(m, a, s, netcode='XTN')
+    assert ok
+
 
 # EOF
