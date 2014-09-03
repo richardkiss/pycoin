@@ -72,45 +72,116 @@ class MsgSigningMixin(object):
         Take a signature, encoded in Base64, and verify it against ourself as a public key.
         """
         try:
-            is_compressed, pairs = keys_from_signature(msg, signature, self.netcode)
+            is_compressed, recid, r, s, mhash = decode_signature(msg, signature, self.netcode)
         except ValueError:
             return False
 
-        # Check each public pair that signature might correspond to. One must be an
+        # Calculate the specific public key used to sign this message.
+        pair = extract_public_pair(ecdsa.generator_secp256k1, recid, r, s, mhash)
+
+        # Check signing public pair is the one expected for the signature. It must be an
         # exact match for this key's public pair... or else we are looking at a validly
-        # signed message, but signed by another key.
+        # signed message, but signed by some other key
         pp = self.public_pair()
         if pp:
             # expect an exact match for public pair.
-            if pp in pairs:
-                return True
+            return pp == pair
         else:
             # Key() constructed from a hash of pubkey doesn't know the exact public pair, so
-            # must compare hashed addresses of all of them.
+            # must compare hashed addresses instead.
             addr = self.address()
             prefix = address_prefix_for_netcode(self.netcode)
-            for pair in pairs:
-                for comp in (True, False):
-                    ta = public_pair_to_bitcoin_address(pair, compressed=comp, address_prefix=prefix) 
-                    if ta == addr:
-                        print "addr=%s comp=%s  is_comp=%s" % (ta, comp, is_compressed)
-                        return True
-
-            print "Addr=%s" % addr
-            print "pairs=%r" % pairs
-
-        return False
+            ta = public_pair_to_bitcoin_address(pair, compressed=is_compressed, address_prefix=prefix) 
+            return ta == addr
             
 
 def msg_magic_for_netcode(netcode):
-    # Constant "strMessageMagic" in C++ source code, in file "main.cpp"
-    # Each altcoin finds and changes this string... But just simple substitution.
+    """
+    We need the constant "strMessageMagic" in C++ source code, from file "main.cpp"
+    
+    Each altcoin finds and changes this string... But just simple substitution.
+    """
     name = network_name_for_netcode(netcode)
 
     if netcode in ('BLK', 'BC'):
-        name = "BlackCoin"     # Note: HumpCase
+        name = "BlackCoin"     # Note: need this particular HumpCase
 
     return '%s Signed Message:\n' % name
+
+
+def decode_signature(msg, signature, netcode='BTC'):
+    """
+    Decode the fields of the base64-encoded signature.
+    """
+
+    if signature[0] not in ('G', 'H', 'I'):
+        # Because we know the first char is in range(27, 35), we know
+        # valid first character is in this set.
+        raise TypeError("Expected base64 value as signature", signature)
+
+    # base 64 decode
+    sig = a2b_base64(signature)
+    if len(sig) != 65:
+        raise ValueError("Wrong length, expected 65")
+
+    # split into the parts.
+    first = ord(sig[0])
+    r = from_bytes_32(sig[1:33])
+    s = from_bytes_32(sig[33:33+32])
+
+    # first byte encodes a bits we need to know about the point used in signature
+    if not (27 <= first < 35):
+        raise ValueError("First byte out of range")
+
+    # NOTE: we aren't using the number in the first byte because our
+    # escda code doesn't allow us to put in the Y even/odd thing. Unfortunately
+    # I think that means this code will accept some signatures that bitcoind would not,
+    # but I don't see how you could generate those signatures, or what the use of that
+    # could possibly be...
+    #
+    first -= 27
+    is_compressed = bool(first & 0x4)
+
+    mhash = _hash_for_signing(msg, netcode)
+    return is_compressed, (first&0x3), r, s, mhash
+
+def extract_public_pair(generator, recid, r, s, value):
+    """
+    Using the already-decoded parameters of the bitcoin signature, 
+    return the specific public key pair used to sign this message.
+    Caller must verify this pubkey is what was expected.
+    """
+    assert 0 <= recid < 4, recid
+
+    G = generator
+    n = G.order()
+
+    # Check order of data; but okay because of way it's encoded, and this assert
+    # is hella slow to evaluate.
+    #assert 1 <= r < n
+    #assert 1 <= s < n
+
+    curve = G.curve()
+    order = G.order()
+    p = curve.p()
+
+    x = r + (n * (recid / 2))
+
+    alpha = ( pow(x,3,p)  + curve.a() * x + curve.b() ) % p
+    beta = numbertheory.modular_sqrt(alpha, p)
+    inv_r = numbertheory.inverse_mod(r,order)
+
+    y = beta if ((beta - recid) % 2 == 0) else (p - beta)
+
+    minus_e = -value % order
+
+    R = ellipticcurve.Point(curve, x, y, order)
+    Q = inv_r * ( s * R + minus_e * G )
+    public_pair = (Q.x(), Q.y())
+
+    # check that Q is the RIGHT public key? No. Leave that for the caller.
+
+    return public_pair
 
 def keys_from_signature(msg, signature, netcode='BTC'):
     """
