@@ -10,3 +10,4 @@ python -m unittest pycoin.test.signature_test
 python -m unittest pycoin.test.validate_tx_test
 python -m unittest pycoin.test.bip32_test
 python -m unittest pycoin.test.altcoins_test
+python -m unittest pycoin.test.msg_signing_test
