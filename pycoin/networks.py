@@ -7,30 +7,23 @@ NetworkValues = namedtuple('NetworkValues',
     ('code', 'network_name',
         'wif_prefix', 'address_prefix',
         'bip32_priv_prefix', 'bip32_pub_prefix',
-        'block_class',
-        'msg_magic'            # Constant "strMessageMagic" in C++ source code, in file "main.cpp"
-    ))
+        'block_class'))
 
 NETWORKS = (
     # Bitcoin
-    NetworkValues("BTC", "Bitcoin", b'\x80', b'\0', h2b("0488ADE4"), h2b("0488B21E"),
-        BitcoinBlock, 'Bitcoin Signed Message:\n'),
+    NetworkValues("BTC", "Bitcoin", b'\x80', b'\0', h2b("0488ADE4"), h2b("0488B21E"), BitcoinBlock),
 
     # Bitcoin Textnet3
-    NetworkValues("XTN", "Bitcoin testnet", b'\xef', b'\x6f', h2b("04358394"), h2b("043587CF"),
-        BitcoinTestNetBlock, 'Bitcoin Signed Message:\n'),
+    NetworkValues("XTN", "Bitcoin testnet", b'\xef', b'\x6f', h2b("04358394"), h2b("043587CF"), BitcoinTestNetBlock),
 
     # Litecoin
-    NetworkValues("LTC", "Litecoin", b'\xb0', b'\x30', None, None,
-        LitecoinBlock, 'Litecoin Signed Message:\n'),
+    NetworkValues("LTC", "Litecoin", b'\xb0', b'\x30', None, None, LitecoinBlock),
 
     # Dogecoin
-    NetworkValues("DOGE", "Dogecoin", b'\x9e', b'\x1e', h2b("02fda4e8"), h2b("02fda923"),
-        Block, 'Dogecoin Signed Message:\n'),
+    NetworkValues("DOGE", "Dogecoin", b'\x9e', b'\x1e', h2b("02fda4e8"), h2b("02fda923"), Block),
 
     # BlackCoin: unsure about bip32 prefixes; assuming will use Bitcoin's
-    NetworkValues("BLK", "Blackcoin", b'\x99', b'\x19', h2b("0488ADE4"), h2b("0488B21E"),
-        BlackcoinBlock, 'BlackCoin Signed Message:\n'),
+    NetworkValues("BLK", "Blackcoin", b'\x99', b'\x19', h2b("0488ADE4"), h2b("0488B21E"), BlackcoinBlock),
 )
 
 # Map from short code to details about that network.
@@ -65,10 +58,6 @@ def transaction_class_for_netcode(netcode):
 def block_class_for_netcode(netcode):
     # We need to know what class to use for the blocks.
     return NETWORK_NAME_LOOKUP[netcode].block_class
-
-def msg_magic_for_netcode(netcode):
-    # A short message prefixed with text to be signed/verified by pubkey.
-    return NETWORK_NAME_LOOKUP[netcode].msg_magic
 
 
 
