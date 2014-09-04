@@ -26,23 +26,25 @@ def parse_signed_message(msg_in):
     and the base64 signature. Should work on all altcoin networks, and should
     accept both Inputs.IO and Multibit formats but not Armory (per brainwallet)
     """
-    # convert to unix line feeds from DOS, if any
+    # convert to unix line feeds from DOS style, if that happens (untested)
     msg_in = msg_in.replace('\r\n', '\n')
 
     try:
+        # trim any junk in front
         _, body = msg_in.split('SIGNED MESSAGE-----\n', 1)
     except:
         raise ValueError("expecting text SIGNED MESSSAGE somewhere")
 
     try:
-        # sometimes middle is BEGIN BITCOIN SIGNATURE, other times just BEGIN SIGNATURE
-        msg, hdr = re.split('\n-----BEGIN [A-Z ]*SIGNATURE-----\n', body, maxsplit=1)
+        # - sometimes middle sep is BEGIN BITCOIN SIGNATURE, other times just BEGIN SIGNATURE
+        # - choose the last instance, in case someone signs a signed message
+        parts = re.split('\n-----BEGIN [A-Z ]*SIGNATURE-----\n', body)
+        msg, hdr = ''.join(parts[:-1]), parts[-1]
     except:
         raise ValueError("expected BEGIN SIGNATURE line", body)
 
-    # after message, expect something like an email/http headers 
+    # after message, expect something like an email/http headers, so split into lines
     hdr = filter(None, [i.strip() for i in hdr.split('\n')])
-    #print repr(hdr)
 
     if '-----END' not in hdr[-1]:
         raise ValueError("expecting END on last line")
@@ -70,7 +72,6 @@ def parse_signed_message(msg_in):
     if not addr or addr == sig:
         raise ValueError("Could not find address")
 
-    #print "msg=%r a=%r s=%r" % (msg, addr, sig)
     return msg, addr, sig
 
 class MsgSigningMixin(object):
@@ -270,40 +271,46 @@ def _hash_for_signing(msg, netcode='BTC'):
     # return as a number, since it's an input to signing algos like that anyway
     return from_bytes_32(double_sha256(fd.getvalue()))
 
-def _my_deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashlib.sha256):
-    """
-    Generate K value according to https://tools.ietf.org/html/rfc6979
 
-    PDG: this is more general than it needs to be, and I feel the hand of NSA here.
-    TODO: rewrite / simplify and use different salt.
+def deterministic_make_k(generator_order, secret_exponent, val, hash_f=hashlib.sha256,
+                                trust_no_one=True):
+    """
+    Generate K value BUT NOT according to https://tools.ietf.org/html/rfc6979
+
+    ecsda.deterministic_generate_k() was more general than it needs to be,
+    and I felt the hand of NSA in the wholly constants, so I simplified and
+    changed the salt.
     """
     n = generator_order
-    order_size = (n.bit_length() + 7) // 8
-    hash_size = hash_f().digest_size
-    v = b'\x01' * hash_size
-    k = b'\x00' * hash_size
-    priv = intbytes.to_bytes(secret_exponent, length=order_size)
-    shift = 8 * hash_size - n.bit_length()
-    if shift > 0:
-        val >>= shift
+    assert hash_f().digest_size == 32
+
+    # code below has been specialized for SHA256 / bitcoin usage
+    assert n.bit_length() == 256
+    hash_size = 32
+
+    if trust_no_one:
+        v = b"Edward Snowden rocks the world!!"
+        k = b"Qwest CEO Joseph Nacchio is free"
+    else:
+        v = b'\x01' * hash_size
+        k = b'\x00' * hash_size
+
+    priv = to_bytes_32(secret_exponent)
+
     if val > n:
         val -= n
-    h1 = intbytes.to_bytes(val, length=order_size)
+
+    h1 = to_bytes_32(val)
     k = hmac.new(k, v + b'\x00' + priv + h1, hash_f).digest()
     v = hmac.new(k, v, hash_f).digest()
     k = hmac.new(k, v + b'\x01' + priv + h1, hash_f).digest()
     v = hmac.new(k, v, hash_f).digest()
 
     while 1:
-        t = bytearray()
+        t = hmac.new(k, v, hash_f).digest()
 
-        while len(t) < order_size:
-            v = hmac.new(k, v, hash_f).digest()
-            t.extend(v)
+        k1 = from_bytes_32(t)
 
-        k1 = intbytes.from_bytes(bytes(t))
-
-        k1 >>= (len(t)*8 - n.bit_length())
         if k1 >= 1 and k1 < n:
             return k1
 
@@ -322,7 +329,7 @@ def _my_sign(generator, secret_exponent, val, _k=None):
     G = generator
     n = G.order()
 
-    k = _k or _my_deterministic_generate_k(n, secret_exponent, val)
+    k = _k or deterministic_make_k(n, secret_exponent, val)
     p1 = k * G
     r = p1.x()
     if r == 0: raise RuntimeError("amazingly unlucky random number r")
