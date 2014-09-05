@@ -154,9 +154,9 @@ class BlockChain(object):
             old_path = old_longest_chain
             new_path = new_longest_chain
         if old_path:
-            logging.debug("old_path is %s-%s", old_path[0], old_path[-1])
+            logging.debug("old_path is %r-%r", old_path[0], old_path[-1])
         if new_path:
-            logging.debug("new_path is %s-%s", new_path[0], new_path[-1])
+            logging.debug("new_path is %r-%r", new_path[0], new_path[-1])
             logging.debug("block chain now has %d elements", self.length())
 
         # return a list of operations:
