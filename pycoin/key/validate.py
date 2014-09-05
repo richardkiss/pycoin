@@ -1,6 +1,5 @@
 
 import binascii
-import re
 from .. import encoding
 from ..networks import DEFAULT_NETCODES, NETWORK_NAMES, NETWORKS
 from ..serialize import h2b

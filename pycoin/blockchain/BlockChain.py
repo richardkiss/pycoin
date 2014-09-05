@@ -52,6 +52,9 @@ class BlockChain(object):
     def locked_length(self):
         return len(self._locked_chain)
 
+    def unlocked_length(self):
+        return len(self._longest_local_block_chain())
+
     def tuple_for_index(self, index):
         if index < 0:
             index = self.length() + index

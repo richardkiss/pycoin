@@ -245,9 +245,9 @@ class Tx(object):
 
     def tx_outs_as_spendable(self):
         h = self.hash()
-        return [
+        return (
             Spendable(tx_out.coin_value, tx_out.script, h, tx_out_index)
-            for tx_out_index, tx_out in enumerate(self.txs_out)]
+            for tx_out_index, tx_out in enumerate(self.txs_out))
 
     def is_coinbase(self):
         return len(self.txs_in) == 1 and self.txs_in[0].is_coinbase()

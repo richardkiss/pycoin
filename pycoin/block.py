@@ -131,6 +131,10 @@ class Block(BlockHeader):
         self.nonce = nonce
         self.txs = txs
 
+    def as_blockheader(self):
+        return BlockHeader(self.version, self.previous_block_hash, self.merkle_root,
+                           self.timestamp, self.difficulty, self.nonce)
+
     def stream(self, f):
         """Stream the block in the standard way to the file-like object f."""
         stream_struct("L##LLLI", f, self.version, self.previous_block_hash,

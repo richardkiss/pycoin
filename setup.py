@@ -19,7 +19,8 @@ setup(
         "pycoin.tx.script",
         "pycoin.serialize",
         "pycoin.services",
-        "pycoin.scripts"
+        "pycoin.scripts",
+        "pycoin.wallet"
     ],
     author="Richard Kiss",
     entry_points = { 'console_scripts':
