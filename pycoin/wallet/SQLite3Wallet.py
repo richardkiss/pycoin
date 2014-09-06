@@ -11,7 +11,6 @@ class SQLite3Wallet(object):
     def __init__(self, keychain, persistence, desired_spendable_count=None):
         self.keychain = keychain
         self.persistence = persistence
-        self._last_block_index = 0
         self._desired_spendable_count = desired_spendable_count
         self._lock = RLock()
 

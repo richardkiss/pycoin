@@ -51,6 +51,7 @@ class InsightService(object):
         calculated_hash = merkle(tx_hashes, double_sha256)
         if calculated_hash != merkle_root:
             return None, None
+        blockheader.height = r.get("height")
         return blockheader, tx_hashes
 
     def get_tx(self, tx_hash):
