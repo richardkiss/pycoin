@@ -26,6 +26,8 @@ class KeyTest(unittest.TestCase):
 
             for key in keys_wif:
                 self.assertEqual(key.secret_exponent(), secret_exponent)
+                self.assertEqual(key.public_copy().secret_exponent(), None)
+                v = repr(key)
                 if key._prefer_uncompressed:
                     self.assertEqual(key.wif(), wif)
                 else:
