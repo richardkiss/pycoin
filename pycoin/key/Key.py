@@ -187,15 +187,16 @@ class Key(object):
         if self.secret_exponent():
             return self.wif()
         sec_hex = self.sec_as_hex()
-        if pp:
-            return pp
+        if sec_hex:
+            return sec_hex
         return self.address()
 
     def public_copy(self):
         if self.secret_exponent() is None:
             return self
+
         return Key(public_pair=self.public_pair(), prefer_uncompressed=self._prefer_uncompressed,
-                   is_compressed=self._is_compressed, netcode=self._netcode)
+                   is_compressed=(self._hash160_compressed is not None), netcode=self._netcode)
 
     def subkey(self, path_to_subkey):
         """
