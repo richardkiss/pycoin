@@ -54,6 +54,9 @@ class InsightService(object):
         blockheader.height = r.get("height")
         return blockheader, tx_hashes
 
+    def get_block_height(self, block_hash):
+        return self.get_blockheader_with_transaction_hashes(block_hash)[0].height
+
     def get_tx(self, tx_hash):
         URL = "%s/api/tx/%s" % (self.base_url, b2h_rev(tx_hash))
         r = json.loads(urlopen(URL).read().decode("utf8"))
@@ -61,6 +64,9 @@ class InsightService(object):
         if tx.hash() == tx_hash:
             return tx
         return None
+
+    def get_tx_confirmation_block(self, tx_hash):
+        return self.get_tx(tx_hash).confirmation_block_hash
 
     def spendables_for_address(self, bitcoin_address):
         """
@@ -105,4 +111,9 @@ def tx_from_json_dict(r):
         coin_value = btc_to_satoshi(decimal.Decimal(vout.get("value")))
         script = tools.compile(vout.get("scriptPubKey").get("asm"))
         txs_out.append(TxOut(coin_value, script))
-    return Tx(version, txs_in, txs_out, lock_time)
+    tx = Tx(version, txs_in, txs_out, lock_time)
+    bh = r.get("blockhash")
+    if bh:
+        bh = h2b_rev(bh)
+    tx.confirmation_block_hash = bh
+    return tx
