@@ -4,7 +4,7 @@ from pycoin.convention.tx_fee import TX_FEE_PER_THOUSAND_BYTES
 from pycoin.tx.tx_utils import create_tx, sign_tx
 
 
-DUST = 0
+DUST = 1000000
 
 class SQLite3Wallet(object):
 
@@ -55,6 +55,7 @@ class SQLite3Wallet(object):
             if self._desired_spendable_count is not None:
                 if self.persistence.unspent_spendable_count() < self._desired_spendable_count:
                     desired_change_output_count = len(spendables) + 1
+                    # TODO: be a little smarter about how many change outputs to create
                     if change_amount > desired_change_output_count * DUST:
                         for i in range(desired_change_output_count):
                             change_address = self.keychain.get_change_address()
