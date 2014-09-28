@@ -3,6 +3,7 @@
 
 import decimal
 import json
+import logging
 
 
 try:
@@ -89,6 +90,19 @@ class InsightService(object):
         for addr in bitcoin_addresses:
             spendables.extend(self.spendables_for_address(addr))
         return spendables
+
+    def send_tx(self, tx):
+        # TODO: make this handle errors better
+        s = io.BytesIO()
+        tx.stream(s)
+        tx_as_hex = b2h(s.getvalue())
+        data = urlencode(dict(rawtx=tx_as_hex)).encode("utf8")
+        URL = "%s/api/tx/send" % self.base_url
+        try:
+            d = urlopen(URL, data=data).read()
+            return d
+        except HTTPError as ex:
+            logging.exception("problem in send_tx %s", tx.id())
 
 
 def tx_from_json_dict(r):
