@@ -77,7 +77,7 @@ def parse_signed_message(msg_in):
 class MsgSigningMixin(object):
     # Use this with Key object, only? Needs lots of
 
-    def sign_message(self, message, verbose=False, use_uncompressed=None):
+    def sign_message(self, message=None, verbose=False, use_uncompressed=None, msg_hash=None):
         """
         Return a signature, encoded in Base64, which can be verified by anyone using the
         public key.
@@ -86,7 +86,7 @@ class MsgSigningMixin(object):
         if not secret_exponent:
             raise TypeError("Private key is required to sign a message")
 
-        mhash = _hash_for_signing(message, self.netcode)
+        mhash = hash_for_signing(message, self.netcode) if message else msg_hash
         
         # Use a deterministic K so our signatures are deterministic.
         try:
@@ -111,7 +111,7 @@ class MsgSigningMixin(object):
         first = 27 + y_odd + (4 if is_compressed else 0)
         sig = b2a_base64(chr(first) + to_bytes_32(r) + to_bytes_32(s)).strip()
 
-        if not verbose:
+        if not verbose or not message:
             return sig
 
         addr = self.address()
@@ -131,7 +131,7 @@ class MsgSigningMixin(object):
             return False
 
         # Calculate hash of message used in signature
-        mhash = _hash_for_signing(message, self.netcode)
+        mhash = hash_for_signing(message, self.netcode)
 
         # Calculate the specific public key used to sign this message.
         pair = _extract_public_pair(ecdsa.generator_secp256k1, recid, r, s, mhash)
@@ -257,7 +257,7 @@ def _extract_public_pair(generator, recid, r, s, value):
 
     return public_pair
 
-def _hash_for_signing(msg, netcode='BTC'):
+def hash_for_signing(msg, netcode='BTC'):
     """
     Return a hash of msg, according to bitcoin method: double SHA256 over a bitcoin
     encoded stream of two strings: a fixed magic prefix and the actual message.
