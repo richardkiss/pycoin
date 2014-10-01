@@ -50,6 +50,10 @@ class Key(MsgSigningMixin):
     def netcode(self):
         return self._netcode
 
+    @property
+    def is_compressed(self):
+        return not self._prefer_uncompressed
+
     @classmethod
     def from_text(class_, text, is_compressed=True):
         """
