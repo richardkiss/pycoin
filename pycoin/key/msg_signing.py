@@ -111,7 +111,7 @@ class MsgSigningMixin(object):
         first = 27 + y_odd + (4 if is_compressed else 0)
         sig = b2a_base64(chr(first) + to_bytes_32(r) + to_bytes_32(s)).strip()
 
-        if not verbose or not message:
+        if not verbose or message == None:
             return sig
 
         addr = self.address()
