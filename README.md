@@ -5,6 +5,7 @@ This is an implementation of a bunch of utility routines that may be useful when
 alt-coins. It has been tested with Python 2.7, 3.3 and 3.4.
 
 See also http://github.com/richardkiss/pycoinnet/ for a library that speaks the bitcoin protocol.
+For a more detailed step-by-step walkthrough to setting up a development environment, setting up, and using the project, please see the following: github.com/richardkiss/pycoin/blob/master/STEP-BY-STEP.md
 
 High Level
 ==========
