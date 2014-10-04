@@ -53,6 +53,7 @@ You can also use ```pycoin.tx.tx_utils``` which has ```create_tx``` and ```creat
 very easy way to create signed transactions.
 
 The command-line utility ```tx``` is a Swiss Army knife of transaction utilities. See also COMMAND-LINE-TOOLS.md.
+More specific examples, though possibly out of date (July 8, 2013), can be found at blog.richardkiss.com/?p=313. 
 
 
 Services
