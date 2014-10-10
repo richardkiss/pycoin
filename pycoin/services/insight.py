@@ -103,6 +103,7 @@ class InsightService(object):
             return d
         except HTTPError as ex:
             logging.exception("problem in send_tx %s", tx.id())
+            raise ex
 
 
 def tx_from_json_dict(r):
