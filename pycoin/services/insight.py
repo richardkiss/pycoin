@@ -78,7 +78,7 @@ class InsightService(object):
         r = json.loads(urlopen(URL).read().decode("utf8"))
         spendables = []
         for u in r:
-            coin_value = btc_to_satoshi(u.get("amount"))
+            coin_value = btc_to_satoshi(str(u.get("amount")))
             script = h2b(u.get("scriptPubKey"))
             previous_hash = h2b_rev(u.get("txid"))
             previous_index = u.get("vout")
