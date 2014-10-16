@@ -46,11 +46,11 @@ def test_against_myself():
 
             assert s == sig2, s
 
-            ok = vk.verify_message(msg, sig2)
+            ok = vk.verify_message(sig2, msg)
             print "verifies: %s" % ("Ok" if ok else "WRONG")
             assert ok
 
-            assert vk2.verify_message(msg, sig2)
+            assert vk2.verify_message(sig2, msg)
 
 def test_msg_parse():
     """

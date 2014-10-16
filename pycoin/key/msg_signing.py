@@ -120,7 +120,7 @@ class MsgSigningMixin(object):
                             net_name=network_name_for_netcode(self.netcode).upper())
 
 
-    def verify_message(self, message, signature):
+    def verify_message(self, signature, message=None, msg_hash=None):
         """
         Take a signature, encoded in Base64, and verify it against ourself as the public key.
         """
@@ -131,7 +131,7 @@ class MsgSigningMixin(object):
             return False
 
         # Calculate hash of message used in signature
-        mhash = hash_for_signing(message, self.netcode)
+        mhash = hash_for_signing(message, self.netcode) if message != None else msg_hash
 
         # Calculate the specific public key used to sign this message.
         pair = _extract_public_pair(ecdsa.generator_secp256k1, recid, r, s, mhash)
@@ -162,7 +162,7 @@ def verify_message(message, addr, signature, netcode='BTC'):
     h160, pubpre = pubkey_address_to_hash160_sec_with_prefix(addr)
     k = Key(hash160=h160, netcode=netcode)
 
-    return k.verify_message(message, signature)
+    return k.verify_message(signature, message)
     
             
 
