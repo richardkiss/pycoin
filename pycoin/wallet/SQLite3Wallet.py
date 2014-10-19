@@ -41,11 +41,6 @@ class SQLite3Wallet(object):
             if total_input_value < amount + estimated_fee:
                 raise ValueError("insufficient funds: only %d available" % total_input_value)
 
-            # mark the given spendables as "unconfirmed_spent"
-            for spendable in spendables:
-                spendable.does_seem_spent = True
-                self.persistence.save_spendable(spendable)
-
             payables = [(address, amount)]
             change_amount = total_input_value - estimated_fee - amount
             if change_amount > DUST:
@@ -62,6 +57,10 @@ class SQLite3Wallet(object):
                             payables.append(change_address)
 
             tx = create_tx(spendables, payables, fee=estimated_fee)
+            # mark the given spendables as "unconfirmed_spent"
+            for spendable in spendables:
+                spendable.does_seem_spent = True
+                self.persistence.save_spendable(spendable)
             self.persistence.commit()
         return tx
 
