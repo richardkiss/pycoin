@@ -4,14 +4,13 @@ from pycoin.convention.tx_fee import TX_FEE_PER_THOUSAND_BYTES
 from pycoin.tx.tx_utils import create_tx, sign_tx
 
 
-DUST = 1000000
-
 class SQLite3Wallet(object):
 
-    def __init__(self, keychain, persistence, desired_spendable_count=None):
+    def __init__(self, keychain, persistence, desired_spendable_count=None, min_extra_spendable_amount=1000000):
         self.keychain = keychain
         self.persistence = persistence
         self._desired_spendable_count = desired_spendable_count
+        self._min_extra_spendable_amount = min_extra_spendable_amount
         self._lock = RLock()
 
     def last_block_index(self):
@@ -43,7 +42,7 @@ class SQLite3Wallet(object):
 
             payables = [(address, amount)]
             change_amount = total_input_value - estimated_fee - amount
-            if change_amount > DUST:
+            if change_amount > 0:
                 change_address = self.keychain.get_change_address()
                 payables.append(change_address)
 
@@ -51,7 +50,7 @@ class SQLite3Wallet(object):
                 if self.persistence.unspent_spendable_count() < self._desired_spendable_count:
                     desired_change_output_count = len(spendables) + 1
                     # TODO: be a little smarter about how many change outputs to create
-                    if change_amount > desired_change_output_count * DUST:
+                    if change_amount > desired_change_output_count * self._min_extra_spendable_amount:
                         for i in range(desired_change_output_count):
                             change_address = self.keychain.get_change_address()
                             payables.append(change_address)
