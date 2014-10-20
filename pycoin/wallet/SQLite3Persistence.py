@@ -191,7 +191,7 @@ unique(tx_hash, tx_out_index)
             seen.add(name)
 
     def unspent_spendable_count(self):
-        SQL = ("select count(*) from Spendable where block_index_available is not null"
+        SQL = ("select count(*) from Spendable where does_seem_spent = 0"
                " and block_index_spent is null")
         c = self._exec_sql(SQL)
         r = c.fetchone()
