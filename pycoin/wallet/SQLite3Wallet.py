@@ -96,7 +96,7 @@ class SQLite3Wallet(object):
     def _rollback_block(self, blockheader, block_index):
         with self._lock:
             self.set_last_block_index(block_index-1)
-            self.persistence.invalidate_block_index_for_wallet(block_index)
+            self.persistence.invalidate_block_index_for_spendables(block_index)
 
     def get_balance(self, confirmations=1):
         lbi = self.last_block_index()
