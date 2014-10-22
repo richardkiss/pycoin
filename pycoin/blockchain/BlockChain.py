@@ -110,7 +110,8 @@ class BlockChain(object):
                     if c in excluded:
                         break
                     excluded.add(c)
-                    yield (c, old_chain_finder.parent_lookup[c])
+                    if c in old_chain_finder.parent_lookup:
+                        yield (c, old_chain_finder.parent_lookup[c])
         self.chain_finder.load_nodes(iterate())
         self.parent_hash = the_hash
 
