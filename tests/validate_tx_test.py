@@ -182,5 +182,11 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
         tx_to_validate.unspents_from_db(TX_DB)
         self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
+    def test_endian(self):
+        from pycoin.tx.script.tools import bytes_to_int, int_to_bytes
+        assert bytes_to_int(int_to_bytes(768)) == 768
+        assert bytes_to_int(int_to_bytes(3)) == 3
+        assert bytes_to_int(int_to_bytes(66051)) == 66051
+
 if __name__ == "__main__":
     unittest.main()
