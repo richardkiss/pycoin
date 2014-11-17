@@ -45,6 +45,9 @@ NETWORKS = (
     # JBS Jumbucks mainnet : jprv/jpub
     NetworkValues("Jumbucks", "mainnet", "JBS", b'\xab', b'\x2b', None, h2b('037a6460'), h2b('037a689a')),
 
+    # MZC Mazacoin mainnet: xprv/xpub
+    NetworkValues("Mazacoin", "mainnet", "MZC", b'\xe0', b'\x32', b'\9', h2b("0488ADE4"), h2b("0488B21E")),
+
 )
 
 
