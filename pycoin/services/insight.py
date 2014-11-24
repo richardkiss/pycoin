@@ -27,7 +27,6 @@ class InsightService(object):
         self.base_url = base_url
 
     def get_blockchain_tip(self):
-        "https://search.bitaccess.ca/api/status?q=getLastBlockHash"
         URL = "%s/api/status?q=getLastBlockHash" % self.base_url
         d = urlopen(URL).read().decode("utf8")
         r = json.loads(d)
