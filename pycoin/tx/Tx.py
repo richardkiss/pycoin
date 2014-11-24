@@ -182,7 +182,7 @@ class Tx(object):
                 # This should probably be moved to a constant, but the
                 # likelihood of ever getting here is already really small
                 # and getting smaller
-                return h2b_rev('0000000000000000000000000000000000000000000000000000000000000001')
+                return (1<<248)
 
             # Only lock in the txout payee at same index as txin; delete
             # any outputs after this one and set all outputs before this
