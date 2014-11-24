@@ -7,13 +7,13 @@ from pycoin.encoding import a2b_hashed_base58, secret_exponent_to_wif,\
     hash160_sec_to_bitcoin_address, sec_to_public_pair,\
     is_sec_compressed, from_bytes_32, EncodingError
 from pycoin.serialize import b2h
+from msg_signing import MsgSigningMixin
 
 
 class InvalidKeyGeneratedError(Exception):
     pass
 
-
-class Key(object):
+class Key(MsgSigningMixin):
     def __init__(self, secret_exponent=None, public_pair=None, hash160=None,
                  prefer_uncompressed=None, is_compressed=True, is_pay_to_script=False, netcode='BTC'):
         """
