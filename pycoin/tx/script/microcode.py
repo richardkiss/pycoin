@@ -32,12 +32,10 @@ import hashlib
 from . import ScriptError
 
 from .opcodes import OPCODE_TO_INT
-from .tools import bytes_to_int, int_to_bytes
+from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, bytes_to_int
 from ...encoding import hash160, double_sha256, ripemd160
 from ...serialize import h2b
 
-bytes_from_ints = (lambda x: ''.join(chr(c) for c in x)) if bytes == str else bytes
-bytes_to_ints = (lambda x: (ord(c) for c in x)) if bytes == str else lambda x: x
 
 VCH_TRUE = b'\1\1'
 VCH_FALSE = b'\0'

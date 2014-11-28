@@ -17,11 +17,16 @@ name that exist on int in Python 3 only. For Python 3, use
 those implementations.
 """
 
-bytes_to_ints = (lambda x: (ord(c) for c in x)) if bytes == str else lambda x: x
+bytes_to_ints = (lambda x: [ord(c) for c in x]) if bytes == str else lambda x: x
+bytes_from_int = chr if bytes == str else lambda x: bytes([x])
+byte_to_int = ord if bytes == str else lambda x: x
+
 
 if hasattr(int, "to_bytes"):
     to_bytes = lambda v, length, byteorder="big": v.to_bytes(length, byteorder=byteorder)
     from_bytes = lambda bytes, byteorder="big", signed=False: int.from_bytes(bytes, byteorder="big", signed=signed)
+    int_to_bytes = lambda v: v.to_bytes((v.bit_length()+7)//8, byteorder="big")
+    bytes_to_int = lambda v: int.from_bytes(v, byteorder="big")
 else:
     def to_bytes(v, length, byteorder="big"):
         l = bytearray()
@@ -42,4 +47,19 @@ else:
             v += c
         if signed and bytes[0] & 0x80:
             v = v - (1<<(8*len(bytes)))
+        return v
+
+    def int_to_bytes(v):
+        l = bytearray()
+        while v > 0:
+            v, mod = divmod(v, 256)
+            l.append(mod)
+        return bytes(l)
+
+    def bytes_to_int(s):
+        v = 0
+        b = 0
+        for c in bytes_to_ints(s):
+            v += (c << b)
+            b += 8
         return v

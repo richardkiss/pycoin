@@ -29,8 +29,8 @@ THE SOFTWARE.
 
 import hashlib
 
-bytes_from_int = chr if bytes == str else lambda x: bytes([x])
-byte_to_int = ord if bytes == str else lambda x: x
+from .intbytes import byte_to_int, bytes_from_int
+
 
 BASE58_ALPHABET = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 BASE58_BASE = len(BASE58_ALPHABET)

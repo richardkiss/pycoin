@@ -30,6 +30,7 @@ import logging
 
 from ... import ecdsa
 from ...encoding import sec_to_public_pair, EncodingError
+from ...intbytes import byte_to_int
 
 from . import der
 from . import opcodes
