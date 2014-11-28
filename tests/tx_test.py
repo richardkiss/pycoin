@@ -161,7 +161,8 @@ class TxTest(unittest.TestCase):
         TX_DB = dict((tx.hash(), tx) for tx in TX_LIST)
         for h in ["315ac7d4c26d69668129cc352851d9389b4a6868f1509c6c8b66bead11e2619f",
                   "dbf38261224ebff0c455c405e2435cfc69adb6b8a42d7b10674d9a4eb0464dca",
-                  "de744408e4198c0a39310c8106d1830206e8d8a5392bcf715c9b5ec97d784edd"]:
+                  "de744408e4198c0a39310c8106d1830206e8d8a5392bcf715c9b5ec97d784edd",
+                  "485716e53b422aca0fe5b1ded21360695ce5f49255d80e10db56458ed6962ff3"]:
             tx = TX_DB.get(h2b_rev(h))
             self.assertNotEqual(tx, None)
             tx.unspents_from_db(TX_DB)
