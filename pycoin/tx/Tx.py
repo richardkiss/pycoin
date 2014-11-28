@@ -243,10 +243,10 @@ class Tx(object):
     def total_out(self):
         return sum(tx_out.coin_value for tx_out in self.txs_out)
 
-    def tx_outs_as_spendable(self):
+    def tx_outs_as_spendable(self, block_index_available=0):
         h = self.hash()
         return [
-            Spendable(tx_out.coin_value, tx_out.script, h, tx_out_index)
+            Spendable(tx_out.coin_value, tx_out.script, h, tx_out_index, block_index_available)
             for tx_out_index, tx_out in enumerate(self.txs_out)]
 
     def is_coinbase(self):

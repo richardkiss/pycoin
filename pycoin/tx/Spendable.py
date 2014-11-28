@@ -13,15 +13,15 @@ class Spendable(TxOut):
         self.script = script
         self.tx_hash = tx_hash
         self.tx_out_index = tx_out_index
-        self.block_index_available = block_index_available or None
-        self.does_seem_spent = bool(does_seem_spent)
-        self.block_index_spent = block_index_spent or None
+        self.block_index_available = block_index_available
+        self.does_seem_spent = int(does_seem_spent)
+        self.block_index_spent = block_index_spent
 
     def stream(self, f, as_spendable=False):
         super(Spendable, self).stream(f)
         if as_spendable:
             stream_struct("#LIbI", f, self.previous_hash, self.previous_index,
-                          self.block_index_available, self.does_seem_spent, self.block_index_spent)
+                          self.block_index_available, bool(self.does_seem_spent), self.block_index_spent)
 
     @classmethod
     def parse(class_, f):
@@ -32,7 +32,7 @@ class Spendable(TxOut):
         return dict(
             coin_value=self.coin_value,
             script_hex=b2h(self.script),
-            tx_hash_hex=b2h(self.tx_hash),
+            tx_hash_hex=b2h_rev(self.tx_hash),
             tx_out_index=self.tx_out_index,
             block_index_available=self.block_index_available,
             does_seem_spent=int(self.does_seem_spent),
@@ -42,9 +42,9 @@ class Spendable(TxOut):
     @classmethod
     def from_dict(class_, d):
         return class_(d["coin_value"], h2b(d["script_hex"]),
-                      h2b(d["tx_hash_hex"]), d["tx_out_index"],
-                      d.get("block_index_available"), d.get("does_seem_spent", 0),
-                      d.get("block_index_spent"))
+                      h2b_rev(d["tx_hash_hex"]), d["tx_out_index"],
+                      d.get("block_index_available", 0), d.get("does_seem_spent", 0),
+                      d.get("block_index_spent", 0))
 
     def as_text(self):
         return "/".join([b2h_rev(self.tx_hash), str(self.tx_out_index), b2h(self.script),
@@ -60,8 +60,8 @@ class Spendable(TxOut):
         tx_out_index = int(tx_out_index_str)
         script = h2b(script_hex)
         coin_value = int(coin_value)
-        return class_(coin_value, script, tx_hash, tx_out_index, block_index_available,
-                      bool(does_seem_spent), block_index_spent)
+        return class_(coin_value, script, tx_hash, tx_out_index, int(block_index_available),
+                      int(does_seem_spent), int(block_index_spent))
 
     def tx_in(self, script=b'', sequence=4294967295):
         return TxIn(self.tx_hash, self.tx_out_index, script, sequence)
@@ -69,7 +69,7 @@ class Spendable(TxOut):
     def __str__(self):
         return 'Spendable<%s mbtc "%s:%d" %s/%s/%s>' % (
             satoshi_to_mbtc(self.coin_value), b2h_rev(self.tx_hash), self.tx_out_index,
-            self.block_index_available, str(self.does_seem_spent)[0], self.block_index_spent)
+            self.block_index_available, self.does_seem_spent, self.block_index_spent)
 
     def __repr__(self):
         return str(self)
