@@ -157,7 +157,7 @@ class TxTest(unittest.TestCase):
             )
         ]
 
-        TX_LIST = [Tx.tx_from_hex(b2h(binascii.a2b_base64(b64))) for b64 in TX_B64_LIST]
+        TX_LIST = [Tx.tx_from_hex(b2h(binascii.a2b_base64(b64.encode("utf8")))) for b64 in TX_B64_LIST]
         TX_DB = dict((tx.hash(), tx) for tx in TX_LIST)
         for h in ["315ac7d4c26d69668129cc352851d9389b4a6868f1509c6c8b66bead11e2619f",
                   "dbf38261224ebff0c455c405e2435cfc69adb6b8a42d7b10674d9a4eb0464dca",
