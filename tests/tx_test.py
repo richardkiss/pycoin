@@ -134,6 +134,26 @@ class TxTest(unittest.TestCase):
                 "/////wNAQg8AAAAAABl2qRSU70Qwi2d2bI+nKnCP19XGsbSnWoisVEkwAAAA"
                 "AAAZdqkUgroT7ai54LzKPXVnWJsPoV6lJ0yIrHjrFQAAAAAAGXapFEFyZV9I"
                 "izJXnWmTivO2n9OKDWCdiKwAAAAA"
+            ),
+            (
+                "AQAAAAHBHumhtHyFj2ma501AFchO/RrrfkY1sYTKsJiYe6i5pAEAAADaAEcw"
+                "RAIgJQsMj5xe4yyGSQOseNBu7zuQNbdwYRpmu4tyOeVrDhoCIHTRJ5lHr5OH"
+                "JsmDYl4nTEMhT2TeEN8tMNtrt/rFLMaHAUgwRQIhAObKZ2o5NubR2aoXKP7q"
+                "oNMI3sv4u33Hnxcu1NBCilhoAiAH5OaEGAC5snVQDIWgXXVWICosFmTHHjXg"
+                "y5fNwAO5gAFHUiECzr9qtYCUjRRrfMdx2OZGl0NJ09exHz4DKH0Jl6R307kh"
+                "A3umUUhbeiyyIhketkpVkm5iu6v+m17SqUiKrVR7IEKCUq7/////An1KDwAA"
+                "AAAAGXapFNxnIa33YyARGtMFwzhMdn1LmeGViKxllyYPAAAAABepFNsSg3N8"
+                "2T68HrEpjWRKeEbFWm2WhwAAAAA="
+            ),
+            (
+                "AQAAAAHZI2Rm7Gvz7UMEKi20P7AIT5AOxlhwW29S0uFz9EPz1QEAAADaAEgw"
+                "RQIhAIX1NZuYzrKUHFAxUNYI6yWMUuzCEapuZOUY6TdCspWaAiAchzgPP6if"
+                "WNh0cmVkyW1UpygM/eVa1XrtHepCMhvArAFHMEQCIGLJtKtbyJEaH6iQS+hK"
+                "xUlGrWwmqdJScz/JfSZ1Qln6AiBNRC+gswEEMjTNR5uVetqCGJkNL2m6fDfk"
+                "DyICU/otoQFHUiECzr9qtYCUjRRrfMdx2OZGl0NJ09exHz4DKH0Jl6R307kh"
+                "A3umUUhbeiyyIhketkpVkm5iu6v+m17SqUiKrVR7IEKCUq7/////Aux5CAAA"
+                "AAAAGXapFDIKbLrYWAn/2ZTB7ToisbIaZ5DoiKzL5TUPAAAAABepFNsSg3N8"
+                "2T68HrEpjWRKeEbFWm2WhwAAAAA="
             )
         ]
 
@@ -147,6 +167,17 @@ class TxTest(unittest.TestCase):
             tx.unspents_from_db(TX_DB)
             for idx, tx_in in enumerate(tx.txs_in):
                 self.assertTrue(tx.is_signature_ok(tx_in_idx=idx))
+
+
+def tx_to_b64(tx_hex):
+    # use this to dump raw transactions in the data above
+    import io
+    tx = Tx.tx_from_hex(tx_hex)
+    f = io.BytesIO()
+    tx.stream(f)
+    d = f.getvalue()
+    for idx in range(0, len(d), 45):
+        print('"%s"' % binascii.b2a_base64(d[idx:idx+45]).decode("utf8")[:-1])
 
 
 if __name__ == "__main__":
