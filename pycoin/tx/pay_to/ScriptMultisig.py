@@ -5,7 +5,7 @@ from ..script.microcode import VCH_TRUE
 from ... import ecdsa
 from ... import encoding
 
-from ...networks import address_prefix_for_netcode
+from ...networks import address_prefix_for_netcode, pay_to_script_prefix_for_netcode
 from ...serialize import b2h
 
 from .ScriptType import ScriptType
@@ -19,6 +19,7 @@ class ScriptMultisig(ScriptType):
         self.n = n
         self.sec_keys = sec_keys
         self._script = None
+        self._address = None
 
     @classmethod
     def from_script(cls, script):
@@ -51,10 +52,12 @@ class ScriptMultisig(ScriptType):
 
         return cls(sec_keys=sec_keys, n=n)
 
-    def address(self):
+    def address(self, netcode):
         if self._address is None:
+            address_prefix = pay_to_script_prefix_for_netcode(netcode)
+            hash160 = encoding.hash160(self.script())
             self._address = encoding.hash160_sec_to_bitcoin_address(
-                self.hash160, address_prefix=self.address_prefix)
+                hash160, address_prefix=address_prefix)
         return self._address
 
     def script(self):
