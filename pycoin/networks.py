@@ -51,9 +51,6 @@ NETWORKS = (
     # MZC Mazacoin mainnet: xprv/xpub
     NetworkValues("Mazacoin", "mainnet", "MZC", b'\xe0', b'\x32', b'\9', h2b("0488ADE4"), h2b("0488B21E")),
 
-    # VTC Vertcoin mainnet: vtcv/vtcp
-    NetworkValues("Vertcoin", "mainnet", "VTC", b'\xcc', b'\x47', b'\9', h2b("0488ADE4"), h2b("0488B21E")),
-
 )
 
 
