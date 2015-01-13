@@ -335,7 +335,12 @@ class Tx(object):
         if unspent is None:
             return False
         tx_out_script = self.unspents[tx_in_idx].script
-        signature_for_hash_type_f = lambda hash_type: self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+
+        def signature_for_hash_type_f(hash_type, script=None):
+            if script:
+                return self.signature_hash(script, tx_in_idx, hash_type)
+            return self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+
         return tx_in.verify(tx_out_script, signature_for_hash_type_f)
 
     def sign(self, hash160_lookup, hash_type=SIGHASH_ALL, **kwargs):

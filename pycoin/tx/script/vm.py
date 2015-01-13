@@ -151,7 +151,7 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
                 sig_ok = VCH_TRUE
                 for sig_blob in sig_blobs:
                     sig_pair, signature_type = parse_signature_blob(sig_blob)
-                    signature_hash = signature_for_hash_type_f(signature_type)
+                    signature_hash = signature_for_hash_type_f(signature_type, script=script)
 
                     ppp = ecdsa.possible_public_pairs_for_signature(
                         ecdsa.generator_secp256k1, signature_hash, sig_pair)
