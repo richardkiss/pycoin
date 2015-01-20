@@ -37,7 +37,7 @@ from . import opcodes
 from . import ScriptError
 
 from .microcode import MICROCODE_LOOKUP, VCH_TRUE, VCH_FALSE, make_bool
-from .tools import get_opcode, bin_script
+from .tools import get_opcode, bin_script, delete_subscript
 
 logger = logging.getLogger(__name__)
 
@@ -117,10 +117,19 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
             if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
                 public_pair = sec_to_public_pair(stack.pop())
-                sig_pair, signature_type = parse_signature_blob(stack.pop())
+                sig_blob = stack.pop()
+                sig_pair, signature_type = parse_signature_blob(sig_blob)
                 if expected_hash_type not in (None, signature_type):
                     raise ScriptError("wrong hash type")
-                signature_hash = signature_for_hash_type_f(signature_type, script)
+
+                # Subset of script starting at the most recent codeseparator
+                tmp_script = script[begin_code_hash:]
+
+                # Drop the signature, since there's no way for a signature to sign itself
+                # see: Bitcoin Core/script/interpreter.cpp::EvalScript()
+                tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
+
+                signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
                 if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair):
                     stack.append(VCH_TRUE)
                 else:
@@ -150,10 +159,17 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
                 should_be_zero_bug = stack.pop()
 
+                # Subset of script starting at the most recent codeseparator
+                tmp_script = script[begin_code_hash:]
+
+                # Drop the signatures, since there's no way for a signature to sign itself
+                for sig_blob in sig_blobs:
+                    tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
+
                 sig_ok = VCH_TRUE
                 for sig_blob in sig_blobs:
                     sig_pair, signature_type = parse_signature_blob(sig_blob)
-                    signature_hash = signature_for_hash_type_f(signature_type, script)
+                    signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
 
                     ppp = ecdsa.possible_public_pairs_for_signature(
                         ecdsa.generator_secp256k1, signature_hash, sig_pair)
