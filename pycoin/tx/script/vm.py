@@ -221,4 +221,4 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         return verify_script(alt_script_signature, alt_script_public_key,
                              signature_for_hash_type_f, expected_hash_type=expected_hash_type)
 
-    return stack[-1] == VCH_TRUE
+    return stack[-1] != VCH_FALSE
