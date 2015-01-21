@@ -116,6 +116,10 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
 
         matching_pair = ppp.pop()
         idx = public_pairs.index(matching_pair)
-        public_pairs = public_pairs[:idx] + public_pairs[idx+1:]
+        # The exact order of pubkey/signature evaluation
+        # is important for consensus.  If someday it will
+        # no longer matter, just replace the line below with:
+        # public_pairs = public_pairs[:idx] + public_pairs[idx+1:]
+        public_pairs = public_pairs[idx+1:]
 
     stack.append(sig_ok)
