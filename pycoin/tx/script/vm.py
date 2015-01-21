@@ -116,6 +116,9 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
             if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
                 public_pair = sec_to_public_pair(stack.pop())
                 sig_blob = stack.pop()
+                if sig_blob == b"\x00":
+                    stack.append(VCH_FALSE)
+                    continue
                 sig_pair, signature_type = parse_signature_blob(sig_blob)
                 if expected_hash_type not in (None, signature_type):
                     raise ScriptError("wrong hash type")
@@ -166,6 +169,9 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
                 sig_ok = VCH_TRUE
                 for sig_blob in sig_blobs:
+                    if sig_blob == b"\x00":
+                        sig_ok = VCH_FALSE
+                        break
                     sig_pair, signature_type = parse_signature_blob(sig_blob)
                     signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
 
