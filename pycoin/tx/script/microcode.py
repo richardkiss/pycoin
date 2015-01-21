@@ -461,7 +461,7 @@ do_OP_2MUL = make_unary_num_op(lambda x: x<<1)
 do_OP_2DIV = make_unary_num_op(lambda x: x>>1)
 do_OP_NEGATE = make_unary_num_op(lambda x: -x)
 do_OP_ABS = make_unary_num_op(lambda x: abs(x))
-do_OP_NOT = make_unary_num_op(lambda x: make_bool(x == 0))
+do_OP_NOT = lambda stack: stack.append(make_bool(stack.pop() == VCH_FALSE))
 do_OP_0NOTEQUAL = make_unary_num_op(lambda x: make_bool(x != 0))
 
 def build_ops_lookup():
