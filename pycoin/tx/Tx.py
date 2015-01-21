@@ -32,7 +32,7 @@ from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 from ..convention import MAX_MONEY, MAX_BLOCK_SIZE
-from ..intbytes import byte_to_int
+from ..intbytes import byte_to_int, int_to_bytes
 
 from .TxIn import TxIn
 from .TxOut import TxOut
@@ -187,7 +187,7 @@ class Tx(object):
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.
-        tx_out_script = tools.delete_subscript(tx_out_script, [opcodes.OP_CODESEPARATOR])
+        tx_out_script = tools.delete_subscript(tx_out_script, int_to_bytes(opcodes.OP_CODESEPARATOR))
 
         # blank out other inputs' signatures
         def tx_in_for_idx(idx, tx_in):
