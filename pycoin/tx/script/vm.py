@@ -158,6 +158,9 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
                 for i in range(signature_count):
                     sig_blobs.append(stack.pop())
 
+                if len(stack) < 1 or stack[0] != b'\x00':
+                    stack.append(VCH_FALSE)
+                    continue
                 should_be_zero_bug = stack.pop()
 
                 # Subset of script starting at the most recent codeseparator
