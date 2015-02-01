@@ -6,6 +6,12 @@ bytes_to_ints(bytes):
     Python 2 treats bytes[0] as a string while
     Python 3 treats bytes[0] as an int.
 
+bytes_from_int(an_int):
+    convert an integer into bytes (of length 1)
+
+byte_to_int(one_byte):
+    turn one byte into an int
+
 to_bytes(v, length, byteorder):
     convert integer v into a bytes object
 
