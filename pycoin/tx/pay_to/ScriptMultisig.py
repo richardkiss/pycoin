@@ -52,7 +52,7 @@ class ScriptMultisig(ScriptType):
 
         return cls(sec_keys=sec_keys, n=n)
 
-    def address(self, netcode):
+    def address(self, netcode="BTC"):
         if self._address is None:
             address_prefix = pay_to_script_prefix_for_netcode(netcode)
             hash160 = encoding.hash160(self.script())
