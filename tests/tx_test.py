@@ -154,6 +154,27 @@ class TxTest(unittest.TestCase):
                 "A3umUUhbeiyyIhketkpVkm5iu6v+m17SqUiKrVR7IEKCUq7/////Aux5CAAA"
                 "AAAAGXapFDIKbLrYWAn/2ZTB7ToisbIaZ5DoiKzL5TUPAAAAABepFNsSg3N8"
                 "2T68HrEpjWRKeEbFWm2WhwAAAAA="
+            ),
+            (# 837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba
+                "AQAAAAGsp/O0VlTCMOCIalf7mIwwRO9ej385cm0wXGHV6BiQPAAAAAD9XQEAS"
+                "DBFAiABh6+Sjp0VXEsaycHJEYFTI5q6dndPd118H5w+EG/zPAIhAIgisPZY7e"
+                "wiJ00LauneEOvy2gaxu9qrpOUOsHjznj14AUcwRAIgeV8PT1lBp3rgMuy54zd"
+                "TeI1+tcsMeNgFV11rAKHZv+0CID4fStkzLRQWrgHicDjpRbydtZxzJyijg6bx"
+                "7S+5naekAUzJUkEEkbuiUQkSpb032h+1sWcwEOQ9LG2BLFFOkb+p8usSnhwYM"
+                "ynbVb2GjiCarC+8Assz2Y/nS/I/DCNdYSax2DNPhkEEhlxAKTpoDLnAIOex4Q"
+                "bYwZFtPO+ZqkMaVtJT5pJW2sCe8SKxqYaBiny2JFMvBiwdH4ciCEhhxcMpHM/"
+                "+9OxodEEEjSRV0kA+CHCPwfVWAC8bbNg/mS0IUJf5l0qwiiiDjweJb7qwjzlJ"
+                "XhX6b61u2/sedU41+hx4RMQfMioYY9RiE1Ou/////wFAQg8AAAAAABl2qRSuV"
+                "rTbE1VNMhxALbOWEYeu0bvtW4isAAAAAA=="
+            ),
+            (# 3c9018e8d5615c306d72397f8f5eef44308c98fb576a88e030c25456b4f3a7ac
+             # input of
+             # 837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba
+                "AQAAAAGJYyhI+ZcikVcnxcddqNstvxlDQqBCmCj2b/iPqyr31gAAAACLSDBFA"
+                "iEAq7yKc/4gVEgL2j8ygdotDFHihBORq9TAn0+QiiA0wY0CIFvJ5NaOr7kY8+"
+                "lmIzhkekQZwN4aZQq4mD8dIW4qMdjjAUEEb1XXre/2ARx+rClP5UDFeDC+gOk"
+                "1XIOGnJJgpLi/R2ema6y9cLgE3GPVvusUGAKSrX87CDNysdAtejfdl/9cnv//"
+                "//8BQEIPAAAAAAAXqRT4FbA22bu85enyoAq9G/PckelVEIcAAAAA"
             )
         ]
 
@@ -162,7 +183,8 @@ class TxTest(unittest.TestCase):
         for h in ["315ac7d4c26d69668129cc352851d9389b4a6868f1509c6c8b66bead11e2619f",
                   "dbf38261224ebff0c455c405e2435cfc69adb6b8a42d7b10674d9a4eb0464dca",
                   "de744408e4198c0a39310c8106d1830206e8d8a5392bcf715c9b5ec97d784edd",
-                  "485716e53b422aca0fe5b1ded21360695ce5f49255d80e10db56458ed6962ff3"]:
+                  "485716e53b422aca0fe5b1ded21360695ce5f49255d80e10db56458ed6962ff3",
+                  "837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba"]:
             tx = TX_DB.get(h2b_rev(h))
             self.assertNotEqual(tx, None)
             tx.unspents_from_db(TX_DB)
