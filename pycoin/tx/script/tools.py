@@ -31,7 +31,7 @@ import io
 import logging
 
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
-from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, bytes_to_int
+from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, int_from_bytes
 
 
 def get_opcode(script, pc):
@@ -44,13 +44,13 @@ def get_opcode(script, pc):
         if opcode < OPCODE_TO_INT["OP_PUSHDATA1"]:
             size = opcode
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA1"]:
-            size = bytes_to_int(script[pc:pc+1])
+            size = int_from_bytes(script[pc:pc+1])
             pc += 1
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA2"]:
-            size = bytes_to_int(script[pc:pc+2])
+            size = int_from_bytes(script[pc:pc+2])
             pc += 2
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA4"]:
-            size = bytes_to_int(script[pc:pc+4])
+            size = int_from_bytes(script[pc:pc+4])
             pc += 4
         data = script[pc:pc+size]
         pc += size
