@@ -12,9 +12,9 @@ import re
 import subprocess
 import sys
 
-from pycoin import encoding
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.key import Key
+from pycoin.key.validate import is_address_valid
 from pycoin.networks import address_prefix_for_netcode
 from pycoin.serialize import b2h_rev, h2b_rev, stream_to_bytes
 from pycoin.services import spendables_for_address, get_tx_db
@@ -24,7 +24,6 @@ from pycoin.tx import Spendable, Tx, TxOut
 from pycoin.tx.Tx import BadSpendableError
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.tx.TxOut import standard_tx_out_script
-
 
 DEFAULT_VERSION = 1
 DEFAULT_LOCK_TIME = 0
@@ -277,6 +276,11 @@ def main():
         except Exception:
             pass
 
+        is_valid = is_address_valid(arg, allowable_netcodes=[args.network])
+        if is_valid:
+            payables.append((arg, 0))
+            continue
+
         try:
             key = Key.from_text(arg)
             # TODO: check network
@@ -313,10 +317,7 @@ def main():
             except Exception:
                 pass
 
-        # TODO: fix allowable_prefixes
-        allowable_prefixes = b'\0'
-        if len(parts) == 2 and encoding.is_valid_bitcoin_address(
-                parts[0], allowable_prefixes=allowable_prefixes):
+        if len(parts) == 2 and is_address_valid(parts[0], allowable_netcodes=[args.network]):
             try:
                 payables.append(parts)
                 continue
