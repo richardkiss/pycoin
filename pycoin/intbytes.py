@@ -7,7 +7,7 @@ bytes_to_ints(bytes):
     Python 3 treats bytes[0] as an int.
 
 bytes_from_int(an_int):
-    convert an integer into bytes (of length 1)
+    convert a small integer (< 256) into bytes (of length 1)
 
 byte_to_int(one_byte):
     turn one byte into an int

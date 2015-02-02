@@ -29,6 +29,7 @@ THE SOFTWARE.
 import binascii
 import io
 import logging
+import struct
 
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
 from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, int_from_bytes
@@ -73,8 +74,11 @@ def write_push_data(data_list, f):
             f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA2"]))
             f.write(int_to_bytes(len(t)))
             f.write(t)
-        # BRAIN DAMAGE: if len(t) is too much, we need a different opcode
-        # This will never be used in practice as it makes the scripts too long.
+        else:
+            # This will never be used in practice as it makes the scripts too long.
+            f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA4"]))
+            f.write(struct.pack(">L", len(t)))
+            f.write(t)
 
 def bin_script(data_list):
     f = io.BytesIO()
