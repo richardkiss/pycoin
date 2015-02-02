@@ -62,8 +62,9 @@ else:
     def int_to_bytes(v):
         l = bytearray()
         while v > 0:
-            v, mod = divmod(v, 256)
-            l.append(mod)
+            l.append(v&0xff)
+            v >>= 8
+        l.reverse()
         return bytes(l)
 
     def int_from_bytes(s):
