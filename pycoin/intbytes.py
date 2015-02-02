@@ -12,6 +12,9 @@ bytes_from_int(an_int):
 byte_to_int(one_byte):
     turn one byte into an int
 
+bytes_from_ints(list_of_small_ints):
+    return a bytes object from a list of small (< 256) integers
+
 to_bytes(v, length, byteorder):
     convert integer v into a bytes object
 
@@ -26,6 +29,7 @@ those implementations.
 bytes_to_ints = (lambda x: [ord(c) for c in x]) if bytes == str else lambda x: x
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 byte_to_int = ord if bytes == str else lambda x: x
+bytes_from_ints = (lambda l: b''.join(chr(x) for x in l)) if bytes == str else bytes
 
 
 if hasattr(int, "to_bytes"):
@@ -64,8 +68,7 @@ else:
 
     def int_from_bytes(s):
         v = 0
-        b = 0
         for c in bytes_to_ints(s):
-            v += (c << b)
-            b += 8
+            v <<= 8
+            v += c
         return v

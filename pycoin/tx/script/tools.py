@@ -72,7 +72,7 @@ def write_push_data(data_list, f):
             f.write(t)
         elif len(t) <= 65535:
             f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA2"]))
-            f.write(int_to_bytes(len(t)))
+            f.write(struct.pack(">H", len(t)))
             f.write(t)
         else:
             # This will never be used in practice as it makes the scripts too long.
