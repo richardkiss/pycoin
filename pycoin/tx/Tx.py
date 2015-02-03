@@ -250,7 +250,7 @@ class Tx(object):
 
     def verify_tx_in(self, tx_in_idx, tx_out_script, expected_hash_type=None):
         tx_in = self.txs_in[tx_in_idx]
-        signature_for_hash_type_f = lambda hash_type: self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(script, tx_in_idx, hash_type)
         if not tx_in.verify(tx_out_script, signature_for_hash_type_f, expected_hash_type):
             raise ValidationFailureError(
                 "just signed script Tx %s TxIn index %d did not verify" % (
