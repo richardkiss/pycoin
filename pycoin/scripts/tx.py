@@ -13,10 +13,11 @@ import subprocess
 import sys
 
 from pycoin.convention import tx_fee, satoshi_to_mbtc
+from pycoin.encoding import hash160
 from pycoin.key import Key
 from pycoin.key.validate import is_address_valid
 from pycoin.networks import address_prefix_for_netcode
-from pycoin.serialize import b2h_rev, h2b_rev, stream_to_bytes
+from pycoin.serialize import b2h_rev, h2b, h2b_rev, stream_to_bytes
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_get_tx_env, message_about_spendables_for_address_env
@@ -187,6 +188,12 @@ def main():
     parser.add_argument('-o', "--output-file", metavar="path-to-output-file", type=argparse.FileType('wb'),
                         help='file to write transaction to. This supresses most other output.')
 
+    parser.add_argument('-p', "--pay-to-script", metavar="pay-to-script", action="append",
+                        help='a hex version of a script required for a pay-to-script input (a bitcoin address that starts with 3)')
+
+    parser.add_argument('-P', "--pay-to-script-file", metavar="pay-to-script-file", nargs=1, type=argparse.FileType('r'),
+                        help='a file containing hex scripts (one per line) corresponding to pay-to-script inputs')
+
     parser.add_argument("argument", nargs="+", help='generic argument: can be a hex transaction id '
                         '(exactly 64 characters) to be fetched from cache or a web service;'
                         ' a transaction as a hex string; a path name to a transaction to be loaded;'
@@ -247,6 +254,33 @@ def main():
                 # if len(keys) == 1 and key.hierarchical_wallet() is None:
                 #    # we have exactly 1 WIF. Let's look for an address
                 #   potential_addresses = address_re.findall(line)
+
+    # update p2sh_lookup
+    p2sh_lookup = {}
+    if args.pay_to_script:
+        for p2s in args.pay_to_script:
+            try:
+                script = h2b(p2s)
+                p2sh_lookup[hash160(script)] = script
+            except Exception:
+                print("warning: error parsing pay-to-script value %s" % p2s)
+
+    if args.pay_to_script_file:
+        hex_re = re.compile(r"[0-9a-fA-F]+")
+        for f in args.pay_to_script_file:
+            count = 0
+            for l in f:
+                try:
+                    m = hex_re.search(l)
+                    if m:
+                        p2s = m.group(0)
+                        script = h2b(p2s)
+                        p2sh_lookup[hash160(script)] = script
+                        count += 1
+                except Exception:
+                    print("warning: error parsing pay-to-script file %s" % f.name)
+            if count == 0:
+                print("warning: no scripts found in %s" % f.name)
 
     # we create the tx_db lazily
     tx_db = None
@@ -406,7 +440,7 @@ def main():
                         break
 
         print("signing...", file=sys.stderr)
-        sign_tx(tx, wif_iter(key_iters))
+        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup)
 
     unsigned_after = tx.bad_signature_count()
     if unsigned_after > 0 and key_iters:
