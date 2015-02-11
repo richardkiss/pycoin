@@ -183,7 +183,7 @@ class Tx(object):
                 # This should probably be moved to a constant, but the
                 # likelihood of ever getting here is already really small
                 # and getting smaller
-                return (1<<248)
+                return (1 << 248)
 
             # Only lock in the txout payee at same index as txin; delete
             # any outputs after this one and set all outputs before this
@@ -221,7 +221,7 @@ class Tx(object):
         tx_in = self.txs_in[tx_in_idx]
 
         is_p2h = (len(tx_out_script) == 23 and byte_to_int(tx_out_script[0]) == opcodes.OP_HASH160
-                and byte_to_int(tx_out_script[-1]) == opcodes.OP_EQUAL)
+                  and byte_to_int(tx_out_script[-1]) == opcodes.OP_EQUAL)
         if is_p2h:
             hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
             p2sh_lookup = kwargs.get("p2sh_lookup")
@@ -237,7 +237,8 @@ class Tx(object):
 
         # Leave out the signature from the hash, since a signature can't sign itself.
         # The checksig op will also drop the signatures from its hash.
-        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(script, tx_in_idx, hash_type)
+        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(
+            script, tx_in_idx, hash_type)
         if tx_in.verify(tx_out_script, signature_for_hash_type_f):
             return
 
@@ -351,7 +352,8 @@ class Tx(object):
         if unspent is None:
             return False
         tx_out_script = self.unspents[tx_in_idx].script
-        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(script, tx_in_idx, hash_type)
+        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(
+            script, tx_in_idx, hash_type)
         return tx_in.verify(tx_out_script, signature_for_hash_type_f)
 
     def sign(self, hash160_lookup, hash_type=SIGHASH_ALL, **kwargs):
@@ -368,7 +370,8 @@ class Tx(object):
                 continue
             try:
                 if self.unspents[idx]:
-                    self.sign_tx_in(hash160_lookup, idx, self.unspents[idx].script, hash_type=hash_type, **kwargs)
+                    self.sign_tx_in(
+                        hash160_lookup, idx, self.unspents[idx].script, hash_type=hash_type, **kwargs)
             except SolvingError:
                 pass
 
