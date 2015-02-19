@@ -186,7 +186,8 @@ def main():
                         help='URL to bitcoind instance to validate against (http://user:pass@host:port).')
 
     parser.add_argument('-o', "--output-file", metavar="path-to-output-file", type=argparse.FileType('wb'),
-                        help='file to write transaction to. This supresses most other output.')
+                        help='file to write transaction to. This supresses most other output.'
+                        'use .hex for hex output.')
 
     parser.add_argument('-p', "--pay-to-script", metavar="pay-to-script", action="append",
                         help='a hex version of a script required for a pay-to-script input (a bitcoin address that starts with 3)')
@@ -499,6 +500,7 @@ def main():
                 tx_db = get_tx_db()
             tx.validate_unspents(tx_db)
             print('all incoming transaction values validated')
+
         except BadSpendableError as ex:
             print("\n**** ERROR: FEES INCORRECTLY STATED: %s" % ex.args[0], file=sys.stderr)
         except Exception as ex:
