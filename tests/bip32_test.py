@@ -155,7 +155,7 @@ class Bip0032TestCase(unittest.TestCase):
         from pycoin.key import Key
         netcode = 'XTN'
         key = Key(secret_exponent=273, netcode=netcode)
-        wallet = BIP32Node.from_master_secret(key.wif(), netcode)
+        wallet = BIP32Node.from_master_secret(bytes(key.wif()), netcode)
 
         address = wallet.address()
         pub_k = wallet.from_text(address)
