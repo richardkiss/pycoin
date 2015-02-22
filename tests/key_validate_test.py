@@ -2,6 +2,9 @@
 
 import unittest
 
+# This is necessary for the import Wallet statement below to work?
+import tests.bip32_test
+
 from pycoin.block import Block
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
@@ -82,3 +85,17 @@ class KeyUtilsTest(unittest.TestCase):
                 a = text[:-1] + chr(ord(text[-1])+1)
                 self.assertEqual(is_private_bip32_valid(a, allowable_netcodes=NETWORK_NAMES), None)
                 self.assertEqual(is_public_bip32_valid(a, allowable_netcodes=NETWORK_NAMES), None)
+
+    def test_repr(self):
+        key = Key(secret_exponent=273, netcode='XTN')
+
+        address = key.address()
+        pub_k = Key.from_text(address)
+        self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
+
+        wif = key.wif()
+        priv_k = Key.from_text(wif)
+        self.assertEqual(repr(priv_k), 'private_for <0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
+
+if __name__ == '__main__':
+    unittest.main()
