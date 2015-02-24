@@ -174,7 +174,7 @@ def is_hashed_base58_valid(base58):
     return True
 
 
-def wif_to_tuple_of_prefix_secret_exponent_compressed(wif):
+def wif_to_tuple_of_prefix_secret_exponent_compressed(wif, netcode = 'BTC'):
     """
     Return a tuple of (prefix, secret_exponent, is_compressed).
     """
@@ -184,22 +184,23 @@ def wif_to_tuple_of_prefix_secret_exponent_compressed(wif):
     return actual_prefix, from_bytes_32(private_key[:32]), compressed
 
 
-def wif_to_tuple_of_secret_exponent_compressed(wif, allowable_wif_prefixes=[b'\x80']):
+def wif_to_tuple_of_secret_exponent_compressed(wif, allowable_wif_prefixes=[b'\x80'], netcode='BTC'):
     """Convert a WIF string to the corresponding secret exponent. Private key manipulation.
     Returns a tuple: the secret exponent, as a bignum integer, and a boolean indicating if the
     WIF corresponded to a compressed key or not.
 
     Not that it matters, since we can use the secret exponent to generate both the compressed
     and uncompressed Bitcoin address."""
-    actual_prefix, secret_exponent, is_compressed = wif_to_tuple_of_prefix_secret_exponent_compressed(wif)
+    actual_prefix, secret_exponent, is_compressed = wif_to_tuple_of_prefix_secret_exponent_compressed(wif, netcode=netcode)
+    if netcode == "XTN": allowable_wif_prefixes.append([b'\xef'])
     if actual_prefix not in allowable_wif_prefixes:
         raise EncodingError("unexpected first byte of WIF %s" % wif)
     return secret_exponent, is_compressed
 
 
-def wif_to_secret_exponent(wif, allowable_wif_prefixes=[b'\x80']):
+def wif_to_secret_exponent(wif, allowable_wif_prefixes=[b'\x80'], netcode= 'BTC'):
     """Convert a WIF string to the corresponding secret exponent."""
-    return wif_to_tuple_of_secret_exponent_compressed(wif, allowable_wif_prefixes=allowable_wif_prefixes)[0]
+    return wif_to_tuple_of_secret_exponent_compressed(wif, allowable_wif_prefixes=allowable_wif_prefixes, netcode = netcode)[0]
 
 
 def is_valid_wif(wif, allowable_wif_prefixes=[b'\x80']):
