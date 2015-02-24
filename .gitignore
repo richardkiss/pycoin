@@ -7,3 +7,5 @@ files.txt
 *egg-info
 .DS_STORE
 .tox
+sign_test.py
+.idea/*

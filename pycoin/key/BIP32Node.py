@@ -68,7 +68,7 @@ class BIP32Node(Key):
         return class_(netcode=netcode, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
 
     @classmethod
-    def from_hwif(class_, b58_str, allow_subkey_suffix=True):
+    def from_hwif(class_, b58_str, allow_subkey_suffix=True, netcode='BTC'):
         """Generate a Wallet from a base58 string in a standard way."""
         # TODO: support subkey suffixes
 
