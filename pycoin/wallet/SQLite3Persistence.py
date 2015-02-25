@@ -1,11 +1,6 @@
-
-import io
-import logging
-import os
-
 from pycoin.serialize import b2h, h2b, b2h_rev, h2b_rev
 from pycoin.key.BIP32Node import BIP32Node
-from pycoin.tx import Spendable, Tx
+from pycoin.tx import Spendable
 
 class SQLite3Persistence(object):
     def __init__(self, sqlite3_db):
@@ -70,7 +65,7 @@ unique(path, key_id)
     def add_bip32_path(self, bip32_node, path):
         address = bip32_node.subkey_for_path(path).address()
         key_id = bip32_node.id
-        c = self._exec_sql("insert or ignore into BIP32Node values (?, ?, ?)", path, bip32_node.id, address)
+        c = self._exec_sql("insert or ignore into BIP32Node values (?, ?, ?)", path, key_id, address)
         self.db.commit()
         return address
 

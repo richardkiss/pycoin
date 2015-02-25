@@ -5,11 +5,11 @@ import decimal
 import json
 import logging
 
-
 try:
-    from urllib2 import urlopen
+    from urllib2 import ( HTTPError, urlopen )
 except ImportError:
     from urllib.request import urlopen
+    from urllib.error import HTTPError
 
 from pycoin.block import BlockHeader
 from pycoin.convention import btc_to_satoshi
@@ -19,6 +19,7 @@ from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
 from pycoin.tx.script import tools
 from pycoin.tx import Spendable, Tx, TxIn, TxOut
 
+logger = logging.getLogger(__name__)
 
 class InsightService(object):
     def __init__(self, base_url):
@@ -101,7 +102,7 @@ class InsightService(object):
             d = urlopen(URL, data=data).read()
             return d
         except HTTPError as ex:
-            logging.exception("problem in send_tx %s", tx.id())
+            logger.exception("problem in send_tx %s", tx.id())
             raise ex
 
 
