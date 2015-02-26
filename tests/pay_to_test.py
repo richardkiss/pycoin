@@ -6,6 +6,7 @@ import unittest
 from pycoin.key import Key
 from pycoin.serialize import h2b
 from pycoin.tx import Tx, TxIn, TxOut, SIGHASH_ALL, tx_utils
+from pycoin.tx.Tx import NoAddressesForScriptTypeError
 from pycoin.tx.TxOut import standard_tx_out_script
 
 from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey
@@ -104,6 +105,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertEqual(sorted(tx2.who_signed_me(0)), sorted(( ( key.address(), SIGHASH_ALL ) for key in keys[:N] )))
 
     def test_create_multisig_1_of_2(self):
         unsigned_id = "dd40f601e801ad87701b04851a4a6852d6b625e481d0fc9c3302faf613a4fc88"
@@ -135,6 +137,7 @@ class ScriptTypesTest(unittest.TestCase):
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
         self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertEqual(sorted(tx2.who_signed_me(0)), sorted(( ( key.address(), SIGHASH_ALL ) for key in keys[:N] )))
 
     def test_sign_pay_to_script_multisig(self):
         N, M = 3, 3
@@ -151,6 +154,7 @@ class ScriptTypesTest(unittest.TestCase):
         p2sh_lookup = build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertRaises(NoAddressesForScriptTypeError, tx2.who_signed_me, 0)
 
     def test_weird_tx(self):
         # this is from tx 12a8d1d62d12307eac6e62f2f14d7e826604e53c320a154593845aa7c8e59fbf
