@@ -113,6 +113,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertEqual(sorted(tx_utils.who_signed_tx(tx2, 0)), sorted(( ( key.address(), SIGHASH_ALL ) for key in keys[:N] )))
 
     def test_create_multisig_1_of_2(self):
         unsigned_id = "dd40f601e801ad87701b04851a4a6852d6b625e481d0fc9c3302faf613a4fc88"
@@ -143,6 +144,7 @@ class ScriptTypesTest(unittest.TestCase):
             hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[i-1:i])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
+            self.assertEqual(sorted(tx_utils.who_signed_tx(tx2, 0)), sorted(( ( key.address(), SIGHASH_ALL ) for key in keys[:i] )))
         self.assertEqual(tx2.bad_signature_count(), 0)
 
     def test_p2sh_multisig_sequential_signing(self):
@@ -176,6 +178,7 @@ class ScriptTypesTest(unittest.TestCase):
         p2sh_lookup = build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertRaises(tx_utils.NoAddressesForScriptTypeError, tx_utils.who_signed_tx, tx2, 0)
 
     def test_weird_tx(self):
         # this is from tx 12a8d1d62d12307eac6e62f2f14d7e826604e53c320a154593845aa7c8e59fbf

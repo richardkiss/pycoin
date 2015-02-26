@@ -1,16 +1,27 @@
+import binascii
 
-from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
+from ..ecdsa import generator_secp256k1, verify as ecdsa_verify
+from ..encoding import public_pair_to_bitcoin_address, sec_to_public_pair
+from ..encoding import wif_to_secret_exponent
+from ..networks import address_prefix_for_netcode
+from ..serialize import b2h_rev, h2b
 
 from .Spendable import Spendable
 from .Tx import Tx
 from .TxOut import TxOut
-from .pay_to import build_hash160_lookup
+from .pay_to import build_hash160_lookup, script_obj_from_script, ScriptMultisig, ScriptPayToAddress, ScriptPayToPublicKey
 from ..networks import wif_prefix_for_netcode
 from ..ui import standard_tx_out_script
+from .script.check_signature import parse_signature_blob
+from .script.tools import opcode_list
 
 
 class SecretExponentMissing(Exception):
+    pass
+
+
+class NoAddressesForScriptTypeError(Exception):
     pass
 
 
@@ -212,3 +223,57 @@ def create_signed_tx(spendables, payables, wifs=[], fee="standard",
             raise SecretExponentMissing("failed to sign spendable for %s" %
                                         tx.unspents[idx].bitcoin_address())
     return tx
+
+def who_signed_tx(tx, tx_in_idx, netcode='BTC'):
+    """
+    Given a transaction (tx) an input index (tx_in_idx), attempt to figure
+    out which addresses where used in signing (so far). This method
+    depends on tx.unspents being properly configured. This should work on
+    partially-signed MULTISIG transactions (it will return as many
+    addresses as there are good signatures).
+
+    Returns a list of ( address, sig_type ) pairs.
+
+    Raises NoAddressesForScriptTypeError if addresses cannot be determined
+    for the input's script.
+
+    TODO: This does not yet support P2SH.
+    """
+    tx_in = tx.txs_in[tx_in_idx]
+    tx_in_opcode_list = opcode_list(tx_in.script)
+    parent_tx_id = b2h_rev(tx_in.previous_hash)
+    parent_tx_out_idx = tx_in.previous_index
+    parent_tx_out_script = tx.unspents[tx_in_idx].script
+    script_obj = script_obj_from_script(parent_tx_out_script)
+    signed_by = []
+
+    if script_obj is None:
+        script_obj_info = {}
+    else:
+        script_obj_info = script_obj.info(netcode=netcode)
+
+    if type(script_obj) in ( ScriptPayToAddress, ScriptPayToPublicKey ):
+        if tx.is_signature_ok(tx_in_idx):
+            addr = script_obj_info.get('address')
+            _, sig_type = parse_signature_blob(h2b(tx_in_opcode_list[0]))
+            signed_by.append(( addr, sig_type ))
+    elif type(script_obj) is ScriptMultisig:
+        for opcode in tx_in_opcode_list[1:]:
+            try:
+                sig_pair, sig_type = parse_signature_blob(h2b(opcode))
+            except ( TypeError, binascii.Error ):
+                continue
+
+            sig_hash = tx.signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
+
+            for sec_key in script_obj.sec_keys:
+                public_pair = sec_to_public_pair(sec_key)
+
+                if ecdsa_verify(generator_secp256k1, public_pair, sig_hash, sig_pair):
+                    addr_pfx = address_prefix_for_netcode(netcode)
+                    addr = public_pair_to_bitcoin_address(public_pair, address_prefix=addr_pfx)
+                    signed_by.append(( addr, sig_type ))
+    else:
+        raise NoAddressesForScriptTypeError('unable to determine signing addresses for script type of parent tx {}[{}]'.format(parent_tx_id, parent_tx_out_idx))
+
+    return signed_by
