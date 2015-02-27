@@ -94,11 +94,11 @@ class ParitalSignTest(TestCase):
         disburse_unspents = unsigned_disburse_tx.unspents
 
         # Sign all with any of KE, K1, and K2
-        disburse_tx_all = Tx.tx_from_hex(unsigned_disburse_tx.as_hex())
-        disburse_tx_all.set_unspents(disburse_unspents)
-        self.assertFalse(disburse_tx_all.is_signature_ok(0))
-        disburse_tx_all.sign(ALL_LOOKUP)
-        self.assertTrue(disburse_tx_all.is_signature_ok(0))
+        disburse_tx_copy = Tx.tx_from_hex(unsigned_disburse_tx.as_hex())
+        disburse_tx_copy.set_unspents(disburse_unspents)
+        self.assertFalse(disburse_tx_copy.is_signature_ok(0))
+        disburse_tx_copy.sign(ALL_LOOKUP)
+        self.assertTrue(disburse_tx_copy.is_signature_ok(0))
 
         # Sign out of order with various pairs
         self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP)
@@ -182,29 +182,29 @@ class ParitalSignTest(TestCase):
 
     #=====================================================================
     def _sign_one_key_at_a_time(self, unsigned_disburse_tx, *lookups):
-        disburse_tx = Tx.tx_from_hex(unsigned_disburse_tx.as_hex())
-        disburse_tx.set_unspents(unsigned_disburse_tx.unspents)
+        disburse_tx_copy = Tx.tx_from_hex(unsigned_disburse_tx.as_hex())
+        disburse_tx_copy.set_unspents(unsigned_disburse_tx.unspents)
 
         for lookup in lookups:
-            self.assertFalse(disburse_tx.is_signature_ok(0))
-            disburse_tx.sign(lookup)
+            self.assertFalse(disburse_tx_copy.is_signature_ok(0))
+            disburse_tx_copy.sign(lookup)
 
-        return disburse_tx
+        return disburse_tx_copy
 
     #=====================================================================
     def _sign_in_order(self, unsigned_disburse_tx, *lookups):
-        disburse_tx = self._sign_one_key_at_a_time(unsigned_disburse_tx, *lookups)
-        self.assertTrue(disburse_tx.is_signature_ok(0))
+        disburse_tx_signed_copy = self._sign_one_key_at_a_time(unsigned_disburse_tx, *lookups)
+        self.assertTrue(disburse_tx_signed_copy.is_signature_ok(0))
 
-        return disburse_tx
+        return disburse_tx_signed_copy
 
     #=====================================================================
     def _sign_out_of_order(self, unsigned_disburse_tx, *lookups):
-        disburse_tx_in_order = self._sign_in_order(unsigned_disburse_tx, *lookups)
+        disburse_tx_in_order_copy = self._sign_in_order(unsigned_disburse_tx, *lookups)
         reversed_lookups = reversed(lookups)
-        disburse_tx_out_of_order = self._sign_one_key_at_a_time(unsigned_disburse_tx, *reversed_lookups) # pylint: disable=star-args
-        expected_result = disburse_tx_in_order.txs_in[0].script == disburse_tx_out_of_order.txs_in[0].script \
-            or not disburse_tx_out_of_order.is_signature_ok(0)
+        disburse_tx_out_of_order_copy = self._sign_one_key_at_a_time(unsigned_disburse_tx, *reversed_lookups) # pylint: disable=star-args
+        expected_result = disburse_tx_in_order_copy.txs_in[0].script == disburse_tx_out_of_order_copy.txs_in[0].script \
+            or not disburse_tx_out_of_order_copy.is_signature_ok(0)
         self.assertTrue(expected_result, TX_VALIDATES_WITH_SIGS_OUT_OF_ORDER_MSG)
 
 #---- Initialization -----------------------------------------------------
