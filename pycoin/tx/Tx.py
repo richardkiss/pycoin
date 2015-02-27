@@ -484,8 +484,8 @@ class Tx(object):
                 addr = script_obj_info.get('address')
                 _, sig_type = parse_signature_blob(h2b(tx_in_opcode_list[0]))
                 signed_by.append(( addr, sig_type ))
-        elif type(script_obj) in ( ScriptMultisig, ):
-            for opcode in tx_in_opcode_list:
+        elif type(script_obj) is ScriptMultisig:
+            for opcode in tx_in_opcode_list[1:]:
                 try:
                     sig_pair, sig_type = parse_signature_blob(h2b(opcode))
                 except ( TypeError, binascii.Error ):
