@@ -451,6 +451,20 @@ class Tx(object):
         return self.fee()
 
     def who_signed_me(self, tx_in_idx, netcode='BTC'):
+        """
+        Given an input index (tx_in_idx), attempt to figure out which
+        addresses where used in signing (so far). This method depends on
+        self.unspents being properly configured. This should work on
+        partially-signed MULTISIG transactions (it will return as many
+        addresses as there are good signatures).
+
+        Returns a list of ( address, sig_type ) pairs.
+
+        Raises NoAddressesForScriptTypeError if addresses cannot be
+        determined for the input's script.
+
+        TODO: This does not yet support P2SH.
+        """
         tx_in = self.txs_in[tx_in_idx]
         tx_in_opcode_list = tools.opcode_list(tx_in.script)
         parent_tx_id = b2h_rev(tx_in.previous_hash)
