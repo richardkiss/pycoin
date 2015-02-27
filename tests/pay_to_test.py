@@ -136,8 +136,8 @@ class ScriptTypesTest(unittest.TestCase):
             hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[i-1:i])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
+            self.assertEqual(sorted(tx2.who_signed_me(0)), sorted(( ( key.address(), SIGHASH_ALL ) for key in keys[:i] )))
         self.assertEqual(tx2.bad_signature_count(), 0)
-        self.assertEqual(sorted(tx2.who_signed_me(0)), sorted(( ( key.address(), SIGHASH_ALL ) for key in keys[:N] )))
 
     def test_sign_pay_to_script_multisig(self):
         N, M = 3, 3
