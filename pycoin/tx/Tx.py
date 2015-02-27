@@ -26,6 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import binascii
 import io
 
 from ..ecdsa import generator_secp256k1, verify as ecdsa_verify
@@ -487,7 +488,7 @@ class Tx(object):
             for opcode in tx_in_opcode_list:
                 try:
                     sig_pair, sig_type = parse_signature_blob(h2b(opcode))
-                except TypeError:
+                except ( TypeError, binascii.Error ):
                     continue
 
                 sig_hash = self.signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
