@@ -142,29 +142,32 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
                         pass
 
                 signature_count = int_from_bytes(stack.pop())
-                sig_blobs = []
-                for i in range(signature_count):
-                    sig_blobs.append(stack.pop())
-
-                should_be_zero_bug = stack.pop()
-
                 sig_ok = VCH_TRUE
-                for sig_blob in sig_blobs:
+
+                for i in range(signature_count):
+                    sig_blob = stack.pop()
                     sig_pair, signature_type = parse_signature_blob(sig_blob)
                     signature_hash = signature_for_hash_type_f(signature_type, script)
+                    ppp = ecdsa.possible_public_pairs_for_signature(ecdsa.generator_secp256k1, signature_hash, sig_pair)
 
-                    ppp = ecdsa.possible_public_pairs_for_signature(
-                        ecdsa.generator_secp256k1, signature_hash, sig_pair)
-
-                    ppp.intersection_update(public_pairs)
-                    if len(ppp) == 0:
+                    try:
+                        while True:
+                            public_pair = public_pairs.pop(0)
+                            if public_pair in ppp:
+                                break
+                            # TODO: This is probably not as efficient as
+                            # it could be; if public_pair can't be found
+                            # in ppp just once, because everything has
+                            # been popped off the stack at this point, I
+                            # *think* we can exit this while loop *and*
+                            # the outer for loop with sig_ok set to
+                            # VCH_FALSE; this probably makes little
+                            # difference for a 2-of-3, but it could be
+                            # significant in a 503-of-1009
+                    except IndexError:
                         sig_ok = VCH_FALSE
-                        break
 
-                    matching_pair = ppp.pop()
-                    idx = public_pairs.index(matching_pair)
-                    public_pairs = public_pairs[:idx] + public_pairs[idx+1:]
-
+                should_be_zero_bug = stack.pop()
                 stack.append(sig_ok)
                 continue
 
