@@ -86,8 +86,7 @@ class ScriptMultisig(ScriptType):
         sign_value = kwargs.get("sign_value")
         signature_type = kwargs.get("signature_type")
 
-        secs_solved = set()
-        existing_signatures = []
+        existing_signatures = {}
         existing_script = kwargs.get("existing_script")
         if existing_script:
             pc = 0
@@ -102,15 +101,16 @@ class ScriptMultisig(ScriptType):
                         sig_pair, signature_type = parse_signature_blob(data)
                         v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
                         if v:
-                            existing_signatures.append(data)
-                            secs_solved.add(sec_key)
+                            existing_signatures[sec_key] = data
                             break
                     except encoding.EncodingError:
                         # if public_pair is invalid, we just ignore it
                         pass
 
+        ordered_signatures = []
         for sec_key in self.sec_keys:
-            if sec_key in secs_solved:
+            if sec_key in existing_signatures:
+                ordered_signatures.append(existing_signatures[sec_key])
                 continue
             if len(existing_signatures) >= self.n:
                 break
@@ -120,12 +120,12 @@ class ScriptMultisig(ScriptType):
                 continue
             secret_exponent, public_pair, compressed = result
             binary_signature = self._create_script_signature(secret_exponent, sign_value, signature_type)
-            existing_signatures.append(binary_signature)
+            ordered_signatures.append(binary_signature)
         DUMMY_SIGNATURE = self._dummy_signature(signature_type)
-        while len(existing_signatures) < self.n:
-            existing_signatures.append(DUMMY_SIGNATURE)
+        while len(ordered_signatures) < self.n:
+            ordered_signatures.append(DUMMY_SIGNATURE)
 
-        script = "OP_0 %s" % " ".join(b2h(s) for s in existing_signatures)
+        script = "OP_0 %s" % " ".join(b2h(s) for s in ordered_signatures)
         solution = tools.compile(script)
         return solution
 

@@ -66,7 +66,7 @@ TX_VALIDATES_WITH_SIGS_OUT_OF_ORDER_MSG = 'signatures appear out of order but th
 #---- Classes ------------------------------------------------------------
 
 #=========================================================================
-class ParitalSignTest(TestCase):
+class PartialSignTest(TestCase):
     """
     Signing MULTISIG transactions out of order should either fail
     validation (or possibly raise an exception), or produce the same
@@ -104,6 +104,32 @@ class ParitalSignTest(TestCase):
         self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP)
         self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K2_LOOKUP)
         self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP)
+
+    #=====================================================================
+    def test_partial_sign_weird(self):
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(2, KE, K1, K2, KE)
+        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP)
+        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP)
+
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(3, KE, K1, K2)
+        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP, K2_LOOKUP)
+        self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP, K1_LOOKUP)
+        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
+
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(3, KE, K1, K2, KE)
+        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP)
+        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K2_LOOKUP)
+        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
+
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(3, K2, K1, KE, K1, K2)
+        self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, K1_LOOKUP)
+        self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP)
+        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, KE_LOOKUP)
+
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(6, KE, K1, K2, KE, K1, K2)
+        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP, K2_LOOKUP)
+        self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP, K1_LOOKUP)
+        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
 
     #=====================================================================
     def test_partial_sign_specific_transactions(self):
@@ -203,11 +229,14 @@ class ParitalSignTest(TestCase):
         disburse_tx_in_order_copy = self._sign_in_order(unsigned_disburse_tx, *lookups)
         reversed_lookups = reversed(lookups)
         disburse_tx_out_of_order_copy = self._sign_one_key_at_a_time(unsigned_disburse_tx, *reversed_lookups) # pylint: disable=star-args
-        expected_result = disburse_tx_in_order_copy.txs_in[0].script == disburse_tx_out_of_order_copy.txs_in[0].script \
-            or not disburse_tx_out_of_order_copy.is_signature_ok(0)
-        self.assertTrue(expected_result, TX_VALIDATES_WITH_SIGS_OUT_OF_ORDER_MSG)
+        self.assertTrue(disburse_tx_out_of_order_copy.is_signature_ok(0))
+        self.assertEqual(disburse_tx_in_order_copy.txs_in[0].script, disburse_tx_out_of_order_copy.txs_in[0].script)
+
+        return disburse_tx_out_of_order_copy
 
 #---- Initialization -----------------------------------------------------
 
 if __name__ == '__main__':
+    import logging
+    logging.basicConfig(level=logging.CRITICAL + 1)
     main()
