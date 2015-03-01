@@ -30,6 +30,10 @@ from pycoin.tx.pay_to import (
     script_obj_from_address,
     build_hash160_lookup,
 )
+from pycoin.tx.script.tools import (
+    compile as compile_script,
+    opcode_list,
+)
 
 #---- Constants ----------------------------------------------------------
 
@@ -62,7 +66,6 @@ ESCROW_TXS_IN = (
 
 TX_VALIDATES_WITH_SIGS_OUT_OF_ORDER_MSG = 'signatures appear out of order but they still validate'
 
-
 #---- Classes ------------------------------------------------------------
 
 #=========================================================================
@@ -86,92 +89,156 @@ class PartialSignTest(TestCase):
     #=====================================================================
     def test_partial_sign_2_of_2(self):
         unsigned_disburse_tx = self._fake_unsigned_disburse_tx(2, K1, K2)
-        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP)
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
 
     #=====================================================================
     def test_partial_sign_2_of_3(self):
         unsigned_disburse_tx = self._fake_unsigned_disburse_tx(2, KE, K1, K2)
-        disburse_unspents = unsigned_disburse_tx.unspents
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
 
         # Sign all with any of KE, K1, and K2
+        disburse_unspents = unsigned_disburse_tx.unspents
         disburse_tx_copy = Tx.tx_from_hex(unsigned_disburse_tx.as_hex())
         disburse_tx_copy.set_unspents(disburse_unspents)
         self.assertFalse(disburse_tx_copy.is_signature_ok(0))
         disburse_tx_copy.sign(ALL_LOOKUP)
         self.assertTrue(disburse_tx_copy.is_signature_ok(0))
 
-        # Sign out of order with various pairs
-        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K2_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP)
-
     #=====================================================================
-    def test_partial_sign_weird(self):
-        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(2, KE, K1, K2, KE)
-        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP)
-
+    def test_partial_sign_3_of_3(self):
         unsigned_disburse_tx = self._fake_unsigned_disburse_tx(3, KE, K1, K2)
-        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP, K2_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP, K1_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
 
-        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(3, KE, K1, K2, KE)
-        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K2_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
 
-        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(3, K2, K1, KE, K1, K2)
-        self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, K1_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, KE_LOOKUP)
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP, K1_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
 
-        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(6, KE, K1, K2, KE, K1, K2)
-        self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP, K2_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP, K1_LOOKUP)
-        self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+
+        # Sign all with any of KE, K1, and K2
+        disburse_unspents = unsigned_disburse_tx.unspents
+        disburse_tx_copy = Tx.tx_from_hex(unsigned_disburse_tx.as_hex())
+        disburse_tx_copy.set_unspents(disburse_unspents)
+        self.assertFalse(disburse_tx_copy.is_signature_ok(0))
+        disburse_tx_copy.sign(ALL_LOOKUP)
+        self.assertTrue(disburse_tx_copy.is_signature_ok(0))
 
     #=====================================================================
-    def test_partial_sign_specific_transactions(self):
-        # pylint: disable=pointless-string-statement
-        key = Key.from_text('cUQV5ChTDSVqvPxu39Fzvdfw4FhaS417SdKHbG59Kq7bGB9BqPfk')
-        hash160_lookup = build_hash160_lookup(( k.secret_exponent() for k in ( key, ) ))
+    def test_partial_sign_weird_2_of_4(self):
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(2, KE, K1, K2, KE)
 
-        escrow_tx1 = Tx.tx_from_hex('010000000245b681a697a3cf8a9be4af56182b383a4a45c6ca92f43b4846a520beee94968900000000490047304402200aec5aae8d2e8116cc933cb27d9f3a2094ab1904ceb3e8c20eb11d207c16e11e02206c0d496c625f48036d6f2c8e60bb3817b2e60aab4f3b0da3d61c8139f88a0e4701ffffffff9f47c29599ea8d452e6d3e267cacfc232904301842a332d0765df5de4a32b24c00000000490047304402202c8acaaf8b674ae47a93661c5dc81f56e72e0da59a40710cfbe7e5e09c487f4d02202f29e89eee22bdc2ba121dc26bea1dd55af7f4119c58a6f9389844ecc8f733ff01ffffffff039aa4a0000000000069522103fe4e6231d614d159741df8371fa3b31ab93b3d28a7495cdaa0cd63a2097015c72103dd97fd4f2dd61dd0510fa43acd83231e9b9cadb321fdd0fec97096249eabd2522103dd97fd4f2dd61dd0510fa43acd83231e9b9cadb321fdd0fec97096249eabd25253aece010400000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88acce010400000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac00000000')
-        partial_disburse_tx1 = Tx.tx_from_hex('0100000001e9a392c95b88f8b65d66a5d104de1c8ba8599c38a79e15d01775b5796b34a44c000000009300483045022100ca2c7414f1b3aa62c70f715eea8824d780ddfe87ceb8981c4a96f02a08006ea702200409efff354e2571d5d2dce8c60c8ec1cbe4e11b3c47cc05f568c79f496a07c101483045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001ffffffff030ae70700000000001976a91467c62abb4b00de59f45d5ac06d1ca9490920148c88ace5eb3e00000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac9baa5900000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac00000000')
-        escrow_tx1_out_idx = 0
-        partial_disburse_tx1.set_unspents(escrow_tx1.tx_outs_as_spendable()[escrow_tx1_out_idx:escrow_tx1_out_idx + 1])
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
 
-        # bitcoind can complete this transaction ...
-        """
-        % bitcoin-cli -testnet signrawtransaction 0100000001e9a392c95b88f8b65d66a5d104de1c8ba8599c38a79e15d01775b5796b34a44c000000004b00483045022100ca2c7414f1b3aa62c70f715eea8824d780ddfe87ceb8981c4a96f02a08006ea702200409efff354e2571d5d2dce8c60c8ec1cbe4e11b3c47cc05f568c79f496a07c10100ffffffff030ae70700000000001976a91467c62abb4b00de59f45d5ac06d1ca9490920148c88ace5eb3e00000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac9baa5900000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac00000000 '[]' '["cUQV5ChTDSVqvPxu39Fzvdfw4FhaS417SdKHbG59Kq7bGB9BqPfk"]' ALL
-        {
-            "hex" : "0100000001e9a392c95b88f8b65d66a5d104de1c8ba8599c38a79e15d01775b5796b34a44c000000009300483045022100ca2c7414f1b3aa62c70f715eea8824d780ddfe87ceb8981c4a96f02a08006ea702200409efff354e2571d5d2dce8c60c8ec1cbe4e11b3c47cc05f568c79f496a07c1014830450221008dfe5036313be8f57c320a32cfc01489bf2ac81d3d2696b411c96f44ff385f1a02206c4bbb4f5b9c67d53cb765a98f9a8f281493e655508e51ea86c2ec5d7f444e5f01ffffffff030ae70700000000001976a91467c62abb4b00de59f45d5ac06d1ca9490920148c88ace5eb3e00000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac9baa5900000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac00000000",
-            "complete" : true
-        }
-        """
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
 
-        # ... can pycoin?
-        partial_disburse_tx1.sign(hash160_lookup)
-        self.assertTrue(partial_disburse_tx1.is_signature_ok(0))
+        in_order_tx1, out_of_order_tx1 = self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, KE_LOOKUP)
+        in_order_tx2, out_of_order_tx2 = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP)
+        self.assertEqual(in_order_tx1.txs_in[0].script, out_of_order_tx2.txs_in[0].script)
+        self.assertEqual(in_order_tx2.txs_in[0].script, out_of_order_tx1.txs_in[0].script)
 
-        escrow_tx2 = Tx.tx_from_hex('010000000295989fa4578e8004790813dc5feaaf8edfdde1da3d3267dcc0703d59564d48e5000000004900473044022017df76061e0529bec90abd4c35ed177b8528ed6cf636df5beff9013fffdee816022076a8ab1c2866e7478f1ffae66949ff1ef4659f19743a22b37cc10b6e5452a00501ffffffffd585df72afedad0f2408d79880d411d3f5820973896e37c63485f0d20c3b3915000000004a004830450221009be18163101230eb171dc5e00efeac515f4b559517afd34f0c86879409b6ac16022017dccbd2ebdd0ca92eee4b30527aec1e1bd304185db138196e00d3d10c38bbea01ffffffff039aa4a0000000000069522103fe4e6231d614d159741df8371fa3b31ab93b3d28a7495cdaa0cd63a2097015c72103dd97fd4f2dd61dd0510fa43acd83231e9b9cadb321fdd0fec97096249eabd2522103540be1c323e54ad38f45a12d42d409fb798fab71551559d2feabf2ac473aeffc53aece010400000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88acce010400000000001976a9144a62edd0a379c76e4fcbf7d00d0debf055c0979088ac00000000')
-        partial_disburse_tx2 = Tx.tx_from_hex('01000000018a9ca5b80315cdb0026e11a8db533fa07b59877f292b684268b6efd3f0f67841000000009200473044022062af66e008b01a8ca17f632fbc2a0b705b70308f708318d94f4eafffa902e64b02203260c060b43fb8fa28ce7dff3687b8ec7dfb5c247fd547328ad09055687a284f01483045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001ffffffff030ae70700000000001976a914f89873b36ea31cfbf4d2081db73147078460c61188ace5eb3e00000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac9baa5900000000001976a9144a62edd0a379c76e4fcbf7d00d0debf055c0979088ac00000000')
-        escrow_tx2_out_idx = 0
-        partial_disburse_tx2.set_unspents(escrow_tx2.tx_outs_as_spendable()[escrow_tx2_out_idx:escrow_tx2_out_idx + 1])
+        in_order_tx1, out_of_order_tx1 = self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP)
+        in_order_tx2, out_of_order_tx2 = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx1.txs_in[0].script, out_of_order_tx2.txs_in[0].script)
+        self.assertEqual(in_order_tx2.txs_in[0].script, out_of_order_tx1.txs_in[0].script)
 
-        # bitcoind can complete this transaction
-        """
-        % bitcoin-cli -testnet signrawtransaction 01000000018a9ca5b80315cdb0026e11a8db533fa07b59877f292b684268b6efd3f0f67841000000009200473044022062af66e008b01a8ca17f632fbc2a0b705b70308f708318d94f4eafffa902e64b02203260c060b43fb8fa28ce7dff3687b8ec7dfb5c247fd547328ad09055687a284f01483045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001ffffffff030ae70700000000001976a914f89873b36ea31cfbf4d2081db73147078460c61188ace5eb3e00000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac9baa5900000000001976a9144a62edd0a379c76e4fcbf7d00d0debf055c0979088ac00000000 '[]' '["cUQV5ChTDSVqvPxu39Fzvdfw4FhaS417SdKHbG59Kq7bGB9BqPfk"]' ALL
-        {
-            "hex" : "01000000018a9ca5b80315cdb0026e11a8db533fa07b59877f292b684268b6efd3f0f67841000000009200473044022062af66e008b01a8ca17f632fbc2a0b705b70308f708318d94f4eafffa902e64b02203260c060b43fb8fa28ce7dff3687b8ec7dfb5c247fd547328ad09055687a284f01483045022100cd2bd2b0cb56c516e7ee4d4c6575d07f97e23192053d13077e42bfc4df84414d02206258a12dd2568602391a6424a3566e376abf2b11195dc856930e49fc96aabadc01ffffffff030ae70700000000001976a914f89873b36ea31cfbf4d2081db73147078460c61188ace5eb3e00000000001976a9147ae117a1ae026769482bf896ea266671bb7e8d8d88ac9baa5900000000001976a9144a62edd0a379c76e4fcbf7d00d0debf055c0979088ac00000000",
-            "complete" : true
-        }
-        """
+    #=====================================================================
+    def test_partial_sign_weird_3_of_4(self):
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(3, KE, K1, K2, KE)
 
-        # ... can pycoin?
-        partial_disburse_tx2.sign(hash160_lookup)
-        self.assertTrue(partial_disburse_tx2.is_signature_ok(0))
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+
+        in_order_tx1, out_of_order_tx1 = self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
+        in_order_tx2, out_of_order_tx2 = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K2_LOOKUP, K1_LOOKUP)
+        self.assertEqual(in_order_tx1.txs_in[0].script, out_of_order_tx2.txs_in[0].script)
+        self.assertEqual(in_order_tx2.txs_in[0].script, out_of_order_tx1.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx1, out_of_order_tx2)
+
+        in_order_tx1, out_of_order_tx1 = self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, K1_LOOKUP, KE_LOOKUP)
+        in_order_tx2, out_of_order_tx2 = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx1.txs_in[0].script, out_of_order_tx2.txs_in[0].script)
+        self.assertEqual(in_order_tx2.txs_in[0].script, out_of_order_tx1.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx1, out_of_order_tx2)
+
+    #=====================================================================
+    def test_partial_sign_weird_4_of_4(self):
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(4, KE, K1, K2, KE)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP, K1_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+
+    #=====================================================================
+    def test_partial_sign_weird_3_of_5(self):
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(3, K2, K1, KE, K1, K2)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, K1_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, KE_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+
+    #=====================================================================
+    def test_partial_sign_weird_6_of_6(self):
+        unsigned_disburse_tx = self._fake_unsigned_disburse_tx(6, KE, K1, K2, KE, K1, K2)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, KE_LOOKUP, K1_LOOKUP, K2_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K2_LOOKUP, KE_LOOKUP, K1_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
+
+        in_order_tx, out_of_order_tx = self._sign_out_of_order(unsigned_disburse_tx, K1_LOOKUP, K2_LOOKUP, KE_LOOKUP)
+        self.assertEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+        self._screw_up_signature_order_then_fix_it(in_order_tx, out_of_order_tx)
 
     #---- Private methods ------------------------------------------------
 
@@ -207,32 +274,44 @@ class PartialSignTest(TestCase):
         return unsigned_disburse_tx
 
     #=====================================================================
+    def _screw_up_signature_order_then_fix_it(self, in_order_tx, out_of_order_tx):
+        # Swap the last two signatures
+        opcodes = opcode_list(out_of_order_tx.txs_in[0].script)
+        opcodes[-1], opcodes[-2] = opcodes[-2], opcodes[-1]
+        out_of_order_tx.txs_in[0].script = compile_script(' '.join(opcodes))
+        self.assertFalse(out_of_order_tx.is_signature_ok(0))
+        self.assertNotEqual(in_order_tx.txs_in[0].script, out_of_order_tx.txs_in[0].script)
+
+        # Fix it (it already has all the signatures it needs, they're just
+        # in the wrong order)
+        out_of_order_tx.sign({})
+        self.assertTrue(out_of_order_tx.is_signature_ok(0))
+
+    #=====================================================================
     def _sign_one_key_at_a_time(self, unsigned_disburse_tx, *lookups):
         disburse_tx_copy = Tx.tx_from_hex(unsigned_disburse_tx.as_hex())
         disburse_tx_copy.set_unspents(unsigned_disburse_tx.unspents)
+        self.assertFalse(disburse_tx_copy.is_signature_ok(0))
 
         for lookup in lookups:
-            self.assertFalse(disburse_tx_copy.is_signature_ok(0))
             disburse_tx_copy.sign(lookup)
 
         return disburse_tx_copy
 
     #=====================================================================
     def _sign_in_order(self, unsigned_disburse_tx, *lookups):
-        disburse_tx_signed_copy = self._sign_one_key_at_a_time(unsigned_disburse_tx, *lookups)
-        self.assertTrue(disburse_tx_signed_copy.is_signature_ok(0))
+        signed_disburse_tx = self._sign_one_key_at_a_time(unsigned_disburse_tx, *lookups)
+        self.assertTrue(signed_disburse_tx.is_signature_ok(0))
 
-        return disburse_tx_signed_copy
+        return signed_disburse_tx
 
     #=====================================================================
     def _sign_out_of_order(self, unsigned_disburse_tx, *lookups):
-        disburse_tx_in_order_copy = self._sign_in_order(unsigned_disburse_tx, *lookups)
-        reversed_lookups = reversed(lookups)
-        disburse_tx_out_of_order_copy = self._sign_one_key_at_a_time(unsigned_disburse_tx, *reversed_lookups) # pylint: disable=star-args
-        self.assertTrue(disburse_tx_out_of_order_copy.is_signature_ok(0))
-        self.assertEqual(disburse_tx_in_order_copy.txs_in[0].script, disburse_tx_out_of_order_copy.txs_in[0].script)
+        disburse_in_order_tx = self._sign_in_order(unsigned_disburse_tx, *lookups)
+        disburse_out_of_order_tx = self._sign_one_key_at_a_time(unsigned_disburse_tx, *reversed(lookups)) # pylint: disable=star-args
+        self.assertTrue(disburse_out_of_order_tx.is_signature_ok(0))
 
-        return disburse_tx_out_of_order_copy
+        return disburse_in_order_tx, disburse_out_of_order_tx
 
 #---- Initialization -----------------------------------------------------
 
