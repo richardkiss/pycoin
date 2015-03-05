@@ -182,19 +182,17 @@ class BIP32Node(Key):
 
         Note that setting i<0 uses private key derivation, no matter the
         value for is_hardened."""
-        if i > 0xffffffff:
-            raise ValueError("i is too big: %d" % i)
+        if i >= 0x80000000:
+            raise ValueError("subkey index 0x%x too large" % i)
+        if i <= -0x80000000:
+            raise ValueError("subkey index 0x%x too small" % i)
+
         if i < 0:
-            raise ValueError("i can't be negative")
-            is_hardened = True
             i = -i
+            is_hardened = True
+
+        if is_hardened:
             i |= 0x80000000
-        else:
-            if i >= 0x80000000:
-                raise ValueError("subkey index 0x%x too large" % i)
-            i &= 0x7fffffff
-            if is_hardened:
-                i |= 0x80000000
 
         d = dict(netcode=self._netcode, depth=self._depth+1,
                  parent_fingerprint=self.fingerprint(), child_index=i)
