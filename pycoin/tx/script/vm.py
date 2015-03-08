@@ -36,7 +36,7 @@ from . import der
 from . import opcodes
 from . import ScriptError
 
-from .microcode import MICROCODE_LOOKUP, VCH_TRUE, VCH_FALSE, make_bool
+from .microcode import MICROCODE_LOOKUP, VCH_TRUE, VCH_FALSE
 from .tools import get_opcode, bin_script
 
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split()))
@@ -130,43 +130,38 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
             if opcode == opcodes.OP_CHECKMULTISIG:
                 key_count = int_from_bytes(stack.pop())
-                public_pairs = []
-                for i in range(key_count):
-                    the_sec = stack.pop()
+                key_secs = [stack.pop() for _ in range(key_count)]
+                sig_count = int_from_bytes(stack.pop())
+                sig_blobs = [stack.pop() for _ in range(sig_count)]
+                k = s = 0
+                match_found = True
+                sig_hashes = {}
+                sig_ok = VCH_TRUE
+
+                while s < sig_count and (sig_count - s <= key_count - k):
                     try:
-                        public_pairs.append(sec_to_public_pair(the_sec))
+                        key_pair = sec_to_public_pair(key_secs[k])
                     except EncodingError:
                         # we must ignore badly encoded public pairs
                         # the transaction 70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a
                         # is in a block and requires this hack
-                        pass
+                        k += 1
+                        continue
+                    else:
+                        k += 1
+                    if match_found:
+                        sig_pair, sig_type = parse_signature_blob(sig_blobs[s])
+                        try:
+                            sig_hash = sig_hashes[(sig_type, script)]
+                        except KeyError:
+                            sig_hash = sig_hashes[(sig_type, script)] = signature_for_hash_type_f(sig_type, script)
+                        ppp = ecdsa.possible_public_pairs_for_signature(ecdsa.generator_secp256k1, sig_hash, sig_pair)
+                    match_found = key_pair in ppp
+                    if match_found:
+                        s += 1
 
-                signature_count = int_from_bytes(stack.pop())
-                sig_ok = VCH_TRUE
-
-                for i in range(signature_count):
-                    sig_blob = stack.pop()
-                    sig_pair, signature_type = parse_signature_blob(sig_blob)
-                    signature_hash = signature_for_hash_type_f(signature_type, script)
-                    ppp = ecdsa.possible_public_pairs_for_signature(ecdsa.generator_secp256k1, signature_hash, sig_pair)
-
-                    try:
-                        while True:
-                            public_pair = public_pairs.pop(0)
-                            if public_pair in ppp:
-                                break
-                            # TODO: This is probably not as efficient as
-                            # it could be; if public_pair can't be found
-                            # in ppp just once, because everything has
-                            # been popped off the stack at this point, I
-                            # *think* we can exit this while loop *and*
-                            # the outer for loop with sig_ok set to
-                            # VCH_FALSE; this probably makes little
-                            # difference for a 2-of-3, but it could be
-                            # significant in a 503-of-1009
-                    except IndexError:
-                        sig_ok = VCH_FALSE
-
+                if s < sig_count:
+                    sig_ok = VCH_FALSE
                 should_be_zero_bug = stack.pop()
                 stack.append(sig_ok)
                 continue
