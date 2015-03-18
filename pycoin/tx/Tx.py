@@ -31,12 +31,13 @@ import io
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
+from ..intbytes import byte_to_int
 
 from .TxIn import TxIn
 from .TxOut import TxOut
 from .Spendable import Spendable
 
-from .pay_to import script_obj_from_script, SolvingError
+from .pay_to import script_obj_from_script, SolvingError, ScriptPayToScript
 
 from .script import opcodes
 from .script import tools
@@ -182,7 +183,7 @@ class Tx(object):
                 # This should probably be moved to a constant, but the
                 # likelihood of ever getting here is already really small
                 # and getting smaller
-                return h2b_rev('0000000000000000000000000000000000000000000000000000000000000001')
+                return (1 << 248)
 
             # Only lock in the txout payee at same index as txin; delete
             # any outputs after this one and set all outputs before this
@@ -219,13 +220,29 @@ class Tx(object):
 
         tx_in = self.txs_in[tx_in_idx]
 
+        is_p2h = (len(tx_out_script) == 23 and byte_to_int(tx_out_script[0]) == opcodes.OP_HASH160
+                  and byte_to_int(tx_out_script[-1]) == opcodes.OP_EQUAL)
+        if is_p2h:
+            hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
+            p2sh_lookup = kwargs.get("p2sh_lookup")
+            if p2sh_lookup is None:
+                raise ValueError("p2sh_lookup not set")
+            if hash160 not in p2sh_lookup:
+                raise ValueError("hash160=%s not found in p2sh_lookup" %
+                                 b2h(hash160))
+
+            script_to_hash = p2sh_lookup[hash160]
+        else:
+            script_to_hash = tx_out_script
+
         # Leave out the signature from the hash, since a signature can't sign itself.
         # The checksig op will also drop the signatures from its hash.
-        signature_for_hash_type_f = lambda hash_type: self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(
+            script, tx_in_idx, hash_type)
         if tx_in.verify(tx_out_script, signature_for_hash_type_f):
             return
 
-        sign_value = self.signature_hash(tx_out_script, tx_in_idx, hash_type=hash_type)
+        sign_value = self.signature_hash(script_to_hash, tx_in_idx, hash_type=hash_type)
         the_script = script_obj_from_script(tx_out_script)
         solution = the_script.solve(
             hash160_lookup=hash160_lookup, sign_value=sign_value, signature_type=hash_type,
@@ -234,7 +251,7 @@ class Tx(object):
 
     def verify_tx_in(self, tx_in_idx, tx_out_script, expected_hash_type=None):
         tx_in = self.txs_in[tx_in_idx]
-        signature_for_hash_type_f = lambda hash_type: self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(script, tx_in_idx, hash_type)
         if not tx_in.verify(tx_out_script, signature_for_hash_type_f, expected_hash_type):
             raise ValidationFailureError(
                 "just signed script Tx %s TxIn index %d did not verify" % (
@@ -243,10 +260,10 @@ class Tx(object):
     def total_out(self):
         return sum(tx_out.coin_value for tx_out in self.txs_out)
 
-    def tx_outs_as_spendable(self):
+    def tx_outs_as_spendable(self, block_index_available=0):
         h = self.hash()
         return [
-            Spendable(tx_out.coin_value, tx_out.script, h, tx_out_index)
+            Spendable(tx_out.coin_value, tx_out.script, h, tx_out_index, block_index_available)
             for tx_out_index, tx_out in enumerate(self.txs_out)]
 
     def is_coinbase(self):
@@ -335,7 +352,8 @@ class Tx(object):
         if unspent is None:
             return False
         tx_out_script = self.unspents[tx_in_idx].script
-        signature_for_hash_type_f = lambda hash_type: self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(
+            script, tx_in_idx, hash_type)
         return tx_in.verify(tx_out_script, signature_for_hash_type_f)
 
     def sign(self, hash160_lookup, hash_type=SIGHASH_ALL, **kwargs):
@@ -352,7 +370,8 @@ class Tx(object):
                 continue
             try:
                 if self.unspents[idx]:
-                    self.sign_tx_in(hash160_lookup, idx, self.unspents[idx].script, hash_type=hash_type, **kwargs)
+                    self.sign_tx_in(
+                        hash160_lookup, idx, self.unspents[idx].script, hash_type=hash_type, **kwargs)
             except SolvingError:
                 pass
 

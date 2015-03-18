@@ -3,6 +3,7 @@
 
 import decimal
 import json
+import logging
 
 
 try:
@@ -26,7 +27,6 @@ class InsightService(object):
         self.base_url = base_url
 
     def get_blockchain_tip(self):
-        "https://search.bitaccess.ca/api/status?q=getLastBlockHash"
         URL = "%s/api/status?q=getLastBlockHash" % self.base_url
         d = urlopen(URL).read().decode("utf8")
         r = json.loads(d)
@@ -77,7 +77,7 @@ class InsightService(object):
         r = json.loads(urlopen(URL).read().decode("utf8"))
         spendables = []
         for u in r:
-            coin_value = btc_to_satoshi(u.get("amount"))
+            coin_value = btc_to_satoshi(str(u.get("amount")))
             script = h2b(u.get("scriptPubKey"))
             previous_hash = h2b_rev(u.get("txid"))
             previous_index = u.get("vout")
@@ -89,6 +89,20 @@ class InsightService(object):
         for addr in bitcoin_addresses:
             spendables.extend(self.spendables_for_address(addr))
         return spendables
+
+    def send_tx(self, tx):
+        # TODO: make this handle errors better
+        s = io.BytesIO()
+        tx.stream(s)
+        tx_as_hex = b2h(s.getvalue())
+        data = urlencode(dict(rawtx=tx_as_hex)).encode("utf8")
+        URL = "%s/api/tx/send" % self.base_url
+        try:
+            d = urlopen(URL, data=data).read()
+            return d
+        except HTTPError as ex:
+            logging.exception("problem in send_tx %s", tx.id())
+            raise ex
 
 
 def tx_from_json_dict(r):

@@ -1,3 +1,13 @@
+Version 0.53
+------------
+
+* more networks
+* changed how Spendable streams to text and to dicts to put transaction hashes in the
+  more conventional order. ** WARNING **: if you have built databases of Spendable objects
+  using these methods, you will need to convert them
+* make spend.py script obsolete
+* first crack at Insight service
+
 Version 0.52
 ------------
 

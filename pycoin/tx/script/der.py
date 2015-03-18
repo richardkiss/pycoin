@@ -68,6 +68,8 @@ def remove_integer(string):
         raise UnexpectedDER("wanted integer (0x02), got 0x%02x" %
                             ord(string[:1]))
     length, llen = read_length(string[1:])
+    if len(string) < 1+llen+length:
+        raise UnexpectedDER("ran out of integer bytes")
     numberbytes = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
     assert ord(numberbytes[:1]) < 0x80 # can't support negative numbers yet

@@ -29,33 +29,11 @@ THE SOFTWARE.
 import binascii
 import io
 import logging
+import struct
 
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
+from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, int_from_bytes
 
-bytes_from_int = chr if bytes == str else lambda x: bytes([x])
-bytes_to_ints = (lambda x: (ord(c) for c in x)) if bytes == str else lambda x: x
-
-if hasattr(int, "to_bytes"):
-    int_to_bytes = lambda v: v.to_bytes((v.bit_length()+7)//8, byteorder="big")
-else:
-    def int_to_bytes(v):
-        l = bytearray()
-        while v > 0:
-            v, mod = divmod(v, 256)
-            l.append(mod)
-        l.reverse()
-        return bytes(l)
-
-if hasattr(int, "from_bytes"):
-    bytes_to_int = lambda v: int.from_bytes(v, byteorder="big")
-else:
-    def bytes_to_int(s):
-        v = 0
-        b = 0
-        for c in bytes_to_ints(s):
-            v += (c << b)
-            b += 8
-        return v
 
 def get_opcode(script, pc):
     """Step through the script, returning a tuple with the next opcode, the next
@@ -67,13 +45,13 @@ def get_opcode(script, pc):
         if opcode < OPCODE_TO_INT["OP_PUSHDATA1"]:
             size = opcode
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA1"]:
-            size = bytes_to_int(script[pc:pc+1])
+            size = int_from_bytes(script[pc:pc+1])
             pc += 1
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA2"]:
-            size = bytes_to_int(script[pc:pc+2])
+            size = int_from_bytes(script[pc:pc+2])
             pc += 2
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA4"]:
-            size = bytes_to_int(script[pc:pc+4])
+            size = int_from_bytes(script[pc:pc+4])
             pc += 4
         data = script[pc:pc+size]
         pc += size
@@ -94,10 +72,13 @@ def write_push_data(data_list, f):
             f.write(t)
         elif len(t) <= 65535:
             f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA2"]))
-            f.write(int_to_bytes(len(t)))
+            f.write(struct.pack(">H", len(t)))
             f.write(t)
-        # BRAIN DAMAGE: if len(t) is too much, we need a different opcode
-        # This will never be used in practice as it makes the scripts too long.
+        else:
+            # This will never be used in practice as it makes the scripts too long.
+            f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA4"]))
+            f.write(struct.pack(">L", len(t)))
+            f.write(t)
 
 def bin_script(data_list):
     f = io.BytesIO()

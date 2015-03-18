@@ -32,12 +32,10 @@ import hashlib
 from . import ScriptError
 
 from .opcodes import OPCODE_TO_INT
-from .tools import bytes_to_int, int_to_bytes
+from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, int_from_bytes
 from ...encoding import hash160, double_sha256, ripemd160
 from ...serialize import h2b
 
-bytes_from_ints = (lambda x: ''.join(chr(c) for c in x)) if bytes == str else bytes
-bytes_to_ints = (lambda x: (ord(c) for c in x)) if bytes == str else lambda x: x
 
 VCH_TRUE = b'\1\1'
 VCH_FALSE = b'\0'
@@ -186,7 +184,7 @@ def do_OP_PICK(stack):
     >>> print(s)
     ['a', 'b', 'c', 'd', 'b']
     """
-    v = bytes_to_int(stack.pop())
+    v = int_from_bytes(stack.pop())
     stack.append(stack[-v-1])
 
 def do_OP_ROLL(stack):
@@ -196,7 +194,7 @@ def do_OP_ROLL(stack):
     >>> print(s)
     ['a', 'c', 'd', 'b']
     """
-    v = bytes_to_int(stack.pop())
+    v = int_from_bytes(stack.pop())
     stack.append(stack.pop(-v-1))
 
 def do_OP_ROT(stack):
@@ -248,8 +246,8 @@ def do_OP_SUBSTR(stack):
     >>> print(s)
     ['de']
     """
-    pos = bytes_to_int(stack.pop())
-    length = bytes_to_int(stack.pop())
+    pos = int_from_bytes(stack.pop())
+    length = int_from_bytes(stack.pop())
     stack.append(stack.pop()[length:length+pos])
 
 def do_OP_LEFT(stack):
@@ -263,7 +261,7 @@ def do_OP_LEFT(stack):
     >>> print(len(s) ==1 and s[0]==b'')
     True
     """
-    pos = bytes_to_int(stack.pop())
+    pos = int_from_bytes(stack.pop())
     stack.append(stack.pop()[:pos])
 
 def do_OP_RIGHT(stack):
@@ -277,7 +275,7 @@ def do_OP_RIGHT(stack):
     >>> print(s==[b''])
     True
     """
-    pos = bytes_to_int(stack.pop())
+    pos = int_from_bytes(stack.pop())
     if pos > 0:
         stack.append(stack.pop()[-pos:])
     else:
@@ -366,8 +364,8 @@ do_OP_EQUALVERIFY = lambda s: do_OP_EQUAL(s)
 
 def make_bin_op(binop):
     def f(stack):
-        v1 = bytes_to_int(stack.pop())
-        v2 = bytes_to_int(stack.pop())
+        v1 = int_from_bytes(stack.pop())
+        v2 = int_from_bytes(stack.pop())
         stack.append(int_to_bytes(binop(v2, v1)))
     return f
 
@@ -454,7 +452,7 @@ def do_OP_HASH256(stack):
 
 def make_unary_num_op(unary_f):
     def f(stack):
-        stack.append(int_to_bytes(unary_f(bytes_to_int(stack.pop()))))
+        stack.append(int_to_bytes(unary_f(int_from_bytes(stack.pop()))))
     return f
 
 do_OP_1ADD = make_unary_num_op(lambda x: x+1)

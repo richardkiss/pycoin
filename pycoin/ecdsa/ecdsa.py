@@ -31,7 +31,8 @@ Portions written in 2005 by Peter Pearson and placed in the public domain.
 import hashlib
 import hmac
 
-from . import ellipticcurve, intbytes, numbertheory
+from .. import intbytes
+from . import ellipticcurve, numbertheory
 
 
 if hasattr(1, "bit_length"):

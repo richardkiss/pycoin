@@ -4,14 +4,13 @@ from pycoin.convention.tx_fee import TX_FEE_PER_THOUSAND_BYTES
 from pycoin.tx.tx_utils import create_tx, sign_tx
 
 
-DUST = 0
-
 class SQLite3Wallet(object):
 
-    def __init__(self, keychain, persistence, desired_spendable_count=None):
+    def __init__(self, keychain, persistence, desired_spendable_count=None, min_extra_spendable_amount=1000000):
         self.keychain = keychain
         self.persistence = persistence
         self._desired_spendable_count = desired_spendable_count
+        self._min_extra_spendable_amount = min_extra_spendable_amount
         self._lock = RLock()
 
     def last_block_index(self):
@@ -26,14 +25,14 @@ class SQLite3Wallet(object):
     def create_unsigned_send_tx(self, address, amount):
         total_input_value = 0
         estimated_fee = TX_FEE_PER_THOUSAND_BYTES
+        lbi = self.last_block_index()
         with self._lock:
             confirmations = 7
             while confirmations > 0 and self.get_balance(confirmations=confirmations) < amount + estimated_fee:
                 confirmations -= 1
 
             spendables = []
-            for spendable in self.persistence.unspent_spendables(
-                    self.last_block_index(), confirmations=1):
+            for spendable in self.persistence.unspent_spendables(lbi, confirmations=1):
                 spendables.append(spendable)
                 total_input_value += spendable.coin_value
                 if total_input_value >= amount + estimated_fee and len(spendables) > 1:
@@ -41,26 +40,26 @@ class SQLite3Wallet(object):
             if total_input_value < amount + estimated_fee:
                 raise ValueError("insufficient funds: only %d available" % total_input_value)
 
-            # mark the given spendables as "unconfirmed_spent"
-            for spendable in spendables:
-                spendable.does_seem_spent = True
-                self.persistence.save_spendable(spendable)
-
             payables = [(address, amount)]
             change_amount = total_input_value - estimated_fee - amount
-            if change_amount > DUST:
+            if change_amount > 0:
                 change_address = self.keychain.get_change_address()
                 payables.append(change_address)
 
             if self._desired_spendable_count is not None:
                 if self.persistence.unspent_spendable_count() < self._desired_spendable_count:
                     desired_change_output_count = len(spendables) + 1
-                    if change_amount > desired_change_output_count * DUST:
+                    # TODO: be a little smarter about how many change outputs to create
+                    if change_amount > desired_change_output_count * self._min_extra_spendable_amount:
                         for i in range(desired_change_output_count):
                             change_address = self.keychain.get_change_address()
                             payables.append(change_address)
 
             tx = create_tx(spendables, payables, fee=estimated_fee)
+            # mark the given spendables as "unconfirmed_spent"
+            for spendable in spendables:
+                spendable.does_seem_spent = True
+                self.persistence.save_spendable(spendable)
             self.persistence.commit()
         return tx
 
@@ -97,12 +96,13 @@ class SQLite3Wallet(object):
     def _rollback_block(self, blockheader, block_index):
         with self._lock:
             self.set_last_block_index(block_index-1)
-            self.persistence.invalidate_block_index_for_wallet(block_index)
+            self.persistence.invalidate_block_index_for_spendables(block_index)
 
     def get_balance(self, confirmations=1):
+        lbi = self.last_block_index()
         with self._lock:
             balance = 0
-            for s in self.persistence.unspent_spendables(self.last_block_index(), confirmations=confirmations):
+            for s in self.persistence.unspent_spendables(lbi, confirmations=confirmations):
                 # if it looks already spent, skip
                 if s.does_seem_spent:
                     continue
@@ -111,7 +111,7 @@ class SQLite3Wallet(object):
                     if s.block_index_available is None:
                         continue
                     # if not enough confirmations have elapsed, skip
-                    if self.last_block_index() - s.block_index_available + 1 < confirmations:
+                    if lbi - s.block_index_available + 1 < confirmations:
                         continue
                 balance += s.coin_value
             return balance
