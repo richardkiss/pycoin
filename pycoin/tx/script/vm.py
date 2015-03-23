@@ -129,18 +129,18 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
                 continue
 
             if opcode == opcodes.OP_CHECKMULTISIG:
-                key_count = int_from_bytes(stack.pop())
-                key_secs = [stack.pop() for _ in range(key_count)]
+                pub_count = int_from_bytes(stack.pop())
+                pub_secs = [stack.pop() for _ in range(pub_count)]
                 sig_count = int_from_bytes(stack.pop())
                 sig_blobs = [stack.pop() for _ in range(sig_count)]
                 k = s = 0
                 match_found = True
-                sig_hashes = {}
+                sig_hash_cache = {}
                 sig_ok = VCH_TRUE
 
-                while s < sig_count and (sig_count - s <= key_count - k):
+                while s < sig_count and (sig_count - s <= pub_count - k):
                     try:
-                        key_pair = sec_to_public_pair(key_secs[k])
+                        pub_pair = sec_to_public_pair(pub_secs[k])
                     except EncodingError:
                         # we must ignore badly encoded public pairs
                         # the transaction 70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a
@@ -152,11 +152,11 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
                     if match_found:
                         sig_pair, sig_type = parse_signature_blob(sig_blobs[s])
                         try:
-                            sig_hash = sig_hashes[(sig_type, script)]
+                            sig_hash = sig_hash_cache[(sig_type, script)]
                         except KeyError:
-                            sig_hash = sig_hashes[(sig_type, script)] = signature_for_hash_type_f(sig_type, script)
+                            sig_hash = sig_hash_cache[(sig_type, script)] = signature_for_hash_type_f(sig_type, script)
                         ppp = ecdsa.possible_public_pairs_for_signature(ecdsa.generator_secp256k1, sig_hash, sig_pair)
-                    match_found = key_pair in ppp
+                    match_found = pub_pair in ppp
                     if match_found:
                         s += 1
 
