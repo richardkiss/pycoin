@@ -27,12 +27,14 @@ THE SOFTWARE.
 """
 
 OPCODE_LIST = [
+  ("OP_FALSE", 0),
   ("OP_0", 0),
   ("OP_PUSHDATA1", 76),
   ("OP_PUSHDATA2", 77),
   ("OP_PUSHDATA4", 78),
   ("OP_1NEGATE", 79),
   ("OP_RESERVED", 80),
+  ("OP_TRUE", 81),
   ("OP_1", 81),
   ("OP_2", 82),
   ("OP_3", 83),

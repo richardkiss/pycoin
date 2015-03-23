@@ -14,7 +14,7 @@ class ToolsTest(unittest.TestCase):
         def test_bytes(as_bytes):
             script = bin_script([as_bytes])
             stack = []
-            eval_script(script, None, stack=stack, disallow_long_scripts=False)
+            eval_script(script, None, stack=stack, disallow_long_scripts=False, verify_null_dummy=False)
             assert len(stack) == 1
             assert stack[0] == as_bytes
 

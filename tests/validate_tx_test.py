@@ -5,10 +5,15 @@ import io
 import unittest
 
 from pycoin.block import Block
+from pycoin.serialize import b2h
+from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
-from pycoin.tx import Tx, ValidationFailureError
+from pycoin.scripts.ku import get_entropy
+from pycoin.tx import SIGHASH_ALL, Tx
+from pycoin.tx.pay_to.ScriptType import create_script_signature
 from pycoin.tx.script import tools
-
+from pycoin.tx.script.microcode import VCH_FALSE
+from pycoin.tx.script.vm import ScriptError, eval_script
 
 class ValidatingTest(unittest.TestCase):
     def test_validate(self):
@@ -187,6 +192,56 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
         assert int_from_bytes(int_to_bytes(768)) == 768
         assert int_from_bytes(int_to_bytes(3)) == 3
         assert int_from_bytes(int_to_bytes(66051)) == 66051
+
+    def test_verify_ops(self):
+        w = BIP32Node.from_master_secret(get_entropy())
+        fake_sig_hash = 0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100
+        fake_sig_hash_f = lambda hash_type, script=None: fake_sig_hash | hash_type # pylint: disable=unused-variable
+        keys = [ w.subkey(i) for i in range(2) ]
+        sign_val = fake_sig_hash_f(SIGHASH_ALL)
+        verify_script_asms = []
+
+        for i, key in enumerate(keys):
+            sig = b2h(create_script_signature(key.secret_exponent(), sign_val, SIGHASH_ALL))
+            asm = 'OP_TRUE OP_FALSE {} OP_1 {} OP_{} OP_CHECKMULTISIG'.format(sig, ' '.join(( k.sec_as_hex() for k in keys )), len(keys))
+            verify_script_asms.append(asm + 'VERIFY')
+            verify_script_asms.append(asm + ' OP_VERIFY')
+            asm = 'OP_TRUE {} {} OP_CHECKSIG'.format(sig, key.sec_as_hex())
+            verify_script_asms.append(asm + 'VERIFY')
+            verify_script_asms.append(asm + ' OP_VERIFY')
+            asm = 'OP_TRUE {} {} OP_EQUAL'.format(sig, sig)
+            verify_script_asms.append(asm + 'VERIFY')
+            verify_script_asms.append(asm + ' OP_VERIFY')
+
+        for asm in verify_script_asms:
+            stack = []
+            script = tools.compile(asm)
+            self.assertTrue(eval_script(script, fake_sig_hash_f, stack=stack), 'script {{{}}} failed evaluation (stack after execution: {!r})'.format(asm, stack))
+            self.assertEqual(len(stack), 1)
+            self.assertNotEqual(stack[-1], VCH_FALSE)
+
+        other_key = w.subkey(len(keys) + 256)
+        other_sig = b2h(create_script_signature(other_key.secret_exponent(), sign_val, SIGHASH_ALL))
+        no_verify_script_asms = []
+
+        for i, key in enumerate(keys):
+            asm = 'OP_TRUE OP_FALSE {} OP_1 {} OP_{} OP_CHECKMULTISIG'.format(other_sig, ' '.join(( k.sec_as_hex() for k in keys )), len(keys))
+            no_verify_script_asms.append(asm + 'VERIFY')
+            no_verify_script_asms.append(asm + ' OP_VERIFY')
+            asm = 'OP_TRUE {} {} OP_CHECKSIG'.format(other_sig, key.sec_as_hex())
+            no_verify_script_asms.append(asm + 'VERIFY')
+            no_verify_script_asms.append(asm + ' OP_VERIFY')
+            asm = 'OP_TRUE {} {} OP_EQUAL'.format(other_sig, sig)
+            no_verify_script_asms.append(asm + 'VERIFY')
+            no_verify_script_asms.append(asm + ' OP_VERIFY')
+
+        for asm in no_verify_script_asms:
+            stack = []
+            script = tools.compile(asm)
+            self.assertFalse(eval_script(script, fake_sig_hash_f, stack=stack), 'script {{{}}} did not fail evaluation (stack after execution: {!r})'.format(asm, stack))
+            self.assertEqual(len(stack), 2)
+            self.assertEqual(stack[-1], VCH_FALSE)
+            self.assertNotEqual(stack[0], VCH_FALSE)
 
 if __name__ == "__main__":
     unittest.main()

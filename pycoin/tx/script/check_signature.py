@@ -122,7 +122,7 @@ def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_typ
     return sig_blob_indices
 
 
-def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script):
+def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script, verify_null_dummy=True):
     key_count = int_from_bytes(stack.pop())
     public_pairs = []
     for i in range(key_count):
@@ -140,13 +140,15 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
     for i in range(signature_count):
         sig_blobs.append(stack.pop())
 
-    # check that we have the required hack 00 byte
-    if stack != [b'\x00']:
-        stack.append(VCH_FALSE)
-        return
+    # remove the extra stack item
+    extra_stack_item_bug = stack.pop()
 
-    # remove the 0 byte hack for pay to script hash
-    stack.pop()
+    # previously, interpreters did not care what this value was; see
+    # <https://github.com/bitcoin/bitcoin/blob/41e6e4caba9899ce7c165b0784461c55c867ee24/src/script/interpreter.cpp#L893>
+    if verify_null_dummy and extra_stack_item_bug != b'\x00':
+        # See <https://github.com/bitcoin/bitcoin/blob/41e6e4caba9899ce7c165b0784461c55c867ee24/src/script/script_error.cpp#L61>
+        stack.append(VCH_FALSE)
+        raise ScriptError("Dummy CHECKMULTISIG argument must be zero")
 
     sig_blob_indices = sig_blob_matches(
         sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=True)
