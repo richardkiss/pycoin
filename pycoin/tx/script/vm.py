@@ -155,8 +155,7 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
                             sig_hash = sig_hash_cache[(sig_type, script)]
                         except KeyError:
                             sig_hash = sig_hash_cache[(sig_type, script)] = signature_for_hash_type_f(sig_type, script)
-                        ppp = ecdsa.possible_public_pairs_for_signature(ecdsa.generator_secp256k1, sig_hash, sig_pair)
-                    match_found = pub_pair in ppp
+                    match_found = ecdsa.verify(ecdsa.generator_secp256k1, pub_pair, sig_hash, sig_pair)
                     if match_found:
                         s += 1
 
