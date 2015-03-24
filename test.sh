@@ -8,4 +8,4 @@ cd $THIS_DIR
 PYTHONPATH=$THIS_DIR
 export PYTHONPATH
 
-tox
+exec tox ${1+"${@}"}
