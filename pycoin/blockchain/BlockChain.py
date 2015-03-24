@@ -7,6 +7,7 @@ from ..serialize import b2h_rev
 logger = logging.getLogger(__name__)
 ZERO_HASH = b'\0' * 32
 
+
 def _update_q(q, ops):
     # first, we meld out complimentary adds and removes
     while len(ops) > 0:
