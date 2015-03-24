@@ -4,12 +4,14 @@ from pycoin import ecdsa
 
 from ..script import der, opcodes, tools
 
+
 SIGHASH_ALL = 1
 SIGHASH_NONE = 2
 SIGHASH_SINGLE = 3
 SIGHASH_ANYONECANPAY = 0x80
 
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
+
 
 class ScriptType(object):
     def _mk_dummy_signatures(): # pylint: disable=no-method-argument
