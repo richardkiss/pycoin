@@ -2,15 +2,10 @@
 
 import unittest
 
-# This is necessary for the import Wallet statement below to work?
-import tests.bip32_test
-
-from pycoin.block import Block
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
-from pycoin.key.bip32 import Wallet
-from pycoin.networks import pay_to_script_prefix_for_netcode, prv32_prefix_for_netcode, NETWORK_NAMES
-from pycoin.serialize import b2h_rev, h2b
+from pycoin.key.BIP32Node import BIP32Node
+from pycoin.networks import pay_to_script_prefix_for_netcode, NETWORK_NAMES
 
 from pycoin.key.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 
@@ -72,7 +67,7 @@ class KeyUtilsTest(unittest.TestCase):
         # not all networks support BIP32 yet
         for netcode in "BTC XTN DOGE".split():
             for wk in WALLET_KEYS:
-                wallet = Wallet.from_master_secret(wk.encode("utf8"), netcode=netcode)
+                wallet = BIP32Node.from_master_secret(wk.encode("utf8"), netcode=netcode)
                 text = wallet.wallet_key(as_private=True)
                 self.assertEqual(is_private_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), netcode)
                 self.assertEqual(is_public_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), None)
