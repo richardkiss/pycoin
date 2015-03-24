@@ -67,7 +67,7 @@ class TxOut(object):
 
 
 def standard_tx_out_script(address, netcodes=DEFAULT_NETCODES):
-    script_obj = script_obj_from_address(address, netcodes=DEFAULT_NETCODES)
+    script_obj = script_obj_from_address(address, netcodes=netcodes)
     if script_obj is None:
         raise ValueError("can't parse address %s" % address)
     return script_obj.script()
