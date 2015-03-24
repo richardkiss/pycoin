@@ -11,6 +11,10 @@ from pycoin.networks import pay_to_script_prefix_for_netcode, NETWORK_NAMES
 from pycoin.ecdsa.secp256k1 import generator_secp256k1
 
 
+def change_prefix(address, new_prefix):
+    return hash160_sec_to_bitcoin_address(Key.from_text(address).hash160(), address_prefix=new_prefix)
+
+
 PAY_TO_HASH_ADDRESSES = ["1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", "1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm",
                         "1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP", "1LagHJk2FyCV2VzrNHVqg3gYG4TSYwDV4m",
                         "1CUNEBjYrCn2y1SdiUMohaKUi4wpP326Lb", "1NZUP3JAc9JkmbvmoTv7nVgZGtyJjirKV1"]
@@ -18,10 +22,6 @@ PAY_TO_HASH_ADDRESSES = ["1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", "1EHNa6Q4Jz2uvNEx
 PAY_TO_SCRIPT_PREFIX = pay_to_script_prefix_for_netcode("BTC")
 
 PAY_TO_SCRIPT_ADDRESSES = [change_prefix(t, PAY_TO_SCRIPT_PREFIX) for t in PAY_TO_HASH_ADDRESSES]
-
-
-def change_prefix(address, new_prefix):
-    return hash160_sec_to_bitcoin_address(Key.from_text(address).hash160(), address_prefix=new_prefix)
 
 
 class KeyUtilsTest(unittest.TestCase):
@@ -87,10 +87,14 @@ class KeyUtilsTest(unittest.TestCase):
     def test_key_limits(self):
         nc = 'BTC'
         cc = '000102030405060708090a0b0c0d0e0f'
+        self.assertRaises(InvalidKeyGeneratedError, Key, secret_exponent=-1)
         self.assertRaises(InvalidKeyGeneratedError, Key, secret_exponent=0)
         self.assertRaises(InvalidKeyGeneratedError, Key, secret_exponent=generator_secp256k1.order())
+        self.assertRaises(InvalidKeyGeneratedError, Key, secret_exponent=generator_secp256k1.order() + 1)
+        self.assertRaises(InvalidKeyGeneratedError, BIP32Node, nc, cc, secret_exponent=-1)
         self.assertRaises(InvalidKeyGeneratedError, BIP32Node, nc, cc, secret_exponent=0)
         self.assertRaises(InvalidKeyGeneratedError, BIP32Node, nc, cc, secret_exponent=generator_secp256k1.order())
+        self.assertRaises(InvalidKeyGeneratedError, BIP32Node, nc, cc, secret_exponent=generator_secp256k1.order() + 1)
 
         for i in range(1, 512):
             Key(secret_exponent=i)

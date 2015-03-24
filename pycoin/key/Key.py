@@ -119,9 +119,14 @@ class Key(object):
         """
         Return a pair of integers representing the public key (or None).
         """
-        if self._public_pair is None and self.secret_exponent() is not None:
+        if self._public_pair is None and self._secret_exponent is not None:
+            if self._secret_exponent < 1 \
+                    or self._secret_exponent >= ecdsa.generator_secp256k1.order():
+                raise InvalidKeyGeneratedError(
+                    "this key would produce an invalid public pair; please skip it")
             public_pair = ecdsa.public_pair_for_secret_exponent(
                 ecdsa.generator_secp256k1, self._secret_exponent)
+            # This is probably redundant
             if None in public_pair \
                     or not ecdsa.is_public_pair_valid(ecdsa.generator_secp256k1, public_pair):
                 raise InvalidKeyGeneratedError(
