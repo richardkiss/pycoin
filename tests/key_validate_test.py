@@ -79,11 +79,16 @@ class KeyUtilsTest(unittest.TestCase):
                 self.assertEqual(is_public_bip32_valid(a, allowable_netcodes=NETWORK_NAMES), None)
 
     def test_key_limits(self):
+        nc = 'BTC'
+        cc = '000102030405060708090a0b0c0d0e0f'
         self.assertRaises(InvalidKeyGeneratedError, Key, secret_exponent=0)
         self.assertRaises(InvalidKeyGeneratedError, Key, secret_exponent=generator_secp256k1.order())
+        self.assertRaises(InvalidKeyGeneratedError, BIP32Node, nc, cc, secret_exponent=0)
+        self.assertRaises(InvalidKeyGeneratedError, BIP32Node, nc, cc, secret_exponent=generator_secp256k1.order())
 
         for i in range(1, 512):
             Key(secret_exponent=i)
+            BIP32Node(nc, cc, secret_exponent=i)
 
 if __name__ == '__main__':
     unittest.main()
