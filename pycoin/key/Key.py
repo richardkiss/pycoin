@@ -7,8 +7,10 @@ from pycoin.key.validate import netcode_and_type_for_data
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.serialize import b2h
 
+
 class InvalidKeyGeneratedError(Exception):
     pass
+
 
 class Key(object):
     def __init__(self, secret_exponent=None, public_pair=None, hash160=None,
@@ -35,6 +37,7 @@ class Key(object):
         Include at most one of secret_exponent, public_pair or hash160.
         prefer_uncompressed, is_compressed (booleans) are optional.
         """
+
         if [secret_exponent, public_pair, hash160].count(None) != 2:
             raise ValueError("exactly one of secret_exponent, public_pair, hash160 must be passed.")
         if prefer_uncompressed is None:
