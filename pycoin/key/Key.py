@@ -1,17 +1,14 @@
 from pycoin import ecdsa
+from pycoin.encoding import EncodingError, a2b_hashed_base58, \
+    from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
+    is_sec_compressed, public_pair_to_sec, sec_to_public_pair, \
+    secret_exponent_to_wif
 from pycoin.key.validate import netcode_and_type_for_data
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
-
-from pycoin.encoding import a2b_hashed_base58, secret_exponent_to_wif,\
-    public_pair_to_sec, hash160,\
-    hash160_sec_to_bitcoin_address, sec_to_public_pair,\
-    is_sec_compressed, from_bytes_32, EncodingError
 from pycoin.serialize import b2h
-
 
 class InvalidKeyGeneratedError(Exception):
     pass
-
 
 class Key(object):
     def __init__(self, secret_exponent=None, public_pair=None, hash160=None,
@@ -38,7 +35,6 @@ class Key(object):
         Include at most one of secret_exponent, public_pair or hash160.
         prefer_uncompressed, is_compressed (booleans) are optional.
         """
-
         if [secret_exponent, public_pair, hash160].count(None) != 2:
             raise ValueError("exactly one of secret_exponent, public_pair, hash160 must be passed.")
         if prefer_uncompressed is None:
@@ -54,6 +50,9 @@ class Key(object):
             else:
                 self._hash160_uncompressed = hash160
         self._netcode = netcode
+
+        # Check to see if secret_exponent yielded a valid key pair
+        self.public_pair()
 
     @classmethod
     def from_text(class_, text, is_compressed=True):
@@ -117,10 +116,11 @@ class Key(object):
         """
         Return a pair of integers representing the public key (or None).
         """
-        if self._public_pair is None and self.secret_exponent():
+        if self._public_pair is None and self.secret_exponent() is not None:
             public_pair = ecdsa.public_pair_for_secret_exponent(
                 ecdsa.generator_secp256k1, self._secret_exponent)
-            if not ecdsa.is_public_pair_valid(ecdsa.generator_secp256k1, public_pair):
+            if None in public_pair \
+                    or not ecdsa.is_public_pair_valid(ecdsa.generator_secp256k1, public_pair):
                 raise InvalidKeyGeneratedError(
                     "this key would produce an invalid public pair; please skip it")
             self._public_pair = public_pair
