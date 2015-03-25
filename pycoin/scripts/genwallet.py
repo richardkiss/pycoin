@@ -72,7 +72,7 @@ def main():
             child_index = "%d" % wallet.child_index()
         if args.json:
             d = dict(
-                wallet_key=wallet.wallet_key(as_private=wallet.is_private),
+                wallet_key=wallet.wallet_key(as_private=wallet.is_private()),
                 public_pair_x=wallet.public_pair[0],
                 public_pair_y=wallet.public_pair[1],
                 tree_depth=wallet.depth,
@@ -84,7 +84,7 @@ def main():
                 bitcoin_addr_uncompressed=wallet.bitcoin_address(compressed=False),
                 network="test" if wallet.is_test else "main",
             )
-            if wallet.is_private:
+            if wallet.is_private():
                 d.update(dict(
                     key="private",
                     secret_exponent=wallet.secret_exponent,
@@ -95,9 +95,9 @@ def main():
                 d.update(dict(key="public"))
             print(json.dumps(d, indent=3))
         elif args.info:
-            print(wallet.wallet_key(as_private=wallet.is_private))
+            print(wallet.wallet_key(as_private=wallet.is_private()))
             print(full_network_name_for_netcode(wallet.netcode))
-            if wallet.is_private:
+            if wallet.is_private():
                 print("private key")
                 print("secret exponent: %d" % wallet.secret_exponent)
             else:
@@ -108,7 +108,7 @@ def main():
             print("parent f'print:  %s" % b2h(wallet.parent_fingerprint))
             print("child index:     %s" % child_index)
             print("chain code:      %s" % b2h(wallet.chain_code))
-            if wallet.is_private:
+            if wallet.is_private():
                 print("WIF:             %s" % wallet.wif())
                 print("  uncompressed:  %s" % wallet.wif(compressed=False))
             print("Bitcoin address: %s" % wallet.bitcoin_address())
@@ -118,7 +118,7 @@ def main():
         elif args.wif:
             print(wallet.wif(compressed=not args.uncompressed))
         else:
-            print(wallet.wallet_key(as_private=wallet.is_private))
+            print(wallet.wallet_key(as_private=wallet.is_private()))
     except PublicPrivateMismatchError as ex:
         print(ex.args[0])
 
