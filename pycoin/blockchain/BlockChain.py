@@ -4,6 +4,7 @@ import weakref
 from .ChainFinder import ChainFinder
 from ..serialize import b2h_rev
 
+logger = logging.getLogger(__name__)
 ZERO_HASH = b'\0' * 32
 
 
@@ -156,10 +157,10 @@ class BlockChain(object):
             old_path = old_longest_chain
             new_path = new_longest_chain
         if old_path:
-            logging.debug("old_path is %r-%r", old_path[0], old_path[-1])
+            logger.debug("old_path is %r-%r", old_path[0], old_path[-1])
         if new_path:
-            logging.debug("new_path is %r-%r", new_path[0], new_path[-1])
-            logging.debug("block chain now has %d elements", self.length())
+            logger.debug("new_path is %r-%r", new_path[0], new_path[-1])
+            logger.debug("block chain now has %d elements", self.length())
 
         # return a list of operations:
         # ("add"/"remove", the_hash, the_index)

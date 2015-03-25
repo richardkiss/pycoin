@@ -167,6 +167,20 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertRaises(ValueError, list, my_prv.subkeys('-1'))
         self.assertRaises(ValueError, list, my_prv.subkeys('-1-0'))
 
+    def test_repr(self):
+        from pycoin.key import Key
+        netcode = 'XTN'
+        key = Key(secret_exponent=273, netcode=netcode)
+        wallet = BIP32Node.from_master_secret(bytes(key.wif().encode('ascii')), netcode)
+
+        address = wallet.address()
+        pub_k = wallet.from_text(address)
+        self.assertEqual(repr(pub_k),  '<myb5gZNXePNf2E2ksrjnHRFCwyuvt7oEay>')
+
+        wif = wallet.wif()
+        priv_k = wallet.from_text(wif)
+        self.assertEqual(repr(priv_k), 'private_for <03ad094b1dc9fdce5d3648ca359b4e210a89d049532fdd39d9ccdd8ca393ac82f4>')
+
 if __name__ == '__main__':
     unittest.main()
 
