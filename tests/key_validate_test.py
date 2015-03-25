@@ -86,7 +86,7 @@ class KeyUtilsTest(unittest.TestCase):
 
     def test_key_limits(self):
         nc = 'BTC'
-        cc = '000102030405060708090a0b0c0d0e0f'
+        cc = b'000102030405060708090a0b0c0d0e0f'
         order = generator_secp256k1.order()
 
         for k in -1, 0, order, order + 1:
