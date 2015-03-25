@@ -1,0 +1,2 @@
+
+class ScriptError(Exception): pass
