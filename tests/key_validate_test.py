@@ -2,18 +2,13 @@
 
 import unittest
 
+from pycoin.ecdsa.ellipticcurve import Point
+from pycoin.ecdsa.secp256k1 import generator_secp256k1
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node
-<<<<<<< HEAD
-=======
-from pycoin.networks import pay_to_script_prefix_for_netcode, NETWORK_NAMES
-
->>>>>>> master
 from pycoin.key.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 from pycoin.networks import pay_to_script_prefix_for_netcode, NETWORK_NAMES
-from pycoin.ecdsa.ellipticcurve import Point
-from pycoin.ecdsa.secp256k1 import generator_secp256k1
 
 
 def change_prefix(address, new_prefix):
