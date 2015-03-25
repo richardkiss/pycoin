@@ -34,6 +34,7 @@ import struct
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
 from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, int_from_bytes
 
+logger = logging.getLogger(__name__)
 
 def get_opcode(script, pc):
     """Step through the script, returning a tuple with the next opcode, the next
@@ -112,7 +113,7 @@ def opcode_list(script):
             opcodes.append(binascii.hexlify(data).decode("utf8"))
             continue
         if not opcode in INT_TO_OPCODE:
-            logging.info("missing opcode %r", opcode)
+            logger.info("missing opcode %r", opcode)
             continue
         opcodes.append(INT_TO_OPCODE[opcode])
     return opcodes

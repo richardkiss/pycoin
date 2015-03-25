@@ -2,12 +2,10 @@
 
 import unittest
 
-from pycoin.block import Block
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
-from pycoin.key.bip32 import Wallet
-from pycoin.networks import pay_to_script_prefix_for_netcode, prv32_prefix_for_netcode, NETWORK_NAMES
-from pycoin.serialize import b2h_rev, h2b
+from pycoin.key.BIP32Node import BIP32Node
+from pycoin.networks import pay_to_script_prefix_for_netcode, NETWORK_NAMES
 
 from pycoin.key.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 
@@ -69,7 +67,7 @@ class KeyUtilsTest(unittest.TestCase):
         # not all networks support BIP32 yet
         for netcode in "BTC XTN DOGE".split():
             for wk in WALLET_KEYS:
-                wallet = Wallet.from_master_secret(wk.encode("utf8"), netcode=netcode)
+                wallet = BIP32Node.from_master_secret(wk.encode("utf8"), netcode=netcode)
                 text = wallet.wallet_key(as_private=True)
                 self.assertEqual(is_private_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), netcode)
                 self.assertEqual(is_public_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), None)
@@ -82,3 +80,17 @@ class KeyUtilsTest(unittest.TestCase):
                 a = text[:-1] + chr(ord(text[-1])+1)
                 self.assertEqual(is_private_bip32_valid(a, allowable_netcodes=NETWORK_NAMES), None)
                 self.assertEqual(is_public_bip32_valid(a, allowable_netcodes=NETWORK_NAMES), None)
+
+    def test_repr(self):
+        key = Key(secret_exponent=273, netcode='XTN')
+
+        address = key.address()
+        pub_k = Key.from_text(address)
+        self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
+
+        wif = key.wif()
+        priv_k = Key.from_text(wif)
+        self.assertEqual(repr(priv_k), 'private_for <0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
+
+if __name__ == '__main__':
+    unittest.main()
