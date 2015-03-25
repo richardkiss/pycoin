@@ -1,13 +1,14 @@
 import binascii
 import logging
 import io
-import struct
 
 from .InvItem import InvItem
 from .PeerAddress import PeerAddress
 from ..block import Block, BlockHeader
 from ..serialize import bitcoin_streamer
 from ..tx.Tx import Tx
+
+logger = logging.getLogger(__name__)
 
 # ## definitions of message structures and types
 # L: 4 byte long integer
@@ -112,7 +113,7 @@ def _make_parse_from_data():
             if fixup:
                 d = fixup(d, message_stream)
         else:
-            logging.error("unknown message: %s %s", message_name, binascii.hexlify(data))
+            logger.error("unknown message: %s %s", message_name, binascii.hexlify(data))
             d = {}
         return d
     return parse_from_data

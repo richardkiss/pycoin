@@ -39,6 +39,8 @@ from . import ScriptError
 from .microcode import MICROCODE_LOOKUP, VCH_TRUE, VCH_FALSE, make_bool
 from .tools import get_opcode, bin_script
 
+logger = logging.getLogger(__name__)
+
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split()))
 
 INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split()))
@@ -174,10 +176,10 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
                 if v != VCH_TRUE:
                     raise ScriptError("VERIFY failed at %d" % pc-1)
 
-            logging.error("can't execute opcode %s", opcode)
+            logger.error("can't execute opcode %s", opcode)
 
     except Exception as ex:
-        logging.exception("script failed")
+        logger.exception("script failed")
 
     return len(stack) != 0
 
@@ -188,7 +190,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
                 and byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
 
     if not eval_script(script_signature, signature_for_hash_type_f, expected_hash_type, stack):
-        logging.debug("script_signature did not evaluate")
+        logger.debug("script_signature did not evaluate")
         return False
 
     if is_p2h:
@@ -196,7 +198,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         alt_script_signature = bin_script(signatures)
 
     if not eval_script(script_public_key, signature_for_hash_type_f, expected_hash_type, stack):
-        logging.debug("script_public_key did not evaluate")
+        logger.debug("script_public_key did not evaluate")
         return False
 
     if is_p2h and stack[-1] == VCH_TRUE:

@@ -5,6 +5,11 @@ import unittest
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node
+<<<<<<< HEAD
+=======
+from pycoin.networks import pay_to_script_prefix_for_netcode, NETWORK_NAMES
+
+>>>>>>> master
 from pycoin.key.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 from pycoin.networks import pay_to_script_prefix_for_netcode, NETWORK_NAMES
 from pycoin.ecdsa.ellipticcurve import Point
@@ -327,6 +332,19 @@ class KeyUtilsTest(unittest.TestCase):
             Key(public_pair=(0, 0))
         err = cm.exception
         self.assertEqual(err.args[0], 'invalid public pair')
+
+
+    def test_repr(self):
+        key = Key(secret_exponent=273, netcode='XTN')
+
+        address = key.address()
+        pub_k = Key.from_text(address)
+        self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
+
+        wif = key.wif()
+        priv_k = Key.from_text(wif)
+        self.assertEqual(repr(priv_k), 'private_for <0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -55,6 +55,9 @@ NETWORKS = (
     # MZC Mazacoin mainnet: xprv/xpub
     NetworkValues("Mazacoin", "mainnet", "MZC", b'\xe0', b'\x32', b'\9', h2b("0488ADE4"), h2b("0488B21E")),
 
+    NetworkValues(
+        "Riecoin", "mainnet", "RIC", b'\x80', b'\x3c', b'\x05', h2b('0488ADE4'), h2b('0488B21E')),
+
 )
 
 
