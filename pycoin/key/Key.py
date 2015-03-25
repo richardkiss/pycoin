@@ -220,6 +220,6 @@ class Key(object):
 
     def __repr__(self):
         r = self.public_copy().as_text()
-        if self.is_private:
+        if self.is_private():
             return "private_for <%s>" % r
         return "<%s>" % r
