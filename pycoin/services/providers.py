@@ -5,7 +5,7 @@ from .env import main_cache_dir, service_providers_for_env, tx_read_cache_dirs, 
 from .tx_db import TxDb
 
 
-SERVICE_PROVIDERS = ["BLOCKCHAIN_INFO", "BLOCKEXPLORER", "BLOCKR_IO", "BITEASY"]
+SERVICE_PROVIDERS = ["BLOCKCHAIN_INFO", "BLOCKEXPLORER", "BLOCKR_IO", "BITEASY", "CHAIN_COM"]
 
 
 class NoServicesSpecifiedError(Exception):
