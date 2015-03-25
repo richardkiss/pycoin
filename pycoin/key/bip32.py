@@ -66,8 +66,8 @@ any outputted information) onto a USB drive and e-mail "Richard Kiss"
 <him@richardkiss.com> or "Matt Bogosian" <mtb19@columbia.edu> for
 instructions on how best to donate it without losing your bitcoins.
 
-WARNING: DO NOT SEND YOUR WALLET FILE UNLESS YOU WANT TO LOSE ALL THE
-BITCOINS IT CONTAINS.
+WARNING: DO NOT SEND ANY WALLET INFORMATION UNLESS YOU WANT TO LOSE ALL
+THE BITCOINS IT CONTAINS.
 """.strip()
 
 
