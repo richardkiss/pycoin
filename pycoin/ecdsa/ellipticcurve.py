@@ -73,9 +73,8 @@ class Point( object ):
     self.__order = order
     # self.curve is allowed to be None only for INFINITY:
     if self.__curve and not self.__curve.contains_point( x, y ):
-      raise ValueError('({},{}) is not on curve {}'.format(x, y, curve))
-    if self.__order and self * order != INFINITY:
-      raise ValueError('({},{}) * {} == {}', x, y, order, self * order)
+      raise ValueError('({},{}) is not on the curve {}'.format(x, y, curve))
+    if order: assert self * order == INFINITY
  
   def __eq__( self, other ):
     """Return 1 if the points are identical, 0 otherwise."""

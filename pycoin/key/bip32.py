@@ -83,10 +83,10 @@ def subkey_secret_exponent_chain_code_pair(
     I64 = hmac.HMAC(key=chain_code_bytes, msg=data, digestmod=hashlib.sha512).digest()
     I_left_as_exponent = from_bytes_32(I64[:32])
     if I_left_as_exponent >= ORDER:
-        raise ValueError('I_L >= {}'.format(ORDER))
+        raise ValueError('bad derviation: I_L >= {}'.format(ORDER))
     new_secret_exponent = (I_left_as_exponent + secret_exponent) % ORDER
     if new_secret_exponent == 0:
-        raise ValueError('k_{} == 0'.format(i))
+        raise ValueError('bad derviation: k_{} == 0'.format(i))
     new_chain_code = I64[32:]
     return new_secret_exponent, new_chain_code
 
@@ -116,11 +116,11 @@ def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
     the_point = I_left_as_exponent * ecdsa.generator_secp256k1 + \
         ecdsa.Point(ecdsa.generator_secp256k1.curve(), x, y, ORDER)
     if the_point == INFINITY:
-        raise ValueError('K_{} == {}'.format(i, the_point))
+        raise ValueError('bad derviation: K_{} == {}'.format(i, the_point))
 
     I_left_as_exponent = from_bytes_32(I64[:32])
     if I_left_as_exponent >= ORDER:
-        raise ValueError('I_L >= {}'.format(ORDER))
+        raise ValueError('bad derviation: I_L >= {}'.format(ORDER))
     new_public_pair = the_point.pair()
     new_chain_code = I64[32:]
     return new_public_pair, new_chain_code

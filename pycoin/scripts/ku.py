@@ -12,7 +12,6 @@ from pycoin import encoding
 from pycoin.ecdsa import is_public_pair_valid, generator_secp256k1, public_pair_for_x, secp256k1
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
-from pycoin.key.Key import InvalidKeyGeneratedError
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, NETWORK_NAMES
 
@@ -221,8 +220,9 @@ def main():
         for _ in range(max_retries):
             try:
                 return BIP32Node.from_master_secret(get_entropy(), netcode=args.network)
-            except InvalidKeyGeneratedError as e:
+            except ValueError as e:
                 continue
+        # Probably a bug if we get here
         raise e
 
     PREFIX_TRANSFORMS = (
