@@ -1,2 +1,0 @@
-
-class ScriptError(Exception): pass
