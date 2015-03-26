@@ -64,7 +64,7 @@ class TxIn(object):
         return self.previous_hash == ZERO
 
     def public_key_sec(self):
-        """Atempt to return the public key as sec, or None in case of failure."""
+        """Return the public key as sec, or None in case of failure."""
         if self.is_coinbase():
             return None
         opcodes = opcode_list(self.script)
