@@ -57,6 +57,8 @@ class ScriptMultisig(ScriptType):
                 self.hash160, address_prefix=self.address_prefix)
         return self._address
 
+
+
     def script(self):
         if self._script is None:
             # create the script
