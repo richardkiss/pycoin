@@ -57,8 +57,9 @@ def encode_sequence(*encoded_pieces):
 
 def remove_sequence(string):
     if not string.startswith(b"\x30"):
-        raise UnexpectedDER("wanted sequence (0x30), got 0x%02x" %
-                            ord(string[:1]))
+        raise UnexpectedDER(
+            "wanted sequence (0x30), got string length %d %s" % (
+                len(string), binascii.hexlify(string[:10])))
     length, lengthlength = read_length(string[1:])
     endseq = 1+lengthlength+length
     return string[1+lengthlength:endseq], string[endseq:]
