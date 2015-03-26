@@ -31,7 +31,8 @@ import io
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
-from ..intbytes import byte_to_int
+from ..convention import MAX_MONEY, MAX_BLOCK_SIZE
+from ..intbytes import byte_to_int, int_to_bytes
 
 from .TxIn import TxIn
 from .TxOut import TxOut
@@ -96,6 +97,41 @@ class Tx(object):
         self.lock_time = lock_time
         self.unspents = unspents
 
+    def check_transaction(self):
+        """
+        Basic checks that don't depend on any context.
+        Adapted from Bicoin Code: main.cpp
+        """
+        if not self.txs_in:
+            raise ValidationFailureError("self.txs_in = []")
+        if not self.txs_out:
+            raise ValidationFailureError("self.txs_out = []")
+        # Size limits
+        f = io.BytesIO()
+        self.stream(f)
+        size = len(f.getvalue())
+        if size > MAX_BLOCK_SIZE:
+            raise ValidationFailureError("size > MAX_BLOCK_SIZE")
+        # Check for negative or overflow output values
+        nValueOut = 0
+        for txout in self.txs_out:
+            if txout.coin_value < 0 or txout.coin_value > MAX_MONEY:
+                raise ValidationFailureError("txout value negative or out of range")
+            nValueOut += txout.coin_value
+            if nValueOut > MAX_MONEY:
+                raise ValidationFailureError("txout total out of range")
+        # Check for duplicate inputs
+        if [x for x in self.txs_in if self.txs_in.count(x) > 1]:
+            raise ValidationFailureError("duplicate inputs")
+        if(self.is_coinbase()):
+            if len(self.txs_in[0].script) < 2 or len(self.txs_in[0].script) > 100:
+                raise ValidationFailureError("bad coinbase script size")
+        else:
+            for txin in self.txs_in:
+                if not txin:
+                    raise ValidationFailureError("prevout is null")
+        return True
+
     def stream(self, f, blank_solutions=False):
         """Stream a Bitcoin transaction Tx to the file-like object f."""
         stream_struct("LI", f, self.version, len(self.txs_in))
@@ -151,7 +187,7 @@ class Tx(object):
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.
-        tx_out_script = tools.delete_subscript(tx_out_script, [opcodes.OP_CODESEPARATOR])
+        tx_out_script = tools.delete_subscript(tx_out_script, int_to_bytes(opcodes.OP_CODESEPARATOR))
 
         # blank out other inputs' signatures
         def tx_in_for_idx(idx, tx_in):

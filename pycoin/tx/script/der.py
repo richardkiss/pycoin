@@ -31,6 +31,7 @@ THE SOFTWARE.
 """
 
 import binascii
+from ...ecdsa.secp256k1 import generator_secp256k1
 
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 
@@ -63,7 +64,7 @@ def remove_sequence(string):
     endseq = 1+lengthlength+length
     return string[1+lengthlength:endseq], string[endseq:]
 
-def remove_integer(string):
+def remove_integer(string, is_s=False):
     if not string.startswith(b"\x02"):
         raise UnexpectedDER("wanted integer (0x02), got 0x%02x" %
                             ord(string[:1]))
@@ -72,8 +73,12 @@ def remove_integer(string):
         raise UnexpectedDER("ran out of integer bytes")
     numberbytes = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
-    assert ord(numberbytes[:1]) < 0x80 # can't support negative numbers yet
-    return int(binascii.hexlify(numberbytes), 16), rest
+    number = int(binascii.hexlify(numberbytes), 16)
+    if ord(numberbytes[:1]) >= 0x80:
+        assert number < generator_secp256k1.order()
+        if is_s:
+            number = generator_secp256k1.order() - number
+    return number, rest
 
 def encode_length(l):
     assert l >= 0
@@ -107,7 +112,7 @@ def sigdecode_der(sig_der):
         raise UnexpectedDER("trailing junk after DER sig: %s" %
                                 binascii.hexlify(empty))
     r, rest = remove_integer(rs_strings)
-    s, empty = remove_integer(rest)
+    s, empty = remove_integer(rest, is_s=True)
     if empty != b"":
         raise UnexpectedDER("trailing junk after DER numbers: %s" %
                                 binascii.hexlify(empty))

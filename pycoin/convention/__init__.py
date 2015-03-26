@@ -6,6 +6,8 @@ COIN_PER_SATOSHI = decimal.Decimal(1)/SATOSHI_PER_COIN
 
 SATOSHI_TO_MBTC = decimal.Decimal(int(1e5))
 
+MAX_MONEY = 21000000 * SATOSHI_PER_COIN
+MAX_BLOCK_SIZE = 1000000
 
 def satoshi_to_btc(satoshi_count):
     if satoshi_count == 0:

@@ -412,7 +412,7 @@ def do_OP_RIPEMD160(stack):
     >>> print(s == [bytearray([66, 207, 162, 17, 1, 142, 164, 146, 253, 238, 69, 172, 99, 123, 121, 114, 160, 173, 104, 115])])
     True
     """
-    stack.append(ripemd160(stack.pop()).digest())
+    stack.append(ripemd160(bytes(stack.pop())).digest())
 
 def do_OP_SHA1(stack):
     """
@@ -421,7 +421,7 @@ def do_OP_SHA1(stack):
     >>> print(s == [bytearray([11, 238, 199, 181, 234, 63, 15, 219, 201, 93, 13, 212, 127, 60, 91, 194, 117, 218, 138, 51])])
     True
     """
-    stack.append(hashlib.sha1(stack.pop()).digest())
+    stack.append(hashlib.sha1(bytes(stack.pop())).digest())
 
 def do_OP_SHA256(stack):
     """
@@ -430,7 +430,7 @@ def do_OP_SHA256(stack):
     >>> print(s == [bytearray([44, 38, 180, 107, 104, 255, 198, 143, 249, 155, 69, 60, 29, 48, 65, 52, 19, 66, 45, 112, 100, 131, 191, 160, 249, 138, 94, 136, 98, 102, 231, 174])])
     True
     """
-    stack.append(hashlib.sha256(stack.pop()).digest())
+    stack.append(hashlib.sha256(bytes(stack.pop())).digest())
 
 def do_OP_HASH160(stack):
     """
@@ -439,7 +439,7 @@ def do_OP_HASH160(stack):
     >>> print(s == [bytearray([225, 207, 124, 129, 3, 71, 107, 109, 127, 233, 228, 151, 154, 161, 14, 124, 83, 31, 207, 66])])
     True
     """
-    stack.append(hash160(stack.pop()))
+    stack.append(hash160(bytes(stack.pop())))
 
 def do_OP_HASH256(stack):
     """
@@ -448,7 +448,7 @@ def do_OP_HASH256(stack):
     >>> print(s == [bytearray([199, 173, 232, 143, 199, 162, 20, 152, 166, 165, 229, 195, 133, 225, 246, 139, 237, 130, 43, 114, 170, 99, 196, 169, 164, 138, 2, 194, 70, 110, 226, 158])])
     True
     """
-    stack.append(double_sha256(stack.pop()))
+    stack.append(double_sha256(bytes(stack.pop())))
 
 def make_unary_num_op(unary_f):
     def f(stack):
@@ -461,7 +461,7 @@ do_OP_2MUL = make_unary_num_op(lambda x: x<<1)
 do_OP_2DIV = make_unary_num_op(lambda x: x>>1)
 do_OP_NEGATE = make_unary_num_op(lambda x: -x)
 do_OP_ABS = make_unary_num_op(lambda x: abs(x))
-do_OP_NOT = make_unary_num_op(lambda x: make_bool(x == 0))
+do_OP_NOT = lambda stack: stack.append(make_bool(stack.pop() == VCH_FALSE))
 do_OP_0NOTEQUAL = make_unary_num_op(lambda x: make_bool(x != 0))
 
 def build_ops_lookup():
