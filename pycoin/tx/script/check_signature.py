@@ -85,9 +85,13 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
     for i in range(signature_count):
         sig_blobs.append(stack.pop())
 
-    should_be_zero_bug = stack.pop()
-    if should_be_zero_bug != b'\0':
-        raise ScriptError("problem in multisig: missing 00 byte")
+    # check that we have the required hack 00 byte
+    if stack != [b'\x00']:
+        stack.append(VCH_FALSE)
+        return
+
+    # remove the 0 byte hack for pay to script hash
+    stack.pop()
 
     # Drop the signatures, since there's no way for a signature to sign itself
     for sig_blob in sig_blobs:
