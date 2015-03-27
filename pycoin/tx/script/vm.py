@@ -28,39 +28,36 @@ THE SOFTWARE.
 
 import logging
 
-from ... import ecdsa
-from ...encoding import sec_to_public_pair, EncodingError
-from ...intbytes import byte_to_int, int_to_bytes, int_from_bytes
+from ...intbytes import byte_to_int, int_to_bytes
 
-from . import der
 from . import opcodes
 from . import ScriptError
 
-from .microcode import MICROCODE_LOOKUP, VCH_TRUE, VCH_FALSE, make_bool
+from .check_signature import op_checksig, op_checkmultisig
+from .microcode import MICROCODE_LOOKUP, VCH_TRUE, VCH_FALSE
 from .tools import get_opcode, bin_script
 
 logger = logging.getLogger(__name__)
 
-VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split()))
+VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+    "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split())))
 
-INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split()))
-
-def parse_signature_blob(sig_blob):
-    sig_pair = der.sigdecode_der(sig_blob[:-1])
-    signature_type = ord(sig_blob[-1:])
-    return sig_pair, signature_type
+INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+    "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL "
+    "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
 
 
-def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stack=[], disallow_long_scripts=True):
+def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stack=[],
+                disallow_long_scripts=True):
     altstack = []
     if disallow_long_scripts and len(script) > 10000:
         return False
 
     pc = 0
     begin_code_hash = pc
-    if_condition = None # or True or False
-    op_count = 0
+    if_condition = None  # or True or False
     # TODO: set op_count
+    # op_count = 0
 
     try:
         while pc < len(script):
@@ -116,58 +113,17 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
                 raise ScriptError("%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode])
 
             if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
-                public_pair = sec_to_public_pair(stack.pop())
-                sig_pair, signature_type = parse_signature_blob(stack.pop())
-                if expected_hash_type not in (None, signature_type):
-                    raise ScriptError("wrong hash type")
-                signature_hash = signature_for_hash_type_f(signature_type, script)
-                if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair):
-                    stack.append(VCH_TRUE)
-                else:
-                    stack.append(VCH_FALSE)
+                # Subset of script starting at the most recent codeseparator
+                op_checksig(stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:])
                 if opcode == opcodes.OP_CHECKSIGVERIFY:
                     if stack.pop() != VCH_TRUE:
                         raise ScriptError("VERIFY failed at %d" % (pc-1))
                 continue
 
             if opcode == opcodes.OP_CHECKMULTISIG:
-                key_count = int_from_bytes(stack.pop())
-                public_pairs = []
-                for i in range(key_count):
-                    the_sec = stack.pop()
-                    try:
-                        public_pairs.append(sec_to_public_pair(the_sec))
-                    except EncodingError:
-                        # we must ignore badly encoded public pairs
-                        # the transaction 70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a
-                        # is in a block and requires this hack
-                        pass
-
-                signature_count = int_from_bytes(stack.pop())
-                sig_blobs = []
-                for i in range(signature_count):
-                    sig_blobs.append(stack.pop())
-
-                should_be_zero_bug = stack.pop()
-
-                sig_ok = VCH_TRUE
-                for sig_blob in sig_blobs:
-                    sig_pair, signature_type = parse_signature_blob(sig_blob)
-                    signature_hash = signature_for_hash_type_f(signature_type, script)
-
-                    ppp = ecdsa.possible_public_pairs_for_signature(
-                        ecdsa.generator_secp256k1, signature_hash, sig_pair)
-
-                    ppp.intersection_update(public_pairs)
-                    if len(ppp) == 0:
-                        sig_ok = VCH_FALSE
-                        break
-
-                    matching_pair = ppp.pop()
-                    idx = public_pairs.index(matching_pair)
-                    public_pairs = public_pairs[:idx] + public_pairs[idx+1:]
-
-                stack.append(sig_ok)
+                # Subset of script starting at the most recent codeseparator
+                op_checkmultisig(
+                    stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:])
                 continue
 
             # BRAIN DAMAGE -- does it always get down here for each verify op? I think not
@@ -178,16 +134,17 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
             logger.error("can't execute opcode %s", opcode)
 
-    except Exception as ex:
+    except Exception:
         logger.exception("script failed")
 
     return len(stack) != 0
+
 
 def verify_script(script_signature, script_public_key, signature_for_hash_type_f, expected_hash_type=None):
     stack = []
 
     is_p2h = (len(script_public_key) == 23 and byte_to_int(script_public_key[0]) == opcodes.OP_HASH160
-                and byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
+              and byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
 
     if not eval_script(script_signature, signature_for_hash_type_f, expected_hash_type, stack):
         logger.debug("script_signature did not evaluate")
@@ -205,4 +162,4 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         return verify_script(alt_script_signature, alt_script_public_key,
                              signature_for_hash_type_f, expected_hash_type=expected_hash_type)
 
-    return stack[-1] == VCH_TRUE
+    return stack[-1] != VCH_FALSE
