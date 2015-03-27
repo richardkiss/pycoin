@@ -67,6 +67,61 @@ def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script
         stack.append(VCH_FALSE)
 
 
+def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=False):
+    """
+    sig_blobs: signature blobs
+    public_pairs: a list of public pairs that might be valid
+    tmp_script: the script as of the last code separator
+    signature_for_hash_type_f: signature_for_hash_type_f
+    strict_checks: if True, we may exit early if one of the sig_blobs is incorrect or misplaced. Used
+                   for checking a supposedly validated transaction. A -1 indicates no match.
+
+    Returns a list of indices into public_pairs. If strict_checks is True, it may return early.
+    If strict_checks isn't long enough or contains a -1, the signature is not valid.
+    """
+
+    # Drop the signatures, since there's no way for a signature to sign itself
+    for sig_blob in sig_blobs:
+        tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
+
+    sig_cache = {}
+    sig_blob_indices = []
+    for sig_blob in sig_blobs:
+        public_pair_index = -1
+        try:
+            sig_pair, signature_type = parse_signature_blob(sig_blob)
+        except der.UnexpectedDER:
+            if strict_checks:
+                return sig_blob_indices
+
+        if signature_type not in sig_cache:
+            sig_cache[signature_type] = signature_for_hash_type_f(signature_type, script=tmp_script)
+
+        ppp = ecdsa.possible_public_pairs_for_signature(
+            ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
+
+        if len(ppp) > 0:
+            for idx, pp in enumerate(public_pairs):
+                if idx in sig_blob_indices:
+                    continue
+                if pp in ppp:
+                    sig_blob_indices.append(idx)
+                    break
+            else:
+                if strict_checks:
+                    return sig_blob_indices
+                sig_blob_indices.append(-1)
+
+            if len(sig_blob_indices) > 1 and strict_checks:
+                # look for signatures in the wrong order
+                if sig_blob_indices[-1] <= sig_blob_indices[-2]:
+                    return sig_blob_indices
+        else:
+            if strict_checks:
+                return sig_blob_indices
+    return sig_blob_indices
+
+
 def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script):
     key_count = int_from_bytes(stack.pop())
     public_pairs = []
@@ -93,33 +148,17 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
     # remove the 0 byte hack for pay to script hash
     stack.pop()
 
-    # Drop the signatures, since there's no way for a signature to sign itself
-    for sig_blob in sig_blobs:
-        tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
+    sig_blob_indices = sig_blob_matches(
+        sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=True)
 
-    sig_ok = VCH_TRUE
-    for sig_blob in sig_blobs:
-        try:
-            sig_pair, signature_type = parse_signature_blob(sig_blob)
-        except der.UnexpectedDER:
-            sig_ok = VCH_FALSE
-            break
-        signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
-
-        ppp = ecdsa.possible_public_pairs_for_signature(
-            ecdsa.generator_secp256k1, signature_hash, sig_pair)
-
-        ppp.intersection_update(public_pairs)
-        if len(ppp) == 0:
-            sig_ok = VCH_FALSE
-            break
-
-        matching_pair = ppp.pop()
-        idx = public_pairs.index(matching_pair)
-        # The exact order of pubkey/signature evaluation
-        # is important for consensus.  If someday it will
-        # no longer matter, just replace the line below with:
-        # public_pairs = public_pairs[:idx] + public_pairs[idx+1:]
-        public_pairs = public_pairs[idx+1:]
+    sig_ok = VCH_FALSE
+    if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):
+        # bitcoin requires the signatures to be in the same order as the public keys
+        # so let's make sure the indices are strictly increasing
+        for i in range(len(sig_blob_indices) - 1):
+            if sig_blob_indices[i] >= sig_blob_indices[i+1]:
+                break
+        else:
+            sig_ok = VCH_TRUE
 
     stack.append(sig_ok)
