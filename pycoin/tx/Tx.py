@@ -87,7 +87,14 @@ class Tx(object):
     @classmethod
     def tx_from_hex(class_, hex_string):
         """Return the Tx for the given hex string."""
-        return class_.parse(io.BytesIO(h2b(hex_string)))
+        f = io.BytesIO(h2b(hex_string))
+        tx = class_.parse(f)
+        try:
+            tx.parse_unspents(f)
+        except Exception:
+            # parsing unspents failed
+            tx.unspents = []
+        return tx
 
     def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[]):
         self.version = version
