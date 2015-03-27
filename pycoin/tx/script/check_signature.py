@@ -38,7 +38,7 @@ from .tools import bin_script, delete_subscript
 
 
 def parse_signature_blob(sig_blob):
-    sig_pair = der.sigdecode_der(sig_blob[:-1])
+    sig_pair = der.sigdecode_der(sig_blob[:-1], use_broken_open_ssl_mechanism=True)
     signature_type = ord(sig_blob[-1:])
     return sig_pair, signature_type
 
