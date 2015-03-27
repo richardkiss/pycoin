@@ -76,7 +76,7 @@ def remove_integer(string, use_broken_open_ssl_mechanism=False):
     numberbytes = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
     v = int(binascii.hexlify(numberbytes), 16)
-    if ord(numberbytes[0]) >= 0x80:
+    if ord(numberbytes[:1]) >= 0x80:
         if not use_broken_open_ssl_mechanism:
             v -= (1<<(8*length))
     return v, rest
