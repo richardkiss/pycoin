@@ -104,11 +104,11 @@ def subkey_secret_exponent_chain_code_pair(
     I_left_as_exponent = from_bytes_32(I64[:32])
     if I_left_as_exponent >= ORDER:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
-        raise ValueError('bad derviation: I_L >= {}'.format(ORDER))
+        raise ValueError('bad derivation: I_L >= {}'.format(ORDER))
     new_secret_exponent = (I_left_as_exponent + secret_exponent) % ORDER
     if new_secret_exponent == 0:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
-        raise ValueError('bad derviation: k_{} == 0'.format(i))
+        raise ValueError('bad derivation: k_{} == 0'.format(i))
     new_chain_code = I64[32:]
     return new_secret_exponent, new_chain_code
 
@@ -139,12 +139,12 @@ def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
         ecdsa.Point(ecdsa.generator_secp256k1.curve(), x, y, ORDER)
     if the_point == INFINITY:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
-        raise ValueError('bad derviation: K_{} == {}'.format(i, the_point))
+        raise ValueError('bad derivation: K_{} == {}'.format(i, the_point))
 
     I_left_as_exponent = from_bytes_32(I64[:32])
     if I_left_as_exponent >= ORDER:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
-        raise ValueError('bad derviation: I_L >= {}'.format(ORDER))
+        raise ValueError('bad derivation: I_L >= {}'.format(ORDER))
     new_public_pair = the_point.pair()
     new_chain_code = I64[32:]
     return new_public_pair, new_chain_code
