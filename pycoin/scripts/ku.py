@@ -215,13 +215,22 @@ def main():
         # force network arg to match override, but also will override decoded data below.
         args.network = args.override_network
 
+    def _create(_):
+        max_retries = 64
+        for _ in range(max_retries):
+            try:
+                return BIP32Node.from_master_secret(get_entropy(), netcode=args.network)
+            except ValueError as e:
+                continue
+        # Probably a bug if we get here
+        raise e
+
     PREFIX_TRANSFORMS = (
         ("P:", lambda s:
             BIP32Node.from_master_secret(s.encode("utf8"), netcode=args.network)),
         ("H:", lambda s:
             BIP32Node.from_master_secret(h2b(s), netcode=args.network)),
-        ("create", lambda s:
-            BIP32Node.from_master_secret(get_entropy(), netcode=args.network)),
+        ("create", _create),
     )
 
     for item in args.item:

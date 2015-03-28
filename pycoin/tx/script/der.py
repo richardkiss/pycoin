@@ -57,13 +57,16 @@ def encode_sequence(*encoded_pieces):
 
 def remove_sequence(string):
     if not string.startswith(b"\x30"):
-        raise UnexpectedDER("wanted sequence (0x30), got 0x%02x" %
-                            ord(string[:1]))
+        raise UnexpectedDER(
+            "wanted sequence (0x30), got string length %d %s" % (
+                len(string), binascii.hexlify(string[:10])))
     length, lengthlength = read_length(string[1:])
     endseq = 1+lengthlength+length
     return string[1+lengthlength:endseq], string[endseq:]
 
-def remove_integer(string):
+def remove_integer(string, use_broken_open_ssl_mechanism=False):
+    # OpenSSL treats DER-encoded negative integers (that have their most significant
+    # bit set) as positive integers. Some apps depend upon this bug.
     if not string.startswith(b"\x02"):
         raise UnexpectedDER("wanted integer (0x02), got 0x%02x" %
                             ord(string[:1]))
@@ -72,8 +75,11 @@ def remove_integer(string):
         raise UnexpectedDER("ran out of integer bytes")
     numberbytes = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
-    assert ord(numberbytes[:1]) < 0x80 # can't support negative numbers yet
-    return int(binascii.hexlify(numberbytes), 16), rest
+    v = int(binascii.hexlify(numberbytes), 16)
+    if ord(numberbytes[:1]) >= 0x80:
+        if not use_broken_open_ssl_mechanism:
+            v -= (1<<(8*length))
+    return v, rest
 
 def encode_length(l):
     assert l >= 0
@@ -101,13 +107,13 @@ def read_length(string):
 def sigencode_der(r, s):
     return encode_sequence(encode_integer(r), encode_integer(s))
 
-def sigdecode_der(sig_der):
+def sigdecode_der(sig_der, use_broken_open_ssl_mechanism=False):
     rs_strings, empty = remove_sequence(sig_der)
     if empty != b"":
         raise UnexpectedDER("trailing junk after DER sig: %s" %
                                 binascii.hexlify(empty))
-    r, rest = remove_integer(rs_strings)
-    s, empty = remove_integer(rest)
+    r, rest = remove_integer(rs_strings, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
+    s, empty = remove_integer(rest, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
     if empty != b"":
         raise UnexpectedDER("trailing junk after DER numbers: %s" %
                                 binascii.hexlify(empty))
