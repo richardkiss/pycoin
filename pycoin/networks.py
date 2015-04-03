@@ -27,7 +27,11 @@ NETWORKS = (
 
     # DOGE Dogecoin mainnet : dogv/dogp
     NetworkValues(
-        "Dogecoin", "mainnet", "DOGE", b'\x9e', b'\x1e', b'\x16', h2b("02fd3955"), h2b("02fd3929")),
+        "Dogecoin", "mainnet", "DOGE", b'\x9e', b'\x1e', b'\x16', h2b("02FD3955"), h2b("02FD3929")),
+    # DOGE Dogecoin testnet : tgpv/tgub
+    NetworkValues(
+        "Dogecoin", "testnet", "XDT", b'\xf1', b'\x71', b'\xc4', h2b("0432a9a8"), h2b("0432a243")),
+
 
     # BC BlackCoin mainnet : bcpv/bcpb
     NetworkValues("Blackcoin", "mainnet", "BC", b'\x99', b'\x19', None, h2b("02cfbf60"), h2b("02cfbede")),
