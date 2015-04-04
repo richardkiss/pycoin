@@ -178,11 +178,12 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
         sig_blobs.append(stack.pop())
 
     # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
-    # <COMMENTARY>I think this is too strict. MOST implementations have a
-    # zero byte as this stack item, but not all. The bug in the
-    # implementation doesn't really care what it is, just that it
-    # exsts. Enforcing that it must be b'\x00' may cause evaluation to
-    # fail for otherwise valid scripts.</COMMENTARY>
+    # <COMMENTARY>I think this is far too restrictive. Most
+    # implementations have a zero byte as the next stack item, but not
+    # all. The bug is such that implementations really shouldn't care what
+    # it is, just that it exsts. Also, enforcing that the ENTIRE stack
+    # must be [b'\x00'] may cause evaluation to fail for otherwise valid
+    # (but non-standard) scripts.</COMMENTARY>
     # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
     # check that we have the required hack 00 byte
     if stack != [b'\x00']:
