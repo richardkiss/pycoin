@@ -1,5 +1,5 @@
 from ..script import opcodes, tools
-from ..script.vm import parse_signature_blob
+from ..script.check_signature import parse_signature_blob
 from ..script.microcode import VCH_TRUE
 
 from ... import ecdsa

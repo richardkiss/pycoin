@@ -317,5 +317,11 @@ class PartialSignTest(TestCase):
 
 if __name__ == '__main__':
     import logging
+    import cProfile as profile
+    import unittest
     logging.basicConfig(level=logging.CRITICAL + 1)
+    suite = unittest.TestLoader().discover('.')
+    def runtests():
+        unittest.TextTestRunner().run(suite)
+    s = profile.run('runtests()', 'profile_results.original')
     main()
