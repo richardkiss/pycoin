@@ -67,59 +67,59 @@ def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script
         stack.append(VCH_FALSE)
 
 
-# def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=False):
-#     """
-#     sig_blobs: signature blobs
-#     public_pairs: a list of public pairs that might be valid
-#     tmp_script: the script as of the last code separator
-#     signature_for_hash_type_f: signature_for_hash_type_f
-#     strict_checks: if True, we may exit early if one of the sig_blobs is incorrect or misplaced. Used
-#                    for checking a supposedly validated transaction. A -1 indicates no match.
+def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=False):
+    """
+    sig_blobs: signature blobs
+    public_pairs: a list of public pairs that might be valid
+    tmp_script: the script as of the last code separator
+    signature_for_hash_type_f: signature_for_hash_type_f
+    strict_checks: if True, we may exit early if one of the sig_blobs is incorrect or misplaced. Used
+                   for checking a supposedly validated transaction. A -1 indicates no match.
 
-#     Returns a list of indices into public_pairs. If strict_checks is True, it may return early.
-#     If strict_checks isn't long enough or contains a -1, the signature is not valid.
-#     """
+    Returns a list of indices into public_pairs. If strict_checks is True, it may return early.
+    If strict_checks isn't long enough or contains a -1, the signature is not valid.
+    """
 
-#     # Drop the signatures, since there's no way for a signature to sign itself
-#     for sig_blob in sig_blobs:
-#         tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
+    # Drop the signatures, since there's no way for a signature to sign itself
+    for sig_blob in sig_blobs:
+        tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
 
-#     sig_cache = {}
-#     sig_blob_indices = []
-#     for sig_blob in sig_blobs:
-#         public_pair_index = -1
-#         try:
-#             sig_pair, signature_type = parse_signature_blob(sig_blob)
-#         except der.UnexpectedDER:
-#             if strict_checks:
-#                 return sig_blob_indices
+    sig_cache = {}
+    sig_blob_indices = []
+    for sig_blob in sig_blobs:
+        public_pair_index = -1
+        try:
+            sig_pair, signature_type = parse_signature_blob(sig_blob)
+        except der.UnexpectedDER:
+            if strict_checks:
+                return sig_blob_indices
 
-#         if signature_type not in sig_cache:
-#             sig_cache[signature_type] = signature_for_hash_type_f(signature_type, script=tmp_script)
+        if signature_type not in sig_cache:
+            sig_cache[signature_type] = signature_for_hash_type_f(signature_type, script=tmp_script)
 
-#         ppp = ecdsa.possible_public_pairs_for_signature(
-#             ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
+        ppp = ecdsa.possible_public_pairs_for_signature(
+            ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
 
-#         if len(ppp) > 0:
-#             for idx, pp in enumerate(public_pairs):
-#                 if idx in sig_blob_indices:
-#                     continue
-#                 if pp in ppp:
-#                     sig_blob_indices.append(idx)
-#                     break
-#             else:
-#                 if strict_checks:
-#                     return sig_blob_indices
-#                 sig_blob_indices.append(-1)
+        if len(ppp) > 0:
+            for idx, pp in enumerate(public_pairs):
+                if idx in sig_blob_indices:
+                    continue
+                if pp in ppp:
+                    sig_blob_indices.append(idx)
+                    break
+            else:
+                if strict_checks:
+                    return sig_blob_indices
+                sig_blob_indices.append(-1)
 
-#             if len(sig_blob_indices) > 1 and strict_checks:
-#                 # look for signatures in the wrong order
-#                 if sig_blob_indices[-1] <= sig_blob_indices[-2]:
-#                     return sig_blob_indices
-#         else:
-#             if strict_checks:
-#                 return sig_blob_indices
-#     return sig_blob_indices
+            if len(sig_blob_indices) > 1 and strict_checks:
+                # look for signatures in the wrong order
+                if sig_blob_indices[-1] <= sig_blob_indices[-2]:
+                    return sig_blob_indices
+        else:
+            if strict_checks:
+                return sig_blob_indices
+    return sig_blob_indices
 
 
 def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script):
