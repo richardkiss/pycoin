@@ -185,8 +185,8 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
     #     sig_blobs.append(stack.pop())
 
     # # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
-    # # <COMMENTARY>I think this is far too restrictive. Enforcing that the
-    # # ENTIRE stack must be [b'\x00'] may cause evaluation to fail for
+    # # <COMMENTARY>I think this is too restrictive. Enforcing that the
+    # # *entire* stack must be [b'\x00'] may cause evaluation to fail for
     # # otherwise valid (but non-standard) scripts. It's probably better to
     # # pop the top value and make sure it's equal to b'\x00' (see, e.g.,
     # # above).</COMMENTARY>
@@ -201,13 +201,13 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
 
     # # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
     # # <COMMENTARY>In an m-of-n situation, I *think* this approach ensures
-    # # that ecdsa.verify() is called at least n times. Where m is roughly
-    # # equal to n, this won't matter. But if m << n, then this may not be
-    # # very efficient. If ecdsa.verify() is called on a per-signature
-    # # basis, it will be called at least m times and at most
-    # # n. ecdsa.verify() has proven to be an expensive operation, so
-    # # minimizing calls to it seems to be an appropriate
-    # # optimization.</COMMENTARY>
+    # # that ecdsa.verify() is called at least 2m times (because of
+    # # ecdsa.possible_public_pairs_for_signature). Where 2m < n, this will
+    # # be more efficient, but for 2m >= n, then this will suffer. If
+    # # ecdsa.verify is called on a per-signature basis, it will be called
+    # # at least m times and at most n. ecdsa.verify() has proven to be an
+    # # expensive operation, so optimizing seems to be
+    # # appropriate.</COMMENTARY>
     # # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
     # sig_blob_indices = sig_blob_matches(
     #     sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=True)
