@@ -122,12 +122,19 @@ def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_typ
     return sig_blob_indices
 
 
-def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script):
+def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script, verify_null_dummy=True):
     pub_count = int_from_bytes(stack.pop())
     pub_secs = [stack.pop() for _ in range(pub_count)]
     sig_count = int_from_bytes(stack.pop())
     sig_blobs = [stack.pop() for _ in range(sig_count)]
-    _ = stack.pop() # extra stack item bug
+    extra_stack_item_bug = stack.pop()
+
+    # Previously, interpreters did not care what this value was; now (to
+    # avoid malleability) most enforce that it must be OP_0
+    if verify_null_dummy and extra_stack_item_bug != b'\x00':
+        stack.append(VCH_FALSE)
+        raise ScriptError("Dummy CHECKMULTISIG argument must be zero")
+
     k = s = 0
     match_found = True
     sig_hash_cache = {}
@@ -178,12 +185,11 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
     #     sig_blobs.append(stack.pop())
 
     # # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
-    # # <COMMENTARY>I think this is far too restrictive. Most
-    # # implementations have a zero byte as the next stack item, but not
-    # # all. The bug is such that implementations really shouldn't care what
-    # # it is, just that it exsts. Also, enforcing that the ENTIRE stack
-    # # must be [b'\x00'] may cause evaluation to fail for otherwise valid
-    # # (but non-standard) scripts.</COMMENTARY>
+    # # <COMMENTARY>I think this is far too restrictive. Enforcing that the
+    # # ENTIRE stack must be [b'\x00'] may cause evaluation to fail for
+    # # otherwise valid (but non-standard) scripts. It's probably better to
+    # # pop the top value and make sure it's equal to b'\x00' (see, e.g.,
+    # # above).</COMMENTARY>
     # # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
     # # check that we have the required hack 00 byte
     # if stack != [b'\x00']:

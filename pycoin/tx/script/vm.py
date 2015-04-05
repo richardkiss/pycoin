@@ -48,7 +48,7 @@ INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
 
 
 def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stack=[],
-                disallow_long_scripts=True):
+                disallow_long_scripts=True, verify_null_dummy=True):
     altstack = []
     if disallow_long_scripts and len(script) > 10000:
         return False
@@ -123,7 +123,8 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
             if opcode == opcodes.OP_CHECKMULTISIG:
                 # Subset of script starting at the most recent codeseparator
                 op_checkmultisig(
-                    stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:])
+                    stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:],
+                    verify_null_dummy)
                 continue
 
             # BRAIN DAMAGE -- does it always get down here for each verify op? I think not
