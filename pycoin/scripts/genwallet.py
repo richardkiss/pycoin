@@ -99,7 +99,7 @@ def main():
             print(full_network_name_for_netcode(wallet.netcode()))
             if wallet.is_private():
                 print("private key")
-                print("secret exponent: %d" % wallet.secret_exponent)
+                print("secret exponent: %d" % wallet.secret_exponent())
             else:
                 print("public key only")
             print("public pair x:   %d\npublic pair y:   %d" % wallet.public_pair())
@@ -110,7 +110,7 @@ def main():
             print("chain code:      %s" % b2h(wallet.chain_code()))
             if wallet.is_private():
                 print("WIF:             %s" % wallet.wif())
-                print("  uncompressed:  %s" % wallet.wif(compressed=False))
+                print("  uncompressed:  %s" % wallet.wif(use_uncompressed=True))
             print("Bitcoin address: %s" % wallet.bitcoin_address())
             print("  uncompressed:  %s" % wallet.bitcoin_address(use_uncompressed=True))
         elif args.address:
