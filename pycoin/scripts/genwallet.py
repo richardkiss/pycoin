@@ -96,23 +96,23 @@ def main():
             print(json.dumps(d, indent=3))
         elif args.info:
             print(wallet.wallet_key(as_private=wallet.is_private()))
-            print(full_network_name_for_netcode(wallet.netcode))
+            print(full_network_name_for_netcode(wallet.netcode()))
             if wallet.is_private():
                 print("private key")
                 print("secret exponent: %d" % wallet.secret_exponent)
             else:
                 print("public key only")
-            print("public pair x:   %d\npublic pair y:   %d" % wallet.public_pair)
-            print("tree depth:      %d" % wallet.depth)
+            print("public pair x:   %d\npublic pair y:   %d" % wallet.public_pair())
+            print("tree depth:      %d" % wallet.tree_depth())
             print("fingerprint:     %s" % b2h(wallet.fingerprint()))
-            print("parent f'print:  %s" % b2h(wallet.parent_fingerprint))
+            print("parent f'print:  %s" % b2h(wallet.parent_fingerprint()))
             print("child index:     %s" % child_index)
-            print("chain code:      %s" % b2h(wallet.chain_code))
+            print("chain code:      %s" % b2h(wallet.chain_code()))
             if wallet.is_private():
                 print("WIF:             %s" % wallet.wif())
                 print("  uncompressed:  %s" % wallet.wif(compressed=False))
             print("Bitcoin address: %s" % wallet.bitcoin_address())
-            print("  uncompressed:  %s" % wallet.bitcoin_address(compressed=False))
+            print("  uncompressed:  %s" % wallet.bitcoin_address(use_uncompressed=True))
         elif args.address:
             print(wallet.bitcoin_address(compressed=not args.uncompressed))
         elif args.wif:
