@@ -2,11 +2,12 @@
 
 import unittest
 
-from pycoin.ecdsa.ellipticcurve import Point
+from pycoin.ecdsa.ellipticcurve import Point, NoSuchPointError
 from pycoin.ecdsa.secp256k1 import generator_secp256k1
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node
+from pycoin.key.Key import InvalidPublicPairError, InvalidSecretExponentError
 from pycoin.key.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 from pycoin.networks import pay_to_script_prefix_for_netcode, NETWORK_NAMES
 
@@ -90,15 +91,8 @@ class KeyUtilsTest(unittest.TestCase):
         order = generator_secp256k1.order()
 
         for k in -1, 0, order, order + 1:
-            with self.assertRaises(ValueError) as cm:
-                Key(secret_exponent=k)
-            err = cm.exception
-            self.assertEqual(err.args[0], 'invalid secret exponent')
-
-            with self.assertRaises(ValueError) as cm:
-                BIP32Node(nc, cc, secret_exponent=k)
-            err = cm.exception
-            self.assertEqual(err.args[0], 'invalid secret exponent')
+            self.assertRaises(InvalidSecretExponentError, Key, secret_exponent=k)
+            self.assertRaises(InvalidSecretExponentError, BIP32Node, nc, cc, secret_exponent=k)
 
         for i in range(1, 512):
             Key(secret_exponent=i)
@@ -318,15 +312,8 @@ class KeyUtilsTest(unittest.TestCase):
             self.assertEqual(K.public_pair(), k.public_pair())
 
         x = y = 0
-        with self.assertRaises(ValueError) as cm:
-            Point(secp256k1_curve, x, y)
-        err = cm.exception
-        self.assertTrue(err.args[0].startswith('({},{}) is not on the curve '.format(x, y)))
-
-        with self.assertRaises(ValueError) as cm:
-            Key(public_pair=(0, 0))
-        err = cm.exception
-        self.assertEqual(err.args[0], 'invalid public pair')
+        self.assertRaises(NoSuchPointError, Point, secp256k1_curve, x, y)
+        self.assertRaises(InvalidPublicPairError, Key, public_pair=(0, 0))
 
 
     def test_repr(self):

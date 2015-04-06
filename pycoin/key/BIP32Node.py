@@ -51,10 +51,7 @@ from .validate import netcode_and_type_for_data
 from .Key import Key
 from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
 
-
-class PublicPrivateMismatchError(Exception):
-    pass
-
+class PublicPrivateMismatchError(Exception): pass
 
 class BIP32Node(Key):
     """
@@ -110,7 +107,7 @@ class BIP32Node(Key):
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)
 
         if not isinstance(chain_code, bytes):
-            raise ValueError("chain code must be bytes")
+            raise TypeError("chain code must be bytes")
         if len(chain_code) != 32:
             raise ValueError("chain code wrong length")
         self._netcode = netcode

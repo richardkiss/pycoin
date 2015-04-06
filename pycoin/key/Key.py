@@ -8,6 +8,10 @@ from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.serialize import b2h
 
 
+class InvalidPublicPairError(ValueError): pass
+class InvalidSecretExponentError(ValueError): pass
+
+
 class Key(object):
     def __init__(self, secret_exponent=None, public_pair=None, hash160=None,
                  prefer_uncompressed=None, is_compressed=True, is_pay_to_script=False, netcode='BTC'):
@@ -53,7 +57,7 @@ class Key(object):
         if self._public_pair is None and self._secret_exponent is not None:
             if self._secret_exponent < 1 \
                     or self._secret_exponent >= ecdsa.generator_secp256k1.order():
-                raise ValueError("invalid secret exponent")
+                raise InvalidSecretExponentError()
             public_pair = ecdsa.public_pair_for_secret_exponent(
                 ecdsa.generator_secp256k1, self._secret_exponent)
             self._public_pair = public_pair
@@ -61,7 +65,7 @@ class Key(object):
         if self._public_pair is not None \
                 and (None in self._public_pair \
                     or not ecdsa.is_public_pair_valid(ecdsa.generator_secp256k1, self._public_pair)):
-            raise ValueError("invalid public pair")
+            raise InvalidPublicPairError()
 
     @classmethod
     def from_text(class_, text, is_compressed=True):
