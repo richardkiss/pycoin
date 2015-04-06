@@ -34,6 +34,9 @@
 
 from . import numbertheory
 
+class NoSuchPointError(ValueError): pass
+
+
 class CurveFp( object ):
   """Elliptic Curve over the field of integers modulo a prime."""
   def __init__( self, p, a, b ):
@@ -73,7 +76,7 @@ class Point( object ):
     self.__order = order
     # self.curve is allowed to be None only for INFINITY:
     if self.__curve and not self.__curve.contains_point( x, y ):
-      raise ValueError('({},{}) is not on the curve {}'.format(x, y, curve))
+      raise NoSuchPointError('({},{}) is not on the curve {}'.format(x, y, curve))
     if order: assert self * order == INFINITY
  
   def __eq__( self, other ):
