@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -13,7 +14,7 @@ Version:  1  tx hash 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c
 TxIn count: 1; TxOut count: 1
 Lock time: 0 (valid anytime)
 Input:
-  0:                          (unknown) from 1e133f7de73ac7d074e2746a3d6717dfc99ecaa8e9f9fade2cb8b0b20a5e0441:0
+  0:                          (unknown) from 1e133f7de73ac7d074e2746a3d6717dfc99ecaa8e9f9fade2cb8b0b20a5e0441:0   
 Output:
   0: 1CZDM6oTttND6WPdt3D6bydo7DYKzd9Qik receives 10000000.00000 mBTC
 Total output 10000000.00000 mBTC
@@ -61,7 +62,7 @@ Version:  1  tx hash 3d36aed60ecb311a55a6329f5c2af785f06e147fc35b7678eb798eca7f6
 TxIn count: 1; TxOut count: 1
 Lock time: 0 (valid anytime)
 Input:
-  0: 12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX from 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0  50000.00000 mBTC  BAD SIG
+  0: 12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX from 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0     50000.00000 mBTC  BAD SIG
 Output:
   0: 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T receives  49999.90000 mBTC
 Total input   50000.00000 mBTC
@@ -102,7 +103,7 @@ Version:  1  tx hash ab963a39df0e095bbd76840de90fe208e903d5d43e891ef245b217dbcd2
 TxIn count: 1; TxOut count: 1
 Lock time: 0 (valid anytime)
 Input:
-  0: 1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm from d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a:1    123.45678 mBTC  BAD SIG
+  0: 1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm from d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a:1       123.45678 mBTC  BAD SIG
 Output:
   0: 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T receives    123.35678 mBTC
 Total input     123.45678 mBTC
@@ -124,7 +125,7 @@ Version:  1  tx hash 0995cf6f55e1cf22f7c31f5ad52d111e897b0b9b7e37a1bb755a470324b
 TxIn count: 1; TxOut count: 1
 Lock time: 0 (valid anytime)
 Input:
-  0: 1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm from d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a:1    123.45678 mBTC  sig ok
+  0: 1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm from d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a:1       123.45678 mBTC  sig ok
 Output:
   0: 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T receives    123.35678 mBTC
 Total input     123.45678 mBTC
@@ -155,12 +156,14 @@ class CmdTxTest(unittest.TestCase):
         os.chdir(cache_dir)
         env = dict(PYCOIN_CACHE_DIR=cache_dir)
         for cmd, expected_output in TEST_CASES:
+            expected_output_filtered = re.sub(r'\s+', ' ', expected_output.strip(), flags=re.MULTILINE)
             actual_output = self.launch_tool(cmd, env=env)
-            if actual_output != expected_output:
+            actual_output_filtered = re.sub(r'\s+', ' ', actual_output.strip(), flags=re.MULTILINE)
+            if actual_output_filtered != expected_output_filtered:
                 print(repr(cmd))
                 print(repr(actual_output))
                 print(repr(expected_output))
-            self.assertEqual(expected_output, actual_output)
+            self.assertEqual(expected_output_filtered, actual_output_filtered)
 
 
 def main():
