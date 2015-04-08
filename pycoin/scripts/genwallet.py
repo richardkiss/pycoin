@@ -114,7 +114,7 @@ def main():
             print("Bitcoin address: %s" % wallet.bitcoin_address())
             print("  uncompressed:  %s" % wallet.bitcoin_address(compressed=False))
         elif args.address:
-            print(wallet.bitcoin_address(compressed=not args.uncompressed))
+            print(wallet.bitcoin_address(use_uncompressed=args.uncompressed))
         elif args.wif:
             print(wallet.wif(compressed=not args.uncompressed))
         else:
