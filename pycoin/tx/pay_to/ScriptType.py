@@ -59,6 +59,10 @@ class ScriptType(object):
                 if len(data1) != 160/8:
                     break
                 r["PUBKEYHASH_LIST"].append(data1)
+            elif opcode2 == opcodes.OP_NULLDATA:
+                if not (0 < len(data1) <= 40):
+                    break
+                r["NULLDATA_LIST"].append(data1)
             elif (opcode1, data1) != (opcode2, data2):
                 break
         raise ValueError("script doesn't match")
