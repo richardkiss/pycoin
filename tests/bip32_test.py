@@ -142,6 +142,22 @@ class Bip0032TestCase(unittest.TestCase):
         uag = my_prv.subkey(i=0, is_hardened=True, as_private=True)
         self.assertEqual(None, uag.subkey(i=0, as_private=False).secret_exponent())
 
+        with self.assertRaises(ValueError) as cm:
+            my_prv.subkey(i=-1)
+
+        err = cm.exception
+        self.assertEqual(err.message, "i can't be negative")
+
+        for p in ( '-1', '0/-1', '0H/-1' ):
+            with self.assertRaises(ValueError) as cm:
+                my_prv.subkey_for_path(p)
+
+            err = cm.exception
+            self.assertEqual(err.message, "i can't be negative")
+
+        self.assertRaises(ValueError, list, my_prv.subkeys('-1'))
+        self.assertRaises(ValueError, list, my_prv.subkeys('-1-0'))
+
     def test_repr(self):
         from pycoin.key import Key
         netcode = 'XTN'

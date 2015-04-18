@@ -169,28 +169,13 @@ class BIP32Node(Key):
                               child_index=self._child_index, public_pair=self.public_pair())
 
     def _subkey(self, i, is_hardened, as_private):
-        """Yield a child node for this node.
-
-        i: the index for this node.
-        is_hardened: use "hardened key derivation". That is, the public version
-            of this node cannot calculate this child.
-        as_private: set to True to get a private subkey.
-
-        Note that setting i<0 uses private key derivation, no matter the
-        value for is_hardened."""
-        if i > 0xffffffff:
-            raise ValueError("i is too big: %d" % i)
         if i < 0:
             raise ValueError("i can't be negative")
-            is_hardened = True
-            i = -i
+        if i >= 0x80000000:
+            raise ValueError("subkey index 0x%x too large" % i)
+        i &= 0x7fffffff
+        if is_hardened:
             i |= 0x80000000
-        else:
-            if i >= 0x80000000:
-                raise ValueError("subkey index 0x%x too large" % i)
-            i &= 0x7fffffff
-            if is_hardened:
-                i |= 0x80000000
 
         d = dict(netcode=self._netcode, depth=self._depth+1,
                  parent_fingerprint=self.fingerprint(), child_index=i)
@@ -216,6 +201,12 @@ class BIP32Node(Key):
         return "<%s>" % r
 
     def subkey(self, i=0, is_hardened=False, as_private=None):
+        """Yield a child node for this node.
+
+        i: the index for this node.
+        is_hardened: use "hardened key derivation". That is, the public version
+            of this node cannot calculate this child.
+        as_private: set to True to get a private subkey."""
         if as_private is None:
             as_private = self.secret_exponent() is not None
         is_hardened = not not is_hardened
@@ -227,17 +218,16 @@ class BIP32Node(Key):
 
     def subkey_for_path(self, path):
         """
-        path: a path of subkeys denoted by numbers and slashes. Use
-            H or i<0 for private key derivation. End with .pub to force
-            the key public.
+        path: a path of subkeys denoted by numbers and slashes. Use H or p
+            for private key derivation. End with .pub to force the key
+            public.
 
-        Examples:
-            1H/-5/2/1 would call subkey(i=1, is_hardened=True).subkey(i=-5).
-                subkey(i=2).subkey(i=1) and then yield the private key
-            0/0/458.pub would call subkey(i=0).subkey(i=0).subkey(i=458) and
-                then yield the public key
+        Examples: 1H/5/2/1 would call subkey(i=1, is_hardened=True)
+            .subkey(i=5).subkey(i=2).subkey(i=1) and then yield the
+            private key 0/0/458.pub would call subkey(i=0).subkey(i=0)
+            .subkey(i=458) and then yield the public key
 
-        You should choose one of the p or the negative number convention for private key
+        You should choose one of the H or p convention for private key
         derivation and stick with it.
         """
         force_public = (path[-4:] == '.pub')
