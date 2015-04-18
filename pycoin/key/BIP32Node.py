@@ -45,7 +45,7 @@ import itertools
 import struct
 
 from ..encoding import a2b_hashed_base58, b2a_hashed_base58, from_bytes_32, to_bytes_32
-from ..encoding import sec_to_public_pair, to_bytes_32, public_pair_to_hash160_sec, EncodingError
+from ..encoding import sec_to_public_pair, public_pair_to_hash160_sec, EncodingError
 from ..networks import prv32_prefix_for_netcode, pub32_prefix_for_netcode
 from .validate import netcode_and_type_for_data
 from .Key import Key
@@ -178,19 +178,17 @@ class BIP32Node(Key):
 
         Note that setting i<0 uses private key derivation, no matter the
         value for is_hardened."""
-        if i > 0xffffffff:
-            raise ValueError("i is too big: %d" % i)
+        if i >= 0x80000000:
+            raise ValueError("subkey index 0x%x too large" % i)
+        if i <= -0x80000000:
+            raise ValueError("subkey index 0x%x too small" % i)
+
         if i < 0:
-            raise ValueError("i can't be negative")
-            is_hardened = True
             i = -i
+            is_hardened = True
+
+        if is_hardened:
             i |= 0x80000000
-        else:
-            if i >= 0x80000000:
-                raise ValueError("subkey index 0x%x too large" % i)
-            i &= 0x7fffffff
-            if is_hardened:
-                i |= 0x80000000
 
         d = dict(netcode=self._netcode, depth=self._depth+1,
                  parent_fingerprint=self.fingerprint(), child_index=i)

@@ -142,6 +142,14 @@ class Bip0032TestCase(unittest.TestCase):
         uag = my_prv.subkey(i=0, is_hardened=True, as_private=True)
         self.assertEqual(None, uag.subkey(i=0, as_private=False).secret_exponent())
 
+    def test_hardened_subkey_negative_i(self):
+        my_prv = BIP32Node.from_master_secret(b"I'm a lumberjack, and I'm okay. I sleep all night, and I work all day.")
+
+        for i in range(1, 128):
+            m_ip = my_prv.subkey(i=i, is_hardened=True, as_private=True)
+            m_neg_i = my_prv.subkey(i=-i, as_private=True)
+            self.assertEqual(m_ip.wallet_key(as_private=True), m_neg_i.wallet_key(as_private=True))
+
     def test_repr(self):
         from pycoin.key import Key
         netcode = 'XTN'
