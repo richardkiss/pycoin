@@ -113,13 +113,17 @@ class Tx(object):
             t.stream(f)
         stream_struct("L", f, self.lock_time)
 
-    def as_hex(self, include_unspents=False):
-        """Return the transaction as hex."""
+    def as_bin(self, include_unspents=False):
+        """Return the transaction as binary."""
         f = io.BytesIO()
         self.stream(f)
         if include_unspents and not self.missing_unspents():
             self.stream_unspents(f)
-        return b2h(f.getvalue())
+        return f.getvalue()
+
+    def as_hex(self, include_unspents=False):
+        """Return the transaction as hex."""
+        return b2h(self.as_bin(include_unspents=include_unspents))
 
     def hash(self, hash_type=None):
         """Return the hash for this Tx object."""
