@@ -32,10 +32,16 @@ def balance_for_address(bitcoin_address, confidence=1):
     if confidence != 1:
         raise Exception("biteasy only shows confirmed transactions")
 
-    json_response = fetch_json("addresses/%s" % bitcoin_address)
-    if json_response.get("status") == 404:
-        # Assume this is an unused address:
-        return [0, 0, 0]
+    try:
+        json_response = fetch_json("addresses/%s" % bitcoin_address)
+    except Exception as e:
+        if e.code == 404:
+            # TODO: Can we distinguish between malformed requets and
+            # unused addresses?
+            # Assume this is an unused address:
+            return [0, 0, 0]
+        else:
+            raise
 
     payload = json_response.get("data", {})
     return [
