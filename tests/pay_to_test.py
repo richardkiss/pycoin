@@ -8,7 +8,7 @@ from pycoin.serialize import h2b
 from pycoin.tx import Tx, TxIn, TxOut, SIGHASH_ALL, tx_utils
 from pycoin.tx.TxOut import standard_tx_out_script
 
-from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey
+from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata
 from pycoin.tx.pay_to import address_for_pay_to_script, build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx.pay_to import script_obj_from_address, script_obj_from_script
 
@@ -156,6 +156,15 @@ class ScriptTypesTest(unittest.TestCase):
         # this is from tx 12a8d1d62d12307eac6e62f2f14d7e826604e53c320a154593845aa7c8e59fbf
         st = script_obj_from_script(b'Q')
         self.assertNotEqual(st, None)
+
+    def test_nulldata(self):
+        sample = b'test'
+        sample_script = b'\x6a\x04' + sample
+        nd = ScriptNulldata(sample)
+        self.assertEqual(nd.nulldata, sample)
+        self.assertEqual(nd.script(), sample_script)
+        nd2 = ScriptNulldata.from_script(sample_script)
+        self.assertEqual(nd.nulldata, nd2.nulldata)
 
 if __name__ == "__main__":
     unittest.main()
