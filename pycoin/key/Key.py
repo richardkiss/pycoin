@@ -130,7 +130,7 @@ class Key(object):
         Return a pair of integers representing the public key (or None).
         """
         return self._public_pair
-    
+
     def netcode(self):
         """
         Return the netcode
