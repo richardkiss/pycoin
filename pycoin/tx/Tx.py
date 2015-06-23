@@ -215,7 +215,7 @@ class Tx(object):
         tmp_tx = Tx(self.version, txs_in, txs_out, self.lock_time)
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
-    def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
+    def solve(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
         """
         Sign a standard transaction.
         hash160_lookup:
@@ -258,7 +258,10 @@ class Tx(object):
         solution = the_script.solve(
             hash160_lookup=hash160_lookup, sign_value=sign_value, signature_type=hash_type,
             existing_script=self.txs_in[tx_in_idx].script, **kwargs)
-        tx_in.script = solution
+        return solution
+
+    def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
+        self.txs_in[tx_in_idx].script = self.solve(hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs)
 
     def verify_tx_in(self, tx_in_idx, tx_out_script, expected_hash_type=None):
         tx_in = self.txs_in[tx_in_idx]
