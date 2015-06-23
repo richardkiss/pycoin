@@ -21,10 +21,14 @@ from pycoin.serialize import b2h_rev, h2b, h2b_rev, stream_to_bytes
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_get_tx_env, message_about_spendables_for_address_env
-from pycoin.tx import Spendable, Tx, TxOut
+from pycoin.tx import Spendable, Tx, TxOut, \
+    SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
 from pycoin.tx.Tx import BadSpendableError
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.tx.TxOut import standard_tx_out_script
+from pycoin.tx.script.tools import opcode_list
+from pycoin.tx.script.check_signature import parse_signature_blob
+from pycoin.tx.script.der import UnexpectedDER
 
 DEFAULT_VERSION = 1
 DEFAULT_LOCK_TIME = 0
@@ -42,7 +46,23 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
         print("warning: can't talk to bitcoind due to missing library")
 
 
-def dump_tx(tx, netcode='BTC'):
+def sighash_type_to_string(sighash_type):
+    anyonecanpay = sighash_type & SIGHASH_ANYONECANPAY
+    sighash_type &= ~SIGHASH_ANYONECANPAY
+    if sighash_type == SIGHASH_ALL:
+        sighash_str = 'SIGHASH_ALL'
+    elif sighash_type == SIGHASH_NONE:
+        sighash_str = 'SIGHASH_NONE'
+    elif sighash_type == SIGHASH_SINGLE:
+        sighash_str = 'SIGHASH_SINGLE'
+    else:
+        sighash_str = 'SIGHASH_UNKNOWN'
+    if anyonecanpay:
+        sighash_str += ' | SIGHASH_ANYONECANPAY'
+    return sighash_str
+
+
+def dump_tx(tx, netcode='BTC', verbose_signature=False):
     address_prefix = address_prefix_for_netcode(netcode)
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes   " % (tx.version, tx.id(), len(tx_bin)))
@@ -63,6 +83,7 @@ def dump_tx(tx, netcode='BTC'):
         else:
             suffix = ""
             if tx.missing_unspent(idx):
+                tx_out = None
                 address = tx_in.bitcoin_address(address_prefix=address_prefix)
             else:
                 tx_out = tx.unspents[idx]
@@ -72,6 +93,27 @@ def dump_tx(tx, netcode='BTC'):
             t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
                                               tx_in.previous_index, suffix)
             print(t.rstrip())
+            if verbose_signature:
+                signatures = []
+                for opcode in opcode_list(tx_in.script):
+                    if not opcode.startswith("OP_"):
+                        try:
+                            signatures.append(parse_signature_blob(h2b(opcode)))
+                        except UnexpectedDER:
+                            pass
+                if signatures:
+                    sig_types_identical = (zip(*signatures)[1]).count(signatures[0][1]) == len(signatures)
+                    i = 1 if len(signatures) > 1 else ''
+                    for sig_pair, sig_type in signatures:
+                        print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
+                        if not sig_types_identical and tx_out:
+                            print("      z{}: {:#x} {}".format(i, tx.signature_hash(tx_out.script, idx, sig_type),
+                                                               sighash_type_to_string(sig_type)))
+                        if i: i += 1
+                    if sig_types_identical and tx_out:
+                        print("      z:{} {:#x} {}".format(' ' if i else '', tx.signature_hash(tx_out.script, idx, sig_type),
+                                                           sighash_type_to_string(sig_type)))
+
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.txs_out):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
@@ -151,6 +193,9 @@ def main():
     parser.add_argument('-a', "--augment", action='store_true',
                         help='augment tx by adding any missing spendable metadata by fetching'
                              ' inputs from cache and/or web services')
+
+    parser.add_argument('-s', "--verbose-signature", action='store_true',
+                        help='Display technical signature details.')
 
     parser.add_argument("-i", "--fetch-spendables", metavar="address", action="append",
                         help='Add all unspent spendables for the given bitcoin address. This information'
@@ -471,7 +516,7 @@ def main():
     else:
         if not tx.missing_unspents():
             check_fees(tx)
-        dump_tx(tx, args.network)
+        dump_tx(tx, args.network, args.verbose_signature)
         if include_unspents:
             print("including unspents in hex dump since transaction not fully signed")
         print(tx_as_hex)
