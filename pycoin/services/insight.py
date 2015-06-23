@@ -22,8 +22,6 @@ from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
 from pycoin.tx.script import tools
 from pycoin.tx import Spendable, Tx, TxIn, TxOut
 
-logger = logging.getLogger(__name__)
-
 
 class InsightService(object):
     def __init__(self, base_url):
@@ -96,7 +94,6 @@ class InsightService(object):
         return spendables
 
     def send_tx(self, tx):
-        # TODO: make this handle errors better
         s = io.BytesIO()
         tx.stream(s)
         tx_as_hex = b2h(s.getvalue())
@@ -105,9 +102,10 @@ class InsightService(object):
         try:
             d = urlopen(URL, data=data).read()
             return d
-        except HTTPError as ex:
-            logger.exception("problem in send_tx %s", tx.id())
-            raise ex
+        except HTTPError as err:
+            if err.code == 400:
+                raise ValueError(err.readline())
+            raise err
 
 
 def tx_from_json_dict(r):
