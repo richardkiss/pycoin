@@ -25,6 +25,11 @@ NETWORKS = (
     # VIA viacoin testnet : tprv/tpub
     NetworkValues("Viacoin", "testnet", "TVI", b'\xff', b'\x7f', b'\xc4', h2b('04358394'), h2b('043587CF')),
 
+    # FTC feathercoin mainnet : xprv/xpub
+    NetworkValues("Feathercoin", "mainnet", "FTC", b'\x8e', b'\x0e', b'\x60', h2b('0488ADE4'), h2b('0488B21E')),
+    # FTC feathercoin testnet : tprv/tpub
+    NetworkValues("Feathercoin", "testnet", "FTX", b'\xC1', b'\x41', b'\xc4', h2b('04358394'), h2b('043587CF')),
+
     # DOGE Dogecoin mainnet : dogv/dogp
     NetworkValues(
         "Dogecoin", "mainnet", "DOGE", b'\x9e', b'\x1e', b'\x16', h2b("02FD3955"), h2b("02FD3929")),
