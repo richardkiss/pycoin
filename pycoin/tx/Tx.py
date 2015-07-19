@@ -38,15 +38,10 @@ from .TxOut import TxOut
 from .Spendable import Spendable
 
 from .pay_to import script_obj_from_script, SolvingError, ScriptPayToScript
+from .pay_to.ScriptType import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
 
 from .script import opcodes
 from .script import tools
-
-
-SIGHASH_ALL = 1
-SIGHASH_NONE = 2
-SIGHASH_SINGLE = 3
-SIGHASH_ANYONECANPAY = 0x80
 
 
 class ValidationFailureError(Exception):

@@ -5,12 +5,37 @@ from pycoin import ecdsa
 from ..script import der, opcodes, tools
 
 
+SIGHASH_ALL = 1
+SIGHASH_NONE = 2
+SIGHASH_SINGLE = 3
+SIGHASH_ANYONECANPAY = 0x80
+
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 
 
 class ScriptType(object):
+    def _mk_dummy_signatures(): # pylint: disable=no-method-argument
+        dummy_signatures = {}
+
+        for signature_type in (
+                    SIGHASH_ALL,
+                    SIGHASH_NONE,
+                    SIGHASH_SINGLE,
+                    SIGHASH_ALL | SIGHASH_ANYONECANPAY,
+                    SIGHASH_NONE | SIGHASH_ANYONECANPAY,
+                    SIGHASH_SINGLE | SIGHASH_ANYONECANPAY,
+                ):
+            order = ecdsa.generator_secp256k1.order()
+            r, s = order - 1, order // 2
+            dummy_signatures[signature_type] =  der.sigencode_der(r, s) + bytes_from_int(signature_type)
+
+            return dummy_signatures, set(dummy_signatures.values())
+
+    DUMMY_SIGNATURES_BY_TYPE, DUMMY_SIGNATURES = _mk_dummy_signatures()
+    del _mk_dummy_signatures
+
     def __init__(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @classmethod
     def subclasses(cls, skip_self=True):
@@ -74,11 +99,6 @@ class ScriptType(object):
             s = order - s
         return der.sigencode_der(r, s) + bytes_from_int(signature_type)
 
-    def _dummy_signature(self, signature_type):
-        order = ecdsa.generator_secp256k1.order()
-        r, s = order - 1, order // 2
-        return der.sigencode_der(r, s) + bytes_from_int(signature_type)
-
     def address(self, netcode='BTC'):
         return self.info()["address"]
 
@@ -86,4 +106,4 @@ class ScriptType(object):
         """
         The kwargs required depend upon the script type.
         """
-        raise NotImplemented()
+        raise NotImplementedError()

@@ -122,43 +122,106 @@ def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_typ
     return sig_blob_indices
 
 
-def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script):
-    key_count = int_from_bytes(stack.pop())
-    public_pairs = []
-    for i in range(key_count):
-        the_sec = stack.pop()
+def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script, verify_null_dummy=True):
+    pub_count = int_from_bytes(stack.pop())
+    pub_secs = [stack.pop() for _ in range(pub_count)]
+    sig_count = int_from_bytes(stack.pop())
+    sig_blobs = [stack.pop() for _ in range(sig_count)]
+    extra_stack_item_bug = stack.pop()
+
+    # Previously, interpreters did not care what this value was; now (to
+    # avoid malleability) most enforce that it must be OP_0
+    if verify_null_dummy and extra_stack_item_bug != b'\x00':
+        stack.append(VCH_FALSE)
+        raise ScriptError("Dummy CHECKMULTISIG argument must be zero")
+
+    k = s = 0
+    match_found = True
+    sig_hash_cache = {}
+    sig_ok = VCH_TRUE
+
+    while s < sig_count and (sig_count - s <= pub_count - k):
         try:
-            public_pairs.append(sec_to_public_pair(the_sec))
+            pub_pair = sec_to_public_pair(pub_secs[k])
         except EncodingError:
             # we must ignore badly encoded public pairs
             # the transaction 70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a
             # is in a block and requires this hack
-            pass
-
-    signature_count = int_from_bytes(stack.pop())
-    sig_blobs = []
-    for i in range(signature_count):
-        sig_blobs.append(stack.pop())
-
-    # check that we have the required hack 00 byte
-    if stack != [b'\x00']:
-        stack.append(VCH_FALSE)
-        return
-
-    # remove the 0 byte hack for pay to script hash
-    stack.pop()
-
-    sig_blob_indices = sig_blob_matches(
-        sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=True)
-
-    sig_ok = VCH_FALSE
-    if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):
-        # bitcoin requires the signatures to be in the same order as the public keys
-        # so let's make sure the indices are strictly increasing
-        for i in range(len(sig_blob_indices) - 1):
-            if sig_blob_indices[i] >= sig_blob_indices[i+1]:
-                break
+            k += 1
+            continue
         else:
-            sig_ok = VCH_TRUE
+            k += 1
+        if match_found:
+            sig_pair, sig_type = parse_signature_blob(sig_blobs[s])
+            try:
+                sig_hash = sig_hash_cache[(sig_type, tmp_script)]
+            except KeyError:
+                sig_hash = sig_hash_cache[(sig_type, tmp_script)] = signature_for_hash_type_f(sig_type, tmp_script)
+        match_found = ecdsa.verify(ecdsa.generator_secp256k1, pub_pair, sig_hash, sig_pair)
+        if match_found:
+            s += 1
 
+    if s < sig_count:
+        sig_ok = VCH_FALSE
     stack.append(sig_ok)
+
+    #---- BEGIN PRIOR IMPLEMENTATION ----
+
+    # key_count = int_from_bytes(stack.pop())
+    # public_pairs = []
+    # for i in range(key_count):
+    #     the_sec = stack.pop()
+    #     try:
+    #         public_pairs.append(sec_to_public_pair(the_sec))
+    #     except EncodingError:
+    #         # we must ignore badly encoded public pairs
+    #         # the transaction 70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a
+    #         # is in a block and requires this hack
+    #         pass
+
+    # signature_count = int_from_bytes(stack.pop())
+    # sig_blobs = []
+    # for i in range(signature_count):
+    #     sig_blobs.append(stack.pop())
+
+    # # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
+    # # <COMMENTARY>I think this is too restrictive. Enforcing that the
+    # # *entire* stack must be [b'\x00'] may cause evaluation to fail for
+    # # otherwise valid (but non-standard) scripts. It's probably better to
+    # # pop the top value and make sure it's equal to b'\x00' (see, e.g.,
+    # # above).</COMMENTARY>
+    # # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
+    # # check that we have the required hack 00 byte
+    # if stack != [b'\x00']:
+    #     stack.append(VCH_FALSE)
+    #     return
+
+    # # remove the 0 byte hack for pay to script hash
+    # stack.pop()
+
+    # # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
+    # # <COMMENTARY>In an m-of-n situation, I *think* this approach ensures
+    # # that ecdsa.verify() is called at least 2m times (because of
+    # # ecdsa.possible_public_pairs_for_signature). Where 2m < n, this will
+    # # be more efficient, but for 2m >= n, then this will suffer. If
+    # # ecdsa.verify is called on a per-signature basis, it will be called
+    # # at least m times and at most n. ecdsa.verify() has proven to be an
+    # # expensive operation, so optimizing seems to be
+    # # appropriate.</COMMENTARY>
+    # # - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - =
+    # sig_blob_indices = sig_blob_matches(
+    #     sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=True)
+
+    # sig_ok = VCH_FALSE
+    # if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):
+    #     # bitcoin requires the signatures to be in the same order as the public keys
+    #     # so let's make sure the indices are strictly increasing
+    #     for i in range(len(sig_blob_indices) - 1):
+    #         if sig_blob_indices[i] >= sig_blob_indices[i+1]:
+    #             break
+    #     else:
+    #         sig_ok = VCH_TRUE
+
+    # stack.append(sig_ok)
+
+    #----- END PRIOR IMPLEMENTATION -----

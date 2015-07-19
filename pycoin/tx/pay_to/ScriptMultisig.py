@@ -86,50 +86,49 @@ class ScriptMultisig(ScriptType):
         sign_value = kwargs.get("sign_value")
         signature_type = kwargs.get("signature_type")
 
-        dummy_fill = kwargs.get("dummy_fill", True)
-
-        secs_solved = set()
-        existing_signatures = []
+        existing_signatures = {}
         existing_script = kwargs.get("existing_script")
         if existing_script:
             pc = 0
-            opcode, data, pc = tools.get_opcode(existing_script, pc)
             # ignore the first opcode
+            opcode, data, pc = tools.get_opcode(existing_script, pc)
             while pc < len(existing_script):
                 opcode, data, pc = tools.get_opcode(existing_script, pc)
+                if data in ScriptType.DUMMY_SIGNATURES:
+                    continue
                 sig_pair, actual_signature_type = parse_signature_blob(data)
                 for sec_key in self.sec_keys:
                     try:
                         public_pair = encoding.sec_to_public_pair(sec_key)
-                        sig_pair, signature_type = parse_signature_blob(data)
-                        v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
-                        if v:
-                            existing_signatures.append(data)
-                            secs_solved.add(sec_key)
-                            break
                     except encoding.EncodingError:
                         # if public_pair is invalid, we just ignore it
                         pass
+                    else:
+                        sig_pair, signature_type = parse_signature_blob(data)
+                        v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
+                        if v:
+                            existing_signatures[sec_key] = data
+                            break
 
+        ordered_signatures = []
         for sec_key in self.sec_keys:
-            if sec_key in secs_solved:
-                continue
-            if len(existing_signatures) >= self.n:
+            if len(ordered_signatures) >= self.n:
                 break
+            if sec_key in existing_signatures:
+                ordered_signatures.append(existing_signatures[sec_key])
+                continue
             hash160 = encoding.hash160(sec_key)
             result = db.get(hash160)
             if result is None:
                 continue
             secret_exponent, public_pair, compressed = result
             binary_signature = self._create_script_signature(secret_exponent, sign_value, signature_type)
-            existing_signatures.append(binary_signature)
+            ordered_signatures.append(binary_signature)
+        DUMMY_SIGNATURE = ScriptType.DUMMY_SIGNATURES_BY_TYPE[signature_type]
+        while len(ordered_signatures) < self.n:
+            ordered_signatures.append(DUMMY_SIGNATURE)
 
-        if dummy_fill:
-            DUMMY_SIGNATURE = self._dummy_signature(signature_type)
-            while len(existing_signatures) < self.n:
-                existing_signatures.append(DUMMY_SIGNATURE)
-
-        script = "OP_0 %s" % " ".join(b2h(s) for s in existing_signatures)
+        script = "OP_0 %s" % " ".join(b2h(s) for s in ordered_signatures[:self.n])
         solution = tools.compile(script)
         return solution
 
