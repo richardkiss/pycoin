@@ -93,11 +93,13 @@ class ScriptMultisig(ScriptType):
         existing_script = kwargs.get("existing_script")
         if existing_script:
             pc = 0
+            seen = 0
             opcode, data, pc = tools.get_opcode(existing_script, pc)
             # ignore the first opcode
-            while pc < len(existing_script):
+            while pc < len(existing_script) and seen < self.n:
                 opcode, data, pc = tools.get_opcode(existing_script, pc)
                 sig_pair, actual_signature_type = parse_signature_blob(data)
+                seen += 1
                 for sec_key in self.sec_keys:
                     try:
                         public_pair = encoding.sec_to_public_pair(sec_key)
