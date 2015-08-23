@@ -139,8 +139,8 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertEqual(tx2.bad_signature_count(), 0)
 
     def test_p2sh_multisig_sequential_signing(self):
-        raw_scripts = ['52210234abcffd2e80ad01c2ec0276ad02682808169c6fafdd25ebfb60703df272b4612102e5baaafff8094e4d77ce8b009d5ebc3de9110085ebd3d96e50cc7ce70faf1752210316ee25e80eb6e6fc734d9c86fa580cbb9c4bfd94a19f0373a22353ececd4db6853ae'.decode('hex')]
-        txs_in = [TxIn(previous_hash='43c95d14724437bccc102ccf86aba1ac02415524fd1aefa787db886bba52a10c'.decode('hex'), previous_index=0)]
+        raw_scripts = [h2b('52210234abcffd2e80ad01c2ec0276ad02682808169c6fafdd25ebfb60703df272b4612102e5baaafff8094e4d77ce8b009d5ebc3de9110085ebd3d96e50cc7ce70faf1752210316ee25e80eb6e6fc734d9c86fa580cbb9c4bfd94a19f0373a22353ececd4db6853ae')]
+        txs_in = [TxIn(previous_hash=h2b('43c95d14724437bccc102ccf86aba1ac02415524fd1aefa787db886bba52a10c'), previous_index=0)]
         txs_out = [TxOut(10000, standard_tx_out_script('3KeGeLFmsbmbVdeMLrWp7WYKcA3tdsB4AR'))]
         spendable = {'script_hex': 'a914c4ed4de526461e3efbb79c8b688a6f9282c0464687', 'does_seem_spent': 0,
                      'block_index_spent': 0, 'tx_hash_hex': '0ca152ba6b88db87a7ef1afd24554102aca1ab86cf2c10ccbc374472145dc943',
