@@ -113,7 +113,7 @@ class ScriptMultisig(ScriptType):
                         # if public_pair is invalid, we just ignore it
                         pass
 
-        for sec_key in self.sec_keys:
+        for signature_order, sec_key in enumerate(self.sec_keys):
             if sec_key in secs_solved:
                 continue
             if len(existing_signatures) >= self.n:
@@ -124,7 +124,7 @@ class ScriptMultisig(ScriptType):
                 continue
             secret_exponent, public_pair, compressed = result
             binary_signature = self._create_script_signature(secret_exponent, sign_value, signature_type)
-            existing_signatures.append(binary_signature)
+            existing_signatures.insert(signature_order, binary_signature)
 
         if dummy_fill:
             DUMMY_SIGNATURE = self._dummy_signature(signature_type)

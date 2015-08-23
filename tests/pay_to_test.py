@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import io
+import copy
 import unittest
 from pycoin.key import Key
 from pycoin.serialize import h2b
@@ -145,11 +146,14 @@ class ScriptTypesTest(unittest.TestCase):
         spendable = {'script_hex': 'a914c4ed4de526461e3efbb79c8b688a6f9282c0464687', 'does_seem_spent': 0,
                      'block_index_spent': 0, 'tx_hash_hex': '0ca152ba6b88db87a7ef1afd24554102aca1ab86cf2c10ccbc374472145dc943',
                      'coin_value': 10000, 'block_index_available': 0, 'tx_out_index': 0}
-        tx = Tx(version=DEFAULT_VERSION, txs_in=txs_in, txs_out=txs_out, unspents=[Spendable.from_dict(spendable)])
-        for key in ['Kz6pytJCigYHeMsGLmfHQPJhN5og2wpeSVrU43xWwgHLCAvpsprh', 'Kz7NHgX7MBySA3RSKj9GexUSN6NepEDoPNugSPr5absRDoKgn2dT']:
-            self.assertEqual(tx.bad_signature_count(), 1)
-            tx.sign(LazySecretExponentDB([key], {}), p2sh_lookup=build_p2sh_lookup(raw_scripts))
-        self.assertEqual(tx.bad_signature_count(), 0)
+        tx__prototype = Tx(version=DEFAULT_VERSION, txs_in=txs_in, txs_out=txs_out, unspents=[Spendable.from_dict(spendable)])
+        key_1, key_2 = 'Kz6pytJCigYHeMsGLmfHQPJhN5og2wpeSVrU43xWwgHLCAvpsprh', 'Kz7NHgX7MBySA3RSKj9GexUSN6NepEDoPNugSPr5absRDoKgn2dT'
+        for ordered_keys in [(key_1, key_2), (key_2, key_1)]:
+            tx = copy.deepcopy(tx__prototype)
+            for key in ordered_keys:
+                self.assertEqual(tx.bad_signature_count(), 1)
+                tx.sign(LazySecretExponentDB([key], {}), p2sh_lookup=build_p2sh_lookup(raw_scripts))
+            self.assertEqual(tx.bad_signature_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):
         N, M = 3, 3
