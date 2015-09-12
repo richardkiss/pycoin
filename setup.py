@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-version = "0.53"
+version = "0.60"
 
 setup(
     name="pycoin",

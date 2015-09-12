@@ -35,5 +35,5 @@ class ChainSoProvider(object):
             previous_hash = h2b(u["txid"])
             previous_index = u["output_no"]
             spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
-        
+
         return spendables
