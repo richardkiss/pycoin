@@ -49,7 +49,7 @@ class ScriptsTest(unittest.TestCase):
         self.launch_tool("ku.py -n XLT -j -w P:foo -s 5-10")
         self.launch_tool("ku.py -n VIA -j -w P:foo -s 5-10")
         self.launch_tool("ku.py -n TVI -j -w P:foo -s 5-10")
-        self.launch_tool("ku.py -n DRK -j -w P:foo -s 5-10")
+        self.launch_tool("ku.py -n DASH -j -w P:foo -s 5-10")
         self.launch_tool("ku.py -n MEC -j -w P:foo -s 5-10")
         self.launch_tool("ku.py -n DOGE -j -w P:foo -s 5-10")
         self.launch_tool("ku.py -n BC -j -w P:foo -s 5-10")
