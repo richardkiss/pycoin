@@ -12,6 +12,7 @@ setup(
         "pycoin.blockchain",
         "pycoin.convention",
         "pycoin.ecdsa",
+        "pycoin.ecdsa.native",
         "pycoin.key",
         "pycoin.network",
         "pycoin.tx",
