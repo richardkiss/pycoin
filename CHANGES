@@ -13,6 +13,7 @@ Version 0.60
   using these methods, you will need to convert them
 * make spend.py script obsolete
 * first crack at Insight service, chain.so service, chain.com service
+* deprecate Tx.tx_from_hex in favor of Tx.from_hex
 * a zillion other minor fixes
 
 Version 0.52

@@ -27,6 +27,7 @@ THE SOFTWARE.
 """
 
 import io
+import warnings
 
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
@@ -85,7 +86,7 @@ class Tx(object):
         return class_(version, txs_in, txs_out, lock_time)
 
     @classmethod
-    def tx_from_hex(class_, hex_string):
+    def from_hex(class_, hex_string):
         """Return the Tx for the given hex string."""
         f = io.BytesIO(h2b(hex_string))
         tx = class_.parse(f)
@@ -95,6 +96,14 @@ class Tx(object):
             # parsing unspents failed
             tx.unspents = []
         return tx
+
+    @classmethod
+    def tx_from_hex(class_, hex_string):
+        warnings.simplefilter('always', DeprecationWarning)
+        warnings.warn("Call to deprecated function tx_from_hex, use from_hex instead",
+                      category=DeprecationWarning, stacklevel=2)
+        warnings.simplefilter('default', DeprecationWarning)
+        return class_.from_hex(hex_string)
 
     def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[]):
         self.version = version

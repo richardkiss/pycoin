@@ -350,7 +350,7 @@ def main():
 
         # hex transaction data
         try:
-            tx = Tx.tx_from_hex(arg)
+            tx = Tx.from_hex(arg)
             txs.append(tx)
             continue
         except Exception:

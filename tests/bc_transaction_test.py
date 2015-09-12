@@ -215,7 +215,7 @@ class TestTx(unittest.TestCase):
     def test_is_valid(self):
         for (prevouts, tx_hex, flags) in txs_from_json(TX_VALID_JSON):
             try:
-                tx = Tx.tx_from_hex(tx_hex)
+                tx = Tx.from_hex(tx_hex)
             except:
                 self.fail("Cannot parse tx_hex: " + tx_hex)
 
@@ -238,7 +238,7 @@ class TestTx(unittest.TestCase):
     def test_is_invalid(self):
         for (prevouts, tx_hex, flags) in txs_from_json(TX_INVALID_JSON):
             try:
-                tx = Tx.tx_from_hex(tx_hex)
+                tx = Tx.from_hex(tx_hex)
                 if not check_transaction(tx):
                     continue
                 unspents = [Spendable(coin_value=1000000,
