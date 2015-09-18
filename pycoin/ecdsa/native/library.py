@@ -89,8 +89,11 @@ def make_inverse_mod_f(library):
         return a1.to_int()
     return inverse_mod
 
+try:
+    NATIVE_LIBRARY = load_library()
+except:
+    NATIVE_LIBRARY = None
 
-NATIVE_LIBRARY = load_library()
 if NATIVE_LIBRARY:
     NATIVE_LIBRARY.fast_mul = make_fast_mul_f(NATIVE_LIBRARY)
     NATIVE_LIBRARY.inverse_mod = make_inverse_mod_f(NATIVE_LIBRARY)
