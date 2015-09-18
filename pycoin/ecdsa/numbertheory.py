@@ -1,5 +1,7 @@
-from .native.library import NATIVE_LIBRARY
-
+try:
+    from .native.library import NATIVE_LIBRARY
+except ImportError:
+    NATIVE_LIBRARY = None
 
 def inverse_mod( a, m ):
   """Inverse of a mod m."""
