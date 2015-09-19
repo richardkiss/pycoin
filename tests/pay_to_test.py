@@ -13,6 +13,7 @@ from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata
 from pycoin.tx.pay_to import address_for_pay_to_script, build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx.pay_to import script_obj_from_address, script_obj_from_script
+from pycoin.tx.script import tools
 
 
 class ScriptTypesTest(unittest.TestCase):
@@ -177,13 +178,17 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertNotEqual(st, None)
 
     def test_nulldata(self):
-        sample = b'test'
-        sample_script = b'\x6a\x04' + sample
-        nd = ScriptNulldata(sample)
-        self.assertEqual(nd.nulldata, sample)
-        self.assertEqual(nd.script(), sample_script)
-        nd2 = ScriptNulldata.from_script(sample_script)
-        self.assertEqual(nd.nulldata, nd2.nulldata)
+        # note that because chr() is used samples with length > 255 will not work
+        for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q']:
+            sample_script = b'\x6a' + chr(len(sample)).encode() + sample
+            nd = ScriptNulldata(sample)
+            self.assertEqual(nd.nulldata, sample)
+            self.assertEqual(nd.script(), sample_script)
+            nd2 = ScriptNulldata.from_script(sample_script)
+            self.assertEqual(nd.nulldata, nd2.nulldata)
+            out = TxOut(1, nd.script())
+            tx = Tx(0, [], [out])  # ensure we can create a tx
+            self.assertEqual(nd.script(), tools.compile(tools.disassemble(nd.script())))  # convert between asm and back to ensure no bugs with compilation
 
 if __name__ == "__main__":
     unittest.main()
