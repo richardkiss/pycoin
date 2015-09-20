@@ -97,8 +97,11 @@ def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_typ
         if signature_type not in sig_cache:
             sig_cache[signature_type] = signature_for_hash_type_f(signature_type, script=tmp_script)
 
-        ppp = ecdsa.possible_public_pairs_for_signature(
-            ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
+        try:
+            ppp = ecdsa.possible_public_pairs_for_signature(
+                ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
+        except ecdsa.NoSuchPointError as err:
+            ppp = []
 
         if len(ppp) > 0:
             for idx, pp in enumerate(public_pairs):

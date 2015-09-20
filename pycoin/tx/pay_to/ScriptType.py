@@ -74,7 +74,8 @@ class ScriptType(object):
             s = order - s
         return der.sigencode_der(r, s) + bytes_from_int(signature_type)
 
-    def _dummy_signature(self, signature_type):
+    @staticmethod
+    def _dummy_signature(signature_type):
         order = ecdsa.generator_secp256k1.order()
         r, s = order - 1, order // 2
         return der.sigencode_der(r, s) + bytes_from_int(signature_type)
