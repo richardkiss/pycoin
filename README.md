@@ -116,13 +116,20 @@ Here's a partial list of users of pycoin:
 
 ChangeTip https://changetip.com/
 
-CoinSafe https://coinsafe.com/
-
 GreenAddress https://greenaddress.it/
 
 Coinkite https://coinkite.com/
 
 Email me at him@richardkiss.com to be added to this list.
+
+
+Too Slow?
+---------
+As of v0.60, there is experimental code that will call into OpenSSL for two slow functions.
+To enable this, set (and export) environment variable PYCOIN_NATIVE=openssl. Example:
+
+$ PYCOIN_NATIVE=openssl
+$ export PYCOIN_NATIVE
 
 
 Donate

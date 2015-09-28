@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 
 import io
+import copy
 import unittest
-
 from pycoin.key import Key
 from pycoin.serialize import h2b
+from pycoin.scripts.tx import DEFAULT_VERSION
 from pycoin.tx import Tx, TxIn, TxOut, SIGHASH_ALL, tx_utils
 from pycoin.tx.TxOut import standard_tx_out_script
-
-from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey
+from pycoin.tx.Spendable import Spendable
+from pycoin.tx.tx_utils import LazySecretExponentDB
+from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata
 from pycoin.tx.pay_to import address_for_pay_to_script, build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx.pay_to import script_obj_from_address, script_obj_from_script
+
 
 class ScriptTypesTest(unittest.TestCase):
 
@@ -136,6 +139,22 @@ class ScriptTypesTest(unittest.TestCase):
             self.assertEqual(tx2.id(), ids[i])
         self.assertEqual(tx2.bad_signature_count(), 0)
 
+    def test_p2sh_multisig_sequential_signing(self):
+        raw_scripts = [h2b('52210234abcffd2e80ad01c2ec0276ad02682808169c6fafdd25ebfb60703df272b4612102e5baaafff8094e4d77ce8b009d5ebc3de9110085ebd3d96e50cc7ce70faf1752210316ee25e80eb6e6fc734d9c86fa580cbb9c4bfd94a19f0373a22353ececd4db6853ae')]
+        txs_in = [TxIn(previous_hash=h2b('43c95d14724437bccc102ccf86aba1ac02415524fd1aefa787db886bba52a10c'), previous_index=0)]
+        txs_out = [TxOut(10000, standard_tx_out_script('3KeGeLFmsbmbVdeMLrWp7WYKcA3tdsB4AR'))]
+        spendable = {'script_hex': 'a914c4ed4de526461e3efbb79c8b688a6f9282c0464687', 'does_seem_spent': 0,
+                     'block_index_spent': 0, 'tx_hash_hex': '0ca152ba6b88db87a7ef1afd24554102aca1ab86cf2c10ccbc374472145dc943',
+                     'coin_value': 10000, 'block_index_available': 0, 'tx_out_index': 0}
+        tx__prototype = Tx(version=DEFAULT_VERSION, txs_in=txs_in, txs_out=txs_out, unspents=[Spendable.from_dict(spendable)])
+        key_1, key_2 = 'Kz6pytJCigYHeMsGLmfHQPJhN5og2wpeSVrU43xWwgHLCAvpsprh', 'Kz7NHgX7MBySA3RSKj9GexUSN6NepEDoPNugSPr5absRDoKgn2dT'
+        for ordered_keys in [(key_1, key_2), (key_2, key_1)]:
+            tx = copy.deepcopy(tx__prototype)
+            for key in ordered_keys:
+                self.assertEqual(tx.bad_signature_count(), 1)
+                tx.sign(LazySecretExponentDB([key], {}), p2sh_lookup=build_p2sh_lookup(raw_scripts))
+            self.assertEqual(tx.bad_signature_count(), 0)
+
     def test_sign_pay_to_script_multisig(self):
         N, M = 3, 3
         keys = [Key(secret_exponent=i) for i in range(1, M+2)]
@@ -156,6 +175,15 @@ class ScriptTypesTest(unittest.TestCase):
         # this is from tx 12a8d1d62d12307eac6e62f2f14d7e826604e53c320a154593845aa7c8e59fbf
         st = script_obj_from_script(b'Q')
         self.assertNotEqual(st, None)
+
+    def test_nulldata(self):
+        sample = b'test'
+        sample_script = b'\x6a\x04' + sample
+        nd = ScriptNulldata(sample)
+        self.assertEqual(nd.nulldata, sample)
+        self.assertEqual(nd.script(), sample_script)
+        nd2 = ScriptNulldata.from_script(sample_script)
+        self.assertEqual(nd.nulldata, nd2.nulldata)
 
 if __name__ == "__main__":
     unittest.main()

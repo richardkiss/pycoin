@@ -29,10 +29,12 @@ THE SOFTWARE.
 import binascii
 import io
 import logging
+import struct
 
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
-from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, bytes_to_int
+from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, int_from_bytes
 
+logger = logging.getLogger(__name__)
 
 def get_opcode(script, pc):
     """Step through the script, returning a tuple with the next opcode, the next
@@ -44,13 +46,13 @@ def get_opcode(script, pc):
         if opcode < OPCODE_TO_INT["OP_PUSHDATA1"]:
             size = opcode
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA1"]:
-            size = bytes_to_int(script[pc:pc+1])
+            size = int_from_bytes(script[pc:pc+1])
             pc += 1
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA2"]:
-            size = bytes_to_int(script[pc:pc+2])
+            size = int_from_bytes(script[pc:pc+2])
             pc += 2
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA4"]:
-            size = bytes_to_int(script[pc:pc+4])
+            size = int_from_bytes(script[pc:pc+4])
             pc += 4
         data = script[pc:pc+size]
         pc += size
@@ -71,10 +73,13 @@ def write_push_data(data_list, f):
             f.write(t)
         elif len(t) <= 65535:
             f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA2"]))
-            f.write(int_to_bytes(len(t)))
+            f.write(struct.pack(">H", len(t)))
             f.write(t)
-        # BRAIN DAMAGE: if len(t) is too much, we need a different opcode
-        # This will never be used in practice as it makes the scripts too long.
+        else:
+            # This will never be used in practice as it makes the scripts too long.
+            f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA4"]))
+            f.write(struct.pack(">L", len(t)))
+            f.write(t)
 
 def bin_script(data_list):
     f = io.BytesIO()
@@ -108,7 +113,7 @@ def opcode_list(script):
             opcodes.append(binascii.hexlify(data).decode("utf8"))
             continue
         if not opcode in INT_TO_OPCODE:
-            logging.info("missing opcode %r", opcode)
+            logger.info("missing opcode %r", opcode)
             continue
         opcodes.append(INT_TO_OPCODE[opcode])
     return opcodes

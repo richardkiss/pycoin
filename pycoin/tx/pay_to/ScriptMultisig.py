@@ -1,5 +1,5 @@
 from ..script import opcodes, tools
-from ..script.vm import parse_signature_blob
+from ..script.check_signature import parse_signature_blob
 from ..script.microcode import VCH_TRUE
 
 from ... import ecdsa
@@ -86,16 +86,20 @@ class ScriptMultisig(ScriptType):
         sign_value = kwargs.get("sign_value")
         signature_type = kwargs.get("signature_type")
 
+        dummy_fill = kwargs.get("dummy_fill", True)
+
         secs_solved = set()
         existing_signatures = []
         existing_script = kwargs.get("existing_script")
         if existing_script:
             pc = 0
+            seen = 0
             opcode, data, pc = tools.get_opcode(existing_script, pc)
             # ignore the first opcode
-            while pc < len(existing_script):
+            while pc < len(existing_script) and seen < self.n:
                 opcode, data, pc = tools.get_opcode(existing_script, pc)
                 sig_pair, actual_signature_type = parse_signature_blob(data)
+                seen += 1
                 for sec_key in self.sec_keys:
                     try:
                         public_pair = encoding.sec_to_public_pair(sec_key)
@@ -109,7 +113,7 @@ class ScriptMultisig(ScriptType):
                         # if public_pair is invalid, we just ignore it
                         pass
 
-        for sec_key in self.sec_keys:
+        for signature_order, sec_key in enumerate(self.sec_keys):
             if sec_key in secs_solved:
                 continue
             if len(existing_signatures) >= self.n:
@@ -120,10 +124,12 @@ class ScriptMultisig(ScriptType):
                 continue
             secret_exponent, public_pair, compressed = result
             binary_signature = self._create_script_signature(secret_exponent, sign_value, signature_type)
-            existing_signatures.append(binary_signature)
-        DUMMY_SIGNATURE = self._dummy_signature(signature_type)
-        while len(existing_signatures) < self.n:
-            existing_signatures.append(DUMMY_SIGNATURE)
+            existing_signatures.insert(signature_order, binary_signature)
+
+        if dummy_fill:
+            DUMMY_SIGNATURE = self._dummy_signature(signature_type)
+            while len(existing_signatures) < self.n:
+                existing_signatures.append(DUMMY_SIGNATURE)
 
         script = "OP_0 %s" % " ".join(b2h(s) for s in existing_signatures)
         solution = tools.compile(script)

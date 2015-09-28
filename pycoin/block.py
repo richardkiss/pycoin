@@ -119,8 +119,14 @@ class Block(BlockHeader):
             difficulty, nonce, count) = parse_struct("L##LLLI", f)
         txs = []
         for i in range(count):
-            txs.append(Tx.parse(f))
-        return self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs)
+            offset_in_block = f.tell()
+            tx = Tx.parse(f)
+            txs.append(tx)
+            tx.offset_in_block = offset_in_block
+        block = self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs)
+        for tx in txs:
+            tx.block = block
+        return block
 
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs):
         self.version = version

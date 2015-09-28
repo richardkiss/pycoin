@@ -1,12 +1,20 @@
-Version 0.53
+Version 0.60
 ------------
 
+* more tests
+* prototype support for using native OpenSSL methods to speed up some slow operations.
+  Set (and export) environment variable PYCOIN_NATIVE=openssl to activate.
+* moved intbytes to pycoin.intbytes
+* support signing pay-to-scripthash in tx utility
+* abolish support for negative numbers in BIP32 key paths
 * more networks
 * changed how Spendable streams to text and to dicts to put transaction hashes in the
   more conventional order. ** WARNING **: if you have built databases of Spendable objects
   using these methods, you will need to convert them
 * make spend.py script obsolete
-* first crack at Insight service
+* first crack at Insight service, chain.so service, chain.com service
+* deprecate Tx.tx_from_hex in favor of Tx.from_hex
+* a zillion other minor fixes
 
 Version 0.52
 ------------

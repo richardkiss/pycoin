@@ -27,11 +27,12 @@ THE SOFTWARE.
 """
 
 import io
+import warnings
 
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
-from ..intbytes import byte_to_int
+from ..intbytes import byte_to_int, int_to_bytes
 
 from .TxIn import TxIn
 from .TxOut import TxOut
@@ -85,9 +86,24 @@ class Tx(object):
         return class_(version, txs_in, txs_out, lock_time)
 
     @classmethod
-    def tx_from_hex(class_, hex_string):
+    def from_hex(class_, hex_string):
         """Return the Tx for the given hex string."""
-        return class_.parse(io.BytesIO(h2b(hex_string)))
+        f = io.BytesIO(h2b(hex_string))
+        tx = class_.parse(f)
+        try:
+            tx.parse_unspents(f)
+        except Exception:
+            # parsing unspents failed
+            tx.unspents = []
+        return tx
+
+    @classmethod
+    def tx_from_hex(class_, hex_string):
+        warnings.simplefilter('always', DeprecationWarning)
+        warnings.warn("Call to deprecated function tx_from_hex, use from_hex instead",
+                      category=DeprecationWarning, stacklevel=2)
+        warnings.simplefilter('default', DeprecationWarning)
+        return class_.from_hex(hex_string)
 
     def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[]):
         self.version = version
@@ -106,13 +122,17 @@ class Tx(object):
             t.stream(f)
         stream_struct("L", f, self.lock_time)
 
-    def as_hex(self, include_unspents=False):
-        """Return the transaction as hex."""
+    def as_bin(self, include_unspents=False):
+        """Return the transaction as binary."""
         f = io.BytesIO()
         self.stream(f)
         if include_unspents and not self.missing_unspents():
             self.stream_unspents(f)
-        return b2h(f.getvalue())
+        return f.getvalue()
+
+    def as_hex(self, include_unspents=False):
+        """Return the transaction as hex."""
+        return b2h(self.as_bin(include_unspents=include_unspents))
 
     def hash(self, hash_type=None):
         """Return the hash for this Tx object."""
@@ -151,7 +171,7 @@ class Tx(object):
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.
-        tx_out_script = tools.delete_subscript(tx_out_script, [opcodes.OP_CODESEPARATOR])
+        tx_out_script = tools.delete_subscript(tx_out_script, int_to_bytes(opcodes.OP_CODESEPARATOR))
 
         # blank out other inputs' signatures
         def tx_in_for_idx(idx, tx_in):
@@ -183,7 +203,7 @@ class Tx(object):
                 # This should probably be moved to a constant, but the
                 # likelihood of ever getting here is already really small
                 # and getting smaller
-                return (1<<248)
+                return (1 << 248)
 
             # Only lock in the txout payee at same index as txin; delete
             # any outputs after this one and set all outputs before this
@@ -204,7 +224,7 @@ class Tx(object):
         tmp_tx = Tx(self.version, txs_in, txs_out, self.lock_time)
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
-    def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
+    def solve(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
         """
         Sign a standard transaction.
         hash160_lookup:
@@ -221,7 +241,7 @@ class Tx(object):
         tx_in = self.txs_in[tx_in_idx]
 
         is_p2h = (len(tx_out_script) == 23 and byte_to_int(tx_out_script[0]) == opcodes.OP_HASH160
-                and byte_to_int(tx_out_script[-1]) == opcodes.OP_EQUAL)
+                  and byte_to_int(tx_out_script[-1]) == opcodes.OP_EQUAL)
         if is_p2h:
             hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
             p2sh_lookup = kwargs.get("p2sh_lookup")
@@ -237,7 +257,8 @@ class Tx(object):
 
         # Leave out the signature from the hash, since a signature can't sign itself.
         # The checksig op will also drop the signatures from its hash.
-        signature_for_hash_type_f = lambda hash_type: self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(
+            script, tx_in_idx, hash_type)
         if tx_in.verify(tx_out_script, signature_for_hash_type_f):
             return
 
@@ -246,11 +267,14 @@ class Tx(object):
         solution = the_script.solve(
             hash160_lookup=hash160_lookup, sign_value=sign_value, signature_type=hash_type,
             existing_script=self.txs_in[tx_in_idx].script, **kwargs)
-        tx_in.script = solution
+        return solution
+
+    def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
+        self.txs_in[tx_in_idx].script = self.solve(hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs)
 
     def verify_tx_in(self, tx_in_idx, tx_out_script, expected_hash_type=None):
         tx_in = self.txs_in[tx_in_idx]
-        signature_for_hash_type_f = lambda hash_type: self.signature_hash(tx_out_script, tx_in_idx, hash_type)
+        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(script, tx_in_idx, hash_type)
         if not tx_in.verify(tx_out_script, signature_for_hash_type_f, expected_hash_type):
             raise ValidationFailureError(
                 "just signed script Tx %s TxIn index %d did not verify" % (
@@ -351,10 +375,8 @@ class Tx(object):
         if unspent is None:
             return False
         tx_out_script = self.unspents[tx_in_idx].script
-
-        def signature_for_hash_type_f(hash_type, script):
-            return self.signature_hash(script, tx_in_idx, hash_type)
-
+        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(
+            script, tx_in_idx, hash_type)
         return tx_in.verify(tx_out_script, signature_for_hash_type_f)
 
     def sign(self, hash160_lookup, hash_type=SIGHASH_ALL, **kwargs):
@@ -371,7 +393,8 @@ class Tx(object):
                 continue
             try:
                 if self.unspents[idx]:
-                    self.sign_tx_in(hash160_lookup, idx, self.unspents[idx].script, hash_type=hash_type, **kwargs)
+                    self.sign_tx_in(
+                        hash160_lookup, idx, self.unspents[idx].script, hash_type=hash_type, **kwargs)
             except SolvingError:
                 pass
 

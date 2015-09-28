@@ -59,6 +59,10 @@ class ScriptType(object):
                 if len(data1) != 160/8:
                     break
                 r["PUBKEYHASH_LIST"].append(data1)
+            elif opcode2 == opcodes.OP_NULLDATA:
+                if not (0 < len(data1) <= 40):
+                    break
+                r["NULLDATA_LIST"].append(data1)
             elif (opcode1, data1) != (opcode2, data2):
                 break
         raise ValueError("script doesn't match")
@@ -70,7 +74,8 @@ class ScriptType(object):
             s = order - s
         return der.sigencode_der(r, s) + bytes_from_int(signature_type)
 
-    def _dummy_signature(self, signature_type):
+    @staticmethod
+    def _dummy_signature(signature_type):
         order = ecdsa.generator_secp256k1.order()
         r, s = order - 1, order // 2
         return der.sigencode_der(r, s) + bytes_from_int(signature_type)

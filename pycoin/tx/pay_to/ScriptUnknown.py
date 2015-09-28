@@ -13,6 +13,7 @@ class ScriptUnknown(ScriptType):
         return self._script
 
     def solve(self, **kwargs):
+        from . import SolvingError
         raise SolvingError("unknown script type")
 
     def info(self, netcode='BTC'):

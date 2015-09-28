@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-version = "0.53"
+version = "0.60"
 
 setup(
     name="pycoin",
@@ -12,6 +12,7 @@ setup(
         "pycoin.blockchain",
         "pycoin.convention",
         "pycoin.ecdsa",
+        "pycoin.ecdsa.native",
         "pycoin.key",
         "pycoin.network",
         "pycoin.tx",

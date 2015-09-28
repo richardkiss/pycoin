@@ -41,13 +41,37 @@ THE SOFTWARE.
 
 import hashlib
 import hmac
+import logging
 import struct
 
 from .. import ecdsa
 
 from ..encoding import public_pair_to_sec, from_bytes_32, to_bytes_32
+from ..ecdsa.ellipticcurve import INFINITY
+
+logger = logging.getLogger(__name__)
 
 ORDER = ecdsa.generator_secp256k1.order()
+
+_SUBKEY_VALIDATION_LOG_ERR_FMT = """
+BUY A LOTTO TICKET RIGHT NOW! (And consider giving up your wallet to
+science!)
+
+You have stumbled across an astronomically unlikely scenario. Your HD
+wallet contains an invalid subkey. Having access to this information would
+be incredibly valuable to the Bitcoin development community.
+
+If you are inclined to help, please make sure to back up this wallet (or
+any outputted information) onto a USB drive and e-mail "Richard Kiss"
+<him@richardkiss.com> or "Matt Bogosian" <mtb19@columbia.edu> for
+instructions on how best to donate it without losing your bitcoins.
+
+WARNING: DO NOT SEND ANY WALLET INFORMATION UNLESS YOU WANT TO LOSE ALL
+THE BITCOINS IT CONTAINS.
+""".strip()
+
+
+class DerivationError(ValueError): pass
 
 
 def subkey_secret_exponent_chain_code_pair(
@@ -81,7 +105,13 @@ def subkey_secret_exponent_chain_code_pair(
 
     I64 = hmac.HMAC(key=chain_code_bytes, msg=data, digestmod=hashlib.sha512).digest()
     I_left_as_exponent = from_bytes_32(I64[:32])
+    if I_left_as_exponent >= ORDER:
+        logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
+        raise DerivationError('I_L >= {}'.format(ORDER))
     new_secret_exponent = (I_left_as_exponent + secret_exponent) % ORDER
+    if new_secret_exponent == 0:
+        logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
+        raise DerivationError('k_{} == 0'.format(i))
     new_chain_code = I64[32:]
     return new_secret_exponent, new_chain_code
 
@@ -107,10 +137,17 @@ def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
 
     I_left_as_exponent = from_bytes_32(I64[:32])
     x, y = public_pair
+
     the_point = I_left_as_exponent * ecdsa.generator_secp256k1 + \
         ecdsa.Point(ecdsa.generator_secp256k1.curve(), x, y, ORDER)
+    if the_point == INFINITY:
+        logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
+        raise DerivationError('K_{} == {}'.format(i, the_point))
 
     I_left_as_exponent = from_bytes_32(I64[:32])
+    if I_left_as_exponent >= ORDER:
+        logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
+        raise DerivationError('I_L >= {}'.format(ORDER))
     new_public_pair = the_point.pair()
     new_chain_code = I64[32:]
     return new_public_pair, new_chain_code

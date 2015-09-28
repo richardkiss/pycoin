@@ -18,14 +18,14 @@ TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX = (
 class TxTest(unittest.TestCase):
 
     def test_tx_api(self):
-        tx = Tx.tx_from_hex(TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX)
+        tx = Tx.from_hex(TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX)
         # this transaction is a pay-to-hash transaction
         self.assertEqual(tx.id(), "e1a18b843fc420734deeb68ff6df041a2585e1a0d7dbf3b82aab98291a6d9952")
         self.assertEqual(tx.txs_out[0].bitcoin_address(), "19LemzJ3XPdUxp113uynqCAivDbXZBdBy3")
         self.assertEqual(tx.txs_out[1].bitcoin_address(), "3KmkA7hvqG2wKkWUGz1BySioUywvcmdPLR")
 
     def test_blanked_hash(self):
-        tx = Tx.tx_from_hex(TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX)
+        tx = Tx.from_hex(TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX)
         self.assertEqual(tx.id(), "e1a18b843fc420734deeb68ff6df041a2585e1a0d7dbf3b82aab98291a6d9952")
         self.assertEqual(
             b2h(tx.blanked_hash()), "909579526c4c2c441687c7478d3f96249724d2ff071d2272b44500d6cf70d5d6")
@@ -178,7 +178,7 @@ class TxTest(unittest.TestCase):
             )
         ]
 
-        TX_LIST = [Tx.tx_from_hex(b2h(binascii.a2b_base64(b64.encode("utf8")))) for b64 in TX_B64_LIST]
+        TX_LIST = [Tx.from_hex(b2h(binascii.a2b_base64(b64.encode("utf8")))) for b64 in TX_B64_LIST]
         TX_DB = dict((tx.hash(), tx) for tx in TX_LIST)
         for h in ["315ac7d4c26d69668129cc352851d9389b4a6868f1509c6c8b66bead11e2619f",
                   "dbf38261224ebff0c455c405e2435cfc69adb6b8a42d7b10674d9a4eb0464dca",
@@ -195,7 +195,7 @@ class TxTest(unittest.TestCase):
 def tx_to_b64(tx_hex):
     # use this to dump raw transactions in the data above
     import io
-    tx = Tx.tx_from_hex(tx_hex)
+    tx = Tx.from_hex(tx_hex)
     f = io.BytesIO()
     tx.stream(f)
     d = f.getvalue()
