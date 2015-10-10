@@ -6,6 +6,7 @@ from .Spendable import Spendable
 from .Tx import Tx
 from .TxOut import TxOut, standard_tx_out_script
 from .pay_to import build_hash160_lookup
+from ..networks import wif_prefix_for_netcode
 
 class SecretExponentMissing(Exception):
     pass
@@ -18,15 +19,16 @@ class LazySecretExponentDB(object):
     and caches the results to optimize for the case of a large number
     of secret exponents.
     """
-    def __init__(self, wif_iterable, secret_exponent_db_cache):
+    def __init__(self, wif_iterable, secret_exponent_db_cache, netcode = 'BTC'):
         self.wif_iterable = iter(wif_iterable)
         self.secret_exponent_db_cache = secret_exponent_db_cache
+        self.netcode = netcode
 
     def get(self, v):
         if v in self.secret_exponent_db_cache:
             return self.secret_exponent_db_cache[v]
         for wif in self.wif_iterable:
-            secret_exponent = wif_to_secret_exponent(wif)
+            secret_exponent = wif_to_secret_exponent(wif, allowable_wif_prefixes=wif_prefix_for_netcode(self.netcode))
             d = build_hash160_lookup([secret_exponent])
             self.secret_exponent_db_cache.update(d)
             if v in self.secret_exponent_db_cache:
