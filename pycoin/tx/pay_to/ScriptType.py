@@ -68,11 +68,7 @@ class ScriptType(object):
         raise ValueError("script doesn't match")
 
     def _create_script_signature(self, secret_exponent, sign_value, signature_type):
-        order = ecdsa.generator_secp256k1.order()
-        r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
-        if s + s > order:
-            s = order - s
-        return der.sigencode_der(r, s) + bytes_from_int(signature_type)
+        return create_script_signature(secret_exponent, sign_value, signature_type)
 
     @staticmethod
     def _dummy_signature(signature_type):
@@ -88,3 +84,10 @@ class ScriptType(object):
         The kwargs required depend upon the script type.
         """
         raise NotImplemented()
+
+def create_script_signature(secret_exponent, sign_value, signature_type):
+    order = ecdsa.generator_secp256k1.order()
+    r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
+    if s + s > order:
+        s = order - s
+    return der.sigencode_der(r, s) + bytes_from_int(signature_type)

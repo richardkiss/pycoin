@@ -47,12 +47,23 @@ INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
 
 
-def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stack=[],
-                disallow_long_scripts=True):
-    altstack = []
+def check_verifyops(opcode, stack, pc):
+    if opcode in VERIFY_OPS:
+        try:
+            v = stack.pop()
+            if v == VCH_FALSE:
+                stack.append(v)
+                raise ValueError
+        except ( IndexError, ValueError ):
+            raise ScriptError("VERIFY failed at %d" % (pc-1))
+
+
+def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stack=None, disallow_long_scripts=True, verify_null_dummy=True):
     if disallow_long_scripts and len(script) > 10000:
         return False
 
+    stack = stack if stack is not None else []
+    altstack = []
     pc = 0
     begin_code_hash = pc
     if_condition = None  # or True or False
@@ -91,10 +102,7 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
             if opcode in MICROCODE_LOOKUP:
                 MICROCODE_LOOKUP[opcode](stack)
-                if opcode in VERIFY_OPS:
-                    v = stack.pop()
-                    if v != VCH_TRUE:
-                        raise ScriptError("VERIFY failed at %d" % (pc-1))
+                check_verifyops(opcode, stack, pc)
                 continue
 
             if opcode == opcodes.OP_TOALTSTACK:
@@ -115,27 +123,22 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
             if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
                 # Subset of script starting at the most recent codeseparator
                 op_checksig(stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:])
-                if opcode == opcodes.OP_CHECKSIGVERIFY:
-                    if stack.pop() != VCH_TRUE:
-                        raise ScriptError("VERIFY failed at %d" % (pc-1))
+                check_verifyops(opcode, stack, pc)
                 continue
 
-            if opcode == opcodes.OP_CHECKMULTISIG:
+            if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
                 # Subset of script starting at the most recent codeseparator
                 op_checkmultisig(
-                    stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:])
+                    stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:],
+                    verify_null_dummy)
+                check_verifyops(opcode, stack, pc)
                 continue
-
-            # BRAIN DAMAGE -- does it always get down here for each verify op? I think not
-            if opcode in VERIFY_OPS:
-                v = stack.pop()
-                if v != VCH_TRUE:
-                    raise ScriptError("VERIFY failed at %d" % pc-1)
 
             logger.error("can't execute opcode %s", opcode)
 
-    except Exception:
+    except Exception as ex:
         logger.exception("script failed")
+        return False
 
     return len(stack) != 0
 
@@ -158,7 +161,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         logger.debug("script_public_key did not evaluate")
         return False
 
-    if is_p2h and stack[-1] == VCH_TRUE:
+    if is_p2h and stack[-1] != VCH_FALSE:
         return verify_script(alt_script_signature, alt_script_public_key,
                              signature_for_hash_type_f, expected_hash_type=expected_hash_type)
 
