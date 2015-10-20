@@ -135,7 +135,8 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
             logger.error("can't execute opcode %s", opcode)
 
     except Exception:
-        logger.exception("script failed")
+        logger.exception("script failed for unknown reason")
+        return False
 
     return len(stack) != 0
 
