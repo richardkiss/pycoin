@@ -210,13 +210,13 @@ def make_f(tx, expect_ok=True):
 
 
 def inject():
-    for (tx, flags) in txs_from_json(TX_VALID_JSON):
-        name_of_f = "test_valid_%s" % tx.id()
+    for idx, (tx, flags) in enumerate(txs_from_json(TX_VALID_JSON)):
+        name_of_f = "test_valid_%02d_%s" % (idx, tx.id())
         setattr(TestTx, name_of_f, make_f(tx))
         print("adding %s" % name_of_f)
 
-    for (tx, flags) in txs_from_json(TX_INVALID_JSON):
-        name_of_f = "test_invalid_%s" % tx.id()
+    for idx, (tx, flags) in enumerate(txs_from_json(TX_INVALID_JSON)):
+        name_of_f = "test_invalid_%02d_%s" % (idx, tx.id())
         setattr(TestTx, name_of_f, make_f(tx, expect_ok=False))
         print("adding %s" % name_of_f)
 
