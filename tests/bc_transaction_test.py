@@ -110,9 +110,10 @@ import binascii
 from pycoin.convention import SATOSHI_PER_COIN
 from pycoin.intbytes import bytes_from_int, byte_to_int
 from pycoin.serialize import h2b_rev, h2b
-from pycoin.tx.Tx import Tx, TxIn
+from pycoin.tx import Tx, TxIn, ValidationFailureError
 from pycoin.tx.Spendable import Spendable
 from pycoin.tx.script.opcodes import OPCODE_TO_INT
+
 
 TX_VALID_JSON = os.path.dirname(__file__) + '/data/tx_valid.json'
 TX_INVALID_JSON = os.path.dirname(__file__) + '/data/tx_invalid.json'
@@ -171,7 +172,24 @@ def txs_from_json(path):
             for flag in tvec[2].split(','):
                 assert flag in FLAGS
                 flags.add(flag)
-            yield (prevouts, tx_hex, flags)
+
+            try:
+                tx = Tx.from_hex(tx_hex)
+            except:
+                print("Cannot parse tx_hex: %s" % tx_hex)
+                raise
+
+            spendable_db = {}
+            blank_spendable = Spendable(0, b'', b'\0' * 32, 0)
+            for prevout in prevouts:
+                spendable = Spendable(coin_value=1000000,
+                                      script=compile_script(prevout[2]),
+                                      tx_hash=h2b_rev(prevout[0]), tx_out_index=prevout[1])
+                spendable_db[(spendable.tx_hash, spendable.tx_out_index)] = spendable
+            unspents = [spendable_db.get((tx_in.previous_hash, tx_in.previous_index), blank_spendable) for tx_in in tx.txs_in]
+            tx.set_unspents(unspents)
+
+            yield (tx, flags)
 
 
 def check_transaction(tx):
@@ -211,49 +229,42 @@ def check_transaction(tx):
 
 
 class TestTx(unittest.TestCase):
-
-    def test_is_valid(self):
-        for (prevouts, tx_hex, flags) in txs_from_json(TX_VALID_JSON):
-            try:
-                tx = Tx.from_hex(tx_hex)
-            except:
-                self.fail("Cannot parse tx_hex: " + tx_hex)
-
-            if not check_transaction(tx):
-                self.fail("check_transaction(tx) = False for valid tx: " +
-                          tx_hex)
-
-            unspents = [Spendable(coin_value=1000000,
-                                  script=compile_script(prevout[2]),
-                                  tx_hash=h2b(prevout[0]), tx_out_index=prevout[1])
-                        for prevout in prevouts]
-            tx.set_unspents(unspents)
-
-            bs = tx.bad_signature_count()
-            if bs > 0:
-                msg = str(tx.as_hex(include_unspents=True)) + " bad_signature_count() = " + str(bs)
-                self.fail(msg)
+    pass
 
 
-    def test_is_invalid(self):
-        for (prevouts, tx_hex, flags) in txs_from_json(TX_INVALID_JSON):
-            try:
-                tx = Tx.from_hex(tx_hex)
-                if not check_transaction(tx):
-                    continue
-                unspents = [Spendable(coin_value=1000000,
-                                  script=compile_script(prevout[2]),
-                                  tx_hash=h2b_rev(prevout[0]), tx_out_index=prevout[1])
-                        for prevout in prevouts]
-                tx.set_unspents(unspents)
+def make_f(tx, expect_ok=True):
+    tx_hex = tx.as_hex(include_unspents=True)
+    def test_f(self):
+        why = None
+        try:
+            check_transaction(tx)
+        except ValidationFailureError as ex:
+            why = str(ex)
+        bs = tx.bad_signature_count()
+        if bs > 0:
+            why = "bad sig count = %d" % bs
+        if (why != None) == expect_ok:
+            why = why or "tx unexpectedly validated"
+            self.fail("fail on %s because of %s with hex %s" % (tx.id(), why, tx_hex))
+    return test_f
 
-                bs = tx.bad_signature_count()
-                self.assertEqual(bs, 0)
-            except:
-                continue
 
-            self.fail("Invalid transaction: " + tx.id() +
-                      " appears to be valid.")
+def inject():
+    for (tx, flags) in txs_from_json(TX_VALID_JSON):
+        name_of_f = "test_valid_%s" % tx.id()
+        setattr(TestTx, name_of_f, make_f(tx))
+        print("adding %s" % name_of_f)
+
+    for (tx, flags) in txs_from_json(TX_INVALID_JSON):
+        name_of_f = "test_invalid_%s" % tx.id()
+        setattr(TestTx, name_of_f, make_f(tx, expect_ok=False))
+        print("adding %s" % name_of_f)
+
+
+inject()
+
+
+
 
 
 if __name__ == '__main__':
