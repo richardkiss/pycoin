@@ -107,7 +107,6 @@ import os
 import io
 import binascii
 
-from pycoin.convention import SATOSHI_PER_COIN
 from pycoin.intbytes import bytes_from_int, byte_to_int
 from pycoin.serialize import h2b_rev, h2b
 from pycoin.tx import Tx, TxIn, ValidationFailureError
@@ -121,9 +120,6 @@ TX_INVALID_JSON = os.path.dirname(__file__) + '/data/tx_invalid.json'
 FLAGS = ['NONE', 'P2SH', 'STRICTENC', 'DERSIG', 'LOW_S', 'SIGPUSHONLY',
          'MINIMALDATA', 'NULLDUMMY', 'DISCOURAGE_UPGRADABLE_NOPS', 'CLEANSTACK']
 
-
-MAX_MONEY = 21000000 * SATOSHI_PER_COIN
-MAX_BLOCK_SIZE = 1000000
 
 
 def compile_script(s):
@@ -192,42 +188,6 @@ def txs_from_json(path):
             yield (tx, flags)
 
 
-def check_transaction(tx):
-    """
-    Basic checks that don't depend on any context.
-    Adapted from Bicoin Code: main.cpp
-    """
-    if not tx.txs_in:
-        raise ValidationFailureError("tx.txs_in = []")
-    if not tx.txs_out:
-        raise ValidationFailureError("tx.txs_out = []")
-    # Size limits
-    f = io.BytesIO()
-    tx.stream(f)
-    size = len(f.getvalue())
-    if size > MAX_BLOCK_SIZE:
-        raise ValidationFailureError("size > MAX_BLOCK_SIZE")
-    # Check for negative or overflow output values
-    nValueOut = 0
-    for txout in tx.txs_out:
-        if txout.coin_value < 0 or txout.coin_value > MAX_MONEY:
-            raise ValidationFailureError("txout value negative or out of range")
-        nValueOut += txout.coin_value
-        if nValueOut > MAX_MONEY:
-            raise ValidationFailureError("txout total out of range")
-    # Check for duplicate inputs
-    if [x for x in tx.txs_in if tx.txs_in.count(x) > 1]:
-        raise ValidationFailureError("duplicate inputs")
-    if(tx.is_coinbase()):
-        if len(tx.txs_in[0].script) < 2 or len(tx.txs_in[0].script) > 100:
-            raise ValidationFailureError("bad coinbase script size")
-    else:
-        for txin in tx.txs_in:
-            if not txin:
-                raise ValidationFailureError("prevout is null")
-    return True
-
-
 class TestTx(unittest.TestCase):
     pass
 
@@ -237,7 +197,7 @@ def make_f(tx, expect_ok=True):
     def test_f(self):
         why = None
         try:
-            check_transaction(tx)
+            tx.check()
         except ValidationFailureError as ex:
             why = str(ex)
         bs = tx.bad_signature_count()
