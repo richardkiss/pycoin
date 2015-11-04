@@ -62,7 +62,7 @@ class BIP32Node(Key):
     https://en.bitcoin.it/wiki/BIP_0032
     """
     @classmethod
-    def from_master_secret(class_, master_secret, netcode='FAI'):
+    def from_master_secret(class_, master_secret, netcode='BTC'):
         """Generate a Wallet from a master password."""
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
         return class_(netcode=netcode, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
@@ -81,7 +81,7 @@ class BIP32Node(Key):
         is_private = (key_type == 'prv32')
         parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
 
-        d = dict(netcode="FAI", chain_code=data[13:45], depth=ord(data[4:5]),
+        d = dict(netcode=netcode, chain_code=data[13:45], depth=ord(data[4:5]),
                  parent_fingerprint=parent_fingerprint, child_index=child_index)
 
         if is_private:
@@ -104,7 +104,7 @@ class BIP32Node(Key):
 
         super(BIP32Node, self).__init__(
             secret_exponent=secret_exponent, public_pair=public_pair, prefer_uncompressed=False,
-            is_compressed=True, is_pay_to_script=False, netcode='FAI')
+            is_compressed=True, is_pay_to_script=False, netcode=netcode)
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)

@@ -14,7 +14,7 @@ class InvalidSecretExponentError(ValueError): pass
 
 class Key(object):
     def __init__(self, secret_exponent=None, public_pair=None, hash160=None,
-                 prefer_uncompressed=None, is_compressed=True, is_pay_to_script=False, netcode='FAI'):
+                 prefer_uncompressed=None, is_compressed=True, is_pay_to_script=False, netcode='BTC'):
         """
         secret_exponent:
             a long representing the secret exponent
@@ -96,7 +96,7 @@ class Key(object):
         raise EncodingError("unknown text: %s" % text)
 
     @classmethod
-    def from_sec(class_, sec, netcode="FAI"):
+    def from_sec(class_, sec, netcode="BTC"):
         """
         Create a key from an sec bytestream (which is an encoding of a public pair).
         """
