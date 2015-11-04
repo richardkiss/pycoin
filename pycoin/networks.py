@@ -67,6 +67,9 @@ NETWORKS = (
     NetworkValues(
         "Riecoin", "mainnet", "RIC", b'\x80', b'\x3c', b'\x05', h2b('0488ADE4'), h2b('0488B21E')),
 
+ # FAI faircoin mainnet : xprv/xpub
+    NetworkValues("Faircoin", "mainnet", "FAI", b'\xdf', b'\x5f', b'\x24', h2b("0488ADE4"), h2b("0488B21E")),
+
 )
 
 
