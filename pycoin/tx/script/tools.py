@@ -32,7 +32,9 @@ import logging
 import struct
 
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
-from ...intbytes import bytes_from_int, bytes_to_ints, to_bytes, from_bytes
+from ...intbytes import (
+    bytes_from_int, bytes_to_ints, to_bytes, from_bytes, int_to_bytes
+)
 
 logger = logging.getLogger(__name__)
 
