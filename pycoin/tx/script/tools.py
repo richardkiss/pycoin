@@ -69,7 +69,7 @@ def write_push_data(data_list, f):
         if len(t) <= 255:
             if len(t) > 75:
                 f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA1"]))
-            f.write(to_bytes(len(t), 1, 'little'))
+            f.write(int_to_bytes(len(t)))
             f.write(t)
         elif len(t) <= 65535:
             f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA2"]))
