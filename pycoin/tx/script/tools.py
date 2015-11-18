@@ -32,7 +32,7 @@ import logging
 import struct
 
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
-from ...intbytes import bytes_from_int, bytes_to_ints, int_to_bytes, int_from_bytes
+from ...intbytes import bytes_from_int, bytes_to_ints, to_bytes, from_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +46,13 @@ def get_opcode(script, pc):
         if opcode < OPCODE_TO_INT["OP_PUSHDATA1"]:
             size = opcode
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA1"]:
-            size = int_from_bytes(script[pc:pc+1])
+            size = from_bytes(script[pc:pc+1], byteorder="little")
             pc += 1
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA2"]:
-            size = int_from_bytes(script[pc:pc+2])
+            size = from_bytes(script[pc:pc+2], byteorder="little")
             pc += 2
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA4"]:
-            size = int_from_bytes(script[pc:pc+4])
+            size = from_bytes(script[pc:pc+4], byteorder="little")
             pc += 4
         data = script[pc:pc+size]
         pc += size
@@ -69,16 +69,16 @@ def write_push_data(data_list, f):
         if len(t) <= 255:
             if len(t) > 75:
                 f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA1"]))
-            f.write(int_to_bytes(len(t)))
+            f.write(to_bytes(len(t), 1, 'little'))
             f.write(t)
         elif len(t) <= 65535:
             f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA2"]))
-            f.write(struct.pack(">H", len(t)))
+            f.write(struct.pack("<H", len(t)))
             f.write(t)
         else:
             # This will never be used in practice as it makes the scripts too long.
             f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA4"]))
-            f.write(struct.pack(">L", len(t)))
+            f.write(struct.pack("<L", len(t)))
             f.write(t)
 
 def bin_script(data_list):
