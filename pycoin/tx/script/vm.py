@@ -27,6 +27,7 @@ THE SOFTWARE.
 """
 
 import logging
+import sys
 
 from ...intbytes import byte_to_int, int_to_bytes
 
@@ -134,8 +135,8 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
             logger.error("can't execute opcode %s", opcode)
 
-    except Exception:
-        logger.exception("script failed for unknown reason")
+    except Exception: # pylint: disable=broad-except
+        logger.exception("script failed for unknown reason", exc_info=sys.exc_info())
         return False
 
     return len(stack) != 0
