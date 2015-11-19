@@ -1,5 +1,6 @@
 from ..script import opcodes, tools
 from ..script.check_signature import parse_signature_blob
+from ..script.der import UnexpectedDER
 from ..script.microcode import VCH_TRUE
 
 from ... import ecdsa
@@ -109,7 +110,7 @@ class ScriptMultisig(ScriptType):
                             existing_signatures.append(data)
                             secs_solved.add(sec_key)
                             break
-                    except encoding.EncodingError:
+                    except (encoding.EncodingError, UnexpectedDER):
                         # if public_pair is invalid, we just ignore it
                         pass
 
