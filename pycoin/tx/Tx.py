@@ -39,8 +39,8 @@ from .TxIn import TxIn
 from .TxOut import TxOut
 from .Spendable import Spendable
 
-from .pay_to import script_obj_from_script, SolvingError, ScriptPayToScript
-
+from .exceptions import SolvingError
+from .pay_to import script_obj_from_script, ScriptPayToScript
 from .script import opcodes
 from .script import tools
 
