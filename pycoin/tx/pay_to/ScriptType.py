@@ -8,6 +8,15 @@ from ..script import der, opcodes, tools
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 
 
+def generate_default_placeholder_signature():
+    order = ecdsa.generator_secp256k1.order()
+    r, s = order - 1, order // 2
+    return der.sigencode_der(r, s) + bytes_from_int(1)
+
+
+DEFAULT_PLACEHOLDER_SIGNATURE = generate_default_placeholder_signature()
+
+
 class ScriptType(object):
     def __init__(self):
         raise NotImplemented()
@@ -72,12 +81,6 @@ class ScriptType(object):
         r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
         if s + s > order:
             s = order - s
-        return der.sigencode_der(r, s) + bytes_from_int(signature_type)
-
-    @staticmethod
-    def _dummy_signature(signature_type):
-        order = ecdsa.generator_secp256k1.order()
-        r, s = order - 1, order // 2
         return der.sigencode_der(r, s) + bytes_from_int(signature_type)
 
     def address(self, netcode='BTC'):
