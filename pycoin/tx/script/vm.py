@@ -138,7 +138,7 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
         logger.exception("script failed for unknown reason")
         return False
 
-    return len(stack) != 0
+    return True
 
 
 def verify_script(script_signature, script_public_key, signature_for_hash_type_f, expected_hash_type=None):
@@ -152,15 +152,20 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         return False
 
     if is_p2h:
-        signatures, alt_script_public_key = stack[:-1], stack[-1]
-        alt_script_signature = bin_script(signatures)
+        stack_copy = list(stack)
 
     if not eval_script(script_public_key, signature_for_hash_type_f, expected_hash_type, stack):
         logger.debug("script_public_key did not evaluate")
         return False
 
-    if is_p2h and stack[-1] == VCH_TRUE:
+    if is_p2h and len(stack) > 0 and stack[-1] == VCH_TRUE:
+        if len(stack_copy) == 0:
+            return False
+
+        signatures, alt_script_public_key = stack_copy[:-1], stack_copy[-1]
+        alt_script_signature = bin_script(signatures)
+
         return verify_script(alt_script_signature, alt_script_public_key,
                              signature_for_hash_type_f, expected_hash_type=expected_hash_type)
 
-    return stack[-1] != VCH_FALSE
+    return len(stack) > 0 and stack[-1] != VCH_FALSE

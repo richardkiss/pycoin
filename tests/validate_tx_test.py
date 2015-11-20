@@ -5,9 +5,12 @@ import io
 import unittest
 
 from pycoin.block import Block
+from pycoin.intbytes import bytes_from_int
 from pycoin.serialize import h2b
 from pycoin.tx import Tx, ValidationFailureError
 from pycoin.tx.script import tools
+from pycoin.tx.script.opcodes import OPCODE_TO_INT
+from pycoin.tx.script.vm import eval_script, verify_script
 
 
 class ValidatingTest(unittest.TestCase):
@@ -192,6 +195,18 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
             assert from_bytes(to_bytes(768, 2, e), e) == 768
             assert from_bytes(to_bytes(3, 1, e), e) == 3
             assert from_bytes(to_bytes(66051, 3, e), e) == 66051
+
+    def test_empty_stacks(self):
+        stack = []
+        empty_script = b''
+        true_script = bytes_from_int(OPCODE_TO_INT['OP_1'])
+        self.assertTrue(eval_script(empty_script, None, stack=stack))
+        self.assertEqual(stack, [])
+        self.assertTrue(eval_script(true_script, None, stack=stack))
+        self.assertEqual(stack, [ b'\x01' ])
+        self.assertTrue(verify_script(true_script, empty_script, None))
+        self.assertTrue(verify_script(empty_script, true_script, None))
+        self.assertFalse(verify_script(empty_script, empty_script, None))
 
 if __name__ == "__main__":
     unittest.main()
