@@ -159,7 +159,9 @@ class ScriptTypesTest(unittest.TestCase):
         N, M = 3, 3
         keys = [Key(secret_exponent=i) for i in range(1, M+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
-        underlying_script = ScriptMultisig(n=N, sec_keys=[key.sec() for key in keys[:M]]).script()
+        script = ScriptMultisig(n=N, sec_keys=[key.sec() for key in keys[:M]])
+        script.address()
+        underlying_script = script.script()
         address = address_for_pay_to_script(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = standard_tx_out_script(address)
