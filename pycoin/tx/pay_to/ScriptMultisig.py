@@ -54,12 +54,6 @@ class ScriptMultisig(ScriptType):
 
         return cls(sec_keys=sec_keys, n=n)
 
-    def address(self):
-        if self._address is None:
-            self._address = encoding.hash160_sec_to_bitcoin_address(
-                self.hash160, address_prefix=self.address_prefix)
-        return self._address
-
     def script(self):
         if self._script is None:
             # create the script
