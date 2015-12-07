@@ -1,0 +1,3 @@
+
+class SolvingError(Exception):
+    pass

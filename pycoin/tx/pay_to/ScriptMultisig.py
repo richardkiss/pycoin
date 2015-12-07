@@ -1,6 +1,6 @@
 from ..script import opcodes, tools
 from ..script.check_signature import parse_signature_blob
-from ..script.microcode import VCH_TRUE
+from ..script.der import UnexpectedDER
 
 from ... import ecdsa
 from ... import encoding
@@ -8,7 +8,10 @@ from ... import encoding
 from ...networks import address_prefix_for_netcode
 from ...serialize import b2h
 
-from .ScriptType import ScriptType
+from ..exceptions import SolvingError
+
+from .ScriptType import ScriptType, DEFAULT_PLACEHOLDER_SIGNATURE
+
 
 
 # see BIP11 https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki
@@ -77,6 +80,9 @@ class ScriptMultisig(ScriptType):
             the integer value to sign (derived from the transaction hash)
         signature_type:
             usually SIGHASH_ALL (1)
+        signature_placeholder:
+            The signature left in place when we don't have enough keys.
+            Defaults to DEFAULT_PLACEHOLDER_SIGNATURE. Might want OP_0 instead.
         """
         # we need a hash160 => secret_exponent lookup
         db = kwargs.get("hash160_lookup")
@@ -86,7 +92,7 @@ class ScriptMultisig(ScriptType):
         sign_value = kwargs.get("sign_value")
         signature_type = kwargs.get("signature_type")
 
-        dummy_fill = kwargs.get("dummy_fill", True)
+        signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
 
         secs_solved = set()
         existing_signatures = []
@@ -109,7 +115,7 @@ class ScriptMultisig(ScriptType):
                             existing_signatures.append(data)
                             secs_solved.add(sec_key)
                             break
-                    except encoding.EncodingError:
+                    except (encoding.EncodingError, UnexpectedDER):
                         # if public_pair is invalid, we just ignore it
                         pass
 
@@ -126,10 +132,9 @@ class ScriptMultisig(ScriptType):
             binary_signature = self._create_script_signature(secret_exponent, sign_value, signature_type)
             existing_signatures.insert(signature_order, binary_signature)
 
-        if dummy_fill:
-            DUMMY_SIGNATURE = self._dummy_signature(signature_type)
+        if signature_placeholder:
             while len(existing_signatures) < self.n:
-                existing_signatures.append(DUMMY_SIGNATURE)
+                existing_signatures.append(signature_placeholder)
 
         script = "OP_0 %s" % " ".join(b2h(s) for s in existing_signatures)
         solution = tools.compile(script)

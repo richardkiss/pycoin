@@ -183,10 +183,15 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
         self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
     def test_endian(self):
-        from pycoin.tx.script.tools import int_from_bytes, int_to_bytes
+        from pycoin.intbytes import int_from_bytes, int_to_bytes, from_bytes, to_bytes
         assert int_from_bytes(int_to_bytes(768)) == 768
         assert int_from_bytes(int_to_bytes(3)) == 3
         assert int_from_bytes(int_to_bytes(66051)) == 66051
+
+        for e in ("big", "little"):
+            assert from_bytes(to_bytes(768, 2, e), e) == 768
+            assert from_bytes(to_bytes(3, 1, e), e) == 3
+            assert from_bytes(to_bytes(66051, 3, e), e) == 66051
 
 if __name__ == "__main__":
     unittest.main()

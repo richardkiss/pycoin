@@ -5,6 +5,8 @@ from ... import encoding
 from ...networks import address_prefix_for_netcode
 from ...serialize import b2h
 
+from ..exceptions import SolvingError
+
 from .ScriptType import ScriptType
 
 
