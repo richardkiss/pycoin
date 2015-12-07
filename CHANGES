@@ -1,3 +1,9 @@
+
+Version 0.61
+------------
+
+* fix a problem creating and parsing scripts with blobs of size >= 256
+
 Version 0.60
 ------------
 

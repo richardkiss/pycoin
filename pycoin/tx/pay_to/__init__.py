@@ -12,11 +12,10 @@ from .ScriptMultisig import ScriptMultisig
 from .ScriptUnknown import ScriptUnknown
 from .ScriptNulldata import ScriptNulldata
 
-SUBCLASSES = [ScriptPayToAddress, ScriptPayToPublicKey, ScriptPayToScript, ScriptMultisig, ScriptNulldata, ScriptUnknown]
-
-
-class SolvingError(Exception):
-    pass
+SUBCLASSES = [
+    ScriptPayToAddress, ScriptPayToPublicKey, ScriptPayToScript,
+    ScriptMultisig, ScriptNulldata, ScriptUnknown
+]
 
 
 def script_obj_from_address(text, netcodes=DEFAULT_NETCODES):

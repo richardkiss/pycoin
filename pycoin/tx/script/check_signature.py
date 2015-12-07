@@ -44,11 +44,11 @@ def parse_signature_blob(sig_blob):
 
 
 def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script):
-    public_pair = sec_to_public_pair(stack.pop())
-    sig_blob = stack.pop()
     try:
+        public_pair = sec_to_public_pair(stack.pop())
+        sig_blob = stack.pop()
         sig_pair, signature_type = parse_signature_blob(sig_blob)
-    except der.UnexpectedDER:
+    except (der.UnexpectedDER, ValueError, EncodingError):
         stack.append(VCH_FALSE)
         return
 
@@ -97,8 +97,11 @@ def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_typ
         if signature_type not in sig_cache:
             sig_cache[signature_type] = signature_for_hash_type_f(signature_type, script=tmp_script)
 
-        ppp = ecdsa.possible_public_pairs_for_signature(
-            ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
+        try:
+            ppp = ecdsa.possible_public_pairs_for_signature(
+                ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
+        except ecdsa.NoSuchPointError as err:
+            ppp = []
 
         if len(ppp) > 0:
             for idx, pp in enumerate(public_pairs):
@@ -129,7 +132,7 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
         the_sec = stack.pop()
         try:
             public_pairs.append(sec_to_public_pair(the_sec))
-        except EncodingError:
+        except (EncodingError, ValueError):
             # we must ignore badly encoded public pairs
             # the transaction 70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a
             # is in a block and requires this hack

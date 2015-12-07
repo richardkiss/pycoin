@@ -35,7 +35,7 @@ bytes_from_ints = (lambda l: b''.join(chr(x) for x in l)) if bytes == str else b
 if hasattr(int, "to_bytes"):
     to_bytes = lambda v, length, byteorder="big": v.to_bytes(length, byteorder=byteorder)
     from_bytes = lambda bytes, byteorder="big", signed=False: int.from_bytes(
-        bytes, byteorder="big", signed=signed)
+        bytes, byteorder=byteorder, signed=signed)
     int_to_bytes = lambda v: v.to_bytes((v.bit_length()+7)//8, byteorder="big")
     int_from_bytes = lambda v: int.from_bytes(v, byteorder="big")
 else:

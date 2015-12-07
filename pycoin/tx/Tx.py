@@ -29,6 +29,7 @@ THE SOFTWARE.
 import io
 import warnings
 
+from ..convention import SATOSHI_PER_COIN
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
@@ -38,11 +39,14 @@ from .TxIn import TxIn
 from .TxOut import TxOut
 from .Spendable import Spendable
 
-from .pay_to import script_obj_from_script, SolvingError, ScriptPayToScript
-
+from .exceptions import SolvingError
+from .pay_to import script_obj_from_script, ScriptPayToScript
 from .script import opcodes
 from .script import tools
 
+
+MAX_MONEY = 21000000 * SATOSHI_PER_COIN
+MAX_BLOCK_SIZE = 1000000
 
 SIGHASH_ALL = 1
 SIGHASH_NONE = 2
@@ -299,6 +303,45 @@ class Tx(object):
         return "Tx [%s] (v:%d) [%s] [%s]" % (
             self.id(), self.version, ", ".join(str(t) for t in self.txs_in),
             ", ".join(str(t) for t in self.txs_out))
+
+    def check(self):
+        """
+        Basic checks that don't depend on any context.
+        Adapted from Bicoin Code: main.cpp
+        """
+        if not self.txs_in:
+            raise ValidationFailureError("txs_in = []")
+        if not self.txs_out:
+            raise ValidationFailureError("txs_out = []")
+        # Size limits
+        f = io.BytesIO()
+        self.stream(f)
+        size = len(f.getvalue())
+        if size > MAX_BLOCK_SIZE:
+            raise ValidationFailureError("size > MAX_BLOCK_SIZE")
+        # Check for negative or overflow output values
+        nValueOut = 0
+        for tx_out in self.txs_out:
+            if tx_out.coin_value < 0 or tx_out.coin_value > MAX_MONEY:
+                raise ValidationFailureError("tx_out value negative or out of range")
+            nValueOut += tx_out.coin_value
+            if nValueOut > MAX_MONEY:
+                raise ValidationFailureError("tx_out total out of range")
+        # Check for duplicate inputs
+        if [x for x in self.txs_in if self.txs_in.count(x) > 1]:
+            raise ValidationFailureError("duplicate inputs")
+        if (self.is_coinbase()):
+            if not (2 <= len(self.txs_in[0].script) <= 100):
+                raise ValidationFailureError("bad coinbase script size")
+        else:
+            refs = set()
+            for tx_in in self.txs_in:
+                if tx_in.previous_hash == b'0' * 32:
+                    raise ValidationFailureError("prevout is null")
+                pair = (tx_in.previous_hash, tx_in.previous_index)
+                if pair in refs:
+                    raise ValidationFailureError("spendable reused")
+                refs.add(pair)
 
     """
     The functions below here deal with an optional additional parameter: "unspents".
