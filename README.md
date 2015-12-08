@@ -120,6 +120,8 @@ GreenAddress https://greenaddress.it/
 
 Coinkite https://coinkite.com/
 
+Wall of Coins https://wallofcoins.com/
+
 Email me at him@richardkiss.com to be added to this list.
 
 
