@@ -24,7 +24,7 @@ from pycoin.tx import Spendable, Tx, TxIn, TxOut
 
 
 class InsightService(object):
-    def __init__(self, base_url):
+    def __init__(self, base_url="https://insight.bitpay.com"):
         while base_url[-1] == '/':
             base_url = base_url[:-1]
         self.base_url = base_url
