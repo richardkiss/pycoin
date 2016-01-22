@@ -67,7 +67,10 @@ NETWORKS = (
     NetworkValues(
         "Riecoin", "mainnet", "RIC", b'\x80', b'\x3c', b'\x05', h2b('0488ADE4'), h2b('0488B21E')),
 
- # FAI faircoin mainnet : xprv/xpub
+    # DFC Defcoin mainnet: dfcv/dfcp
+    NetworkValues("DEFCOIN", "mainnet", "DFC", b'\x9e', b'\x1e', b'\x16', h2b("02FA54D7"), h2b("02FA54AD")),
+
+    # FAI faircoin mainnet : xprv/xpub
     NetworkValues("Faircoin", "mainnet", "FAI", b'\xdf', b'\x5f', b'\x24', h2b("0488ADE4"), h2b("0488B21E")),
 
 )
