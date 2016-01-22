@@ -5,7 +5,7 @@ try:
 except ImportError:
     from urllib.request import urlopen
 
-from pycoin.serialize import h2b
+from pycoin.serialize import h2b, h2b_rev
 from pycoin.tx import Spendable
 
 
@@ -32,7 +32,7 @@ class ChainSoProvider(object):
         for u in r['data']['txs']:
             coin_value = int (float (u['value']) * 100000000)
             script = h2b(u["script_hex"])
-            previous_hash = h2b(u["txid"])
+            previous_hash = h2b_rev(u["txid"])
             previous_index = u["output_no"]
             spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
 
