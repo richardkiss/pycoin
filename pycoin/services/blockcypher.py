@@ -11,7 +11,7 @@ from pycoin.serialize import h2b, h2b_rev
 
 
 class BlockCypherProvider(object):
-    def __init__(self, netcode="BTC", api_key = ""):
+    def __init__(self, api_key = "", netcode="BTC"):
         NETWORK_PATHS = {
             "BTC" : "main",
             "XTN" : "test3"
@@ -30,10 +30,8 @@ class BlockCypherProvider(object):
         """
         spendables = []
         url_append = "?unspentOnly=true&token=%s&includeScript=true" % self.api_key
-        url = self.base_url("%s%s" % (address, url_append))
-
+        url = self.base_url("addrs/%s%s" % (address, url_append))
         result = json.loads(urlopen(url).read().decode("utf8"))
-
         for txn in result.get("txrefs", []):
             coin_value = txn.get("value")
             script = h2b(txn.get("script"))
@@ -46,11 +44,15 @@ class BlockCypherProvider(object):
         '''
         returns the pycoin.tx object for tx_hash
         '''
-        url_append = "?token=%s&includeHex=true" % self.api_key
-        url = self.base_url("txs/%s" % (tx_hash + url_append))
-        result = json.loads(urlopen(url).read().decode("utf8"))
-        tx = Tx.parse(io.BytesIO(h2b(result.get("hex"))))
-        return tx
+        try:
+            url_append = "?token=%s&includeHex=true" % self.api_key
+            url = self.base_url("txs/%s" % (tx_hash + url_append))
+            result = json.loads(urlopen(url).read().decode("utf8"))
+            tx = Tx.parse(io.BytesIO(h2b(result.get("hex"))))
+            return tx
+        except:
+            raise Exception
+
 
     def get_balance(self, address):
         '''
