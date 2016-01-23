@@ -28,8 +28,14 @@ def parse_signed_message(msg_in):
         for this, so in case of confusion it's a reference, but I've never found
         a real spec for this. Should be a BIP really.
     """
-    # convert to unix line feeds from DOS style, if that happens (untested)
-    msg_in = msg_in.replace('\r\n', '\n')
+
+    # Convert to Unix line feeds from DOS style, iff we find them, but
+    # restore to same at the end. The RFC implies we should be using
+    # DOS \r\n in the message, but that does not always happen in today's
+    # world of MacOS and Linux devs. A mix of types will not work here.
+    dos_nl = ('\r\n' in msg_in)
+    if dos_nl:
+        msg_in = msg_in.replace('\r\n', '\n')
 
     try:
         # trim any junk in front
@@ -73,6 +79,9 @@ def parse_signed_message(msg_in):
 
     if not addr or addr == sig:
         raise ValueError("Could not find address")
+
+    if dos_nl:
+        msg = msg.replace('\n', '\r\n')
 
     return msg, addr, sig
 
