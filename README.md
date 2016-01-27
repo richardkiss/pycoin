@@ -35,7 +35,7 @@ Or
 ```Key.from_sec(sec)``` creates a Key from the SEC bytestream encoding of a public pair.
 
 
-pycoin.key.bip32.Wallet (formerly pycoin.wallet.Wallet) provides a BIP32 hierarchical wallet.
+pycoin.key.BIP32Node (formerly pycoin.wallet.Wallet) provides a BIP32 hierarchical wallet.
 
 Much of this API is exposed in the ```ku``` command-line utility. See also COMMAND-LINE-TOOLS.md.
 
