@@ -11,19 +11,20 @@ from pycoin.tx import Tx, Spendable
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
 
 
-class BlockrIO(object):
-    def __init__(self, netcode):
+class BlockrioProvider(object):
+    def __init__(self, netcode='BTC'):
         url_stub = {"BTC": "btc.blockr.io", "XTN": "tbtc.blockr.io"}.get(netcode)
         if url_stub is None:
             raise ValueError("unsupported netcode %s" % netcode)
         self.url = "http://%s/api/v1" % url_stub
 
-    def spendables_for_address(self, bitcoin_address):
+    def spendables_for_address(self, address):
         """
         Return a list of Spendable objects for the
         given bitcoin address.
         """
-        URL = "%s/address/unspent/%s" % (self.url, bitcoin_address)
+        url_append = "unspent/%s" % address
+        URL = self.base_url("/address/%s" % url_append)
         r = json.loads(urlopen(URL).read().decode("utf8"))
         spendables = []
         for u in r.get("data", {}).get("unspent", []):
@@ -40,3 +41,14 @@ class BlockrIO(object):
         r = json.loads(urlopen(URL).read().decode("utf8"))
         tx = Tx.parse(io.BytesIO(h2b(r.get("data").get("tx").get("hex"))))
         return tx
+
+    get_tx = tx_for_tx_hash
+
+
+# Will keep these for backward compatibility
+def spendables_for_address(bitcoin_address):
+    return BlockrioProvider().spendables_for_address(bitcoin_address)
+
+
+def get_tx(tx_hash):
+    return BlockrioProvider().get_tx(tx_hash)
