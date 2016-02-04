@@ -40,7 +40,7 @@ class BlockCypherProvider(object):
             spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
         return spendables
 
-    def get_tx(self, tx_hash):
+    def tx_for_tx_hash(self, tx_hash):
         '''
         returns the pycoin.tx object for tx_hash
         '''
