@@ -4,10 +4,9 @@ import re
 import threading
 
 from .bitcoind import BitcoindProvider
-from .biteasy import BiteasyProvider
 from .blockexplorer import BlockExplorer
 from .blockchain_info import BlockchainInfo
-from .blockr_io import BlockrIO
+from .blockr_io import BlockrioProvider
 from .chain_so import ChainSoProvider
 from .insight import InsightService
 
@@ -106,9 +105,8 @@ DESCRIPTOR_CRE_INIT_TUPLES = [
         r"^bitcoinrpc://(?P<user>\S*):(?P<password>\S*)\@(?P<hostname>\S*)(:(?P<port>\d*))"),
         bitcoin_rpc_init),
     (re.compile(r"^blockchain\.info$"), BlockchainInfo),
-    (re.compile(r"^biteasy\.com$"), BiteasyProvider),
     (re.compile(r"^blockexplorer\.com$"), BlockExplorer),
-    (re.compile(r"^blockr\.io$"), BlockrIO),
+    (re.compile(r"^blockr\.io$"), BlockrioProvider),
     (re.compile(r"^chain\.so$"), ChainSoProvider),
     (re.compile(r"^insight:(?P<url>\S*)$"), insight_init),
 ]

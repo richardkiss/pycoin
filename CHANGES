@@ -1,3 +1,9 @@
+Version 0.xx
+------------
+
+* chain service provider removed, as they've disabled their API
+* biteasy service provider removed, as many transactions were not being returned properly
+  and there are many other good alternatives
 
 Version 0.61
 ------------
