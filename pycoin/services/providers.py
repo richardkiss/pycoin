@@ -1,7 +1,6 @@
-import importlib
-import random
 import re
 import threading
+import warnings
 
 from .bitcoind import BitcoindProvider
 from .blockexplorer import BlockExplorer
@@ -18,11 +17,21 @@ from .tx_db import TxDb
 THREAD_LOCALS = threading.local()
 
 
+ALL_PROVIDERS = [
+    BitcoindProvider, BlockExplorer, BlockchainInfo, BlockrioProvider, ChainSoProvider, InsightService]
+
+
 # PYCOIN_BTC_PROVIDERS="blockchain.info blockexplorer.com blockr.io chain.so"
 # PYCOIN_BTC_PROVIDERS="insight:http(s?)://hostname/url bitcoinrpc://user:passwd@hostname:8333"
 
 class NoServicesSpecifiedError(Exception):
     pass
+
+
+def service_provider_methods(method_name, service_providers):
+    methods = [getattr(m, method_name, None) for m in service_providers]
+    methods = [m for m in methods if m]
+    return methods
 
 
 def spendables_for_address(bitcoin_address, format=None):
@@ -66,19 +75,17 @@ def message_about_tx_cache_env():
                " cache transactions fetched via web services"
 
 
-def all_providers_message(method):
+def all_providers_message(method, netcode):
     if len(service_provider_methods(method, service_providers_for_env())) == 0:
-        l = list(SERVICE_PROVIDERS)
-        random.shuffle(l)
         return "no service providers found for %s; consider setting environment variable "\
-            "PYCOIN_SERVICE_PROVIDERS=%s" % (method, ':'.join(l))
+            "PYCOIN_%s_PROVIDERS" % (method, netcode)
 
 
-def message_about_spendables_for_address_env():
+def message_about_spendables_for_address_env(netcode):
     return all_providers_message("spendables_for_address")
 
 
-def message_about_get_tx_env():
+def message_about_get_tx_env(netcode):
     return all_providers_message("get_tx")
 
 
@@ -98,7 +105,7 @@ def providers_for_config_string(config_string, netcode):
         if p:
             providers.append(p)
         else:
-            warnings.warn("can't parse %s in environment variable %s" % (d, env_code))
+            warnings.warn("can't parse provider %s in config string" % d)
     return providers
 
 

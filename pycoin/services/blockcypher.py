@@ -11,10 +11,10 @@ from pycoin.serialize import h2b, h2b_rev
 
 
 class BlockCypherProvider(object):
-    def __init__(self, api_key = "", netcode="BTC"):
+    def __init__(self, api_key="", netcode="BTC"):
         NETWORK_PATHS = {
-            "BTC" : "main",
-            "XTN" : "test3"
+            "BTC": "main",
+            "XTN": "test3"
         }
 
         self.network_path = NETWORK_PATHS.get(netcode)
@@ -52,7 +52,6 @@ class BlockCypherProvider(object):
             return tx
         except:
             raise Exception
-
 
     def get_balance(self, address):
         '''

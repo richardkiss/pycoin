@@ -1,12 +1,14 @@
 from pycoin.serialize import b2h, b2h_rev
 
+
 class BitcoindProvider(object):
     def __init__(self, bitcoind_url):
         try:
             from bitcoinrpc.authproxy import AuthServiceProxy
         except ImportError:
             print("This script depends upon python-bitcoinrpc.")
-            print("pip install -e git+https://github.com/jgarzik/python-bitcoinrpc#egg=python_bitcoinrpc-master")
+            print("pip install -e git+https://github.com/jgarzik/"
+                  "python-bitcoinrpc#egg=python_bitcoinrpc-master")
             raise
         self.bitcoind_url = bitcoind_url
         self.connection = AuthServiceProxy(bitcoind_url)
@@ -18,6 +20,7 @@ class BitcoindProvider(object):
         signed = self.connection.signrawtransaction(tx.as_hex(), unknown_tx_outs, [])
         is_ok = [tx.is_signature_ok(idx) for idx in range(len(tx.txs_in))]
         return all(is_ok) == signed.get("complete")
+
 
 def unspent_to_bitcoind_dict(tx_in, tx_out):
     return dict(
