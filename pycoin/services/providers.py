@@ -9,8 +9,8 @@ from .blockr_io import BlockrioProvider
 from .chain_so import ChainSoProvider
 from .insight import InsightService
 
-from .env import main_cache_dir
-from .env import service_providers_for_env, tx_read_cache_dirs, tx_writable_cache_dir
+from .env import main_cache_dir, config_string_for_netcode_from_env
+from .env import tx_read_cache_dirs, tx_writable_cache_dir
 from .tx_db import TxDb
 
 
@@ -34,7 +34,7 @@ def service_provider_methods(method_name, service_providers):
     return methods
 
 
-def spendables_for_address(bitcoin_address, format=None):
+def spendables_for_address(bitcoin_address, netcode, format=None):
     """
     Return a list of Spendable objects for the
     given bitcoin address.
@@ -50,7 +50,7 @@ def spendables_for_address(bitcoin_address, format=None):
     """
     if format:
         method = "as_%s" % format
-    for m in service_provider_methods("spendables_for_address", service_providers_for_env()):
+    for m in service_provider_methods("spendables_for_address", providers_for_netcode_from_env(netcode)):
         try:
             spendables = m(bitcoin_address)
             if format:
@@ -61,8 +61,8 @@ def spendables_for_address(bitcoin_address, format=None):
     return []
 
 
-def get_tx_db():
-    lookup_methods = service_provider_methods("get_tx", service_providers_for_env())
+def get_tx_db(netcode):
+    lookup_methods = service_provider_methods("tx_for_tx_hash", providers_for_netcode_from_env(netcode))
     read_cache_dirs = tx_read_cache_dirs()
     writable_cache_dir = tx_writable_cache_dir()
     return TxDb(lookup_methods=lookup_methods, read_only_paths=read_cache_dirs,
@@ -76,7 +76,7 @@ def message_about_tx_cache_env():
 
 
 def all_providers_message(method, netcode):
-    if len(service_provider_methods(method, service_providers_for_env())) == 0:
+    if len(service_provider_methods(method, providers_for_netcode_from_env(netcode))) == 0:
         return "no service providers found for %s; consider setting environment variable "\
             "PYCOIN_%s_PROVIDERS" % (method, netcode)
 
@@ -85,8 +85,8 @@ def message_about_spendables_for_address_env(netcode):
     return all_providers_message("spendables_for_address")
 
 
-def message_about_get_tx_env(netcode):
-    return all_providers_message("get_tx")
+def message_about_tx_for_tx_hash_env(netcode):
+    return all_providers_message("tx_for_tx_hash", netcode)
 
 
 def bitcoin_rpc_init(match, netcode):
@@ -111,7 +111,7 @@ def providers_for_config_string(config_string, netcode):
 
 def providers_for_netcode_from_env(netcode):
     env_var = "PYCOIN_%s_PROVIDERS" % netcode
-    return providers_for_config_string(env_var)
+    return providers_for_config_string(config_string_for_netcode_from_env(netcode), netcode)
 
 
 DESCRIPTOR_CRE_INIT_TUPLES = [

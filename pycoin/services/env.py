@@ -1,10 +1,6 @@
 import os
 
 
-def service_providers_for_env():
-    return os.getenv("PYCOIN_SERVICE_PROVIDERS", '').split(":")
-
-
 def main_cache_dir():
     p = os.getenv("PYCOIN_CACHE_DIR")
     if p:
@@ -23,5 +19,5 @@ def tx_writable_cache_dir():
     return p
 
 
-def providers_for_netcode_from_env(netcode):
+def config_string_for_netcode_from_env(netcode):
     return os.getenv("PYCOIN_%s_PROVIDERS" % netcode)
