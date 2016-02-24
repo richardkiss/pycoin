@@ -29,6 +29,7 @@ from pycoin.tx.TxOut import standard_tx_out_script
 from pycoin.tx.script.tools import opcode_list
 from pycoin.tx.script.check_signature import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
+from pycoin.tx.script.disassemble import disassemble_scripts
 
 DEFAULT_VERSION = 1
 DEFAULT_LOCK_TIME = 0
@@ -62,7 +63,7 @@ def sighash_type_to_string(sighash_type):
     return sighash_str
 
 
-def dump_tx(tx, netcode='BTC', verbose_signature=False):
+def dump_tx(tx, netcode='BTC', verbose_signature=False, disassembly_level=0):
     address_prefix = address_prefix_for_netcode(netcode)
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes   " % (tx.version, tx.id(), len(tx_bin)))
@@ -93,6 +94,20 @@ def dump_tx(tx, netcode='BTC', verbose_signature=False):
             t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
                                               tx_in.previous_index, suffix)
             print(t.rstrip())
+            if disassembly_level > 0:
+                signature_for_hash_type_f = lambda hash_type, script: tx.signature_hash(
+                                            script, idx, hash_type)
+                out_script = b''
+                if tx_out:
+                    out_script = tx_out.script
+                for (pre_annotations, pc, opcode, instruction, post_annotations) in \
+                        disassemble_scripts(tx_in.script, out_script, signature_for_hash_type_f):
+                    for l in pre_annotations:
+                        print("           %s" % l)
+                    print(    "    %4x: %02x  %s" % (pc, opcode, instruction))
+                    for l in post_annotations:
+                        print("           %s" % l)
+
             if verbose_signature:
                 signatures = []
                 for opcode in opcode_list(tx_in.script):
@@ -119,6 +134,15 @@ def dump_tx(tx, netcode='BTC', verbose_signature=False):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
         address = tx_out.bitcoin_address(netcode=netcode) or "(unknown)"
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
+        if disassembly_level > 0:
+            for (pre_annotations, pc, opcode, instruction, post_annotations) in \
+                    disassemble_scripts(b'', tx_out.script, signature_for_hash_type_f):
+                for l in pre_annotations:
+                    print("           %s" % l)
+                print(    "    %4x: %02x  %s" % (pc, opcode, instruction))
+                for l in post_annotations:
+                    print("           %s" % l)
+
     if not missing_unspents:
         print("Total input  %12.5f mBTC" % satoshi_to_mbtc(tx.total_in()))
     print(    "Total output %12.5f mBTC" % satoshi_to_mbtc(tx.total_out()))
@@ -233,6 +257,9 @@ def main():
 
     parser.add_argument('-o', "--output-file", metavar="path-to-output-file", type=argparse.FileType('wb'),
                         help='file to write transaction to. This supresses most other output.')
+
+    parser.add_argument('-d', "--disassemble", action='store_true',
+                        help='Disassemble scripts.')
 
     parser.add_argument('-p', "--pay-to-script", metavar="pay-to-script", action="append",
                         help='a hex version of a script required for a pay-to-script input (a bitcoin address that starts with 3)')
@@ -474,6 +501,7 @@ def main():
         print("warning: %s" % ex.args[0], file=sys.stderr)
 
     unsigned_before = tx.bad_signature_count()
+    unsigned_after = unsigned_before
     if unsigned_before > 0 and key_iters:
         def wif_iter(iters):
             while len(iters) > 0:
@@ -488,9 +516,9 @@ def main():
         print("signing...", file=sys.stderr)
         sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup)
 
-    unsigned_after = tx.bad_signature_count()
-    if unsigned_after > 0 and key_iters:
-        print("warning: %d TxIn items still unsigned" % unsigned_after, file=sys.stderr)
+        unsigned_after = tx.bad_signature_count()
+        if unsigned_after > 0:
+            print("warning: %d TxIn items still unsigned" % unsigned_after, file=sys.stderr)
 
     if len(tx.txs_in) == 0:
         print("warning: transaction has no inputs", file=sys.stderr)
@@ -516,7 +544,7 @@ def main():
     else:
         if not tx.missing_unspents():
             check_fees(tx)
-        dump_tx(tx, args.network, args.verbose_signature)
+        dump_tx(tx, args.network, args.verbose_signature, 1 if args.disassemble else 0)
         if include_unspents:
             print("including unspents in hex dump since transaction not fully signed")
         print(tx_as_hex)
