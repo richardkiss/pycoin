@@ -29,7 +29,7 @@ from pycoin.tx.TxOut import standard_tx_out_script
 from pycoin.tx.script.tools import opcode_list
 from pycoin.tx.script.check_signature import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
-from pycoin.tx.script.disassemble import disassemble_scripts
+from pycoin.tx.script.disassemble import disassemble_scripts, sighash_type_to_string
 
 DEFAULT_VERSION = 1
 DEFAULT_LOCK_TIME = 0
@@ -45,22 +45,6 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
             print("tx ==> %s FAILED interop test" % tx.id(), file=sys.stderr)
     except ImportError:
         print("warning: can't talk to bitcoind due to missing library")
-
-
-def sighash_type_to_string(sighash_type):
-    anyonecanpay = sighash_type & SIGHASH_ANYONECANPAY
-    sighash_type &= ~SIGHASH_ANYONECANPAY
-    if sighash_type == SIGHASH_ALL:
-        sighash_str = 'SIGHASH_ALL'
-    elif sighash_type == SIGHASH_NONE:
-        sighash_str = 'SIGHASH_NONE'
-    elif sighash_type == SIGHASH_SINGLE:
-        sighash_str = 'SIGHASH_SINGLE'
-    else:
-        sighash_str = 'SIGHASH_UNKNOWN'
-    if anyonecanpay:
-        sighash_str += ' | SIGHASH_ANYONECANPAY'
-    return sighash_str
 
 
 def dump_tx(tx, netcode='BTC', verbose_signature=False, disassembly_level=0):
