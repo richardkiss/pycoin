@@ -141,11 +141,15 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
     return len(stack) != 0
 
 
+def is_pay_to_script_hash(script_public_key):
+    return (len(script_public_key) == 23 and byte_to_int(script_public_key[0]) == opcodes.OP_HASH160 and
+            byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
+
+
 def verify_script(script_signature, script_public_key, signature_for_hash_type_f, expected_hash_type=None):
     stack = []
 
-    is_p2h = (len(script_public_key) == 23 and byte_to_int(script_public_key[0]) == opcodes.OP_HASH160
-              and byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
+    is_p2h = is_pay_to_script_hash(script_public_key)
 
     if not eval_script(script_signature, signature_for_hash_type_f, expected_hash_type, stack):
         logger.debug("script_signature did not evaluate")
