@@ -62,6 +62,9 @@ def dump_tx(tx, netcode='BTC', verbose_signature=False, disassembly_level=0):
     print("Input%s:" % ('s' if len(tx.txs_in) != 1 else ''))
     missing_unspents = tx.missing_unspents()
     for idx, tx_in in enumerate(tx.txs_in):
+        if disassembly_level > 0:
+            signature_for_hash_type_f = lambda hash_type, script: tx.signature_hash(
+                                        script, idx, hash_type)
         if tx.is_coinbase():
             print("%4d: COINBASE  %12.5f mBTC" % (idx, satoshi_to_mbtc(tx.total_in())))
         else:
@@ -78,8 +81,6 @@ def dump_tx(tx, netcode='BTC', verbose_signature=False, disassembly_level=0):
                                               tx_in.previous_index, suffix)
             print(t.rstrip())
             if disassembly_level > 0:
-                signature_for_hash_type_f = lambda hash_type, script: tx.signature_hash(
-                                            script, idx, hash_type)
                 out_script = b''
                 if tx_out:
                     out_script = tx_out.script
@@ -417,7 +418,7 @@ def main():
         parser.error("can't parse %s" % arg)
 
     if args.fetch_spendables:
-        warning_spendables = message_about_spendables_for_address_env()
+        warning_spendables = message_about_spendables_for_address_env(args.network)
         for address in args.fetch_spendables:
             spendables.extend(spendables_for_address(address))
 
@@ -425,7 +426,7 @@ def main():
         if tx.missing_unspents() and args.augment:
             if tx_db is None:
                 warning_tx_cache = message_about_tx_cache_env()
-                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env()
+                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
                 tx_db = get_tx_db(args.network)
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
@@ -535,14 +536,14 @@ def main():
     if args.cache:
         if tx_db is None:
             warning_tx_cache = message_about_tx_cache_env()
-            warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env()
+            warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
             tx_db = get_tx_db(args.network)
         tx_db.put(tx)
 
     if args.bitcoind_url:
         if tx_db is None:
             warning_tx_cache = message_about_tx_cache_env()
-            warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env()
+            warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
             tx_db = get_tx_db(args.network)
         validate_bitcoind(tx, tx_db, args.bitcoind_url)
 
@@ -552,7 +553,7 @@ def main():
         try:
             if tx_db is None:
                 warning_tx_cache = message_about_tx_cache_env()
-                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env()
+                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
                 tx_db = get_tx_db(args.network)
             tx.validate_unspents(tx_db)
             print('all incoming transaction values validated')

@@ -76,7 +76,7 @@ def all_providers_message(method, netcode):
 
 
 def message_about_spendables_for_address_env(netcode):
-    return all_providers_message("spendables_for_address")
+    return all_providers_message("spendables_for_address", netcode)
 
 
 def message_about_tx_for_tx_hash_env(netcode):

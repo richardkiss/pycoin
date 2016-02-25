@@ -4,12 +4,12 @@ import unittest
 
 from pycoin.serialize import h2b_rev
 from pycoin.services import providers
-from pycoin.services.blockchain_info import BlockchainInfo
-from pycoin.services.blockcypher import BlockCypherProvider
-from pycoin.services.blockexplorer import BlockExplorer
+from pycoin.services.blockchain_info import BlockchainInfoProvider
+from pycoin.services.blockcypher import BlockcypherProvider
+from pycoin.services.blockexplorer import BlockExplorerProvider
 from pycoin.services.blockr_io import BlockrioProvider
 from pycoin.services.chain_so import ChainSoProvider
-from pycoin.services.insight import InsightService
+from pycoin.services.insight import InsightProvider
 
 
 tx_id_for_net = {
@@ -69,7 +69,7 @@ class ServicesTest(unittest.TestCase):
         pass
 
     def test_BlockExplorerProvider(self):
-        self.check_provider_tx_for_tx_hash(BlockExplorer, ["BTC", "XTN"])
+        self.check_provider_tx_for_tx_hash(BlockExplorerProvider, ["BTC", "XTN"])
 
     def test_BlockIOProvider(self):
         self.check_provider_tx_for_tx_hash(BlockrioProvider, ["BTC", "XTN"])
@@ -77,9 +77,9 @@ class ServicesTest(unittest.TestCase):
     def test_ChainSoProvider(self):
         self.check_provider_tx_for_tx_hash(ChainSoProvider, ["BTC", "XTN", "DOGE", "XDT"])
 
-    def test_InsightService(self):
+    def test_InsightProvider(self):
         self.check_provider_tx_for_tx_hash(
-            lambda x: InsightService("http://insight.bitpay.com/"), ["BTC"])
+            lambda x: InsightProvider("http://insight.bitpay.com/"), ["BTC"])
 
 
 def main():

@@ -20,4 +20,4 @@ def tx_writable_cache_dir():
 
 
 def config_string_for_netcode_from_env(netcode):
-    return os.getenv("PYCOIN_%s_PROVIDERS" % netcode)
+    return os.getenv("PYCOIN_%s_PROVIDERS" % netcode, "")
