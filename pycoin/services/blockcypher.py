@@ -6,11 +6,12 @@ try:
 except ImportError:
     from urllib.request import urlopen
 
+from pycoin.serialize import b2h_rev
 from pycoin.tx import Tx, Spendable
 from pycoin.serialize import h2b, h2b_rev
 
 
-class BlockCypherProvider(object):
+class BlockcypherProvider(object):
     def __init__(self, api_key="", netcode="BTC"):
         NETWORK_PATHS = {
             "BTC": "main",
@@ -41,12 +42,12 @@ class BlockCypherProvider(object):
         return spendables
 
     def tx_for_tx_hash(self, tx_hash):
-        '''
+        """
         returns the pycoin.tx object for tx_hash
-        '''
+        """
         try:
             url_append = "?token=%s&includeHex=true" % self.api_key
-            url = self.base_url("txs/%s" % (tx_hash + url_append))
+            url = self.base_url("txs/%s%s" % (b2h_rev(tx_hash), url_append))
             result = json.loads(urlopen(url).read().decode("utf8"))
             tx = Tx.parse(io.BytesIO(h2b(result.get("hex"))))
             return tx
@@ -54,9 +55,9 @@ class BlockCypherProvider(object):
             raise Exception
 
     def get_balance(self, address):
-        '''
+        """
         returns the balance object from blockcypher for address
-        '''
+        """
         url_append = "/balance?token=%s" % self.api_key
         url = self.base_url("addrs/%s" % (address + url_append))
         result = json.loads(urlopen(url).read().decode("utf8"))

@@ -13,7 +13,7 @@ from pycoin.serialize import b2h, h2b
 from pycoin.tx import Spendable
 
 
-class BlockchainInfo(object):
+class BlockchainInfoProvider(object):
     def __init__(self, netcode):
         if netcode != 'BTC':
             raise ValueError("BlockchainInfo only supports mainnet")
@@ -68,6 +68,6 @@ class BlockchainInfo(object):
 
 
 def send_tx(self, tx):
-    warnings.warn("use BlockchainInfo.broadcast_tx instead of send_tx",
+    warnings.warn("use BlockchainInfoProvider.broadcast_tx instead of send_tx",
                   category=DeprecationWarning)
-    return BlockchainInfo().broadcast_tx(tx)
+    return BlockchainInfoProvider().broadcast_tx(tx)

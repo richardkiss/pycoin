@@ -22,7 +22,7 @@ from pycoin.tx.script import tools
 from pycoin.tx import Spendable, Tx, TxIn, TxOut
 
 
-class InsightService(object):
+class InsightProvider(object):
     def __init__(self, base_url, netcode="BTC"):
         while base_url[-1] == '/':
             base_url = base_url[:-1]

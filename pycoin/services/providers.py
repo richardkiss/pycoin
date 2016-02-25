@@ -3,11 +3,12 @@ import threading
 import warnings
 
 from .bitcoind import BitcoindProvider
-from .blockexplorer import BlockExplorer
-from .blockchain_info import BlockchainInfo
+from .blockexplorer import BlockExplorerProvider
+from .blockchain_info import BlockchainInfoProvider
 from .blockr_io import BlockrioProvider
+from .blockcypher import BlockcypherProvider
 from .chain_so import ChainSoProvider
-from .insight import InsightService
+from .insight import InsightProvider
 
 from .env import main_cache_dir, config_string_for_netcode_from_env
 from .env import tx_read_cache_dirs, tx_writable_cache_dir
@@ -17,15 +18,8 @@ from .tx_db import TxDb
 THREAD_LOCALS = threading.local()
 
 
-ALL_PROVIDERS = [
-    BitcoindProvider, BlockExplorer, BlockchainInfo, BlockrioProvider, ChainSoProvider, InsightService]
-
-
-# PYCOIN_BTC_PROVIDERS="blockchain.info blockexplorer.com blockr.io chain.so"
+# PYCOIN_BTC_PROVIDERS="blockchain.info blockexplorer.com blockr.io blockcypher.com chain.so"
 # PYCOIN_BTC_PROVIDERS="insight:http(s?)://hostname/url bitcoinrpc://user:passwd@hostname:8333"
-
-class NoServicesSpecifiedError(Exception):
-    pass
 
 
 def service_provider_methods(method_name, service_providers):
@@ -50,7 +44,7 @@ def spendables_for_address(bitcoin_address, netcode, format=None):
     """
     if format:
         method = "as_%s" % format
-    for m in service_provider_methods("spendables_for_address", providers_for_netcode_from_env(netcode)):
+    for m in service_provider_methods("spendables_for_address", get_default_providers_for_netcode(netcode)):
         try:
             spendables = m(bitcoin_address)
             if format:
@@ -62,7 +56,7 @@ def spendables_for_address(bitcoin_address, netcode, format=None):
 
 
 def get_tx_db(netcode):
-    lookup_methods = service_provider_methods("tx_for_tx_hash", providers_for_netcode_from_env(netcode))
+    lookup_methods = service_provider_methods("tx_for_tx_hash", get_default_providers_for_netcode(netcode))
     read_cache_dirs = tx_read_cache_dirs()
     writable_cache_dir = tx_writable_cache_dir()
     return TxDb(lookup_methods=lookup_methods, read_only_paths=read_cache_dirs,
@@ -76,7 +70,7 @@ def message_about_tx_cache_env():
 
 
 def all_providers_message(method, netcode):
-    if len(service_provider_methods(method, providers_for_netcode_from_env(netcode))) == 0:
+    if len(service_provider_methods(method, get_default_providers_for_netcode(netcode))) == 0:
         return "no service providers found for %s; consider setting environment variable "\
             "PYCOIN_%s_PROVIDERS" % (method, netcode)
 
@@ -95,7 +89,28 @@ def bitcoin_rpc_init(match, netcode):
 
 
 def insight_init(match, netcode):
-    return InsightService(base_url=match.group("url"))
+    return InsightProvider(base_url=match.group("url"))
+
+
+DESCRIPTOR_CRE_INIT_TUPLES = [
+    (re.compile(
+        r"^bitcoinrpc://(?P<user>\S*):(?P<password>\S*)\@(?P<hostname>\S*)(:(?P<port>\d*))"),
+        bitcoin_rpc_init),
+    (re.compile(r"^blockchain\.info$"), lambda m, netcode: BlockchainInfoProvider(netcode)),
+    (re.compile(r"^blockcypher\.com$"), lambda m, netcode: BlockcypherProvider(netcode)),
+    (re.compile(r"^blockexplorer\.com$"), lambda m, netcode: BlockExplorerProvider(netcode)),
+    (re.compile(r"^blockr\.io$"), lambda m, netcode: BlockrioProvider(netcode)),
+    (re.compile(r"^chain\.so$"), lambda m, netcode: ChainSoProvider(netcode)),
+    (re.compile(r"^insight:(?P<url>\S*)$"), insight_init),
+]
+
+
+def provider_for_descriptor_and_netcode(descriptor, netcode="BTC"):
+    for cre, f in DESCRIPTOR_CRE_INIT_TUPLES:
+        m = cre.match(descriptor)
+        if m:
+            return f(m, netcode)
+    return None
 
 
 def providers_for_config_string(config_string, netcode):
@@ -110,34 +125,7 @@ def providers_for_config_string(config_string, netcode):
 
 
 def providers_for_netcode_from_env(netcode):
-    env_var = "PYCOIN_%s_PROVIDERS" % netcode
     return providers_for_config_string(config_string_for_netcode_from_env(netcode), netcode)
-
-
-DESCRIPTOR_CRE_INIT_TUPLES = [
-    (re.compile(
-        r"^bitcoinrpc://(?P<user>\S*):(?P<password>\S*)\@(?P<hostname>\S*)(:(?P<port>\d*))"),
-        bitcoin_rpc_init),
-    (re.compile(r"^blockchain\.info$"), lambda m, netcode: BlockchainInfo(netcode)),
-    (re.compile(r"^blockexplorer\.com$"), lambda m, netcode: BlockExplorer(netcode)),
-    (re.compile(r"^blockr\.io$"), lambda m, netcode: BlockrioProvider(netcode)),
-    (re.compile(r"^chain\.so$"), lambda m, netcode: ChainSoProvider(netcode)),
-    (re.compile(r"^insight:(?P<url>\S*)$"), insight_init),
-]
-
-
-def provider_for_descriptor_and_netcode(descriptor, netcode="BTC"):
-    # methods:
-    # get_block_for_hash
-    # get_tx_for_hash
-    # get_blockchain_tip
-    # send_tx
-    # spendables_for_address
-    for cre, f in DESCRIPTOR_CRE_INIT_TUPLES:
-        m = cre.match(descriptor)
-        if m:
-            return f(m, netcode)
-    return None
 
 
 def get_default_providers_for_netcode(netcode="BTC"):

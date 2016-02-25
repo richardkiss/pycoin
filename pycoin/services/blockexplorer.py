@@ -8,7 +8,7 @@ from pycoin.serialize import b2h_rev
 from pycoin.tx.Tx import Tx
 
 
-class BlockExplorer(object):
+class BlockExplorerProvider(object):
     def __init__(self, netcode):
         url_stub = {"BTC": "blockexplorer.com", "XTN": "testnet.blockexplorer.com"}.get(netcode)
         if url_stub is None:
