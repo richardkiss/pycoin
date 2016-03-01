@@ -61,7 +61,7 @@ When signing or verifying signatures on a transaction, the source transactions a
 environment variables in your ```.profile``` like this:
 
     PYCOIN_CACHE_DIR=~/.pycoin_cache
-    PYCOIN_BTC_PROVIDERS=BLOCKR_IO:BITEASY:BLOCKCHAIN_INFO:BLOCKEXPLORER
+    PYCOIN_BTC_PROVIDERS="blockr.io blockchain.info blockr.io blockexplorer.com"
     export PYCOIN_CACHE_DIR PYCOIN_BTC_PROVIDERS
 
 and then ```tx``` will automatically fetch transactions from the web sites listed and cache the results in
