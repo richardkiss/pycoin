@@ -22,7 +22,7 @@ class ScriptsTest(unittest.TestCase):
         cwd = os.getcwd()
         os.chdir(script_dir)
         tool = "%s %s" % (python_path, tool)
-        os.environ["PYCOIN_SERVICE_PROVIDERS"] = "BLOCKR_IO:BLOCKCHAIN_INFO:BITEASY:BLOCKEXPLORER"
+        os.environ["PYCOIN_BTC_PROVIDERS"] = "blockr.io blockchain.info biteasy.com blockexplorer.com"
         r = os.system(tool)
         os.chdir(cwd)
         assert r == 0

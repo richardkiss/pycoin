@@ -61,11 +61,13 @@ When signing or verifying signatures on a transaction, the source transactions a
 environment variables in your ```.profile``` like this:
 
     PYCOIN_CACHE_DIR=~/.pycoin_cache
-    PYCOIN_SERVICE_PROVIDERS=BLOCKR_IO:BITEASY:BLOCKCHAIN_INFO:BLOCKEXPLORER
-    export PYCOIN_CACHE_DIR PYCOIN_SERVICE_PROVIDERS
+    PYCOIN_BTC_PROVIDERS="blockr.io blockchain.info blockr.io blockexplorer.com"
+    export PYCOIN_CACHE_DIR PYCOIN_BTC_PROVIDERS
 
 and then ```tx``` will automatically fetch transactions from the web sites listed and cache the results in
 ```PYCOIN_CACHE_DIR``` when they are needed.
+
+(The old syntax with ```PYCOIN_SERVICE_PROVIDERS``` is deprecated.)
 
 The module pycoin.services includes two functions ```spendables_for_address```, ```get_tx_db``` that look at the
 environment variables set to determine which web sites to use to fetch the underlying information. The sites are

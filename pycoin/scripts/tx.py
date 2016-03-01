@@ -20,9 +20,8 @@ from pycoin.networks import address_prefix_for_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev, stream_to_bytes
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
-    message_about_get_tx_env, message_about_spendables_for_address_env
-from pycoin.tx import Spendable, Tx, TxOut, \
-    SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
+    message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
+from pycoin.tx import Spendable, Tx, TxOut
 from pycoin.tx.Tx import BadSpendableError
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.tx.TxOut import standard_tx_out_script
@@ -63,6 +62,9 @@ def dump_tx(tx, netcode='BTC', verbose_signature=False, disassembly_level=0):
     print("Input%s:" % ('s' if len(tx.txs_in) != 1 else ''))
     missing_unspents = tx.missing_unspents()
     for idx, tx_in in enumerate(tx.txs_in):
+        if disassembly_level > 0:
+            signature_for_hash_type_f = lambda hash_type, script: tx.signature_hash(
+                                        script, idx, hash_type)
         if tx.is_coinbase():
             print("%4d: COINBASE  %12.5f mBTC" % (idx, satoshi_to_mbtc(tx.total_in())))
         else:
@@ -79,8 +81,6 @@ def dump_tx(tx, netcode='BTC', verbose_signature=False, disassembly_level=0):
                                               tx_in.previous_index, suffix)
             print(t.rstrip())
             if disassembly_level > 0:
-                signature_for_hash_type_f = lambda hash_type, script: tx.signature_hash(
-                                            script, idx, hash_type)
                 out_script = b''
                 if tx_out:
                     out_script = tx_out.script
@@ -276,7 +276,7 @@ def main():
     # collect them here and print them at the end if they ever kick in.
 
     warning_tx_cache = None
-    warning_get_tx = None
+    warning_tx_for_tx_hash = None
     warning_spendables = None
 
     if args.private_key_file:
@@ -348,11 +348,11 @@ def main():
         if TX_ID_RE.match(arg):
             if tx_db is None:
                 warning_tx_cache = message_about_tx_cache_env()
-                warning_get_tx = message_about_get_tx_env()
-                tx_db = get_tx_db()
+                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
+                tx_db = get_tx_db(args.network)
             tx = tx_db.get(h2b_rev(arg))
             if not tx:
-                for m in [warning_tx_cache, warning_get_tx, warning_spendables]:
+                for m in [warning_tx_cache, warning_tx_for_tx_hash, warning_spendables]:
                     if m:
                         print("warning: %s" % m, file=sys.stderr)
                 parser.error("can't find Tx with id %s" % arg)
@@ -418,7 +418,7 @@ def main():
         parser.error("can't parse %s" % arg)
 
     if args.fetch_spendables:
-        warning_spendables = message_about_spendables_for_address_env()
+        warning_spendables = message_about_spendables_for_address_env(args.network)
         for address in args.fetch_spendables:
             spendables.extend(spendables_for_address(address))
 
@@ -426,8 +426,8 @@ def main():
         if tx.missing_unspents() and args.augment:
             if tx_db is None:
                 warning_tx_cache = message_about_tx_cache_env()
-                warning_get_tx = message_about_get_tx_env()
-                tx_db = get_tx_db()
+                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
+                tx_db = get_tx_db(args.network)
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
     txs_in = []
@@ -536,15 +536,15 @@ def main():
     if args.cache:
         if tx_db is None:
             warning_tx_cache = message_about_tx_cache_env()
-            warning_get_tx = message_about_get_tx_env()
-            tx_db = get_tx_db()
+            warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
+            tx_db = get_tx_db(args.network)
         tx_db.put(tx)
 
     if args.bitcoind_url:
         if tx_db is None:
             warning_tx_cache = message_about_tx_cache_env()
-            warning_get_tx = message_about_get_tx_env()
-            tx_db = get_tx_db()
+            warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
+            tx_db = get_tx_db(args.network)
         validate_bitcoind(tx, tx_db, args.bitcoind_url)
 
     if tx.missing_unspents():
@@ -553,8 +553,8 @@ def main():
         try:
             if tx_db is None:
                 warning_tx_cache = message_about_tx_cache_env()
-                warning_get_tx = message_about_get_tx_env()
-                tx_db = get_tx_db()
+                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
+                tx_db = get_tx_db(args.network)
             tx.validate_unspents(tx_db)
             print('all incoming transaction values validated')
         except BadSpendableError as ex:
@@ -564,7 +564,7 @@ def main():
                   ex.args[0], file=sys.stderr)
 
     # print warnings
-    for m in [warning_tx_cache, warning_get_tx, warning_spendables]:
+    for m in [warning_tx_cache, warning_tx_for_tx_hash, warning_spendables]:
         if m:
             print("warning: %s" % m, file=sys.stderr)
 
