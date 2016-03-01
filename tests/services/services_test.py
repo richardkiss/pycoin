@@ -24,8 +24,7 @@ tx_id_for_net = {
 
 class ServicesTest(unittest.TestCase):
     def test_env(self):
-        CS = "blockchain.info blockexplorer.com blockr.io chain.so "\
-             "insight:https://hostname/url bitcoinrpc://user:passwd@hostname:8334"
+        CS = "blockchain.info blockexplorer.com blockr.io chain.so insight:https://hostname/url"
         provider_list = providers.providers_for_config_string(CS, "BTC")
         self.assertEqual(len(provider_list), len(CS.split()))
 
