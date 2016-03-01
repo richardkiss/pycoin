@@ -274,7 +274,7 @@ View the famous "pizza" transaction [PIZZA]:
 
     $ tx 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a
     warning: consider setting environment variable PYCOIN_CACHE_DIR=~/.pycoin_cache to cache transactions fetched via web services
-    warning: no service providers found for get_tx; consider setting environment variable PYCOIN_SERVICE_PROVIDERS=BLOCKR_IO:BLOCKCHAIN_INFO:BITEASY:BLOCKEXPLORER
+    warning: no service providers found for get_tx; consider setting environment variable PYCOIN_BTC_PROVIDERS
     usage: tx [-h] [-t TRANSACTION_VERSION] [-l LOCK_TIME] [-n NETWORK] [-a]
               [-i address] [-f path-to-private-keys] [-g GPG_ARGUMENT]
               [--remove-tx-in tx_in_index_to_delete]
@@ -286,8 +286,8 @@ View the famous "pizza" transaction [PIZZA]:
 Oops! We don't have web services set up. Let's do that now.
 
     $ PYCOIN_CACHE_DIR=~/.pycoin_cache
-    $ PYCOIN_SERVICE_PROVIDERS=BLOCKR_IO:BLOCKCHAIN_INFO:BITEASY:BLOCKEXPLORER
-    $ export PYCOIN_CACHE_DIR PYCOIN_SERVICE_PROVIDERS
+    $ PYCOIN_BTC_PROVIDERS="block.io blockchain.info biteasy.com blockexplorer.com"
+    $ export PYCOIN_CACHE_DIR PYCOIN_BTC_PROVIDERS
 
 It's not done automatically so a command-line tool won't leak potentially private information about what transactions you're interested in to a third party web site. If you don't care, you could put these lines into your .profile.
 

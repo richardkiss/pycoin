@@ -1,3 +1,10 @@
+Version 0.xx
+------------
+
+* removed chain service provider, as they've disabled their API
+* removed biteasy service provider, as many transactions were not being returned properly
+  and there are many other good alternatives
+* deprecate PYCOIN_SERVICE_PROVIDERS in favor of PYCOIN_BTC_PROVIDERS
 
 Version 0.61
 ------------

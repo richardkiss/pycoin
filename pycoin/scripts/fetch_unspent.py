@@ -12,13 +12,14 @@ def main():
     parser.add_argument("bitcoin_address", help='a bitcoin address', nargs="+")
 
     args = parser.parse_args()
+    netcode = "BTC"
 
-    m = message_about_spendables_for_address_env()
+    m = message_about_spendables_for_address_env(netcode)
     if m:
         print("warning: %s" % m)
 
     for address in args.bitcoin_address:
-        spendables = spendables_for_address(address, format="text")
+        spendables = spendables_for_address(address, netcode, format="text")
         for spendable in spendables:
             print(spendable)
 
