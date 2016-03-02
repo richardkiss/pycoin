@@ -408,7 +408,7 @@ class Tx(object):
             unspents.append(tx_out)
         self.set_unspents(unspents)
 
-    def is_signature_ok(self, tx_in_idx):
+    def is_signature_ok(self, tx_in_idx, traceback_f=None):
         tx_in = self.txs_in[tx_in_idx]
         if tx_in.is_coinbase():
             return True
@@ -420,7 +420,7 @@ class Tx(object):
         tx_out_script = self.unspents[tx_in_idx].script
         signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(
             script, tx_in_idx, hash_type)
-        return tx_in.verify(tx_out_script, signature_for_hash_type_f)
+        return tx_in.verify(tx_out_script, signature_for_hash_type_f, traceback_f=traceback_f)
 
     def sign(self, hash160_lookup, hash_type=SIGHASH_ALL, **kwargs):
         """

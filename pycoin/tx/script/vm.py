@@ -48,7 +48,7 @@ INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
 
 
 def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stack=[],
-                disallow_long_scripts=True):
+                disallow_long_scripts=True, traceback_f=None, is_signature=False):
     altstack = []
     if disallow_long_scripts and len(script) > 10000:
         return False
@@ -61,7 +61,10 @@ def eval_script(script, signature_for_hash_type_f, expected_hash_type=None, stac
 
     try:
         while pc < len(script):
+            old_pc = pc
             opcode, data, pc = get_opcode(script, pc)
+            if traceback_f:
+                traceback_f(old_pc, opcode, data, stack, altstack, is_signature)
             if len(data) > 0:
                 stack.append(data)
                 continue
@@ -146,12 +149,12 @@ def is_pay_to_script_hash(script_public_key):
             byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
 
 
-def verify_script(script_signature, script_public_key, signature_for_hash_type_f, expected_hash_type=None):
+def verify_script(script_signature, script_public_key, signature_for_hash_type_f, expected_hash_type=None, traceback_f=None):
     stack = []
 
     is_p2h = is_pay_to_script_hash(script_public_key)
 
-    if not eval_script(script_signature, signature_for_hash_type_f, expected_hash_type, stack):
+    if not eval_script(script_signature, signature_for_hash_type_f, expected_hash_type, stack, traceback_f=traceback_f, is_signature=True):
         logger.debug("script_signature did not evaluate")
         return False
 
@@ -159,12 +162,12 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         signatures, alt_script_public_key = stack[:-1], stack[-1]
         alt_script_signature = bin_script(signatures)
 
-    if not eval_script(script_public_key, signature_for_hash_type_f, expected_hash_type, stack):
+    if not eval_script(script_public_key, signature_for_hash_type_f, expected_hash_type, stack, traceback_f=traceback_f, is_signature=False):
         logger.debug("script_public_key did not evaluate")
         return False
 
     if is_p2h and stack[-1] == VCH_TRUE:
         return verify_script(alt_script_signature, alt_script_public_key,
-                             signature_for_hash_type_f, expected_hash_type=expected_hash_type)
+                             signature_for_hash_type_f, expected_hash_type=expected_hash_type, traceback_f=traceback_f)
 
     return stack[-1] != VCH_FALSE

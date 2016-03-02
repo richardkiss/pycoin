@@ -29,6 +29,7 @@ from pycoin.tx.script.tools import opcode_list
 from pycoin.tx.script.check_signature import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
 from pycoin.tx.script.disassemble import disassemble_scripts, sighash_type_to_string
+from pycoin.tx.script.trace import trace_script
 
 DEFAULT_VERSION = 1
 DEFAULT_LOCK_TIME = 0
@@ -46,7 +47,7 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
         print("warning: can't talk to bitcoind due to missing library")
 
 
-def dump_tx(tx, netcode='BTC', verbose_signature=False, disassembly_level=0):
+def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace):
     address_prefix = address_prefix_for_netcode(netcode)
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes   " % (tx.version, tx.id(), len(tx_bin)))
@@ -61,6 +62,7 @@ def dump_tx(tx, netcode='BTC', verbose_signature=False, disassembly_level=0):
     print("Lock time: %d (%s)" % (tx.lock_time, meaning))
     print("Input%s:" % ('s' if len(tx.txs_in) != 1 else ''))
     missing_unspents = tx.missing_unspents()
+    traceback_f = trace_script if do_trace else None
     for idx, tx_in in enumerate(tx.txs_in):
         if disassembly_level > 0:
             signature_for_hash_type_f = lambda hash_type, script: tx.signature_hash(
@@ -74,7 +76,7 @@ def dump_tx(tx, netcode='BTC', verbose_signature=False, disassembly_level=0):
                 address = tx_in.bitcoin_address(address_prefix=address_prefix)
             else:
                 tx_out = tx.unspents[idx]
-                sig_result = " sig ok" if tx.is_signature_ok(idx) else " BAD SIG"
+                sig_result = " sig ok" if tx.is_signature_ok(idx, traceback_f=traceback_f) else " BAD SIG"
                 suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
                 address = tx_out.bitcoin_address(netcode=netcode)
             t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
@@ -244,6 +246,8 @@ def main():
 
     parser.add_argument('-d', "--disassemble", action='store_true',
                         help='Disassemble scripts.')
+
+    parser.add_argument("--trace", action='store_true', help='Trace scripts.')
 
     parser.add_argument('-p', "--pay-to-script", metavar="pay-to-script", action="append",
                         help='a hex version of a script required for a pay-to-script input (a bitcoin address that starts with 3)')
@@ -528,7 +532,7 @@ def main():
     else:
         if not tx.missing_unspents():
             check_fees(tx)
-        dump_tx(tx, args.network, args.verbose_signature, 1 if args.disassemble else 0)
+        dump_tx(tx, args.network, args.verbose_signature, args.disassemble, args.trace)
         if include_unspents:
             print("including unspents in hex dump since transaction not fully signed")
         print(tx_as_hex)

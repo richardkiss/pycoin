@@ -1,6 +1,7 @@
 Version 0.xx
 ------------
 
+* added a framework to trace transaction script
 * removed chain service provider, as they've disabled their API
 * removed biteasy service provider, as many transactions were not being returned properly
   and there are many other good alternatives
