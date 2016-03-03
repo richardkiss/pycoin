@@ -112,17 +112,21 @@ class Block(BlockHeader):
     yields a reward!"""
 
     @classmethod
-    def parse(self, f):
+    def parse(self, f, include_offsets=None):
         """Parse the Block from the file-like object in the standard way
         that blocks are sent in the network."""
+        if include_offsets is None:
+            include_offsets = hasattr(f, "tell")
         (version, previous_block_hash, merkle_root, timestamp,
             difficulty, nonce, count) = parse_struct("L##LLLI", f)
         txs = []
         for i in range(count):
-            offset_in_block = f.tell()
+            if include_offsets:
+                offset_in_block = f.tell()
             tx = Tx.parse(f)
             txs.append(tx)
-            tx.offset_in_block = offset_in_block
+            if include_offsets:
+                tx.offset_in_block = offset_in_block
         block = self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs)
         for tx in txs:
             tx.block = block
