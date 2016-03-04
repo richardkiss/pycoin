@@ -205,6 +205,9 @@ def make_f(tx, expect_ok=True):
             why = "bad sig count = %d" % bs
         if (why != None) == expect_ok:
             why = why or "tx unexpectedly validated"
+            f = open("tx-%s-%s.bin" % (tx.id(), "ok" if expect_ok else "bad"), "wb")
+            f.write(tx.as_bin(include_unspents=True))
+            f.close()
             self.fail("fail on %s because of %s with hex %s" % (tx.id(), why, tx_hex))
     return test_f
 
