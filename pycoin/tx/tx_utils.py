@@ -143,7 +143,7 @@ def distribute_from_split_pool(tx, fee):
     return zero_count
 
 
-def sign_tx(tx, wifs=[], secret_exponent_db={}, **kwargs):
+def sign_tx(tx, wifs=[], secret_exponent_db={}, netcode='BTC', **kwargs):
     """
     This function provides an convenience method to sign a transaction.
 
@@ -169,11 +169,12 @@ def sign_tx(tx, wifs=[], secret_exponent_db={}, **kwargs):
 
     sign_tx(wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
-    tx.sign(LazySecretExponentDB(wifs, secret_exponent_db), **kwargs)
+    tx.sign(LazySecretExponentDB(wifs, secret_exponent_db, netcode), **kwargs)
 
 
 def create_signed_tx(spendables, payables, wifs=[], fee="standard",
-                     lock_time=0, version=1, secret_exponent_db={}, **kwargs):
+                     lock_time=0, version=1, secret_exponent_db={},
+                     netcode='BTC', **kwargs):
     """
     This function provides an easy way to create and sign a transaction.
 
@@ -201,7 +202,8 @@ def create_signed_tx(spendables, payables, wifs=[], fee="standard",
     """
 
     tx = create_tx(spendables, payables, fee=fee, lock_time=lock_time, version=version)
-    sign_tx(tx, wifs=wifs, secret_exponent_db=secret_exponent_db, **kwargs)
+    sign_tx(tx, wifs=wifs, secret_exponent_db=secret_exponent_db,
+            netcode=netcode, **kwargs)
     for idx, tx_out in enumerate(tx.txs_in):
         if not tx.is_signature_ok(idx):
             raise SecretExponentMissing("failed to sign spendable for %s" %
