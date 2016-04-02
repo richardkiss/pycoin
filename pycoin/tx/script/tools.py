@@ -31,6 +31,7 @@ import io
 import logging
 import struct
 
+from . import ScriptError
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
 from ...intbytes import (
     bytes_from_int, bytes_to_ints, to_bytes, from_bytes, int_to_bytes
@@ -101,13 +102,17 @@ def compile(s):
             f.write(bytes_from_int(OPCODE_TO_INT[t]))
         elif ("OP_%s" % t) in OPCODE_TO_INT:
             f.write(bytes_from_int(OPCODE_TO_INT["OP_%s" % t]))
+        elif t.startswith("0x"):
+            d = binascii.unhexlify(t[2:])
+            f.write(d)
         else:
             if (t[0], t[-1]) == ('[', ']'):
                 t = t[1:-1]
-            if len(t) == 1:
-                t = "0" + t
-            t = binascii.unhexlify(t.encode("utf8"))
-            write_push_data([t], f)
+            if t.startswith("'") and t.endswith("'"):
+                v = t[1:-1].encode("utf8")
+            else:
+                v = binascii.unhexlify(t)
+            write_push_data([v], f)
     return f.getvalue()
 
 def disassemble_for_opcode_data(opcode, data):
@@ -134,7 +139,6 @@ def delete_subscript(script, subscript):
     to be removed."""
     new_script = bytearray()
     pc = 0
-    size = len(subscript)
     while pc < len(script):
         opcode, data, new_pc = get_opcode(script, pc)
         section = script[pc:new_pc]
