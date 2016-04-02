@@ -117,9 +117,17 @@ from pycoin.tx.script.opcodes import OPCODE_TO_INT
 TX_VALID_JSON = os.path.dirname(__file__) + '/data/tx_valid.json'
 TX_INVALID_JSON = os.path.dirname(__file__) + '/data/tx_invalid.json'
 
-FLAGS = ['NONE', 'P2SH', 'STRICTENC', 'DERSIG', 'LOW_S', 'SIGPUSHONLY',
-         'MINIMALDATA', 'NULLDUMMY', 'DISCOURAGE_UPGRADABLE_NOPS', 'CLEANSTACK']
+from pycoin.tx.script import flags
 
+
+def parse_flags(flag_string):
+    v = 0
+    if len(flag_string) > 0:
+        for f in flag_string.split(","):
+            if not hasattr(flags, "VERIFY_" + f):
+                import pdb; pdb.set_trace()
+            v |= getattr(flags, "VERIFY_%s" % f)
+    return v
 
 
 def compile_script(s):
@@ -153,9 +161,11 @@ def txs_from_json(path):
 
     verifyFlags is a comma separated list of script verification flags to apply, or "NONE"
     """
+    comments = None
     with open(path, 'r') as f:
         for tvec in json.load(f):
             if len(tvec) == 1:
+                comments = tvec[0]
                 continue
             assert len(tvec) == 3
             prevouts = tvec[0]
@@ -164,11 +174,7 @@ def txs_from_json(path):
 
             tx_hex = tvec[1]
 
-            flags = set()
-            for flag in tvec[2].split(','):
-                assert flag in FLAGS
-                flags.add(flag)
-
+            flags = parse_flags(tvec[2])
             try:
                 tx = Tx.from_hex(tx_hex)
             except:
@@ -184,15 +190,14 @@ def txs_from_json(path):
                 spendable_db[(spendable.tx_hash, spendable.tx_out_index)] = spendable
             unspents = [spendable_db.get((tx_in.previous_hash, tx_in.previous_index), blank_spendable) for tx_in in tx.txs_in]
             tx.set_unspents(unspents)
-
-            yield (tx, flags)
+            yield (tx, flags, comments)
 
 
 class TestTx(unittest.TestCase):
     pass
 
 
-def make_f(tx, expect_ok=True):
+def make_f(tx, flags, comments, expect_ok=True):
     tx_hex = tx.as_hex(include_unspents=True)
     def test_f(self):
         why = None
@@ -200,7 +205,7 @@ def make_f(tx, expect_ok=True):
             tx.check()
         except ValidationFailureError as ex:
             why = str(ex)
-        bs = tx.bad_signature_count()
+        bs = tx.bad_signature_count(flags=flags)
         if bs > 0:
             why = "bad sig count = %d" % bs
         if (why != None) == expect_ok:
@@ -208,19 +213,19 @@ def make_f(tx, expect_ok=True):
             f = open("tx-%s-%s.bin" % (tx.id(), "ok" if expect_ok else "bad"), "wb")
             f.write(tx.as_bin(include_unspents=True))
             f.close()
-            self.fail("fail on %s because of %s with hex %s" % (tx.id(), why, tx_hex))
+            self.fail("fail on %s because of %s with hex %s: %s" % (tx.id(), why, tx_hex, comments))
     return test_f
 
 
 def inject():
-    for idx, (tx, flags) in enumerate(txs_from_json(TX_VALID_JSON)):
+    for idx, (tx, flags, comments) in enumerate(txs_from_json(TX_VALID_JSON)):
         name_of_f = "test_valid_%02d_%s" % (idx, tx.id())
-        setattr(TestTx, name_of_f, make_f(tx))
+        setattr(TestTx, name_of_f, make_f(tx, flags, comments))
         print("adding %s" % name_of_f)
 
-    for idx, (tx, flags) in enumerate(txs_from_json(TX_INVALID_JSON)):
+    for idx, (tx, flags, comments) in enumerate(txs_from_json(TX_INVALID_JSON)):
         name_of_f = "test_invalid_%02d_%s" % (idx, tx.id())
-        setattr(TestTx, name_of_f, make_f(tx, expect_ok=False))
+        setattr(TestTx, name_of_f, make_f(tx, flags, comments, expect_ok=False))
         print("adding %s" % name_of_f)
 
 
