@@ -36,6 +36,7 @@ from . import ScriptError
 from .microcode import VCH_TRUE, VCH_FALSE
 from .tools import bin_script, delete_subscript
 
+from .flags import VERIFY_NULLDUMMY, VERIFY_STRICTENC, VERIFY_MINIMALDATA, VERIFY_DERSIG, VERIFY_LOW_S
 
 def parse_signature_blob(sig_blob):
     sig_pair = der.sigdecode_der(sig_blob[:-1], use_broken_open_ssl_mechanism=True)
@@ -43,7 +44,7 @@ def parse_signature_blob(sig_blob):
     return sig_pair, signature_type
 
 
-def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script):
+def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script, flags):
     try:
         public_pair = sec_to_public_pair(stack.pop())
         sig_blob = stack.pop()
@@ -67,7 +68,7 @@ def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script
         stack.append(VCH_FALSE)
 
 
-def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=False):
+def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, flags, strict_checks=False):
     """
     sig_blobs: signature blobs
     public_pairs: a list of public pairs that might be valid
@@ -125,7 +126,7 @@ def sig_blob_matches(sig_blobs, public_pairs, tmp_script, signature_for_hash_typ
     return sig_blob_indices
 
 
-def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script):
+def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script, flags):
     key_count = int_from_bytes(stack.pop())
     public_pairs = []
     for i in range(key_count):
@@ -152,7 +153,7 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
     stack.pop()
 
     sig_blob_indices = sig_blob_matches(
-        sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, strict_checks=True)
+        sig_blobs, public_pairs, tmp_script, signature_for_hash_type_f, flags, strict_checks=True)
 
     sig_ok = VCH_FALSE
     if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):
