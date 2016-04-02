@@ -59,7 +59,7 @@ def add_sec_annotations(a1, data, address_prefix):
 
 
 def instruction_for_opcode(opcode, data):
-    if len(data) == 0:
+    if data is None or len(data) == 0:
         return INT_TO_OPCODE.get(opcode, "(UNKNOWN OPCODE)")
     return "[PUSH_%d] %s" % (opcode, binascii.hexlify(data))
 
@@ -79,11 +79,12 @@ def annotation_f_for_scripts(input_script, output_script, signature_for_hash_typ
         a0, a1 = [], []
         if pc == 0:
             a0.append("--- SIGNATURE SCRIPT START")
-        if len(data) in (71, 72) and not is_p2sh:
+        ld = len(data) if data is not None else 0
+        if ld in (71, 72) and not is_p2sh:
             add_signature_annotations(a1, data, signature_for_hash_type_f, output_script)
-        if len(data) == 20:
+        if ld == 20:
             add_address_annotations(a1, data, address_prefix=in_ap)
-        if len(data) in (33, 65):
+        if ld in (33, 65):
             add_sec_annotations(a1, data, address_prefix=in_ap)
         return a0, a1
 
@@ -91,9 +92,10 @@ def annotation_f_for_scripts(input_script, output_script, signature_for_hash_typ
         a0, a1 = [], []
         if pc == 0:
             a0.append("--- PUBLIC KEY SCRIPT START")
-        if len(data) == 20:
+        ld = len(data) if data is not None else 0
+        if ld == 20:
             add_address_annotations(a1, data, address_prefix=out_ap)
-        if len(data) in (33, 65):
+        if ld in (33, 65):
             add_sec_annotations(a1, data, address_prefix=out_ap)
         return a0, a1
 

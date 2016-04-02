@@ -43,7 +43,7 @@ def get_opcode(script, pc):
     piece of data (if the opcode represents data), and the new PC."""
     opcode = ord(script[pc:pc+1])
     pc += 1
-    data = b''
+    data = None
     if opcode <= OPCODE_TO_INT["OP_PUSHDATA4"]:
         if opcode < OPCODE_TO_INT["OP_PUSHDATA1"]:
             size = opcode
@@ -57,12 +57,17 @@ def get_opcode(script, pc):
             size = from_bytes(script[pc:pc+4], byteorder="little")
             pc += 4
         data = script[pc:pc+size]
+        if len(data) < size:
+            raise ScriptError("unexpected end of data when literal expected")
         pc += size
     return opcode, data, pc
 
 def write_push_data(data_list, f):
     # return bytes that causes the given data to be pushed onto the stack
     for t in data_list:
+        if len(t) == 0:
+            f.write(bytes_from_int(OPCODE_TO_INT["OP_0"]))
+            continue
         if len(t) == 1:
             v = bytes_to_ints(t)[0]
             if v <= 16:
@@ -105,19 +110,18 @@ def compile(s):
             write_push_data([t], f)
     return f.getvalue()
 
+def disassemble_for_opcode_data(opcode, data):
+    if data is not None and len(data) > 0:
+        return "[%s]" % binascii.hexlify(data).decode("utf8")
+    return INT_TO_OPCODE.get(opcode, "???")
+
 def opcode_list(script):
     """Disassemble the given script. Returns a list of opcodes."""
     opcodes = []
     pc = 0
     while pc < len(script):
         opcode, data, pc = get_opcode(script, pc)
-        if len(data) > 0:
-            opcodes.append(binascii.hexlify(data).decode("utf8"))
-            continue
-        if not opcode in INT_TO_OPCODE:
-            logger.info("missing opcode %r", opcode)
-            continue
-        opcodes.append(INT_TO_OPCODE[opcode])
+        opcodes.append(disassemble_for_opcode_data(opcode, data))
     return opcodes
 
 def disassemble(script):

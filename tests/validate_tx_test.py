@@ -62,7 +62,7 @@ class ValidatingTest(unittest.TestCase):
         tx_db = { tx.hash(): tx for tx in block_80971.txs }
 
         tx_to_validate = block_80974.txs[2]
-        self.assertEqual("OP_DUP OP_HASH160 d4caa8447532ca8ee4c80a1ae1d230a01e22bfdb OP_EQUALVERIFY OP_CHECKSIG",
+        self.assertEqual("OP_DUP OP_HASH160 [d4caa8447532ca8ee4c80a1ae1d230a01e22bfdb] OP_EQUALVERIFY OP_CHECKSIG",
             tools.disassemble(tx_to_validate.txs_out[0].script))
         self.assertEqual(tx_to_validate.id(), "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b")
 
@@ -125,7 +125,7 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
         TX_DB = { tx.hash(): tx for tx in [tx_0, tx_1, tx_2] }
 
         tx_to_validate = tx_0
-        self.assertEqual("OP_DUP OP_HASH160 2d74eede5a76b7fc0c4aebea6e27ce4a3f7f92f9 OP_EQUALVERIFY OP_CHECKSIG",
+        self.assertEqual("OP_DUP OP_HASH160 [2d74eede5a76b7fc0c4aebea6e27ce4a3f7f92f9] OP_EQUALVERIFY OP_CHECKSIG",
             tools.disassemble(tx_to_validate.txs_out[0].script))
         self.assertEqual(tx_to_validate.id(), "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d")
 

@@ -38,7 +38,7 @@ class ScriptMultisig(ScriptType):
             if pc >= len(script):
                 raise ValueError("unexpected end of script")
             opcode, data, pc = tools.get_opcode(script, pc)
-            l = len(data)
+            l = len(data) if data else 0
             if l < 33 or l > 120:
                 break
             sec_keys.append(data)

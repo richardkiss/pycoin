@@ -89,7 +89,7 @@ class BuildTxTest(unittest.TestCase):
         recipient_bc_address = '1BcJRKjiwYQ3f37FQSpTYM7AfnXurMjezu'
         tx_out = standard_tx([], [(coin_value, recipient_bc_address)]).txs_out[0]
         s = str(tx_out)
-        self.assertEqual('TxOut<0.0001 mbtc "OP_DUP OP_HASH160 745e5b81fd30ca1e90311b012badabaa4411ae1a OP_EQUALVERIFY OP_CHECKSIG">', s)
+        self.assertEqual('TxOut<0.0001 mbtc "OP_DUP OP_HASH160 [745e5b81fd30ca1e90311b012badabaa4411ae1a] OP_EQUALVERIFY OP_CHECKSIG">', s)
 
     def test_coinbase_tx(self):
         coinbase_bytes = h2b("04ed66471b02c301")

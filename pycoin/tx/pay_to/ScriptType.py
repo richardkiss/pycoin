@@ -59,17 +59,17 @@ class ScriptType(object):
                 break
             opcode1, data1, pc1 = tools.get_opcode(script, pc1)
             opcode2, data2, pc2 = tools.get_opcode(template, pc2)
+            l1 = 0 if data1 is None else len(data1)
             if opcode2 == opcodes.OP_PUBKEY:
-                l1 = len(data1)
                 if l1 < 33 or l1 > 120:
                     break
                 r["PUBKEY_LIST"].append(data1)
             elif opcode2 == opcodes.OP_PUBKEYHASH:
-                if len(data1) != 160/8:
+                if l1 != 160/8:
                     break
                 r["PUBKEYHASH_LIST"].append(data1)
             elif opcode2 == opcodes.OP_NULLDATA:
-                if not (0 < len(data1) <= 40):
+                if not (0 < l1 <= 40):
                     break
                 r["NULLDATA_LIST"].append(data1)
             elif (opcode1, data1) != (opcode2, data2):

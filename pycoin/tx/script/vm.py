@@ -65,7 +65,7 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
             opcode, data, pc = get_opcode(script, pc)
             if traceback_f:
                 traceback_f(old_pc, opcode, data, stack, altstack, is_signature)
-            if len(data) > 0:
+            if data is not None:
                 stack.append(data)
                 continue
 
