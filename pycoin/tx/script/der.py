@@ -68,8 +68,7 @@ def remove_integer(string, use_broken_open_ssl_mechanism=False):
     # OpenSSL treats DER-encoded negative integers (that have their most significant
     # bit set) as positive integers. Some apps depend upon this bug.
     if not string.startswith(b"\x02"):
-        raise UnexpectedDER("wanted integer (0x02), got 0x%02x" %
-                            ord(string[:1]))
+        raise UnexpectedDER("did not get expected integer 0x02")
     length, llen = read_length(string[1:])
     if len(string) < 1+llen+length:
         raise UnexpectedDER("ran out of integer bytes")

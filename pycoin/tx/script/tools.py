@@ -132,10 +132,9 @@ def delete_subscript(script, subscript):
     pc = 0
     size = len(subscript)
     while pc < len(script):
-        if script[pc:pc+size] == subscript:
-            pc += size
-            continue
-        opcode, data, pc = get_opcode(script, pc)
-        new_script.append(opcode)
-        new_script += data
+        opcode, data, new_pc = get_opcode(script, pc)
+        section = script[pc:new_pc]
+        if section != subscript:
+            new_script.extend(section)
+        pc = new_pc
     return bytes(new_script)

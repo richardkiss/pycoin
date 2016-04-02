@@ -56,7 +56,7 @@ else:
         for c in bytes_to_ints(bytes):
             v <<= 8
             v += c
-        if signed and bytes[0] & 0x80:
+        if signed and byte_to_int(bytes[0]) & 0x80:
             v = v - (1 << (8*len(bytes)))
         return v
 
