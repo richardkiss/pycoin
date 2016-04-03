@@ -24,7 +24,7 @@ class ScriptNulldata(ScriptType):
     def script(self):
         if self._script is None:
             # create the script
-            STANDARD_SCRIPT_OUT = "OP_RETURN %s"
+            STANDARD_SCRIPT_OUT = "OP_RETURN [%s]"
             script_text = STANDARD_SCRIPT_OUT % b2h(self.nulldata)
             self._script = tools.compile(script_text)
         return self._script

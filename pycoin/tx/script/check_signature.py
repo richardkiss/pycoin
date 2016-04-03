@@ -62,7 +62,7 @@ def check_valid_signature(sig):
         raise ScriptError("sig R value not allowed to be negative")
     if r_len > 1 and byte_to_int(sig[4]) == 0 and not (byte_to_int(sig[5]) & 0x80):
         raise ScriptError("sig R value not allowed to have leading 0 byte unless doing so would make it negative")
-    if sig[r_len + 4] != 2:
+    if byte_to_int(sig[r_len + 4]) != 2:
         raise ScriptError("S value region does not start with 0x02")
     if s_len == 0:
         raise ScriptError("zero-length S value")
@@ -154,6 +154,7 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
     public_pair_blobs: a list of public pair blobs
     tmp_script: the script as of the last code separator
     signature_for_hash_type_f: signature_for_hash_type_f
+    flags: verification flags to apply
     exit_early: if True, we may exit early if one of the sig_blobs is incorrect or misplaced. Used
                    for checking a supposedly validated transaction. A -1 indicates no match.
 
@@ -169,13 +170,16 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
 
     sig_cache = {}
     sig_blob_indices = []
-    for sig_blob in sig_blobs:
+    ppb_idx = -1
+
+    while sig_blobs and len(sig_blobs) <= len(public_pair_blobs):
+        if exit_early and -1 in sig_blob_indices:
+            break
+        sig_blob, sig_blobs = sig_blobs[0], sig_blobs[1:]
         try:
             sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
         except der.UnexpectedDER:
             sig_blob_indices.append(-1)
-            if exit_early:
-                return sig_blob_indices
             continue
 
         if signature_type not in sig_cache:
@@ -187,31 +191,20 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
         except ecdsa.NoSuchPointError as err:
             ppp = []
 
-        if len(ppp) > 0:
-            for idx, ppb in enumerate(public_pair_blobs):
-                if idx in sig_blob_indices:
-                    continue
-                if strict_encoding:
-                    check_public_key_encoding(ppb)
-                try:
-                    pp = sec_to_public_pair(ppb, strict=strict_encoding)
-                except EncodingError:
-                    pp = None
-                if pp in ppp:
-                    sig_blob_indices.append(idx)
-                    break
-            else:
-                sig_blob_indices.append(-1)
-                if exit_early:
-                    return sig_blob_indices
-
-            if len(sig_blob_indices) > 1 and exit_early:
-                # look for signatures in the wrong order
-                if sig_blob_indices[-1] <= sig_blob_indices[-2]:
-                    return sig_blob_indices
+        while len(sig_blobs) < len(public_pair_blobs):
+            public_pair_blob, public_pair_blobs = public_pair_blobs[0], public_pair_blobs[1:]
+            ppb_idx += 1
+            if strict_encoding:
+                check_public_key_encoding(public_pair_blob)
+            try:
+                public_pair = sec_to_public_pair(public_pair_blob, strict=strict_encoding)
+            except EncodingError:
+                public_pair = None
+            if public_pair in ppp:
+                sig_blob_indices.append(ppb_idx)
+                break
         else:
-            if exit_early:
-                return sig_blob_indices
+            sig_blob_indices.append(-1)
     return sig_blob_indices
 
 

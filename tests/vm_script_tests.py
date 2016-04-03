@@ -50,18 +50,19 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, comment):
     print(script_out)
     from pycoin.serialize import b2h
     def tbf(*args):
-        pc, opcode, data, stack, altstack, is_signature = args
+        pc, opcode, data, stack, altstack, is_signature, is_condition = args
         from pycoin.tx.script.tools import disassemble_for_opcode_data
         opd = disassemble_for_opcode_data(opcode, data)
         if len(altstack) == 0:
             altstack = ''
         print("%s %s\n  %3x  %s" % (stack, altstack, pc, opd))
+        import pdb
+        pdb.set_trace()
     try:
         r = spend_tx.is_signature_ok(tx_in_idx=0, traceback_f=tbf, flags=flags)
     except Exception as ex:
         print(ex)
     print("test failed: '%s' '%s' : %s  %s" % (script_in, script_out, comment, flags))
-    import pdb; pdb.set_trace()
     try:
         r = spend_tx.is_signature_ok(tx_in_idx=0, traceback_f=tbf, flags=flags)
     except Exception as ex:
