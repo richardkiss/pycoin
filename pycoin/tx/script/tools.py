@@ -153,7 +153,18 @@ def compile(s):
             if t.startswith("'") and t.endswith("'"):
                 v = t[1:-1].encode("utf8")
             else:
-                v = binascii.unhexlify(t)
+                v = None
+                try:
+                    t0 = int(t)
+                    if abs(t0) <= 18446744073709551615 and t[0] != '0':
+                        v = int_to_script_bytes(t0)
+                except SyntaxError:
+                    pass
+                if v is None:
+                    try:
+                        v = binascii.unhexlify(t)
+                    except Exception as ex:
+                        raise SyntaxError("unknown expression %s" % t)
             write_push_data([v], f)
     return f.getvalue()
 
