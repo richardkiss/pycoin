@@ -165,6 +165,16 @@ class EncodingTestCase(unittest.TestCase):
         for public_pair, sec, compressed, hash160_sec, bitcoin_address in SEC_TEST_DATA:
             do_test(public_pair, h2b(sec), compressed, h2b(hash160_sec), bitcoin_address)
 
+    def test_sec(self):
+        pair_blob = h2b('0679be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8')
+        public_pair = encoding.sec_to_public_pair(pair_blob, strict=False)
+        try:
+            public_pair = encoding.sec_to_public_pair(pair_blob, strict=True)
+            self.fail("sec_to_public_pair unexpectedly succeeded")
+        except encoding.EncodingError:
+            pass
+
+
 if __name__ == '__main__':
     unittest.main()
 

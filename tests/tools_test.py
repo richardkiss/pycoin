@@ -4,7 +4,7 @@ import unittest
 
 from pycoin.serialize import h2b
 from pycoin.intbytes import int_to_bytes, bytes_from_ints
-from pycoin.tx.script.tools import bin_script, compile, disassemble
+from pycoin.tx.script.tools import bin_script, compile, disassemble, int_to_script_bytes, int_from_script_bytes
 from pycoin.tx.script.opcodes import OPCODE_LIST
 from pycoin.tx.script.vm import eval_script
 
@@ -82,6 +82,17 @@ class ToolsTest(unittest.TestCase):
         d1 = disassemble(script).split()
         self.assertEqual(len(d1), 5)
         self.assertEqual(d1[-1], "OP_0")
+
+    def test_int_to_from_script_bytes(self):
+        for i in range(-127, 127):
+            self.assertEqual(int_from_script_bytes(int_to_script_bytes(i)), i)
+        for i in range(-1024, 1024, 16):
+            self.assertEqual(int_from_script_bytes(int_to_script_bytes(i)), i)
+        for i in range(-1024*1024, 1024*1024, 10000):
+            self.assertEqual(int_from_script_bytes(int_to_script_bytes(i)), i)
+        self.assertEqual(int_to_script_bytes(1), b"\1")
+        self.assertEqual(int_to_script_bytes(127), b"\x7f")
+        self.assertEqual(int_to_script_bytes(128), b"\x80\x00")
 
 
 if __name__ == "__main__":
