@@ -109,6 +109,6 @@ def sigencode_der(r, s):
 def sigdecode_der(sig_der, use_broken_open_ssl_mechanism=True):
     # if use_broken_open_ssl_mechanism is true, this is a non-standard implementation
     rs_strings, empty = remove_sequence(sig_der)
-    r, rest = remove_integer(rs_strings, use_broken_open_ssl_mechanism=True)
-    s, empty = remove_integer(rest, use_broken_open_ssl_mechanism=True)
+    r, rest = remove_integer(rs_strings, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
+    s, empty = remove_integer(rest, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
     return r, s
