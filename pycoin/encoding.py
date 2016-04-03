@@ -229,21 +229,21 @@ def public_pair_to_sec(public_pair, compressed=True):
     return b'\4' + x_str + y_str
 
 
-def sec_to_public_pair(sec):
+def sec_to_public_pair(sec, strict=True):
     """Convert a public key in sec binary format to a public pair."""
     x = from_bytes_32(sec[1:33])
     sec0 = sec[:1]
-    if sec0 == b'\4':
-        y = from_bytes_32(sec[33:65])
-        from .ecdsa import generator_secp256k1, is_public_pair_valid
-        public_pair = (x, y)
-        # verify this is on the curve
-        if not is_public_pair_valid(generator_secp256k1, public_pair):
-            raise EncodingError("invalid (x, y) pair")
-        return public_pair
-    if sec0 in (b'\2', b'\3'):
-        from .ecdsa import public_pair_for_x, generator_secp256k1
-        return public_pair_for_x(generator_secp256k1, x, is_even=(sec0 == b'\2'))
+    if len(sec) == 65:
+        isok = sec0 == b'\4'
+        if not strict:
+            isok = isok or (sec0 in [b'\6', b'\7'])
+        if isok:
+            y = from_bytes_32(sec[33:65])
+            return (x, y)
+    elif len(sec) == 33:
+        if not strict or (sec0 in (b'\2', b'\3')):
+            from .ecdsa import public_pair_for_x, generator_secp256k1
+            return public_pair_for_x(generator_secp256k1, x, is_even=(sec0 == b'\2'))
     raise EncodingError("bad sec encoding for public key")
 
 

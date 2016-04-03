@@ -106,14 +106,9 @@ def read_length(string):
 def sigencode_der(r, s):
     return encode_sequence(encode_integer(r), encode_integer(s))
 
-def sigdecode_der(sig_der, use_broken_open_ssl_mechanism=False):
+def sigdecode_der(sig_der, use_broken_open_ssl_mechanism=True):
+    # if use_broken_open_ssl_mechanism is true, this is a non-standard implementation
     rs_strings, empty = remove_sequence(sig_der)
-    if empty != b"":
-        raise UnexpectedDER("trailing junk after DER sig: %s" %
-                                binascii.hexlify(empty))
-    r, rest = remove_integer(rs_strings, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
-    s, empty = remove_integer(rest, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
-    if empty != b"":
-        raise UnexpectedDER("trailing junk after DER numbers: %s" %
-                                binascii.hexlify(empty))
+    r, rest = remove_integer(rs_strings, use_broken_open_ssl_mechanism=True)
+    s, empty = remove_integer(rest, use_broken_open_ssl_mechanism=True)
     return r, s
