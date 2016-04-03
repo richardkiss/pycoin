@@ -36,7 +36,6 @@ from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
 from ...intbytes import (
     bytes_from_int, bytes_to_ints, to_bytes, from_bytes, int_to_bytes
 )
-from ...intbytes import byte_to_int
 
 logger = logging.getLogger(__name__)
 
@@ -75,17 +74,16 @@ def int_from_script_bytes(s, require_minimal=False):
         return 0
     s = bytearray(s)
     s.reverse()
-    i = byte_to_int(s[0])
+    i = s[0]
     v = i & 0x7f
     if require_minimal:
         if v == 0:
-            if len(s) <= 1 or ((byte_to_int(s[1]) & 0x80) == 0):
+            if len(s) <= 1 or ((s[1] & 0x80) == 0):
                 raise ScriptError("non-minimally encoded")
     is_negative = ((i & 0x80) > 0)
     for b in s[1:]:
-        i = byte_to_int(b)
         v <<= 8
-        v += i
+        v += b
     if is_negative:
         v = -v
     return v

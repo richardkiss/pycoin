@@ -111,8 +111,8 @@ if hasattr(int, "to_bytes"):
 
 
 def from_bytes_32(v):
-    if len(v) != 32:
-        raise ValueError("input to from_bytes_32 is wrong length")
+    if len(v) > 32:
+        raise OverflowError("int too big to convert")
     return to_long(256, byte_to_int, v)[0]
 
 if hasattr(int, "from_bytes"):
