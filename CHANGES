@@ -1,6 +1,8 @@
-Version 0.xx
+Version 0.70
 ------------
 
+* major overhaul of the VM and scripting system to make it more compatible with bitcoind
+  including added over 1000 tests from bitcoind
 * added a framework to trace transaction script
 * removed chain service provider, as they've disabled their API
 * removed biteasy service provider, as many transactions were not being returned properly
