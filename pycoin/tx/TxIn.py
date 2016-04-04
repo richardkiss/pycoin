@@ -68,9 +68,9 @@ class TxIn(object):
         if self.is_coinbase():
             return None
         opcodes = opcode_list(self.script)
-        if len(opcodes) == 2 and opcodes[0].startswith("30"):
+        if len(opcodes) == 2 and opcodes[0].startswith("[30"):
             # the second opcode is probably the public key as sec
-            sec = h2b(opcodes[1])
+            sec = h2b(opcodes[1][1:-1])
             return sec
         return None
 
