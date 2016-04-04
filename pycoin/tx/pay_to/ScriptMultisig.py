@@ -13,11 +13,9 @@ from ..exceptions import SolvingError
 from .ScriptType import ScriptType, DEFAULT_PLACEHOLDER_SIGNATURE
 
 
-
 # see BIP11 https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki
 
 class ScriptMultisig(ScriptType):
-
     def __init__(self, n, sec_keys):
         self.n = n
         self.sec_keys = sec_keys

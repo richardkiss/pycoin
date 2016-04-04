@@ -34,13 +34,15 @@ import binascii
 
 bytes_from_int = chr if bytes == str else lambda x: bytes([x])
 
+
 class UnexpectedDER(Exception):
     pass
 
+
 def encode_integer(r):
-    assert r >= 0 # can't support negative numbers yet
+    assert r >= 0  # can't support negative numbers yet
     h = "%x" % r
-    if len(h)%2:
+    if len(h) % 2:
         h = "0" + h
     s = binascii.unhexlify(h.encode("utf8"))
     if ord(s[:1]) <= 0x7f:
@@ -51,9 +53,11 @@ def encode_integer(r):
         # looking negative.
         return b"\x02" + bytes_from_int(len(s)+1) + b"\x00" + s
 
+
 def encode_sequence(*encoded_pieces):
     total_len = sum([len(p) for p in encoded_pieces])
     return b"\x30" + encode_length(total_len) + b"".join(encoded_pieces)
+
 
 def remove_sequence(string):
     if not string.startswith(b"\x30"):
@@ -63,6 +67,7 @@ def remove_sequence(string):
     length, lengthlength = read_length(string[1:])
     endseq = 1+lengthlength+length
     return string[1+lengthlength:endseq], string[endseq:]
+
 
 def remove_integer(string, use_broken_open_ssl_mechanism=False):
     # OpenSSL treats DER-encoded negative integers (that have their most significant
@@ -77,19 +82,21 @@ def remove_integer(string, use_broken_open_ssl_mechanism=False):
     v = int(binascii.hexlify(numberbytes), 16)
     if ord(numberbytes[:1]) >= 0x80:
         if not use_broken_open_ssl_mechanism:
-            v -= (1<<(8*length))
+            v -= (1 << (8 * length))
     return v, rest
+
 
 def encode_length(l):
     assert l >= 0
     if l < 0x80:
         return bytes_from_int(l)
     s = "%x" % l
-    if len(s)%2:
+    if len(s) % 2:
         s = "0"+s
     s = binascii.unhexlify(s)
     llen = len(s)
-    return bytes_from_int(0x80|llen) + s
+    return bytes_from_int(0x80 | llen) + s
+
 
 def read_length(string):
     s0 = ord(string[:1])
@@ -103,8 +110,10 @@ def read_length(string):
         raise UnexpectedDER("ran out of length bytes")
     return int(binascii.hexlify(string[1:1+llen]), 16), 1+llen
 
+
 def sigencode_der(r, s):
     return encode_sequence(encode_integer(r), encode_integer(s))
+
 
 def sigdecode_der(sig_der, use_broken_open_ssl_mechanism=True):
     # if use_broken_open_ssl_mechanism is true, this is a non-standard implementation

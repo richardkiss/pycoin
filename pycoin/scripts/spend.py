@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 def main():
     print('this tools is deprecated. Use "tx" instead ("tx -h" for help).')
 

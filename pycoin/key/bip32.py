@@ -71,7 +71,8 @@ THE BITCOINS IT CONTAINS.
 """.strip()
 
 
-class DerivationError(ValueError): pass
+class DerivationError(ValueError):
+    pass
 
 
 def subkey_secret_exponent_chain_code_pair(

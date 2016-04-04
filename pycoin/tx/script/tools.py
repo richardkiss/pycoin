@@ -34,10 +34,11 @@ import struct
 from . import ScriptError
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
 from ...intbytes import (
-    bytes_from_int, bytes_to_ints, to_bytes, from_bytes, int_to_bytes
+    bytes_from_int, bytes_to_ints, from_bytes, int_to_bytes
 )
 
 logger = logging.getLogger(__name__)
+
 
 def get_opcode(script, pc):
     """Step through the script, returning a tuple with the next opcode, the next
@@ -63,11 +64,14 @@ def get_opcode(script, pc):
         pc += size
     return opcode, data, pc
 
+
 def bool_from_script_bytes(v, require_minimal=False):
     return bool(int_from_script_bytes(v, require_minimal=require_minimal))
 
+
 def bool_to_script_bytes(v):
     return b'\1' if v else b''
+
 
 def int_from_script_bytes(s, require_minimal=False):
     if len(s) == 0:
@@ -88,6 +92,7 @@ def int_from_script_bytes(s, require_minimal=False):
         v = -v
     return v
 
+
 def int_to_script_bytes(v):
     if v == 0:
         return b''
@@ -104,6 +109,7 @@ def int_to_script_bytes(v):
     elif is_negative:
         l[-1] |= 0x80
     return bytes(l)
+
 
 def write_push_data(data_list, f):
     # return bytes that causes the given data to be pushed onto the stack
@@ -131,10 +137,30 @@ def write_push_data(data_list, f):
             f.write(struct.pack("<L", len(t)))
             f.write(t)
 
+
 def bin_script(data_list):
     f = io.BytesIO()
     write_push_data(data_list, f)
     return f.getvalue()
+
+
+def compile_expression(t):
+    if (t[0], t[-1]) == ('[', ']'):
+        return binascii.unhexlify(t[1:-1])
+    if t.startswith("'") and t.endswith("'"):
+        return t[1:-1].encode("utf8")
+    try:
+        t0 = int(t)
+        if abs(t0) <= 18446744073709551615 and t[0] != '0':
+            return int_to_script_bytes(t0)
+    except (SyntaxError, ValueError):
+        pass
+    try:
+        return binascii.unhexlify(t)
+    except Exception:
+        pass
+    raise SyntaxError("unknown expression %s" % t)
+
 
 def compile(s):
     """Compile the given script. Returns a bytes object with the compiled script."""
@@ -148,30 +174,16 @@ def compile(s):
             d = binascii.unhexlify(t[2:])
             f.write(d)
         else:
-            v = None
-            if (t[0], t[-1]) == ('[', ']'):
-                v = binascii.unhexlify(t[1:-1])
-            elif t.startswith("'") and t.endswith("'"):
-                v = t[1:-1].encode("utf8")
-            else:
-                try:
-                    t0 = int(t)
-                    if abs(t0) <= 18446744073709551615 and t[0] != '0':
-                        v = int_to_script_bytes(t0)
-                except (SyntaxError, ValueError):
-                    pass
-            if v is None:
-                try:
-                    v = binascii.unhexlify(t)
-                except Exception as ex:
-                    raise SyntaxError("unknown expression %s" % t)
+            v = compile_expression(t)
             write_push_data([v], f)
     return f.getvalue()
+
 
 def disassemble_for_opcode_data(opcode, data):
     if data is not None and len(data) > 0:
         return "[%s]" % binascii.hexlify(data).decode("utf8")
     return INT_TO_OPCODE.get(opcode, "???")
+
 
 def opcode_list(script):
     """Disassemble the given script. Returns a list of opcodes."""
@@ -182,9 +194,11 @@ def opcode_list(script):
         opcodes.append(disassemble_for_opcode_data(opcode, data))
     return opcodes
 
+
 def disassemble(script):
     """Disassemble the given script. Returns a string."""
     return ' '.join(opcode_list(script))
+
 
 def delete_subscript(script, subscript):
     """Returns a script with the given subscript removed. The subscript

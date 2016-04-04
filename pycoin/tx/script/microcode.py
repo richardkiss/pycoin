@@ -55,23 +55,30 @@ def nonnegative_int_from_script_bytes(b, require_minimal):
 def do_OP_0(stack):
     stack.append(b'')
 
+
 def do_OP_RESERVED(stack):
     raise ScriptError("OP_RESERVED encountered")
+
 
 def do_OP_VER(stack):
     raise ScriptError("OP_VER encountered")
 
+
 def do_OP_RESERVED1(stack):
     raise ScriptError("OP_RESERVED1 encountered")
+
 
 def do_OP_RESERVED2(stack):
     raise ScriptError("OP_RESERVED2 encountered")
 
+
 def do_OP_VERIFY(stack):
     pass
 
+
 def do_OP_RETURN(stack):
     raise ScriptError("OP_RETURN encountered")
+
 
 def do_OP_2DROP(stack):
     """
@@ -83,8 +90,9 @@ def do_OP_2DROP(stack):
     stack.pop()
     stack.pop()
 
+
 def do_OP_2DUP(stack):
-    #// (x1 x2 -- x1 x2 x1 x2)
+    #  (x1 x2 -- x1 x2 x1 x2)
     """
     >>> s = [1, 2]
     >>> do_OP_2DUP(s)
@@ -94,8 +102,9 @@ def do_OP_2DUP(stack):
     stack.append(stack[-2])
     stack.append(stack[-2])
 
+
 def do_OP_3DUP(stack):
-    #// (x1 x2 x3 -- x1 x2 x3 x1 x2 x3)
+    #  (x1 x2 x3 -- x1 x2 x3 x1 x2 x3)
     """
     >>> s = [1, 2, 3]
     >>> do_OP_3DUP(s)
@@ -106,8 +115,9 @@ def do_OP_3DUP(stack):
     stack.append(stack[-3])
     stack.append(stack[-3])
 
+
 def do_OP_2OVER(stack):
-    #// (x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2)
+    #  (x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2)
     """
     >>> s = [1, 2, 3, 4]
     >>> do_OP_2OVER(s)
@@ -116,6 +126,7 @@ def do_OP_2OVER(stack):
     """
     stack.append(stack[-4])
     stack.append(stack[-4])
+
 
 def do_OP_2ROT(stack):
     """
@@ -127,6 +138,7 @@ def do_OP_2ROT(stack):
     stack.append(stack.pop(-6))
     stack.append(stack.pop(-6))
 
+
 def do_OP_2SWAP(stack):
     """
     >>> s = [1, 2, 3, 4]
@@ -136,6 +148,7 @@ def do_OP_2SWAP(stack):
     """
     stack.append(stack.pop(-4))
     stack.append(stack.pop(-4))
+
 
 def do_OP_IFDUP(stack):
     """
@@ -151,6 +164,7 @@ def do_OP_IFDUP(stack):
     if stack[-1]:
         stack.append(stack[-1])
 
+
 def do_OP_DEPTH(stack):
     """
     >>> s = [1, 2, 1, 2, 1, 2]
@@ -159,6 +173,7 @@ def do_OP_DEPTH(stack):
     [1, 2, 1, 2, 1, 2, 6]
     """
     stack.append(int_to_script_bytes(len(stack)))
+
 
 def do_OP_DROP(stack):
     """
@@ -169,6 +184,7 @@ def do_OP_DROP(stack):
     """
     stack.pop()
 
+
 def do_OP_DUP(stack):
     """
     >>> s = [1, 2]
@@ -177,6 +193,7 @@ def do_OP_DUP(stack):
     [1, 2, 2]
     """
     stack.append(stack[-1])
+
 
 def do_OP_NIP(stack):
     """
@@ -189,6 +206,7 @@ def do_OP_NIP(stack):
     stack.pop()
     stack.append(v)
 
+
 def do_OP_OVER(stack):
     """
     >>> s = [1, 2]
@@ -197,6 +215,7 @@ def do_OP_OVER(stack):
     [1, 2, 1]
     """
     stack.append(stack[-2])
+
 
 def do_OP_PICK(stack, require_minimal):
     """
@@ -208,6 +227,7 @@ def do_OP_PICK(stack, require_minimal):
     v = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     stack.append(stack[-v-1])
 
+
 def do_OP_ROLL(stack, require_minimal):
     """
     >>> s = ['a', 'b', 'c', 'd', b'\2']
@@ -218,6 +238,7 @@ def do_OP_ROLL(stack, require_minimal):
     v = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     stack.append(stack.pop(-v-1))
 
+
 def do_OP_ROT(stack):
     """
     >>> s = [1, 2, 3]
@@ -227,6 +248,7 @@ def do_OP_ROT(stack):
     """
     stack.append(stack.pop(-3))
 
+
 def do_OP_SWAP(stack):
     """
     >>> s = [1, 2, 3]
@@ -235,6 +257,7 @@ def do_OP_SWAP(stack):
     [1, 3, 2]
     """
     stack.append(stack.pop(-2))
+
 
 def do_OP_TUCK(stack):
     """
@@ -249,6 +272,7 @@ def do_OP_TUCK(stack):
     stack.append(v2)
     stack.append(v1)
 
+
 def do_OP_CAT(stack):
     """
     >>> s = ["foo", "bar"]
@@ -260,6 +284,7 @@ def do_OP_CAT(stack):
     v2 = stack.pop()
     stack.append(v2 + v1)
 
+
 def do_OP_SUBSTR(stack):
     """
     >>> s = ['abcdef', b'\3', b'\2']
@@ -270,6 +295,7 @@ def do_OP_SUBSTR(stack):
     pos = nonnegative_int_from_script_bytes(stack.pop())
     length = nonnegative_int_from_script_bytes(stack.pop())
     stack.append(stack.pop()[length:length+pos])
+
 
 def do_OP_LEFT(stack):
     """
@@ -284,6 +310,7 @@ def do_OP_LEFT(stack):
     """
     pos = nonnegative_int_from_script_bytes(stack.pop())
     stack.append(stack.pop()[:pos])
+
 
 def do_OP_RIGHT(stack):
     """
@@ -303,6 +330,7 @@ def do_OP_RIGHT(stack):
         stack.pop()
         stack.append(b'')
 
+
 def do_OP_SIZE(stack):
     """
     >>> s = [b'abcdef']
@@ -316,6 +344,7 @@ def do_OP_SIZE(stack):
     """
     stack.append(int_to_script_bytes(len(stack[-1])))
 
+
 def do_OP_INVERT(stack):
     """
     >>> s = [h2b('5dcf39822aebc166')]
@@ -326,7 +355,8 @@ def do_OP_INVERT(stack):
     v = stack.pop()
     # use bytes_from_ints and bytes_to_ints so it works with
     # Python 2.7 and 3.3. Ugh
-    stack.append(bytes_from_ints((s^0xff) for s in bytes_to_ints(v)))
+    stack.append(bytes_from_ints((s ^ 0xff) for s in bytes_to_ints(v)))
+
 
 def make_same_size(v1, v2):
     larger = max(len(v1), len(v2))
@@ -334,6 +364,7 @@ def make_same_size(v1, v2):
     v1 = (v1 + nulls)[:larger]
     v2 = (v2 + nulls)[:larger]
     return v1, v2
+
 
 def make_bitwise_bin_op(binop):
     """
@@ -358,9 +389,9 @@ def make_bitwise_bin_op(binop):
         stack.append(bytes_from_ints(binop(c1, c2) for c1, c2 in zip(bytes_to_ints(v1), bytes_to_ints(v2))))
     return f
 
-do_OP_AND = make_bitwise_bin_op(lambda x,y: x & y)
-do_OP_OR = make_bitwise_bin_op(lambda x,y: x | y)
-do_OP_XOR = make_bitwise_bin_op(lambda x,y: x ^ y)
+do_OP_AND = make_bitwise_bin_op(lambda x, y: x & y)
+do_OP_OR = make_bitwise_bin_op(lambda x, y: x | y)
+do_OP_XOR = make_bitwise_bin_op(lambda x, y: x ^ y)
 
 
 def do_OP_EQUAL(stack):
@@ -377,7 +408,8 @@ def do_OP_EQUAL(stack):
     v1, v2 = [stack.pop() for i in range(2)]
     stack.append(bool_to_script_bytes(v1 == v2))
 
-do_OP_EQUALVERIFY = lambda s: do_OP_EQUAL(s)
+
+do_OP_EQUALVERIFY = do_OP_EQUAL
 
 
 def pop_check_bounds(stack, require_minimal):
@@ -386,11 +418,13 @@ def pop_check_bounds(stack, require_minimal):
         raise ScriptError("overflow in binop")
     return int_from_script_bytes(v, require_minimal=require_minimal)
 
+
 def make_bin_op(binop):
     def f(stack, require_minimal):
         v1, v2 = [pop_check_bounds(stack, require_minimal) for i in range(2)]
         stack.append(int_to_script_bytes(binop(v2, v1)))
     return f
+
 
 def make_bool_bin_op(binop):
     def f(stack, require_minimal):
@@ -398,24 +432,25 @@ def make_bool_bin_op(binop):
         stack.append(bool_to_script_bytes(binop(v2, v1)))
     return f
 
-do_OP_ADD = make_bin_op(lambda x,y: x+y)
-do_OP_SUB = make_bin_op(lambda x,y: x-y)
-do_OP_MUL = make_bin_op(lambda x,y: x*y)
-do_OP_DIV = make_bin_op(lambda x,y: x//y)
-do_OP_MOD = make_bin_op(lambda x,y: x%y)
-do_OP_LSHIFT = make_bin_op(lambda x,y: x<<y)
-do_OP_RSHIFT = make_bin_op(lambda x,y: x>>y)
-do_OP_BOOLAND = make_bool_bin_op(lambda x,y: x and y)
-do_OP_BOOLOR = make_bool_bin_op(lambda x,y: x or y)
-do_OP_NUMEQUAL = make_bool_bin_op(lambda x,y: x==y)
-do_OP_NUMEQUALVERIFY = make_bool_bin_op(lambda x,y: x==y)
-do_OP_NUMNOTEQUAL = make_bool_bin_op(lambda x,y: x!=y)
-do_OP_LESSTHAN = make_bool_bin_op(lambda x,y: x<y)
-do_OP_GREATERTHAN = make_bool_bin_op(lambda x,y: x>y)
-do_OP_LESSTHANOREQUAL = make_bool_bin_op(lambda x,y: x<=y)
-do_OP_GREATERTHANOREQUAL = make_bool_bin_op(lambda x,y: x>=y)
+do_OP_ADD = make_bin_op(lambda x, y: x + y)
+do_OP_SUB = make_bin_op(lambda x, y: x - y)
+do_OP_MUL = make_bin_op(lambda x, y: x * y)
+do_OP_DIV = make_bin_op(lambda x, y: x // y)
+do_OP_MOD = make_bin_op(lambda x, y: x % y)
+do_OP_LSHIFT = make_bin_op(lambda x, y: x << y)
+do_OP_RSHIFT = make_bin_op(lambda x, y: x >> y)
+do_OP_BOOLAND = make_bool_bin_op(lambda x, y: x and y)
+do_OP_BOOLOR = make_bool_bin_op(lambda x, y: x or y)
+do_OP_NUMEQUAL = make_bool_bin_op(lambda x, y: x == y)
+do_OP_NUMEQUALVERIFY = make_bool_bin_op(lambda x, y: x == y)
+do_OP_NUMNOTEQUAL = make_bool_bin_op(lambda x, y: x != y)
+do_OP_LESSTHAN = make_bool_bin_op(lambda x, y: x < y)
+do_OP_GREATERTHAN = make_bool_bin_op(lambda x, y: x > y)
+do_OP_LESSTHANOREQUAL = make_bool_bin_op(lambda x, y: x <= y)
+do_OP_GREATERTHANOREQUAL = make_bool_bin_op(lambda x, y: x >= y)
 do_OP_MIN = make_bin_op(min)
 do_OP_MAX = make_bin_op(max)
+
 
 def do_OP_WITHIN(stack, require_minimal):
     """
@@ -432,6 +467,7 @@ def do_OP_WITHIN(stack, require_minimal):
     ok = (v2 <= v1 < v3)
     stack.append(bool_to_script_bytes(ok))
 
+
 def do_OP_RIPEMD160(stack):
     """
     >>> s = [b'foo']
@@ -440,6 +476,7 @@ def do_OP_RIPEMD160(stack):
     True
     """
     stack.append(ripemd160(stack.pop()).digest())
+
 
 def do_OP_SHA1(stack):
     """
@@ -450,6 +487,7 @@ def do_OP_SHA1(stack):
     """
     stack.append(hashlib.sha1(stack.pop()).digest())
 
+
 def do_OP_SHA256(stack):
     """
     >>> s = [b'foo']
@@ -458,6 +496,7 @@ def do_OP_SHA256(stack):
     True
     """
     stack.append(hashlib.sha256(stack.pop()).digest())
+
 
 def do_OP_HASH160(stack):
     """
@@ -468,6 +507,7 @@ def do_OP_HASH160(stack):
     """
     stack.append(hash160(stack.pop()))
 
+
 def do_OP_HASH256(stack):
     """
     >>> s = [b'foo']
@@ -477,19 +517,28 @@ def do_OP_HASH256(stack):
     """
     stack.append(double_sha256(stack.pop()))
 
+
 def make_unary_num_op(unary_f):
     def f(stack, require_minimal):
         stack.append(int_to_script_bytes(unary_f(pop_check_bounds(stack, require_minimal))))
     return f
 
-do_OP_1ADD = make_unary_num_op(lambda x: x+1)
-do_OP_1SUB = make_unary_num_op(lambda x: x-1)
-do_OP_2MUL = make_unary_num_op(lambda x: x<<1)
-do_OP_2DIV = make_unary_num_op(lambda x: x>>1)
+do_OP_1ADD = make_unary_num_op(lambda x: x + 1)
+do_OP_1SUB = make_unary_num_op(lambda x: x - 1)
+do_OP_2MUL = make_unary_num_op(lambda x: x << 1)
+do_OP_2DIV = make_unary_num_op(lambda x: x >> 1)
 do_OP_NEGATE = make_unary_num_op(lambda x: -x)
 do_OP_ABS = make_unary_num_op(lambda x: abs(x))
-do_OP_NOT = lambda stack, require_minimal: stack.append(bool_to_script_bytes(not pop_check_bounds(stack, require_minimal)))
-do_OP_0NOTEQUAL = lambda stack, require_minimal: stack.append(int_to_script_bytes(bool_from_script_bytes(stack.pop(), require_minimal=require_minimal)))
+
+
+def do_OP_NOT(stack, require_minimal):
+    return stack.append(bool_to_script_bytes(not pop_check_bounds(stack, require_minimal)))
+
+
+def do_OP_0NOTEQUAL(stack, require_minimal):
+    return stack.append(int_to_script_bytes(bool_from_script_bytes(
+                stack.pop(), require_minimal=require_minimal)))
+
 
 def build_ops_lookup():
     d = {}

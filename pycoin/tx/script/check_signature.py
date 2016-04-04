@@ -61,7 +61,7 @@ def check_valid_signature(sig):
     if byte_to_int(sig[4]) & 0x80:
         raise ScriptError("sig R value not allowed to be negative")
     if r_len > 1 and byte_to_int(sig[4]) == 0 and not (byte_to_int(sig[5]) & 0x80):
-        raise ScriptError("sig R value not allowed to have leading 0 byte unless doing so would make it negative")
+        raise ScriptError("R value can't have leading 0 byte unless doing so would make it negative")
     if byte_to_int(sig[r_len + 4]) != 2:
         raise ScriptError("S value region does not start with 0x02")
     if s_len == 0:
@@ -69,7 +69,7 @@ def check_valid_signature(sig):
     if byte_to_int(sig[r_len + 6]) & 0x80:
         raise ScriptError("negative S values not allowed")
     if s_len > 1 and byte_to_int(sig[r_len + 6]) == 0 and not (byte_to_int(sig[r_len + 7]) & 0x80):
-        raise ScriptError("sig S value not allowed to have leading 0 byte unless doing so would make it negative")
+        raise ScriptError("S value can't have leading 0 byte unless doing so would make it negative")
 
 
 def check_low_der_signature(sig_pair):
@@ -119,7 +119,6 @@ def check_public_key_encoding(blob):
 
 
 def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script, flags):
-    require_minimal = flags & VERIFY_MINIMALDATA
     try:
         pair_blob = stack.pop()
         sig_blob = stack.pop()
@@ -148,7 +147,8 @@ def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script
         stack.append(VCH_FALSE)
 
 
-def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_hash_type_f, flags, exit_early=False):
+def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_hash_type_f,
+                     flags, exit_early=False):
     """
     sig_blobs: signature blobs
     public_pair_blobs: a list of public pair blobs
@@ -188,7 +188,7 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
         try:
             ppp = ecdsa.possible_public_pairs_for_signature(
                 ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
-        except ecdsa.NoSuchPointError as err:
+        except ecdsa.NoSuchPointError:
             ppp = []
 
         while len(sig_blobs) < len(public_pair_blobs):
@@ -213,7 +213,6 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
     key_count = int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     if key_count < 0 or key_count > 20:
         raise ScriptError("key_count not in range 0 to 20")
-    strict_encoding = not not (flags & VERIFY_STRICTENC)
     public_pair_blobs = []
     for i in range(key_count):
         public_pair_blobs.append(stack.pop())

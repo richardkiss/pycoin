@@ -78,8 +78,8 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
     traceback_f = trace_script if do_trace or use_pdb else None
     for idx, tx_in in enumerate(tx.txs_in):
         if disassembly_level > 0:
-            signature_for_hash_type_f = lambda hash_type, script: tx.signature_hash(
-                                        script, idx, hash_type)
+            def signature_for_hash_type_f(hash_type, script):
+                return tx.signature_hash(script, idx, hash_type)
         if tx.is_coinbase():
             print("%4d: COINBASE  %12.5f mBTC" % (idx, satoshi_to_mbtc(tx.total_in())))
         else:
@@ -123,7 +123,8 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
                         if not sig_types_identical and tx_out:
                             print("      z{}: {:#x} {}".format(i, tx.signature_hash(tx_out.script, idx, sig_type),
                                                                sighash_type_to_string(sig_type)))
-                        if i: i += 1
+                        if i:
+                            i += 1
                     if sig_types_identical and tx_out:
                         print("      z:{} {:#x} {}".format(' ' if i else '', tx.signature_hash(tx_out.script, idx, sig_type),
                                                            sighash_type_to_string(sig_type)))
@@ -265,10 +266,12 @@ def main():
     parser.add_argument("--trace", action='store_true', help='Trace scripts.')
 
     parser.add_argument('-p', "--pay-to-script", metavar="pay-to-script", action="append",
-                        help='a hex version of a script required for a pay-to-script input (a bitcoin address that starts with 3)')
+                        help='a hex version of a script required for a pay-to-script'
+                        'input (a bitcoin address that starts with 3)')
 
-    parser.add_argument('-P', "--pay-to-script-file", metavar="pay-to-script-file", nargs=1, type=argparse.FileType('r'),
-                        help='a file containing hex scripts (one per line) corresponding to pay-to-script inputs')
+    parser.add_argument('-P', "--pay-to-script-file", metavar="pay-to-script-file", nargs=1,
+                        type=argparse.FileType('r'), help='a file containing hex scripts '
+                        '(one per line) corresponding to pay-to-script inputs')
 
     parser.add_argument("argument", nargs="+", help='generic argument: can be a hex transaction id '
                         '(exactly 64 characters) to be fetched from cache or a web service;'

@@ -27,9 +27,7 @@ THE SOFTWARE.
 """
 
 from ..convention import satoshi_to_mbtc
-from ..encoding import bitcoin_address_to_hash160_sec_with_prefix
 
-from ..serialize import b2h
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .pay_to import script_obj_from_address, script_obj_from_script

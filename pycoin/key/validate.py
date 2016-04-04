@@ -6,6 +6,7 @@ from ..serialize import h2b
 
 DEFAULT_ADDRESS_TYPES = ["address", "pay_to_script"]
 
+
 def _generate_network_prefixes():
     d = {}
     for n in NETWORKS:

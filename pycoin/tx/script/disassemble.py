@@ -45,6 +45,7 @@ def add_signature_annotations(annotations, signature_blob, signature_for_hash_ty
             addresses.append(address)
     annotations.append(" sig for %s" % " ".join(addresses))
 
+
 def add_address_annotations(annotations, hash160_blob, address_prefix):
     address = hash160_sec_to_bitcoin_address(hash160_blob, address_prefix=address_prefix)
     annotations.append("%s... corresponds to %s" % (b2h(hash160_blob)[:12], address))
@@ -65,10 +66,6 @@ def instruction_for_opcode(opcode, data):
 
 
 def annotation_f_for_scripts(input_script, output_script, signature_for_hash_type_f):
-    if len(output_script):
-        #  pay_to_script = script_obj_from_script(output_script)
-        pass
-
     is_p2sh = is_pay_to_script_hash(output_script)
     in_ap = b'\0'
     out_ap = b'\0'
@@ -105,7 +102,8 @@ def annotation_f_for_scripts(input_script, output_script, signature_for_hash_typ
 def disassemble_scripts(input_script, output_script, signature_for_hash_type_f):
     "yield pre_annotations, pc, opcode, instruction, post_annotations"
 
-    input_annotations_f, output_annotations_f = annotation_f_for_scripts(input_script, output_script, signature_for_hash_type_f)
+    input_annotations_f, output_annotations_f = annotation_f_for_scripts(
+        input_script, output_script, signature_for_hash_type_f)
     pc = 0
     while pc < len(input_script):
         opcode, data, new_pc = get_opcode(input_script, pc)

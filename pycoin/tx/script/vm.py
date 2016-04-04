@@ -35,7 +35,8 @@ from . import opcodes
 from . import ScriptError
 
 from .check_signature import op_checksig, op_checkmultisig
-from .flags import VERIFY_P2SH, VERIFY_DISCOURAGE_UPGRADABLE_NOPS, VERIFY_MINIMALDATA, VERIFY_SIGPUSHONLY, VERIFY_CHECKLOCKTIMEVERIFY, VERIFY_CLEANSTACK
+from .flags import (VERIFY_P2SH, VERIFY_DISCOURAGE_UPGRADABLE_NOPS, VERIFY_MINIMALDATA,
+                    VERIFY_SIGPUSHONLY, VERIFY_CHECKLOCKTIMEVERIFY, VERIFY_CLEANSTACK)
 from .microcode import MICROCODE_LOOKUP
 from .tools import get_opcode, bin_script, bool_from_script_bytes, int_from_script_bytes
 
@@ -121,7 +122,8 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                 raise ScriptError("stack has > 1000 items")
 
             if opcode in INVALID_OPCODE_VALUES:
-                raise ScriptError("invalid opcode %s at %d" % (opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1))
+                raise ScriptError("invalid opcode %s at %d" % (
+                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1))
 
             if data and len(data) > 520 and disallow_long_scripts:
                 raise ScriptError("pushing too much data onto stack")
@@ -146,7 +148,8 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                 continue
 
             if opcode > 76 and opcode not in opcodes.INT_TO_OPCODE:
-                raise ScriptError("invalid opcode %s at %d" % (opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1))
+                raise ScriptError("invalid opcode %s at %d" % (
+                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1))
 
             if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
                 raise ScriptError("discouraging nops")
@@ -170,7 +173,7 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
 
                 if opcode in VERIFY_OPS:
                     v = bool_from_script_bytes(stack.pop())
-                    if v == False:
+                    if not v:
                         raise ScriptError("VERIFY failed at %d" % (pc-1))
                 continue
 
@@ -195,7 +198,8 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
 
             if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
                 # Subset of script starting at the most recent codeseparator
-                op_checksig(stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:], flags)
+                op_checksig(stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:],
+                            flags)
                 if opcode == opcodes.OP_CHECKSIGVERIFY:
                     if not bool_from_script_bytes(stack.pop()):
                         raise ScriptError("VERIFY failed at %d" % (pc-1))
@@ -261,7 +265,8 @@ def is_pay_to_script_hash(script_public_key):
             byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
 
 
-def verify_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time, flags=None, expected_hash_type=None, traceback_f=None):
+def verify_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,
+                  flags=None, expected_hash_type=None, traceback_f=None):
     stack = Stack()
 
     is_p2h = is_pay_to_script_hash(script_public_key)
@@ -273,20 +278,23 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         check_script_push_only(script_signature)
 
     try:
-        r = eval_script(script_signature, signature_for_hash_type_f, lock_time, expected_hash_type, stack, traceback_f=traceback_f, flags=flags, is_signature=True)
+        eval_script(script_signature, signature_for_hash_type_f, lock_time, expected_hash_type,
+                    stack, traceback_f=traceback_f, flags=flags, is_signature=True)
 
         if is_p2h and (flags & VERIFY_P2SH):
             signatures, alt_script_public_key = stack[:-1], stack[-1]
             alt_script_signature = bin_script(signatures)
 
-        r = eval_script(script_public_key, signature_for_hash_type_f, lock_time, expected_hash_type, stack, traceback_f=traceback_f, flags=flags, is_signature=False)
+        eval_script(script_public_key, signature_for_hash_type_f, lock_time, expected_hash_type,
+                    stack, traceback_f=traceback_f, flags=flags, is_signature=False)
     except ScriptError:
         return False
 
     if is_p2h and bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
         check_script_push_only(script_signature)
-        return verify_script(alt_script_signature, alt_script_public_key,
-                             signature_for_hash_type_f, lock_time, flags & ~VERIFY_P2SH, expected_hash_type=expected_hash_type, traceback_f=traceback_f)
+        return verify_script(alt_script_signature, alt_script_public_key, signature_for_hash_type_f,
+                             lock_time, flags & ~VERIFY_P2SH, expected_hash_type=expected_hash_type,
+                             traceback_f=traceback_f)
 
     if flags & VERIFY_CLEANSTACK and len(stack) != 1:
         raise ScriptError("stack not clean after evaulation")

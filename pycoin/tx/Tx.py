@@ -244,8 +244,8 @@ class Tx(object):
 
         tx_in = self.txs_in[tx_in_idx]
 
-        is_p2h = (len(tx_out_script) == 23 and byte_to_int(tx_out_script[0]) == opcodes.OP_HASH160
-                  and byte_to_int(tx_out_script[-1]) == opcodes.OP_EQUAL)
+        is_p2h = (len(tx_out_script) == 23 and byte_to_int(tx_out_script[0]) == opcodes.OP_HASH160 and
+                  byte_to_int(tx_out_script[-1]) == opcodes.OP_EQUAL)
         if is_p2h:
             hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
             p2sh_lookup = kwargs.get("p2sh_lookup")
@@ -261,8 +261,9 @@ class Tx(object):
 
         # Leave out the signature from the hash, since a signature can't sign itself.
         # The checksig op will also drop the signatures from its hash.
-        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(
-            script, tx_in_idx, hash_type)
+        def signature_for_hash_type_f(hash_type, script):
+            return self.signature_hash(script, tx_in_idx, hash_type)
+
         if tx_in.verify(tx_out_script, signature_for_hash_type_f, self.lock_time):
             return
 
@@ -274,11 +275,15 @@ class Tx(object):
         return solution
 
     def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
-        self.txs_in[tx_in_idx].script = self.solve(hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs)
+        self.txs_in[tx_in_idx].script = self.solve(hash160_lookup, tx_in_idx, tx_out_script,
+                                                   hash_type=SIGHASH_ALL, **kwargs)
 
     def verify_tx_in(self, tx_in_idx, tx_out_script, expected_hash_type=None):
         tx_in = self.txs_in[tx_in_idx]
-        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(script, tx_in_idx, hash_type)
+
+        def signature_for_hash_type_f(hash_type, script):
+            return self.signature_hash(script, tx_in_idx, hash_type)
+
         if not tx_in.verify(tx_out_script, signature_for_hash_type_f, expected_hash_type):
             raise ValidationFailureError(
                 "just signed script Tx %s TxIn index %d did not verify" % (
@@ -418,9 +423,12 @@ class Tx(object):
         if unspent is None:
             return False
         tx_out_script = self.unspents[tx_in_idx].script
-        signature_for_hash_type_f = lambda hash_type, script: self.signature_hash(
-            script, tx_in_idx, hash_type)
-        return tx_in.verify(tx_out_script, signature_for_hash_type_f, self.lock_time, flags=flags, traceback_f=traceback_f)
+
+        def signature_for_hash_type_f(hash_type, script):
+            return self.signature_hash(script, tx_in_idx, hash_type)
+
+        return tx_in.verify(tx_out_script, signature_for_hash_type_f, self.lock_time,
+                            flags=flags, traceback_f=traceback_f)
 
     def sign(self, hash160_lookup, hash_type=SIGHASH_ALL, **kwargs):
         """

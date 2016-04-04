@@ -97,7 +97,8 @@ def blockheader_for_offset_info(offset_info, base_dir=None):
     return block
 
 
-def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, base_dir=None, headers_only=False):
+def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, base_dir=None,
+                           headers_only=False):
     """
     This method loads blocks from disk, skipping any orphan blocks.
     """
@@ -109,7 +110,6 @@ def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, 
         break
     index_table = {initial_header.previous_block_hash: (-1, None, None)}
     head_hash = initial_header.previous_block_hash
-    block_iterator = Blockfiles(base_dir, start_info)
 
     max_index = -1
     for info in block_info_iterator(start_info, base_dir):
