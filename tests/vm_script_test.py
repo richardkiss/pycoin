@@ -89,7 +89,7 @@ def make_test(script_in, script_out, flags_string, comment, expect_valid=True):
 def items_from_json(path):
     with open(path, "r") as f:
         for i in json.load(f):
-            if len(i) in [3, 4]:
+            if len(i) >= 3:
                 if len(i) == 3:
                     i.append("no comment")
                 yield i
@@ -100,7 +100,8 @@ def inject():
         setattr(TestTx, name_of_f, make_test(script_in, script_out, flags, comment))
         print("adding %s" % name_of_f)
 
-    for idx, (script_in, script_out, flags, comment) in enumerate(items_from_json(SCRIPT_INVALID_JSON)):
+    for idx, args in enumerate(items_from_json(SCRIPT_INVALID_JSON)):
+        (script_in, script_out, flags, comment) = args[:4]
         name_of_f = "test_invalid_%03d" % idx
         setattr(TestTx, name_of_f, make_test(script_in, script_out, flags, comment, expect_valid=False))
         print("adding %s" % name_of_f)
