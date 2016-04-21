@@ -70,6 +70,11 @@ class BlockHeader(object):
         self.difficulty = difficulty
         self.nonce = nonce
 
+    def set_nonce(self, nonce):
+        self.nonce = nonce
+        if hasattr(self, "__hash"):
+            del self.__hash
+
     def hash(self):
         """Calculate the hash for the block header. Note that this has the bytes
         in the opposite order from how the header is usually displayed (so the
@@ -89,6 +94,16 @@ class BlockHeader(object):
         """Stream the block header in the standard way to the file-like object f.
         The Block subclass also includes the transactions."""
         self.stream_header(f)
+
+    def as_bin(self):
+        """Return the transaction as binary."""
+        f = io.BytesIO()
+        self.stream(f)
+        return f.getvalue()
+
+    def as_hex(self):
+        """Return the transaction as hex."""
+        return b2h(self.as_bin())
 
     def id(self):
         """Returns the hash of the block displayed with the bytes in the order
@@ -132,6 +147,11 @@ class Block(BlockHeader):
             tx.block = block
         return block
 
+    @classmethod
+    def from_bin(self, bytes):
+        f = io.BytesIO(bytes)
+        return self.parse(f)
+
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs):
         self.version = version
         self.previous_block_hash = previous_block_hash
@@ -151,6 +171,16 @@ class Block(BlockHeader):
                       self.merkle_root, self.timestamp, self.difficulty, self.nonce, len(self.txs))
         for t in self.txs:
             t.stream(f)
+
+    def as_bin(self):
+        """Return the transaction as binary."""
+        f = io.BytesIO()
+        self.stream(f)
+        return f.getvalue()
+
+    def as_hex(self):
+        """Return the transaction as hex."""
+        return b2h(self.as_bin())
 
     def check_merkle_hash(self):
         """Raise a BadMerkleRootError if the Merkle hash of the
