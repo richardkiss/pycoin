@@ -48,8 +48,8 @@ class TxIn(object):
         self.sequence = sequence
 
     @classmethod
-    def coinbase_tx_in(self, script):
-        tx = TxIn(previous_hash=ZERO, previous_index=4294967295, script=script)
+    def coinbase_tx_in(class_, script):
+        tx = class_(previous_hash=ZERO, previous_index=4294967295, script=script)
         return tx
 
     def stream(self, f, blank_solutions=False):

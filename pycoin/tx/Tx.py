@@ -90,9 +90,9 @@ class Tx(object):
         return class_(version, txs_in, txs_out, lock_time)
 
     @classmethod
-    def from_hex(class_, hex_string):
-        """Return the Tx for the given hex string."""
-        f = io.BytesIO(h2b(hex_string))
+    def from_bin(class_, blob):
+        """Return the Tx for the given binary blob."""
+        f = io.BytesIO(blob)
         tx = class_.parse(f)
         try:
             tx.parse_unspents(f)
@@ -100,6 +100,11 @@ class Tx(object):
             # parsing unspents failed
             tx.unspents = []
         return tx
+
+    @classmethod
+    def from_hex(class_, hex_string):
+        """Return the Tx for the given hex string."""
+        return class_.from_bin(h2b(hex_string))
 
     @classmethod
     def tx_from_hex(class_, hex_string):
