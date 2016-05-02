@@ -63,37 +63,49 @@ class BadSpendableError(Exception):
 
 
 class Tx(object):
+    TxIn = TxIn
+    TxOut = TxOut
+    Spendable = Spendable
+
+    MAX_MONEY = MAX_MONEY
+    MAX_BLOCK_SIZE = MAX_BLOCK_SIZE
+
+    SIGHASH_ALL = SIGHASH_ALL
+    SIGHASH_NONE = SIGHASH_NONE
+    SIGHASH_SINGLE = SIGHASH_SINGLE
+    SIGHASH_ANYONECANPAY = SIGHASH_ANYONECANPAY
+
     @classmethod
-    def coinbase_tx(class_, public_key_sec, coin_value, coinbase_bytes=b'', version=1, lock_time=0):
+    def coinbase_tx(cls, public_key_sec, coin_value, coinbase_bytes=b'', version=1, lock_time=0):
         """
         Create the special "first in block" transaction that includes the mining fees.
         """
-        tx_in = TxIn.coinbase_tx_in(script=coinbase_bytes)
+        tx_in = cls.TxIn.coinbase_tx_in(script=coinbase_bytes)
         COINBASE_SCRIPT_OUT = "%s OP_CHECKSIG"
         script_text = COINBASE_SCRIPT_OUT % b2h(public_key_sec)
         script_bin = tools.compile(script_text)
-        tx_out = TxOut(coin_value, script_bin)
-        return class_(version, [tx_in], [tx_out], lock_time)
+        tx_out = cls.TxOut(coin_value, script_bin)
+        return cls(version, [tx_in], [tx_out], lock_time)
 
     @classmethod
-    def parse(class_, f):
+    def parse(cls, f):
         """Parse a Bitcoin transaction Tx from the file-like object f."""
         version, count = parse_struct("LI", f)
         txs_in = []
         for i in range(count):
-            txs_in.append(TxIn.parse(f))
+            txs_in.append(cls.TxIn.parse(f))
         count, = parse_struct("I", f)
         txs_out = []
         for i in range(count):
-            txs_out.append(TxOut.parse(f))
+            txs_out.append(cls.TxOut.parse(f))
         lock_time, = parse_struct("L", f)
-        return class_(version, txs_in, txs_out, lock_time)
+        return cls(version, txs_in, txs_out, lock_time)
 
     @classmethod
-    def from_bin(class_, blob):
+    def from_bin(cls, blob):
         """Return the Tx for the given binary blob."""
         f = io.BytesIO(blob)
-        tx = class_.parse(f)
+        tx = cls.parse(f)
         try:
             tx.parse_unspents(f)
         except Exception:
@@ -102,17 +114,17 @@ class Tx(object):
         return tx
 
     @classmethod
-    def from_hex(class_, hex_string):
+    def from_hex(cls, hex_string):
         """Return the Tx for the given hex string."""
-        return class_.from_bin(h2b(hex_string))
+        return cls.from_bin(h2b(hex_string))
 
     @classmethod
-    def tx_from_hex(class_, hex_string):
+    def tx_from_hex(cls, hex_string):
         warnings.simplefilter('always', DeprecationWarning)
         warnings.warn("Call to deprecated function tx_from_hex, use from_hex instead",
                       category=DeprecationWarning, stacklevel=2)
         warnings.simplefilter('default', DeprecationWarning)
-        return class_.from_hex(hex_string)
+        return cls.from_hex(hex_string)
 
     def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[]):
         self.version = version
@@ -120,6 +132,10 @@ class Tx(object):
         self.txs_out = txs_out
         self.lock_time = lock_time
         self.unspents = unspents
+        for tx_in in self.txs_in:
+            assert type(tx_in) == self.TxIn
+        for tx_out in self.txs_out:
+            assert type(tx_out) == self.TxOut
 
     def stream(self, f, blank_solutions=False):
         """Stream a Bitcoin transaction Tx to the file-like object f."""
@@ -185,14 +201,14 @@ class Tx(object):
         # blank out other inputs' signatures
         def tx_in_for_idx(idx, tx_in):
             if idx == unsigned_txs_out_idx:
-                return TxIn(tx_in.previous_hash, tx_in.previous_index, tx_out_script, tx_in.sequence)
-            return TxIn(tx_in.previous_hash, tx_in.previous_index, b'', tx_in.sequence)
+                return self.TxIn(tx_in.previous_hash, tx_in.previous_index, tx_out_script, tx_in.sequence)
+            return self.TxIn(tx_in.previous_hash, tx_in.previous_index, b'', tx_in.sequence)
 
         txs_in = [tx_in_for_idx(i, tx_in) for i, tx_in in enumerate(self.txs_in)]
         txs_out = self.txs_out
 
         # Blank out some of the outputs
-        if (hash_type & 0x1f) == SIGHASH_NONE:
+        if (hash_type & 0x1f) == self.SIGHASH_NONE:
             # Wildcard payee
             txs_out = []
 
@@ -201,7 +217,7 @@ class Tx(object):
                 if i != unsigned_txs_out_idx:
                     txs_in[i].sequence = 0
 
-        elif (hash_type & 0x1f) == SIGHASH_SINGLE:
+        elif (hash_type & 0x1f) == self.SIGHASH_SINGLE:
             # This preserves the ability to validate existing legacy
             # transactions which followed a buggy path in Satoshi's
             # original code; note that higher level functions for signing
@@ -218,7 +234,7 @@ class Tx(object):
             # any outputs after this one and set all outputs before this
             # one to "null" (where "null" means an empty script and a
             # value of -1)
-            txs_out = [TxOut(0xffffffffffffffff, b'')] * unsigned_txs_out_idx
+            txs_out = [self.TxOut(0xffffffffffffffff, b'')] * unsigned_txs_out_idx
             txs_out.append(self.txs_out[unsigned_txs_out_idx])
 
             # Let the others update at will
@@ -227,10 +243,10 @@ class Tx(object):
                     txs_in[i].sequence = 0
 
         # Blank out other inputs completely, not recommended for open transactions
-        if hash_type & SIGHASH_ANYONECANPAY:
+        if hash_type & self.SIGHASH_ANYONECANPAY:
             txs_in = [txs_in[unsigned_txs_out_idx]]
 
-        tmp_tx = Tx(self.version, txs_in, txs_out, self.lock_time)
+        tmp_tx = self.__class__(self.version, txs_in, txs_out, self.lock_time)
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
     def solve(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
@@ -300,7 +316,7 @@ class Tx(object):
     def tx_outs_as_spendable(self, block_index_available=0):
         h = self.hash()
         return [
-            Spendable(tx_out.coin_value, tx_out.script, h, tx_out_index, block_index_available)
+            self.Spendable(tx_out.coin_value, tx_out.script, h, tx_out_index, block_index_available)
             for tx_out_index, tx_out in enumerate(self.txs_out)]
 
     def is_coinbase(self):
@@ -327,15 +343,15 @@ class Tx(object):
         f = io.BytesIO()
         self.stream(f)
         size = len(f.getvalue())
-        if size > MAX_BLOCK_SIZE:
+        if size > self.MAX_BLOCK_SIZE:
             raise ValidationFailureError("size > MAX_BLOCK_SIZE")
         # Check for negative or overflow output values
         nValueOut = 0
         for tx_out in self.txs_out:
-            if tx_out.coin_value < 0 or tx_out.coin_value > MAX_MONEY:
+            if tx_out.coin_value < 0 or tx_out.coin_value > self.MAX_MONEY:
                 raise ValidationFailureError("tx_out value negative or out of range")
             nValueOut += tx_out.coin_value
-            if nValueOut > MAX_MONEY:
+            if nValueOut > self.MAX_MONEY:
                 raise ValidationFailureError("tx_out total out of range")
         # Check for duplicate inputs
         if [x for x in self.txs_in if self.txs_in.count(x) > 1]:
@@ -399,20 +415,20 @@ class Tx(object):
 
     def txs_in_as_spendable(self):
         return [
-            Spendable(tx_out.coin_value, tx_out.script, tx_in.previous_hash, tx_in.previous_index)
+            self.Spendable(tx_out.coin_value, tx_out.script, tx_in.previous_hash, tx_in.previous_index)
             for tx_in_index, (tx_in, tx_out) in enumerate(zip(self.txs_in, self.unspents))]
 
     def stream_unspents(self, f):
         self.check_unspents()
         for tx_out in self.unspents:
             if tx_out is None:
-                tx_out = TxOut(0, b'')
+                tx_out = self.TxOut(0, b'')
             tx_out.stream(f)
 
     def parse_unspents(self, f):
         unspents = []
         for i in enumerate(self.txs_in):
-            tx_out = TxOut.parse(f)
+            tx_out = self.TxOut.parse(f)
             if tx_out.coin_value == 0:
                 tx_out = None
             unspents.append(tx_out)
