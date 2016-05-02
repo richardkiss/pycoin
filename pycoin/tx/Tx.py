@@ -137,7 +137,7 @@ class Tx(object):
         for tx_out in self.txs_out:
             assert type(tx_out) == self.TxOut
 
-    def stream(self, f, blank_solutions=False):
+    def stream(self, f, blank_solutions=False, include_unspents=False):
         """Stream a Bitcoin transaction Tx to the file-like object f."""
         stream_struct("LI", f, self.version, len(self.txs_in))
         for t in self.txs_in:
@@ -146,13 +146,13 @@ class Tx(object):
         for t in self.txs_out:
             t.stream(f)
         stream_struct("L", f, self.lock_time)
+        if include_unspents and not self.missing_unspents():
+            self.stream_unspents(f)
 
     def as_bin(self, include_unspents=False):
         """Return the transaction as binary."""
         f = io.BytesIO()
-        self.stream(f)
-        if include_unspents and not self.missing_unspents():
-            self.stream_unspents(f)
+        self.stream(f, include_unspents=include_unspents)
         return f.getvalue()
 
     def as_hex(self, include_unspents=False):
