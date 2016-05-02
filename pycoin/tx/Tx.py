@@ -249,7 +249,7 @@ class Tx(object):
         tmp_tx = self.__class__(self.version, txs_in, txs_out, self.lock_time)
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
-    def solve(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
+    def solve(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=None, **kwargs):
         """
         Sign a standard transaction.
         hash160_lookup:
@@ -262,7 +262,8 @@ class Tx(object):
         tx_out:
             the tx_out referenced by the given tx_in
         """
-
+        if hash_type is None:
+            hash_type = self.SIGHASH_ALL
         tx_in = self.txs_in[tx_in_idx]
 
         is_p2h = (len(tx_out_script) == 23 and byte_to_int(tx_out_script[0]) == opcodes.OP_HASH160 and
@@ -295,7 +296,9 @@ class Tx(object):
             existing_script=self.txs_in[tx_in_idx].script, **kwargs)
         return solution
 
-    def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=SIGHASH_ALL, **kwargs):
+    def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=None, **kwargs):
+        if hash_type is None:
+            hash_type = self.SIGHASH_ALL
         self.txs_in[tx_in_idx].script = self.solve(hash160_lookup, tx_in_idx, tx_out_script,
                                                    hash_type=hash_type, **kwargs)
 
@@ -451,7 +454,7 @@ class Tx(object):
         return tx_in.verify(tx_out_script, signature_for_hash_type_f, self.lock_time,
                             flags=flags, traceback_f=traceback_f)
 
-    def sign(self, hash160_lookup, hash_type=SIGHASH_ALL, **kwargs):
+    def sign(self, hash160_lookup, hash_type=None, **kwargs):
         """
         Sign a standard transaction.
         hash160_lookup:
@@ -459,6 +462,8 @@ class Tx(object):
             values are tuples (secret exponent, public_pair, is_compressed) or None
             (in which case the script will obviously not be signed).
         """
+        if hash_type is None:
+            hash_type = self.SIGHASH_ALL
         self.check_unspents()
         for idx, tx_in in enumerate(self.txs_in):
             if self.is_signature_ok(idx) or tx_in.is_coinbase():
