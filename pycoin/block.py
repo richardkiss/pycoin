@@ -53,14 +53,16 @@ class BlockHeader(object):
     complete Merkle tree database, it can be reconstructed from the
     merkle_root."""
 
+    Tx = Tx
+
     @classmethod
-    def parse(self, f):
+    def parse(cls, f):
         """Parse the BlockHeader from the file-like object in the standard way
         that blocks are sent in the network (well, except we ignore the
         transaction information)."""
         (version, previous_block_hash, merkle_root,
             timestamp, difficulty, nonce) = struct.unpack("<L32s32sLLL", f.read(4+32+32+4*3))
-        return self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
+        return cls(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
 
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce):
         self.version = version
@@ -127,7 +129,7 @@ class Block(BlockHeader):
     yields a reward!"""
 
     @classmethod
-    def parse(self, f, include_offsets=None):
+    def parse(cls, f, include_offsets=None):
         """Parse the Block from the file-like object in the standard way
         that blocks are sent in the network."""
         if include_offsets is None:
@@ -138,19 +140,19 @@ class Block(BlockHeader):
         for i in range(count):
             if include_offsets:
                 offset_in_block = f.tell()
-            tx = Tx.parse(f)
+            tx = cls.Tx.parse(f)
             txs.append(tx)
             if include_offsets:
                 tx.offset_in_block = offset_in_block
-        block = self(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs)
+        block = cls(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs)
         for tx in txs:
             tx.block = block
         return block
 
     @classmethod
-    def from_bin(self, bytes):
+    def from_bin(cls, bytes):
         f = io.BytesIO(bytes)
-        return self.parse(f)
+        return cls.parse(f)
 
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs):
         self.version = version
