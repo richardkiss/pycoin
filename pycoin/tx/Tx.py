@@ -343,9 +343,7 @@ class Tx(object):
         if not self.txs_out:
             raise ValidationFailureError("txs_out = []")
         # Size limits
-        f = io.BytesIO()
-        self.stream(f)
-        size = len(f.getvalue())
+        size = len(self.as_bin())
         if size > self.MAX_BLOCK_SIZE:
             raise ValidationFailureError("size > MAX_BLOCK_SIZE")
         # Check for negative or overflow output values
