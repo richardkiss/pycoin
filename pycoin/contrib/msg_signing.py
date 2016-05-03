@@ -1,12 +1,18 @@
-import io, os, hashlib, hmac, re
+import hashlib
+import hmac
+import io
+import os
+import re
+
 from binascii import b2a_base64, a2b_base64
+
 from .. import ecdsa
 from ..serialize.bitcoin_streamer import stream_bc_string
 from ..ecdsa import ellipticcurve, numbertheory
 
 from ..networks import address_prefix_for_netcode, network_name_for_netcode
 from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256
-from . import Key
+from ..key import Key
 
 # According to brainwallet, this is "inputs.io" format, but it seems practical
 # and is deployed in the wild. Core bitcoin doesn't offer a message wrapper like this.
@@ -17,6 +23,7 @@ signature_template = '''\
 {addr}
 {sig}
 -----END {net_name} SIGNED MESSAGE-----'''
+
 
 def parse_signed_message(msg_in):
     """
@@ -61,9 +68,11 @@ def parse_signed_message(msg_in):
     addr = None
     for l in hdr:
         l = l.strip()
-        if not l: continue
+        if not l:
+            continue
 
-        if l.startswith('-----END'): break
+        if l.startswith('-----END'):
+            break
 
         if ':' in l:
             label, value = [i.strip() for i in l.split(':', 1)]
@@ -85,6 +94,7 @@ def parse_signed_message(msg_in):
 
     return msg, addr, sig
 
+
 def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_hash=None):
     """
         Return a signature, encoded in Base64, which can be verified by anyone using the
@@ -98,7 +108,7 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
     netcode = key.netcode()
 
     mhash = hash_for_signing(message, netcode) if message else msg_hash
-    
+
     # Use a deterministic K so our signatures are deterministic.
     try:
         r, s, y_odd = _my_sign(ecdsa.generator_secp256k1, secret_exponent, mhash)
@@ -126,11 +136,12 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
         # python3 b2a wrongness
         sig = str(sig, 'ascii')
 
-    if not verbose or message == None:
+    if not verbose or message is None:
         return sig
 
-    return signature_template.format(msg=message, sig=sig, addr=addr,
-                        net_name=network_name_for_netcode(netcode).upper())
+    return signature_template.format(
+        msg=message, sig=sig, addr=addr,
+        net_name=network_name_for_netcode(netcode).upper())
 
 
 def verify_message(key_or_address, signature, message=None, msg_hash=None, netcode=None):
@@ -155,7 +166,7 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
         return False
 
     # Calculate hash of message used in signature
-    mhash = hash_for_signing(message, netcode) if message != None else msg_hash
+    mhash = hash_for_signing(message, netcode) if message is not None else msg_hash
 
     # Calculate the specific public key used to sign this message.
     pair = _extract_public_pair(ecdsa.generator_secp256k1, recid, r, s, mhash)
@@ -173,19 +184,19 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
         # must compare hashed addresses instead.
         addr = key.address()
         prefix = address_prefix_for_netcode(netcode)
-        ta = public_pair_to_bitcoin_address(pair, compressed=is_compressed, address_prefix=prefix) 
+        ta = public_pair_to_bitcoin_address(pair, compressed=is_compressed, address_prefix=prefix)
         return ta == addr
 
 
 def msg_magic_for_netcode(netcode):
     """
-        We need the constant "strMessageMagic" in C++ source code, from file "main.cpp"
+    We need the constant "strMessageMagic" in C++ source code, from file "main.cpp"
 
-        It is not shown as part of the signed message, but it is prefixed to the message
-        as part of calculating the hash of the message (for signature). It's also what
-        prevents a message signature from ever being a valid signature for a transaction.
-    
-        Each altcoin finds and changes this string... But just simple substitution.
+    It is not shown as part of the signed message, but it is prefixed to the message
+    as part of calculating the hash of the message (for signature). It's also what
+    prevents a message signature from ever being a valid signature for a transaction.
+
+    Each altcoin finds and changes this string... But just simple substitution.
     """
     name = network_name_for_netcode(netcode)
 
@@ -194,7 +205,7 @@ def msg_magic_for_netcode(netcode):
 
     # testnet, the first altcoin, didn't change header
     if netcode == 'XTN':
-        name = "Bitcoin"       
+        name = "Bitcoin"
 
     return '%s Signed Message:\n' % name
 
@@ -231,21 +242,17 @@ def _decode_signature(signature):
 
     return is_compressed, (first & 0x3), r, s
 
+
 def _extract_public_pair(generator, recid, r, s, value):
     """
-        Using the already-decoded parameters of the bitcoin signature, 
-        return the specific public key pair used to sign this message.
-        Caller must verify this pubkey is what was expected.
+    Using the already-decoded parameters of the bitcoin signature,
+    return the specific public key pair used to sign this message.
+    Caller must verify this pubkey is what was expected.
     """
     assert 0 <= recid < 4, recid
 
     G = generator
     n = G.order()
-
-    # Check order of data; but okay because of way it's encoded, and this assert
-    # is rather slow to evaluate.
-    #assert 1 <= r < n
-    #assert 1 <= s < n
 
     curve = G.curve()
     order = G.order()
@@ -253,7 +260,7 @@ def _extract_public_pair(generator, recid, r, s, value):
 
     x = r + (n * (recid // 2))
 
-    alpha = ( pow(x,3,p)  + curve.a() * x + curve.b() ) % p
+    alpha = (pow(x, 3, p) + curve.a() * x + curve.b()) % p
     beta = numbertheory.modular_sqrt(alpha, p)
     inv_r = numbertheory.inverse_mod(r, order)
 
@@ -269,29 +276,30 @@ def _extract_public_pair(generator, recid, r, s, value):
 
     return public_pair
 
+
 def hash_for_signing(msg, netcode='BTC'):
     """
-        Return a hash of msg, according to odd bitcoin method: double SHA256 over a bitcoin
-        encoded stream of two strings: a fixed magic prefix and the actual message.
+    Return a hash of msg, according to odd bitcoin method: double SHA256 over a bitcoin
+    encoded stream of two strings: a fixed magic prefix and the actual message.
     """
     magic = msg_magic_for_netcode(netcode)
 
     fd = io.BytesIO()
     stream_bc_string(fd, bytearray(magic, 'ascii'))
     stream_bc_string(fd, bytearray(msg, 'utf-8'))
-    
+
     # return as a number, since it's an input to signing algos like that anyway
     return from_bytes_32(double_sha256(fd.getvalue()))
 
 
-def deterministic_make_k(generator_order, secret_exponent, val, hash_f=hashlib.sha256,
-                                trust_no_one=True):
+def deterministic_make_k(generator_order, secret_exponent, val,
+                         hash_f=hashlib.sha256, trust_no_one=True):
     """
-        Generate K value BUT NOT according to https://tools.ietf.org/html/rfc6979
+    Generate K value BUT NOT according to https://tools.ietf.org/html/rfc6979
 
-        ecsda.deterministic_generate_k() was more general than it needs to be,
-        and I felt the hand of NSA in the wholly constants, so I simplified and
-        changed the salt.
+    ecsda.deterministic_generate_k() was more general than it needs to be,
+    and I felt the hand of NSA in the wholly constants, so I simplified and
+    changed the salt.
     """
     n = generator_order
     assert hash_f().digest_size == 32
@@ -344,10 +352,12 @@ def _my_sign(generator, secret_exponent, val, _k=None):
     k = _k or deterministic_make_k(n, secret_exponent, val)
     p1 = k * G
     r = p1.x()
-    if r == 0: raise RuntimeError("amazingly unlucky random number r")
-    s = ( numbertheory.inverse_mod( k, n ) * \
-          ( val + ( secret_exponent * r ) % n ) ) % n
-    if s == 0: raise RuntimeError("amazingly unlucky random number s")
+    if r == 0:
+        raise RuntimeError("amazingly unlucky random number r")
+    s = (numbertheory.inverse_mod(k, n) *
+         (val + (secret_exponent * r) % n)) % n
+    if s == 0:
+        raise RuntimeError("amazingly unlucky random number s")
 
     return (r, s, p1.y() % 2)
 

@@ -2,27 +2,27 @@
 from __future__ import print_function
 import unittest
 
+
 def test_against_myself():
     """
-        Test code that verifies against ourselves only. Useful but not so great.
+    Test code that verifies against ourselves only. Useful but not so great.
     """
-    from pycoin.key import Key, msg_signing
+    from pycoin.contrib.msg_signing import (
+            parse_signed_message, sign_message, verify_message)
+    from pycoin.key import Key
     from pycoin.encoding import bitcoin_address_to_hash160_sec_with_prefix
     from pycoin.encoding import wif_to_tuple_of_secret_exponent_compressed
-    from pycoin.key.msg_signing import parse_signed_message
 
     for wif, right_addr in [
                     ('L4gXBvYrXHo59HLeyem94D9yLpRkURCHmCwQtPuWW9m6o1X8p8sp',
-                            '1LsPb3D1o1Z7CzEt1kv5QVxErfqzXxaZXv'),
+                     '1LsPb3D1o1Z7CzEt1kv5QVxErfqzXxaZXv'),
                     ('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss',
-                            '1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN'),
+                     '1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN'),
                 ]:
         se, comp = wif_to_tuple_of_secret_exponent_compressed(wif)
 
         k = Key(secret_exponent=se, is_compressed=comp)
         assert k.address() == right_addr
-
-        #print("\nAddr %s compressed=%s" % (right_addr, comp))
 
         vk = Key(public_pair=k.public_pair(), is_compressed=comp)
         assert vk.address() == right_addr
@@ -33,29 +33,30 @@ def test_against_myself():
 
         for i in range(1, 30, 10):
             msg = 'test message %s' % ('A'*i)
-            sig = msg_signing.sign_message(k, msg, verbose=1)
-            #print(sig)
+            sig = sign_message(k, msg, verbose=1)
             assert right_addr in sig
 
             # check parsing works
-            m,a,s = parse_signed_message(sig)
+            m, a, s = parse_signed_message(sig)
             assert m == msg, m
             assert a == right_addr, a
 
-            sig2 = msg_signing.sign_message(k, msg, verbose=0)
+            sig2 = sign_message(k, msg, verbose=0)
             assert sig2 in sig, (sig, sig2)
 
             assert s == sig2, s
 
-            ok = msg_signing.verify_message(k, sig2, msg)
-            #print("verifies: %s" % ("Ok" if ok else "WRONG"))
+            ok = verify_message(k, sig2, msg)
             assert ok
+
 
 def test_msg_parse():
     """
         Test against real-world signatures found in the wild.
     """
-    from pycoin.key.msg_signing import parse_signed_message, verify_message
+
+    from pycoin.contrib.msg_signing import parse_signed_message, verify_message
+    from pycoin.key import Key
 
     # Output from brainwallet in "multibit" mode.
     multibit = '''
@@ -70,11 +71,11 @@ HCT1esk/TWlF/o9UNzLDANqsPXntkMErf7erIrjH5IBOZP98cNcmWmnW0GpSAi3wbr6CwpUAN4ctNn1T
 -----END BITCOIN SIGNATURE-----
 
 '''
-    m,a,s = parse_signed_message(multibit)
+    m, a, s = parse_signed_message(multibit)
     assert m == 'This is an example of a signed message.'
     assert a == '1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN'
-    assert s == \
-        'HCT1esk/TWlF/o9UNzLDANqsPXntkMErf7erIrjH5IBOZP98cNcmWmnW0GpSAi3wbr6CwpUAN4ctNn1T71UBwSc='
+    assert s == ('HCT1esk/TWlF/o9UNzLDANqsPXntkMErf7erIrjH5IBOZ'
+                 'P98cNcmWmnW0GpSAi3wbr6CwpUAN4ctNn1T71UBwSc=')
     ok = verify_message(a, s, m, netcode='BTC')
     assert ok
 
@@ -94,9 +95,10 @@ https://www.bit2c.co.il
 H2utKkquLbyEJamGwUfS9J0kKT4uuMTEr2WX2dPU9YImg4LeRpyjBelrqEqfM4QC8pJ+hVlQgZI5IPpLyRNxvK8=
 -----END BITCOIN SIGNED MESSAGE-----
 '''
-    m,a,s = parse_signed_message(bit2c)
+    m, a, s = parse_signed_message(bit2c)
     assert a == '15etuU8kwLFCBbCNRsgQTvWgrGWY9829ej'
-    assert s == 'H2utKkquLbyEJamGwUfS9J0kKT4uuMTEr2WX2dPU9YImg4LeRpyjBelrqEqfM4QC8pJ+hVlQgZI5IPpLyRNxvK8='
+    assert s == ('H2utKkquLbyEJamGwUfS9J0kKT4uuMTEr2WX2dPU9YI'
+                 'mg4LeRpyjBelrqEqfM4QC8pJ+hVlQgZI5IPpLyRNxvK8=')
     ok = verify_message(a, s, m, netcode='BTC')
     assert ok
 
@@ -134,23 +136,24 @@ n2D9XsQX1mDpFGgYqsfmePTy61LJFQnXQM
 IEackZgifpBJs3SqQQ6leUwzvakTZgUKTDuCCn6rVMOQgHlIEzWSYZGQu2H+1chvu68uutzt04cGmsHy/kRIaEc=
 -----END BITCOIN SIGNED MESSAGE-----
 '''
-    m,a,s = parse_signed_message(bearbin)
+    m, a, s = parse_signed_message(bearbin)
     assert a == 'n2D9XsQX1mDpFGgYqsfmePTy61LJFQnXQM'
-    assert s == 'IEackZgifpBJs3SqQQ6leUwzvakTZgUKTDuCCn6rVMOQgHlIEzWSYZGQu2H+1chvu68uutzt04cGmsHy/kRIaEc='
+    assert s == ('IEackZgifpBJs3SqQQ6leUwzvakTZgUKTDuCCn6rVMOQgH'
+                 'lIEzWSYZGQu2H+1chvu68uutzt04cGmsHy/kRIaEc=')
     ok = verify_message(a, s, m, netcode='XTN')
     assert ok
 
 
 def test_special_k():
     """
-        Check that my reworked version of ecdsa.deterministic_generate_k works like the 
-        old one, minus my salt
+    Check that my reworked version of ecdsa.deterministic_generate_k works
+    like the old one, minus my salt.
     """
     import random
     from pycoin.ecdsa.ecdsa import deterministic_generate_k
     from pycoin.ecdsa import generator_secp256k1
 
-    from pycoin.key.msg_signing import deterministic_make_k
+    from pycoin.contrib.msg_signing import deterministic_make_k
 
     order = generator_secp256k1.order()
     r = random.Random(42)
@@ -167,9 +170,7 @@ def test_special_k():
         saw.add(new)
 
 
-
 class MsgSigningTests(unittest.TestCase):
-    # Sigh. Would rather use py.test! and unittest.FunctionTestCase broke things for me.
     def test_1(self):
         test_against_myself()
 

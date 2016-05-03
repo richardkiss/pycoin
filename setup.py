@@ -10,6 +10,7 @@ setup(
     packages = [
         "pycoin",
         "pycoin.blockchain",
+        "pycoin.contrib",
         "pycoin.convention",
         "pycoin.ecdsa",
         "pycoin.ecdsa.native",
