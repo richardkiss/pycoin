@@ -24,7 +24,7 @@ class BlockrioProvider(object):
         given bitcoin address.
         """
         url_append = "unspent/%s" % address
-        URL = self.base_url("/address/%s" % url_append)
+        URL = "%s/address/%s" % (self.url, url_append)
         r = json.loads(urlopen(URL).read().decode("utf8"))
         spendables = []
         for u in r.get("data", {}).get("unspent", []):
