@@ -61,6 +61,31 @@ class ScriptMultisig(ScriptType):
             self._script = tools.compile(script_source)
         return self._script
 
+    def _find_signatures(self, script, sign_value):
+        signatures = []
+        secs_solved = set()
+        pc = 0
+        seen = 0
+        opcode, data, pc = tools.get_opcode(script, pc)
+        # ignore the first opcode
+        while pc < len(script) and seen < self.n:
+            opcode, data, pc = tools.get_opcode(script, pc)
+            sig_pair, actual_signature_type = parse_signature_blob(data)
+            seen += 1
+            for idx, sec_key in enumerate(self.sec_keys):
+                try:
+                    public_pair = encoding.sec_to_public_pair(sec_key)
+                    sig_pair, signature_type = parse_signature_blob(data)
+                    v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
+                    if v:
+                        signatures.append((idx, data))
+                        secs_solved.add(sec_key)
+                        break
+                except (encoding.EncodingError, UnexpectedDER):
+                    # if public_pair is invalid, we just ignore it
+                    pass
+        return signatures, secs_solved
+
     def solve(self, **kwargs):
         """
         The kwargs required depend upon the script type.
@@ -90,26 +115,7 @@ class ScriptMultisig(ScriptType):
         existing_signatures = []
         existing_script = kwargs.get("existing_script")
         if existing_script:
-            pc = 0
-            seen = 0
-            opcode, data, pc = tools.get_opcode(existing_script, pc)
-            # ignore the first opcode
-            while pc < len(existing_script) and seen < self.n:
-                opcode, data, pc = tools.get_opcode(existing_script, pc)
-                sig_pair, actual_signature_type = parse_signature_blob(data)
-                seen += 1
-                for sec_key in self.sec_keys:
-                    try:
-                        public_pair = encoding.sec_to_public_pair(sec_key)
-                        sig_pair, signature_type = parse_signature_blob(data)
-                        v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
-                        if v:
-                            existing_signatures.append(data)
-                            secs_solved.add(sec_key)
-                            break
-                    except (encoding.EncodingError, UnexpectedDER):
-                        # if public_pair is invalid, we just ignore it
-                        pass
+            existing_signatures, secs_solved = self._find_signatures(existing_script, sign_value)
 
         for signature_order, sec_key in enumerate(self.sec_keys):
             if sec_key in secs_solved:
@@ -122,13 +128,17 @@ class ScriptMultisig(ScriptType):
                 continue
             secret_exponent, public_pair, compressed = result
             binary_signature = self._create_script_signature(secret_exponent, sign_value, signature_type)
-            existing_signatures.insert(signature_order, binary_signature)
+            existing_signatures.append((signature_order, binary_signature))
 
+        # make sure the existing signatures are in the right order
+        existing_signatures.sort()
+
+        # pad with placeholder signatures
         if signature_placeholder:
             while len(existing_signatures) < self.n:
-                existing_signatures.append(signature_placeholder)
+                existing_signatures.append((-1, signature_placeholder))
 
-        script = "OP_0 %s" % " ".join(b2h(s) for s in existing_signatures)
+        script = "OP_0 %s" % " ".join(b2h(s[1]) for s in existing_signatures)
         solution = tools.compile(script)
         return solution
 
