@@ -190,7 +190,11 @@ def opcode_list(script):
     opcodes = []
     pc = 0
     while pc < len(script):
-        opcode, data, pc = get_opcode(script, pc)
+        try:
+            opcode, data, pc = get_opcode(script, pc)
+        except ScriptError:
+            opcodes.append(binascii.hexlify(script[pc:]))
+            break
         opcodes.append(disassemble_for_opcode_data(opcode, data))
     return opcodes
 
