@@ -4,10 +4,13 @@ Version 0.70
 * major overhaul of the VM and scripting system to make it more compatible with bitcoind
   including added over 1000 tests from bitcoind
 * added a framework to trace transaction script
-* removed chain service provider, as they've disabled their API
+* removed chain.com service provider, as they've disabled their API
 * removed biteasy service provider, as many transactions were not being returned properly
   and there are many other good alternatives
 * deprecate PYCOIN_SERVICE_PROVIDERS in favor of PYCOIN_BTC_PROVIDERS
+* add Peter Gray's message signing code to pycoin/contrib
+* add experimental bitcoind_disk code to read blocks from bitcoind disk database
+* deprecate Tx.tx_from_hex (instead use Tx.from_hex)
 
 Version 0.61
 ------------

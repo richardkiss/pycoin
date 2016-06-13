@@ -54,8 +54,6 @@ def parse_flags(flag_string):
     v = 0
     if len(flag_string) > 0:
         for f in flag_string.split(","):
-            if not hasattr(flags, "VERIFY_" + f):
-                import pdb; pdb.set_trace()
             v |= getattr(flags, "VERIFY_%s" % f)
     return v
 
