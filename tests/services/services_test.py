@@ -68,7 +68,7 @@ class ServicesTest(unittest.TestCase):
         pass
 
     def test_BlockExplorerProvider(self):
-        self.check_provider_tx_for_tx_hash(BlockExplorerProvider, ["BTC", "XTN"])
+        self.check_provider_tx_for_tx_hash(BlockExplorerProvider, ["BTC"])
 
     def test_BlockIOProvider(self):
         self.check_provider_tx_for_tx_hash(BlockrioProvider, ["BTC", "XTN"])

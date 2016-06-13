@@ -118,7 +118,11 @@ def tx_from_json_dict(r):
             previous_index = 4294967295
         else:
             previous_hash = h2b_rev(vin.get("txid"))
-            script = tools.compile(vin.get("scriptSig").get("asm"))
+            scriptSig = vin.get("scriptSig")
+            if "hex" in scriptSig:
+                script = h2b(scriptSig.get("hex"))
+            else:
+                script = tools.compile(scriptSig.get("asm"))
             previous_index = vin.get("vout")
         sequence = vin.get("sequence")
         txs_in.append(TxIn(previous_hash, previous_index, script, sequence))
