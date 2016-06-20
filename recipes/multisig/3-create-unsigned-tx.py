@@ -13,6 +13,7 @@ from pycoin.key.key_from_text import key_from_text
 
 from pycoin.tx.Tx import Tx
 from pycoin.tx.tx_utils import create_tx
+from pycoin.key.validate import is_address_valid
 
 
 def main():
@@ -28,11 +29,9 @@ def main():
     tx_out_index = int(sys.argv[2])
     spendable = tx.tx_outs_as_spendable()[tx_out_index]
 
-    # make sure the key is valid
-    key = key_from_text(sys.argv[3])
-
-    # get the address back out
-    payable = key.address()
+    # make sure the address is valid
+    payable = sys.argv[3]
+    assert is_address_valid(payable)
 
     # create the unsigned transaction
     tx = create_tx([spendable], [payable])
