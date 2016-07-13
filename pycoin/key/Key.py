@@ -1,11 +1,13 @@
 from pycoin import ecdsa
 from pycoin.encoding import EncodingError, a2b_hashed_base58, \
     from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
-    is_sec_compressed, public_pair_to_sec, sec_to_public_pair, \
-    secret_exponent_to_wif
+    is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
+    sec_to_public_pair, secret_exponent_to_wif
 from pycoin.key.validate import netcode_and_type_for_data
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.serialize import b2h
+from pycoin.tx.script.der import sigencode_der, sigdecode_der
+from pycoin import intbytes
 
 
 class InvalidPublicPairError(ValueError):
@@ -224,6 +226,43 @@ class Key(object):
         hierarchical wallet's subkey path (or just this key).
         """
         yield self
+
+    def sign(self, h):
+        """
+        Return a der-encoded signature for a hash h.
+        Will throw a RuntimeError if this key is not a private key
+        """
+        if not self.is_private():
+            raise RuntimeError("Key must be private to be able to sign")
+        val = intbytes.from_bytes(h)
+        r, s = ecdsa.sign(ecdsa.generator_secp256k1, self.secret_exponent(),
+                          val)
+        return sigencode_der(r, s)
+
+    def verify(self, h, sig):
+        """
+        Return whether a signature is valid for hash h using this key.
+        """
+        val = intbytes.from_bytes(h)
+        pubkey = self.public_pair()
+        rs = sigdecode_der(sig)
+        if self.public_pair() is None:
+            # find the pubkey from the signature and see if it matches
+            # our key
+            possible_pubkeys = ecdsa.possible_public_pairs_for_signature(
+                ecdsa.generator_secp256k1, val, rs)
+            hash160 = self.hash160()
+            for candidate in possible_pubkeys:
+                if hash160 == public_pair_to_hash160_sec(candidate, True):
+                    pubkey = candidate
+                    break
+                if hash160 == public_pair_to_hash160_sec(candidate, False):
+                    pubkey = candidate
+                    break
+            else:
+                # signature is using a pubkey that's not this key
+                return False
+        return ecdsa.verify(ecdsa.generator_secp256k1, pubkey, val, rs)
 
     def _use_uncompressed(self, use_uncompressed=None):
         if use_uncompressed:
