@@ -20,8 +20,7 @@ def ip_bin_to_ip4_addr(ip_bin):
 @functools.total_ordering
 class PeerAddress(object):
     def __init__(self, services, ip_bin, port):
-        assert isinstance(services, int)
-        self.services = services
+        self.services = int(services)
         assert isinstance(ip_bin, bytes)
         if len(ip_bin) == 4:
             ip_bin = IP4_HEADER + ip_bin
