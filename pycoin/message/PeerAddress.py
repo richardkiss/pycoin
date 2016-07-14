@@ -23,6 +23,8 @@ class PeerAddress(object):
         assert isinstance(services, int)
         self.services = services
         assert isinstance(ip_bin, bytes)
+        if len(ip_bin) == 4:
+            ip_bin = IP4_HEADER + ip_bin
         assert len(ip_bin) == 16
         self.ip_bin = ip_bin
         self.port = port

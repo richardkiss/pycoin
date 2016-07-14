@@ -8,16 +8,20 @@ ITEM_TYPE_TX, ITEM_TYPE_BLOCK, ITEM_TYPE_MERKLEBLOCK = (1, 2, 3)
 
 @functools.total_ordering
 class InvItem(object):
-    def __init__(self, item_type, data):
-        assert item_type in (ITEM_TYPE_TX, ITEM_TYPE_BLOCK, ITEM_TYPE_MERKLEBLOCK)
+    def __init__(self, item_type, data, dont_check=False):
+        if not dont_check:
+            assert item_type in (ITEM_TYPE_TX, ITEM_TYPE_BLOCK, ITEM_TYPE_MERKLEBLOCK)
         self.item_type = item_type
         assert isinstance(data, bytes)
         assert len(data) == 32
         self.data = data
 
     def __str__(self):
-        INV_TYPES = [None, "Tx", "Block", "Merkle"]
-        return "InvItem %s [%s]" % (INV_TYPES[self.item_type], b2h_rev(self.data))
+        INV_TYPES = ["?", "Tx", "Block", "Merkle"]
+        idx = self.item_type
+        if not 0 < idx < 4:
+            idx = 0
+        return "InvItem %s [%s]" % (INV_TYPES[idx], b2h_rev(self.data))
 
     def __repr__(self):
         return str(self)
@@ -38,4 +42,4 @@ class InvItem(object):
 
     @classmethod
     def parse(self, f):
-        return self(*parse_struct("L#", f))
+        return self(*parse_struct("L#", f), dont_check=True)

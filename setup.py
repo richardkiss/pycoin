@@ -15,7 +15,7 @@ setup(
         "pycoin.ecdsa",
         "pycoin.ecdsa.native",
         "pycoin.key",
-        "pycoin.network",
+        "pycoin.message",
         "pycoin.tx",
         "pycoin.tx.pay_to",
         "pycoin.tx.script",
