@@ -99,7 +99,7 @@ def annotation_f_for_scripts(input_script, output_script, signature_for_hash_typ
     return input_annotations_f, output_annotations_f
 
 
-def disassemble_scripts(input_script, output_script, signature_for_hash_type_f):
+def disassemble_scripts(input_script, output_script, lock_time, signature_for_hash_type_f):
     "yield pre_annotations, pc, opcode, instruction, post_annotations"
 
     input_annotations_f, output_annotations_f = annotation_f_for_scripts(
@@ -122,12 +122,12 @@ def disassemble_scripts(input_script, output_script, signature_for_hash_type_f):
         return
 
     stack = []
-    eval_script(input_script, signature_for_hash_type_f, expected_hash_type=None, stack=stack)
+    eval_script(input_script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=stack)
     if stack:
         signatures, new_output_script = stack[:-1], stack[-1]
         new_input_script = bin_script(signatures)
     else:
         signatures, new_output_script, new_input_script = [], b'', b''
 
-    for r in disassemble_scripts(new_input_script, new_output_script, signature_for_hash_type_f):
+    for r in disassemble_scripts(new_input_script, new_output_script, lock_time, signature_for_hash_type_f):
         yield r

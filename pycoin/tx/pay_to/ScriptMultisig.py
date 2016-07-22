@@ -70,12 +70,11 @@ class ScriptMultisig(ScriptType):
         # ignore the first opcode
         while pc < len(script) and seen < self.n:
             opcode, data, pc = tools.get_opcode(script, pc)
-            sig_pair, actual_signature_type = parse_signature_blob(data)
+            sig_pair, signature_type = parse_signature_blob(data)
             seen += 1
             for idx, sec_key in enumerate(self.sec_keys):
                 try:
                     public_pair = encoding.sec_to_public_pair(sec_key)
-                    sig_pair, signature_type = parse_signature_blob(data)
                     v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
                     if v:
                         signatures.append((idx, data))

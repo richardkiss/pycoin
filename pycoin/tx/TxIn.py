@@ -74,7 +74,7 @@ class TxIn(object):
             return sec
         return None
 
-    def bitcoin_address(self, address_prefix=b'\0'):
+    def address(self, address_prefix=b'\0'):
         if self.is_coinbase():
             return "(coinbase)"
         # attempt to return the source address
@@ -84,6 +84,8 @@ class TxIn(object):
                 encoding.hash160(sec), address_prefix=address_prefix)
             return bitcoin_address
         return "(unknown)"
+
+    bitcoin_address = address
 
     def verify(self, tx_out_script, signature_for_hash_type_f, lock_time, expected_hash_type=None,
                traceback_f=None, flags=None):

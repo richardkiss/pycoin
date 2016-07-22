@@ -182,6 +182,11 @@ class Tx(object):
         """Return the human-readable hash for this Tx object."""
         return b2h_rev(self.hash())
 
+    def _tx_in_for_idx(self, idx, tx_in, tx_out_script, unsigned_txs_out_idx):
+        if idx == unsigned_txs_out_idx:
+            return self.TxIn(tx_in.previous_hash, tx_in.previous_index, tx_out_script, tx_in.sequence)
+        return self.TxIn(tx_in.previous_hash, tx_in.previous_index, b'', tx_in.sequence)
+
     def signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
         """
         Return the canonical hash for a transaction. We need to
@@ -199,12 +204,8 @@ class Tx(object):
         tx_out_script = tools.delete_subscript(tx_out_script, int_to_bytes(opcodes.OP_CODESEPARATOR))
 
         # blank out other inputs' signatures
-        def tx_in_for_idx(idx, tx_in):
-            if idx == unsigned_txs_out_idx:
-                return self.TxIn(tx_in.previous_hash, tx_in.previous_index, tx_out_script, tx_in.sequence)
-            return self.TxIn(tx_in.previous_hash, tx_in.previous_index, b'', tx_in.sequence)
-
-        txs_in = [tx_in_for_idx(i, tx_in) for i, tx_in in enumerate(self.txs_in)]
+        txs_in = [self._tx_in_for_idx(i, tx_in, tx_out_script, unsigned_txs_out_idx)
+                  for i, tx_in in enumerate(self.txs_in)]
         txs_out = self.txs_out
 
         # Blank out some of the outputs
@@ -333,19 +334,18 @@ class Tx(object):
             self.id(), self.version, ", ".join(str(t) for t in self.txs_in),
             ", ".join(str(t) for t in self.txs_out))
 
-    def check(self):
-        """
-        Basic checks that don't depend on any context.
-        Adapted from Bicoin Code: main.cpp
-        """
+    def _check_tx_inout_count(self):
         if not self.txs_in:
             raise ValidationFailureError("txs_in = []")
         if not self.txs_out:
             raise ValidationFailureError("txs_out = []")
-        # Size limits
+
+    def _check_size_limit(self):
         size = len(self.as_bin())
         if size > self.MAX_BLOCK_SIZE:
             raise ValidationFailureError("size > MAX_BLOCK_SIZE")
+
+    def _check_txs_out(self):
         # Check for negative or overflow output values
         nValueOut = 0
         for tx_out in self.txs_out:
@@ -354,6 +354,8 @@ class Tx(object):
             nValueOut += tx_out.coin_value
             if nValueOut > self.MAX_MONEY:
                 raise ValidationFailureError("tx_out total out of range")
+
+    def _check_txs_in(self):
         # Check for duplicate inputs
         if [x for x in self.txs_in if self.txs_in.count(x) > 1]:
             raise ValidationFailureError("duplicate inputs")
@@ -369,6 +371,17 @@ class Tx(object):
                 if pair in refs:
                     raise ValidationFailureError("spendable reused")
                 refs.add(pair)
+
+    def check(self):
+        """
+        Basic checks that don't depend on any context.
+        Adapted from Bicoin Code: main.cpp
+        """
+        self._check_tx_inout_count()
+        # Size limits
+        self._check_size_limit()
+        self._check_txs_out()
+        self._check_txs_in()
 
     """
     The functions below here deal with an optional additional parameter: "unspents".
@@ -417,7 +430,7 @@ class Tx(object):
     def txs_in_as_spendable(self):
         return [
             self.Spendable(tx_out.coin_value, tx_out.script, tx_in.previous_hash, tx_in.previous_index)
-            for tx_in_index, (tx_in, tx_out) in enumerate(zip(self.txs_in, self.unspents))]
+            for tx_in, tx_out in zip(self.txs_in, self.unspents)]
 
     def stream_unspents(self, f):
         self.check_unspents()
@@ -524,8 +537,6 @@ class Tx(object):
         for idx, tx_in in enumerate(self.txs_in):
             if tx_in.previous_hash == ZERO:
                 continue
-            if tx_in.previous_hash not in tx_lookup:
-                raise KeyError("hash id %s not in tx_lookup" % b2h_rev(tx_in.previous_hash))
             txs_out = tx_lookup[tx_in.previous_hash].txs_out
             if tx_in.previous_index > len(txs_out):
                 raise BadSpendableError("tx_out index %d is too big for Tx %s" %

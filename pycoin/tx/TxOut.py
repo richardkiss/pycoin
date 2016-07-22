@@ -53,10 +53,12 @@ class TxOut(object):
     def __str__(self):
         return 'TxOut<%s mbtc "%s">' % (satoshi_to_mbtc(self.coin_value), tools.disassemble(self.script))
 
-    def bitcoin_address(self, netcode="BTC"):
+    def address(self, netcode="BTC"):
         # attempt to return the destination address, or None on failure
         info = script_obj_from_script(self.script).info(netcode=netcode)
         return info.get("address")
+
+    bitcoin_address = address
 
     def hash160(self):
         # attempt to return the destination hash160, or None on failure

@@ -84,7 +84,7 @@ class ScriptType(object):
         return der.sigencode_der(r, s) + bytes_from_int(signature_type)
 
     def address(self, netcode='BTC'):
-        return self.info()["address"]
+        return self.info(netcode=netcode)["address"]
 
     def solve(self, **kwargs):
         """
