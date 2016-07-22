@@ -36,10 +36,10 @@ class Spendable(TxOut):
         f = io.BytesIO(blob)
         return cls.parse(f)
 
-    def as_bin(self):
+    def as_bin(self, as_spendable=False):
         """Return the txo as binary."""
         f = io.BytesIO()
-        self.stream(f)
+        self.stream(f, as_spendable=as_spendable)
         return f.getvalue()
 
     def as_dict(self):
