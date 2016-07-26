@@ -1,38 +1,26 @@
 
 import binascii
 from .. import encoding
-from ..networks import DEFAULT_NETCODES, NETWORK_NAMES, NETWORKS
+from ..networks import network_codes, network_prefixes
 from ..serialize import h2b
 
 DEFAULT_ADDRESS_TYPES = ["address", "pay_to_script"]
 
 
-def _generate_network_prefixes():
-    d = {}
-    for n in NETWORKS:
-        for prop in "wif address pay_to_script prv32 pub32".split():
-            v = getattr(n, prop, None)
-            if v:
-                if v not in d:
-                    d[v] = []
-                d[v].append((n, prop))
-    return d
-
-
-NETWORK_PREFIXES = _generate_network_prefixes()
-
-
-def netcode_and_type_for_data(data, netcodes=NETWORK_NAMES):
+def netcode_and_type_for_data(data, netcodes=None):
     """
     Given some already-decoded raw data from a base58 string,
     return (N, T) where N is the network code ("BTC" or "LTC") and
     T is the data type ("wif", "address", "public_pair", "prv32", "pub32").
     May also raise EncodingError.
     """
+    if netcodes is None:
+        netcodes = network_codes()
+    prefixes = network_prefixes()
     d = {}
     for length in (4, 1):
-        for network, the_type in NETWORK_PREFIXES.get(data[:length], []):
-            d[network.code] = the_type
+        for netcode, the_type in prefixes.get(data[:length], []):
+            d[netcode] = the_type
     for netcode in netcodes:
         v = d.get(netcode)
         if v:
@@ -65,6 +53,8 @@ def netcode_and_type_for_text(text):
 
 
 def _check_against(text, expected_type, allowable_netcodes):
+    if allowable_netcodes is None:
+        allowable_netcodes = network_codes()
     try:
         data = encoding.a2b_hashed_base58(text)
         netcode, the_type = netcode_and_type_for_data(data, netcodes=allowable_netcodes)
@@ -75,7 +65,7 @@ def _check_against(text, expected_type, allowable_netcodes):
     return None
 
 
-def is_address_valid(address, allowable_types=DEFAULT_ADDRESS_TYPES, allowable_netcodes=DEFAULT_NETCODES):
+def is_address_valid(address, allowable_types=DEFAULT_ADDRESS_TYPES, allowable_netcodes=None):
     """
     Accept an address, and a list of allowable address types (a subset of "address" and "pay_to_script"),
     and allowable networks (defaulting to just Bitcoin mainnet), return the network that the address is
@@ -84,7 +74,7 @@ def is_address_valid(address, allowable_types=DEFAULT_ADDRESS_TYPES, allowable_n
     return _check_against(address, allowable_types, allowable_netcodes)
 
 
-def is_wif_valid(wif, allowable_netcodes=DEFAULT_NETCODES):
+def is_wif_valid(wif, allowable_netcodes=None):
     """
     Accept a WIF, and a list of allowable networks (defaulting to just Bitcoin mainnet), return
     the network that the wif is a part of, or None if it doesn't validate.
@@ -92,7 +82,7 @@ def is_wif_valid(wif, allowable_netcodes=DEFAULT_NETCODES):
     return _check_against(wif, ["wif"], allowable_netcodes)
 
 
-def is_public_bip32_valid(hwif, allowable_netcodes=DEFAULT_NETCODES):
+def is_public_bip32_valid(hwif, allowable_netcodes=None):
     """
     Accept a text representation of a BIP32 public wallet, and a list of allowable networks (defaulting
     to just Bitcoin mainnet), return the network that the wif is a part of, or None if it doesn't validate.
@@ -100,7 +90,7 @@ def is_public_bip32_valid(hwif, allowable_netcodes=DEFAULT_NETCODES):
     return _check_against(hwif, ["pub32"], allowable_netcodes)
 
 
-def is_private_bip32_valid(hwif, allowable_netcodes=DEFAULT_NETCODES):
+def is_private_bip32_valid(hwif, allowable_netcodes=None):
     """
     Accept a text representation of a BIP32 private wallet, and a list of allowable networks (defaulting
     to just Bitcoin mainnet), return the network that the wif is a part of, or None if it doesn't validate.

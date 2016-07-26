@@ -32,7 +32,6 @@ from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .pay_to import script_obj_from_address, script_obj_from_script
 from .script import tools
-from ..networks import DEFAULT_NETCODES
 
 
 class TxOut(object):
@@ -66,7 +65,7 @@ class TxOut(object):
         return info.get("hash160")
 
 
-def standard_tx_out_script(address, netcodes=DEFAULT_NETCODES):
+def standard_tx_out_script(address, netcodes=None):
     script_obj = script_obj_from_address(address, netcodes=netcodes)
     if script_obj is None:
         raise ValueError("can't parse address %s" % address)

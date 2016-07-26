@@ -2,7 +2,7 @@
 from ... import ecdsa
 from ... import encoding
 
-from ...networks import DEFAULT_NETCODES, pay_to_script_prefix_for_netcode
+from ...networks import pay_to_script_prefix_for_netcode
 from ...key.validate import netcode_and_type_for_data
 
 from .ScriptPayToAddress import ScriptPayToAddress
@@ -18,7 +18,7 @@ SUBCLASSES = [
 ]
 
 
-def script_obj_from_address(text, netcodes=DEFAULT_NETCODES):
+def script_obj_from_address(text, netcodes=None):
     data = encoding.a2b_hashed_base58(text)
     netcode, key_type = netcode_and_type_for_data(data, netcodes=netcodes)
     if key_type == 'pay_to_script':
