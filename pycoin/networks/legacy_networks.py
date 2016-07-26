@@ -1,19 +1,15 @@
+# this file is deprecated and will soon be folded into all.py
+
+
 from collections import namedtuple
 
-from .serialize import h2b
+from pycoin.serialize import h2b
 
 NetworkValues = namedtuple('NetworkValues',
                            ('network_name', 'subnet_name', 'code', 'wif', 'address',
                             'pay_to_script', 'prv32', 'pub32'))
 
 NETWORKS = (
-
-    # BTC bitcoin mainnet : xprv/xpub
-    NetworkValues("Bitcoin", "mainnet", "BTC", b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E")),
-    # BTC bitcoin testnet : tprv/tpub
-    NetworkValues("Bitcoin", "testnet3", "XTN", b'\xef', b'\x6f', b'\xc4',
-                  h2b("04358394"), h2b("043587CF")),
-
     # LTC litecoin mainnet : Ltpv/Ltub
     NetworkValues("Litecoin", "mainnet", "LTC", b'\xb0', b'\x30', b'\5', h2b('019d9cfe'), h2b('019da462')),
     # LTC litecoin testnet : ttpv/ttub
@@ -26,9 +22,11 @@ NETWORKS = (
     NetworkValues("Viacoin", "testnet", "TVI", b'\xff', b'\x7f', b'\xc4', h2b('04358394'), h2b('043587CF')),
 
     # FTC feathercoin mainnet : xprv/xpub
-    NetworkValues("Feathercoin", "mainnet", "FTC", b'\x8e', b'\x0e', b'\x60', h2b('0488ADE4'), h2b('0488B21E')),
+    NetworkValues(
+        "Feathercoin", "mainnet", "FTC", b'\x8e', b'\x0e', b'\x60', h2b('0488ADE4'), h2b('0488B21E')),
     # FTC feathercoin testnet : tprv/tpub
-    NetworkValues("Feathercoin", "testnet", "FTX", b'\xC1', b'\x41', b'\xc4', h2b('04358394'), h2b('043587CF')),
+    NetworkValues(
+        "Feathercoin", "testnet", "FTX", b'\xC1', b'\x41', b'\xc4', h2b('04358394'), h2b('043587CF')),
 
     # DOGE Dogecoin mainnet : dogv/dogp
     NetworkValues(
@@ -71,57 +69,7 @@ NETWORKS = (
     NetworkValues("DEFCOIN", "mainnet", "DFC", b'\x9e', b'\x1e', b'\5', h2b("02FA54D7"), h2b("02FA54AD")),
 
     # FAI faircoin mainnet : xprv/xpub
-    NetworkValues("Faircoin", "mainnet", "FAI", b'\xdf', b'\x5f', b'\x24', h2b("0488ADE4"), h2b("0488B21E")),
+    NetworkValues(
+        "Faircoin", "mainnet", "FAI", b'\xdf', b'\x5f', b'\x24', h2b("0488ADE4"), h2b("0488B21E")),
 
 )
-
-
-# Map from short code to details about that network.
-NETWORK_NAME_LOOKUP = dict((i.code, i) for i in NETWORKS)
-
-# All network names, return in same order as list above: for UI purposes.
-NETWORK_NAMES = [i.code for i in NETWORKS]
-
-DEFAULT_NETCODES = NETWORK_NAMES
-
-
-def _lookup(netcode, property):
-    # Lookup a specific value needed for a specific network
-    network = NETWORK_NAME_LOOKUP.get(netcode)
-    if network:
-        return getattr(network, property)
-    return None
-
-
-def network_name_for_netcode(netcode):
-    return _lookup(netcode, "network_name")
-
-
-def subnet_name_for_netcode(netcode):
-    return _lookup(netcode, "subnet_name")
-
-
-def full_network_name_for_netcode(netcode):
-    network = NETWORK_NAME_LOOKUP[netcode]
-    if network:
-        return "%s %s" % (network.network_name, network.subnet_name)
-
-
-def wif_prefix_for_netcode(netcode):
-    return _lookup(netcode, "wif")
-
-
-def address_prefix_for_netcode(netcode):
-    return _lookup(netcode, "address")
-
-
-def pay_to_script_prefix_for_netcode(netcode):
-    return _lookup(netcode, "pay_to_script")
-
-
-def prv32_prefix_for_netcode(netcode):
-    return _lookup(netcode, "prv32")
-
-
-def pub32_prefix_for_netcode(netcode):
-    return _lookup(netcode, "pub32")
