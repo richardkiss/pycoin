@@ -100,7 +100,8 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
                 if tx_out:
                     out_script = tx_out.script
                 for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-                        disassemble_scripts(tx_in.script, out_script, signature_for_hash_type_f):
+                        disassemble_scripts(
+                            tx_in.script, out_script, tx.lock_time, signature_for_hash_type_f):
                     for l in pre_annotations:
                         print("           %s" % l)
                     print(    "    %4x: %02x  %s" % (pc, opcode, instruction))
@@ -136,7 +137,7 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
         if disassembly_level > 0:
             for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-                    disassemble_scripts(b'', tx_out.script, signature_for_hash_type_f):
+                    disassemble_scripts(b'', tx_out.script, tx.lock_time, signature_for_hash_type_f):
                 for l in pre_annotations:
                     print("           %s" % l)
                 print(    "    %4x: %02x  %s" % (pc, opcode, instruction))
@@ -197,10 +198,8 @@ def parse_fee(fee):
     return int(fee)
 
 
-EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
-
-
-def main():
+def create_parser():
+    EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
     parser = argparse.ArgumentParser(
         description="Manipulate bitcoin (or alt coin) transactions.",
         epilog=EPILOG)
@@ -281,8 +280,10 @@ def main():
                         'list; an address to be added to the TxOut list and placed in the "split'
                         ' pool".')
 
-    args = parser.parse_args()
+    return parser
 
+
+def parse_context(args, parser):
     # defaults
 
     txs = []
@@ -452,9 +453,21 @@ def main():
                 tx_db = get_tx_db(args.network)
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
+    return (txs, spendables, payables, key_iters, p2sh_lookup, tx_db, warning_tx_cache,
+            warning_tx_for_tx_hash, warning_spendables)
+
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+
+    (txs, spendables, payables, key_iters, p2sh_lookup, tx_db,
+     warning_tx_cache, warning_tx_for_tx_hash, warning_spendables) = parse_context(args, parser)
+
     txs_in = []
     txs_out = []
     unspents = []
+
     # we use a clever trick here to keep each tx_in corresponding with its tx_out
     for tx in txs:
         smaller = min(len(tx.txs_in), len(tx.txs_out))
