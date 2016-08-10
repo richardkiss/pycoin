@@ -192,7 +192,7 @@ class ScriptTypesTest(unittest.TestCase):
 
     def test_sign_bitcoind_partially_signed_2_of_2(self):
         # Finish signing a 2 of 2 transaction, that already has one signature signed by bitcoind
-        # This tx can be found on testnet3 blockchain
+        # This tx can be found on testnet3 blockchain, txid: 9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2
         raw_script = "522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c16885116552102b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452ae"
         p2sh_lookup = build_p2sh_lookup([h2b(raw_script)])
         partially_signed_raw_tx = "010000000196238f11a5fd3ceef4efd5a186a7e6b9217d900418e72aca917cd6a6e634e74100000000910047304402201b41b471d9dd93cf97eed7cfc39a5767a546f6bfbf3e0c91ff9ad23ab9770f1f02205ce565666271d055be1f25a7e52e34cbf659f6c70770ff59bd783a6fcd1be3dd0147522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c16885116552102b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452aeffffffff01a0bb0d00000000001976a9143b3beefd6f7802fa8706983a76a51467bfa36f8b88ac00000000"
