@@ -70,19 +70,22 @@ class ScriptMultisig(ScriptType):
         # ignore the first opcode
         while pc < len(script) and seen < self.n:
             opcode, data, pc = tools.get_opcode(script, pc)
-            sig_pair, signature_type = parse_signature_blob(data)
-            seen += 1
-            for idx, sec_key in enumerate(self.sec_keys):
-                try:
-                    public_pair = encoding.sec_to_public_pair(sec_key)
-                    v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
-                    if v:
-                        signatures.append((idx, data))
-                        secs_solved.add(sec_key)
-                        break
-                except (encoding.EncodingError, UnexpectedDER):
-                    # if public_pair is invalid, we just ignore it
-                    pass
+            try:
+                sig_pair, signature_type = parse_signature_blob(data)
+                seen += 1
+                for idx, sec_key in enumerate(self.sec_keys):
+                    try:
+                        public_pair = encoding.sec_to_public_pair(sec_key)
+                        v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
+                        if v:
+                            signatures.append((idx, data))
+                            secs_solved.add(sec_key)
+                            break
+                    except encoding.EncodingError:
+                        # if public_pair is invalid, we just ignore it
+                        pass
+            except UnexpectedDER:
+                pass
         return signatures, secs_solved
 
     def solve(self, **kwargs):
