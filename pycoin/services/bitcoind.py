@@ -1,4 +1,5 @@
 from pycoin.serialize import b2h, b2h_rev
+from pycoin.tx import Tx
 
 
 class BitcoindProvider(object):
@@ -20,6 +21,11 @@ class BitcoindProvider(object):
         signed = self.connection.signrawtransaction(tx.as_hex(), unknown_tx_outs, [])
         is_ok = [tx.is_signature_ok(idx) for idx in range(len(tx.txs_in))]
         return all(is_ok) == signed.get("complete")
+
+    def tx_for_tx_hash(self, tx_hash):
+        raw_tx = self.connection.getrawtransaction(b2h_rev(tx_hash))
+        tx = Tx.from_hex(raw_tx)
+        return tx
 
 
 def unspent_to_bitcoind_dict(tx_in, tx_out):
