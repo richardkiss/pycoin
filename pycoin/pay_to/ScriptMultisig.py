@@ -2,13 +2,13 @@ from ..script import opcodes, tools
 from ..script.check_signature import parse_signature_blob
 from ..script.der import UnexpectedDER
 
-from ... import ecdsa
-from ... import encoding
+from .. import ecdsa
+from .. import encoding
 
-from ...networks import address_prefix_for_netcode
-from ...serialize import b2h
+from ..networks import address_prefix_for_netcode
+from ..serialize import b2h
 
-from ..exceptions import SolvingError
+from .exceptions import SolvingError
 
 from .ScriptType import ScriptType, DEFAULT_PLACEHOLDER_SIGNATURE
 

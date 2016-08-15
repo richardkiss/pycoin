@@ -1,4 +1,4 @@
-from ..exceptions import SolvingError
+from .exceptions import SolvingError
 
 from .ScriptType import ScriptType
 

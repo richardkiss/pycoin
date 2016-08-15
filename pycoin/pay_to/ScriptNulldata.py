@@ -1,6 +1,6 @@
 from ..script import tools
 
-from ...serialize import b2h
+from ..serialize import b2h
 
 from .ScriptType import ScriptType
 

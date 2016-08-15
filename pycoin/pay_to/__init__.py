@@ -1,9 +1,9 @@
 
-from ... import ecdsa
-from ... import encoding
+from .. import ecdsa
+from .. import encoding
 
-from ...networks import pay_to_script_prefix_for_netcode
-from ...key.validate import netcode_and_type_for_data
+from ..networks.registry import pay_to_script_prefix_for_netcode
+from ..key.validate import netcode_and_type_for_data
 
 from .ScriptPayToAddress import ScriptPayToAddress
 from .ScriptPayToPublicKey import ScriptPayToPublicKey

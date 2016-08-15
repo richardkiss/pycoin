@@ -29,7 +29,7 @@ THE SOFTWARE.
 import functools
 import logging
 
-from ...intbytes import byte_to_int, int_to_bytes
+from ..intbytes import byte_to_int, int_to_bytes
 
 from . import opcodes
 from . import ScriptError

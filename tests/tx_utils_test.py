@@ -7,9 +7,9 @@ import unittest
 from pycoin.ecdsa import generator_secp256k1, public_pair_for_secret_exponent
 from pycoin.encoding import public_pair_to_bitcoin_address, secret_exponent_to_wif
 
-from pycoin.tx.Tx import BadSpendableError
-from pycoin.tx.TxOut import standard_tx_out_script
-from pycoin.tx.tx_utils import create_signed_tx
+from pycoin.base.exceptions import BadSpendableError
+from pycoin.networks.bitcoin.TxOut import standard_tx_out_script
+from pycoin.networks.bitcoin.tx_utils import create_signed_tx
 from pycoin.tx.Spendable import Spendable
 
 

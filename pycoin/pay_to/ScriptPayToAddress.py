@@ -1,11 +1,11 @@
 from ..script import tools
 
-from ... import encoding
+from .. import encoding
 
-from ...networks import address_prefix_for_netcode
-from ...serialize import b2h
+from ..networks import address_prefix_for_netcode
+from ..serialize import b2h
 
-from ..exceptions import SolvingError
+from pycoin.base.exceptions import SolvingError
 
 from .ScriptType import ScriptType
 

@@ -8,12 +8,14 @@ import os
 
 from pycoin.serialize import h2b
 
-from pycoin.tx import TxIn, TxOut, Tx
-from pycoin.tx.script import ScriptError
-from pycoin.tx.script import flags
-from pycoin.tx.script.tools import compile
-from pycoin.tx.script.vm import eval_script
-from pycoin.tx.script.vm import verify_script
+from pycoin.networks.bitcoin.Tx import Tx
+from pycoin.networks.bitcoin.TxIn import TxIn
+from pycoin.networks.bitcoin.TxOut import TxOut
+from pycoin.script import ScriptError
+from pycoin.script import flags
+from pycoin.script.tools import compile
+from pycoin.script.vm import eval_script
+from pycoin.script.vm import verify_script
 
 
 SCRIPT_VALID_JSON = os.path.dirname(__file__) + '/data/script_valid.json'

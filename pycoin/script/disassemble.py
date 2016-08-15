@@ -5,12 +5,12 @@ from pycoin.ecdsa.ecdsa import possible_public_pairs_for_signature
 from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitcoin_address,
                              sec_to_public_pair, is_sec_compressed)
 
+from pycoin.script.check_signature import parse_signature_blob
+from pycoin.script.tools import get_opcode, bin_script
+from pycoin.script.opcodes import INT_TO_OPCODE
+from pycoin.script.vm import eval_script, is_pay_to_script_hash
 from pycoin.serialize import b2h
-from pycoin.tx.script.tools import get_opcode, bin_script
-from pycoin.tx.script.opcodes import INT_TO_OPCODE
-from pycoin.tx.script.vm import eval_script, is_pay_to_script_hash
 
-from pycoin.tx.script.check_signature import parse_signature_blob
 from pycoin.tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
 
 

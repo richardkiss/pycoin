@@ -40,14 +40,13 @@ from pycoin.intbytes import bytes_from_int, byte_to_int
 from pycoin.serialize import h2b_rev, h2b
 from pycoin.tx import Tx, TxIn, ValidationFailureError
 from pycoin.tx.Spendable import Spendable
-from pycoin.tx.script.opcodes import OPCODE_TO_INT
-from pycoin.tx.script.tools import compile
+from pycoin.script import flags
+from pycoin.script.opcodes import OPCODE_TO_INT
+from pycoin.script.tools import compile
 
 
 TX_VALID_JSON = os.path.dirname(__file__) + '/data/tx_valid.json'
 TX_INVALID_JSON = os.path.dirname(__file__) + '/data/tx_invalid.json'
-
-from pycoin.tx.script import flags
 
 
 def parse_flags(flag_string):

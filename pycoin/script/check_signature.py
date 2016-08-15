@@ -26,9 +26,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from ... import ecdsa
-from ...encoding import sec_to_public_pair, EncodingError
-from ...intbytes import byte_to_int
+from .. import ecdsa
+from ..encoding import sec_to_public_pair, EncodingError
+from ..intbytes import byte_to_int
 
 from . import der
 from . import ScriptError

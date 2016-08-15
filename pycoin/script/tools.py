@@ -33,7 +33,7 @@ import struct
 
 from . import ScriptError
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
-from ...intbytes import (
+from ..intbytes import (
     bytes_from_int, bytes_to_ints, from_bytes, int_to_bytes
 )
 

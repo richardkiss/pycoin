@@ -9,11 +9,11 @@ from pycoin import ecdsa
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 from pycoin.serialize import h2b
 
+from pycoin.pay_to import build_hash160_lookup
 from pycoin.tx import Tx, SIGHASH_ALL
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut, standard_tx_out_script
 from pycoin.tx.exceptions import SolvingError
-from pycoin.tx.pay_to import build_hash160_lookup
 
 
 # block 80971

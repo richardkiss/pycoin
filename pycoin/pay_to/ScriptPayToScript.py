@@ -1,9 +1,9 @@
 from ..script import tools
 
-from ... import encoding
+from .. import encoding
 
-from ...networks import pay_to_script_prefix_for_netcode
-from ...serialize import b2h
+from ..networks import pay_to_script_prefix_for_netcode
+from ..serialize import b2h
 
 from .ScriptType import ScriptType
 

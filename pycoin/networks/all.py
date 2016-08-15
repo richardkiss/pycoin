@@ -2,6 +2,9 @@
 from .network import Network
 from .legacy_networks import NETWORKS
 
+from .bitcoin import Tx as BitcoinTx
+from .bitcoin import Block as BitcoinBlock
+
 from ..serialize import h2b
 
 BUILT_IN_NETWORKS = [
@@ -10,7 +13,7 @@ BUILT_IN_NETWORKS = [
     Network(
         'BTC', "Bitcoin", "mainnet",
         b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E"),
-        None, None,  # Tx, Block,
+        BitcoinTx, BitcoinBlock,
         h2b('F9BEB4D9'), 8333, [
             "seed.bitcoin.sipa.be", "dnsseed.bitcoin.dashjr.org",
             "bitseed.xf2.org", "dnsseed.bluematt.me",
@@ -21,7 +24,7 @@ BUILT_IN_NETWORKS = [
     Network(
         "XTN", "Bitcoin", "testnet3",
         b'\xef', b'\x6f', b'\xc4', h2b("04358394"), h2b("043587CF"),
-        None, None,  # Tx, Block,
+        BitcoinTx, BitcoinBlock,
         h2b('0B110907'), 18333, [
             "bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org",
             "bluematt.me", "testnet-seed.bluematt.me"

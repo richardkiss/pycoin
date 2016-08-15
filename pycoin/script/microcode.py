@@ -34,8 +34,8 @@ from . import ScriptError
 
 from .opcodes import OPCODE_TO_INT
 from .tools import bool_from_script_bytes, bool_to_script_bytes, int_to_script_bytes, int_from_script_bytes
-from ...encoding import hash160, double_sha256, ripemd160
-from ...serialize import h2b
+from ..encoding import hash160, double_sha256, ripemd160
+from ..serialize import h2b
 
 
 VCH_TRUE = b'\1'

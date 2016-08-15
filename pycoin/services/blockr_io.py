@@ -6,7 +6,7 @@ try:
 except ImportError:
     from urllib.request import urlopen
 
-from pycoin.convention import btc_to_satoshi
+from pycoin.networks.convention import btc_to_satoshi
 from pycoin.tx import Tx, Spendable
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
 

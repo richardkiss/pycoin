@@ -1,3 +1,2 @@
 
-class SolvingError(Exception):
-    pass
+from pycoin.pay_to.exceptions import SolvingError

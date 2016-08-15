@@ -6,7 +6,7 @@ from pycoin.encoding import EncodingError, a2b_hashed_base58, \
 from pycoin.key.validate import netcode_and_type_for_data
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.serialize import b2h
-from pycoin.tx.script.der import sigencode_der, sigdecode_der
+from pycoin.script.der import sigencode_der, sigdecode_der
 from pycoin import intbytes
 
 
