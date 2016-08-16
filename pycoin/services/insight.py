@@ -13,10 +13,10 @@ except ImportError:
     from urllib.error import HTTPError
     from urllib.parse import urlencode
 
-from pycoin.block import BlockHeader
+from pycoin.base.merkle import merkle
 from pycoin.encoding import double_sha256
+from pycoin.networks.bitcoin.Block import BlockHeader
 from pycoin.networks.convention import btc_to_satoshi
-from pycoin.merkle import merkle
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
 from pycoin.script import tools
 from pycoin.tx import Spendable, Tx, TxIn, TxOut

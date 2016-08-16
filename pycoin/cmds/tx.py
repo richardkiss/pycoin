@@ -23,11 +23,11 @@ from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
 from pycoin.networks.bitcoin.tx_utils import distribute_from_split_pool, sign_tx
-from pycoin.networks.bitcoin.TxOut import standard_tx_out_script
 from pycoin.script.tools import opcode_list
 from pycoin.script.check_signature import parse_signature_blob
 from pycoin.script.der import UnexpectedDER
 from pycoin.script.disassemble import disassemble_scripts, sighash_type_to_string
+from pycoin.standard_tx_out_script import standard_tx_out_script
 from pycoin.tx import Spendable, Tx, TxOut
 
 DEFAULT_VERSION = 1

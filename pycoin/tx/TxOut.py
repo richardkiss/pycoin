@@ -1,2 +1,3 @@
 
-from ..networks.bitcoin.TxOut import TxOut, standard_tx_out_script  # noqa
+from ..networks.bitcoin.TxOut import TxOut
+from pycoin.standard_tx_out_script import standard_tx_out_script  # noqa

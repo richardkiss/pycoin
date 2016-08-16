@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 from pycoin.script import tools
 from pycoin.serialize.bitcoin_streamer import parse_struct, stream_struct
-from pycoin.pay_to import script_obj_from_address, script_obj_from_script
+from pycoin.pay_to import script_obj_for_key_type_hash160, script_obj_from_script
 
 from ..convention import satoshi_to_mbtc
 
@@ -53,8 +53,7 @@ class TxOut(object):
 
     def address(self, netcode="BTC"):
         # attempt to return the destination address, or None on failure
-        info = script_obj_from_script(self.script).info(netcode=netcode)
-        return info.get("address")
+        return script_obj_from_script(self.script).address(netcode=netcode)
 
     bitcoin_address = address
 
@@ -62,10 +61,3 @@ class TxOut(object):
         # attempt to return the destination hash160, or None on failure
         info = script_obj_from_script(self.script).info()
         return info.get("hash160")
-
-
-def standard_tx_out_script(address, netcodes=None):
-    script_obj = script_obj_from_address(address, netcodes=netcodes)
-    if script_obj is None:
-        raise ValueError("can't parse address %s" % address)
-    return script_obj.script()

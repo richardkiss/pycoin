@@ -17,7 +17,7 @@ class KeyTest(unittest.TestCase):
         self.assertTrue(public_key.verify(h, sig))
         h160_key = Key(hash160=private_key.hash160())
         self.assertTrue(h160_key.verify(h, sig))
-    
+
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
 

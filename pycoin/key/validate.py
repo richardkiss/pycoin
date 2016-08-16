@@ -48,7 +48,7 @@ def netcode_and_type_for_text(text):
 
     data = encoding.a2b_hashed_base58(text)
     netcode, the_type = netcode_and_type_for_data(data)
-    length = 1 if the_type in ["wif", "address"] else 4
+    length = 1 if the_type in ["wif", "address", "pay_to_script"] else 4
     return netcode, the_type, data[length:]
 
 

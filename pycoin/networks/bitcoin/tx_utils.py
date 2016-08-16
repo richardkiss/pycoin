@@ -3,10 +3,11 @@ from pycoin.encoding import wif_to_secret_exponent
 from pycoin.networks.convention import tx_fee
 from pycoin.networks.registry import wif_prefix_for_netcode
 from pycoin.pay_to import build_hash160_lookup
+from pycoin.standard_tx_out_script import standard_tx_out_script
 
 from .Spendable import Spendable
 from .Tx import Tx
-from .TxOut import TxOut, standard_tx_out_script
+from .TxOut import TxOut
 
 
 class SecretExponentMissing(Exception):

@@ -26,8 +26,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from .encoding import double_sha256
-from .serialize import h2b_rev
+from pycoin.encoding import double_sha256
+from pycoin.serialize import h2b_rev
 
 
 def merkle(hashes, hash_f=double_sha256):

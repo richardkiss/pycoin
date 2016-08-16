@@ -8,7 +8,7 @@ from .BaseTxIn import BaseTxIn
 from .BaseTxOut import BaseTxOut
 
 
-class Spendable(BaseTxOut):
+class BaseSpendable(BaseTxOut):
     TxIn = BaseTxIn
 
     def __init__(self, coin_value, script, tx_hash, tx_out_index, block_index_available=0,
@@ -22,7 +22,7 @@ class Spendable(BaseTxOut):
         self.block_index_spent = block_index_spent
 
     def stream(self, f, as_spendable=False):
-        super(Spendable, self).stream(f)
+        super(BaseSpendable, self).stream(f)
         if as_spendable:
             stream_struct("#LIbI", f, self.previous_hash, self.previous_index,
                           self.block_index_available, bool(self.does_seem_spent), self.block_index_spent)
@@ -82,7 +82,7 @@ class Spendable(BaseTxOut):
         return self.TxIn(self.tx_hash, self.tx_out_index, script, sequence)
 
     def __str__(self):
-        return 'Spendable<%s mbtc "%s:%d" %s/%s/%s>' % (
+        return 'BaseSpendable<%s mbtc "%s:%d" %s/%s/%s>' % (
             satoshi_to_mbtc(self.coin_value), b2h_rev(self.tx_hash), self.tx_out_index,
             self.block_index_available, self.does_seem_spent, self.block_index_spent)
 
