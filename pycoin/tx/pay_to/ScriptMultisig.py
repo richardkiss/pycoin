@@ -16,8 +16,8 @@ from .ScriptType import ScriptType, DEFAULT_PLACEHOLDER_SIGNATURE
 # see BIP11 https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki
 
 class ScriptMultisig(ScriptType):
-    def __init__(self, n, sec_keys):
-        self.n = n
+    def __init__(self, m, sec_keys):
+        self.m = m
         self.sec_keys = sec_keys
         self._script = None
 
@@ -29,8 +29,8 @@ class ScriptMultisig(ScriptType):
         opcode, data, pc = tools.get_opcode(script, pc)
 
         if not opcodes.OP_1 <= opcode < opcodes.OP_16:
-            raise ValueError("n value invalid")
-        n = opcode + (1 - opcodes.OP_1)
+            raise ValueError("m value invalid")
+        m = opcode + (1 - opcodes.OP_1)
         sec_keys = []
         while 1:
             if pc >= len(script):
@@ -40,9 +40,9 @@ class ScriptMultisig(ScriptType):
             if l < 33 or l > 120:
                 break
             sec_keys.append(data)
-        m = opcode + (1 - opcodes.OP_1)
-        if n > m or len(sec_keys) != m:
-            raise ValueError("m value wrong")
+        n = opcode + (1 - opcodes.OP_1)
+        if m > n or len(sec_keys) != n:
+            raise ValueError("n value wrong")
 
         opcode, data, pc = tools.get_opcode(script, pc)
         if opcode != opcodes.OP_CHECKMULTISIG:
@@ -50,14 +50,14 @@ class ScriptMultisig(ScriptType):
         if pc != len(script):
             raise ValueError("extra stuff at end")
 
-        return cls(sec_keys=sec_keys, n=n)
+        return cls(sec_keys=sec_keys, m=m)
 
     def script(self):
         if self._script is None:
             # create the script
             # TEMPLATE = m {pubkey}...{pubkey} n OP_CHECKMULTISIG
             public_keys = [b2h(sk) for sk in self.sec_keys]
-            script_source = "%d %s %d OP_CHECKMULTISIG" % (self.n, " ".join(public_keys), len(public_keys))
+            script_source = "%d %s %d OP_CHECKMULTISIG" % (self.m, " ".join(public_keys), len(public_keys))
             self._script = tools.compile(script_source)
         return self._script
 
@@ -68,7 +68,7 @@ class ScriptMultisig(ScriptType):
         seen = 0
         opcode, data, pc = tools.get_opcode(script, pc)
         # ignore the first opcode
-        while pc < len(script) and seen < self.n:
+        while pc < len(script) and seen < self.m:
             opcode, data, pc = tools.get_opcode(script, pc)
             sig_pair, signature_type = parse_signature_blob(data)
             seen += 1
@@ -119,7 +119,7 @@ class ScriptMultisig(ScriptType):
         for signature_order, sec_key in enumerate(self.sec_keys):
             if sec_key in secs_solved:
                 continue
-            if len(existing_signatures) >= self.n:
+            if len(existing_signatures) >= self.m:
                 break
             hash160 = encoding.hash160(sec_key)
             result = db.get(hash160)
@@ -134,7 +134,7 @@ class ScriptMultisig(ScriptType):
 
         # pad with placeholder signatures
         if signature_placeholder:
-            while len(existing_signatures) < self.n:
+            while len(existing_signatures) < self.m:
                 existing_signatures.append((-1, signature_placeholder))
 
         script = "OP_0 %s" % " ".join(b2h(s[1]) for s in existing_signatures)
@@ -146,10 +146,10 @@ class ScriptMultisig(ScriptType):
         hash160s = [encoding.hash160(sk) for sk in self.sec_keys]
         addresses = [encoding.hash160_sec_to_bitcoin_address(h1, address_prefix=address_prefix)
                      for h1 in hash160s]
-        return dict(type="multisig m of n", m=len(self.sec_keys), n=self.n, addresses=addresses,
+        return dict(type="multisig m of n", m=self.m, n=len(self.sec_keys), addresses=addresses,
                     hash160s=hash160s, script=self._script, address_prefix=address_prefix,
                     summary="%d of %s" % (self.n, addresses))
 
     def __repr__(self):
         info = self.info()
-        return "<Script: multisig %d of %d (%s)>" % (info["n"], info["m"], "/".join(info["addresses"]))
+        return "<Script: multisig %d of %d (%s)>" % (info["m"], info["n"], "/".join(self.addresses_f()))
