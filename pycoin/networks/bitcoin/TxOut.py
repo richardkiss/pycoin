@@ -26,30 +26,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from pycoin.script import tools
-from pycoin.serialize.bitcoin_streamer import parse_struct, stream_struct
-from pycoin.pay_to import script_obj_for_key_type_hash160, script_obj_from_script
-
-from ..convention import satoshi_to_mbtc
+from pycoin.base.BaseTxOut import BaseTxOut
+from pycoin.pay_to import script_obj_from_script
 
 
-class TxOut(object):
+class TxOut(BaseTxOut):
     """
     The part of a Tx that specifies where the Bitcoin goes to.
     """
-    def __init__(self, coin_value, script):
-        self.coin_value = int(coin_value)
-        self.script = script
-
-    def stream(self, f):
-        stream_struct("QS", f, self.coin_value, self.script)
-
-    @classmethod
-    def parse(cls, f):
-        return cls(*parse_struct("QS", f))
-
-    def __str__(self):
-        return 'TxOut<%s mbtc "%s">' % (satoshi_to_mbtc(self.coin_value), tools.disassemble(self.script))
 
     def address(self, netcode="BTC"):
         # attempt to return the destination address, or None on failure

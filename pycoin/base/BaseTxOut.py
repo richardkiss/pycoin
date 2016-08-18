@@ -42,7 +42,6 @@ class BaseTxOut(object):
     """
 
     def __init__(self, coin_value, script):
-        assert isinstance(coin_value, self.COIN_VALUE_TYPE)
         assert isinstance(script, bytes)
         self.coin_value = coin_value
         self.script = script
@@ -55,4 +54,8 @@ class BaseTxOut(object):
         return cls(*parse_struct("QS", f))
 
     def __str__(self):
-        return 'TxOut<%s mbtc "%s">' % (satoshi_to_mbtc(self.coin_value), tools.disassemble(self.script))
+        return '%s<%s mbtc "%s">' % (
+            self.__class__.__name__,
+            satoshi_to_mbtc(self.coin_value),
+            tools.disassemble(self.script)
+        )

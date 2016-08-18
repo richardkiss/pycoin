@@ -32,13 +32,10 @@ from ..encoding import double_sha256
 from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import stream_struct
 
+from .exceptions import ValidationFailureError
 from .BaseTxIn import BaseTxIn
 from .BaseTxOut import BaseTxOut
 from .BaseSpendable import BaseSpendable
-
-
-class ValidationFailureError(Exception):
-    pass
 
 
 class BaseTx(object):
@@ -48,6 +45,17 @@ class BaseTx(object):
 
     MAX_MONEY = int(21000000 * 1e8)
     MAX_TX_SIZE = 1000000
+
+    def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[]):
+        self.version = version
+        self.txs_in = txs_in
+        self.txs_out = txs_out
+        self.lock_time = lock_time
+        self.unspents = unspents
+        for tx_in in self.txs_in:
+            assert type(tx_in) == self.TxIn
+        for tx_out in self.txs_out:
+            assert type(tx_out) == self.TxOut
 
     @classmethod
     def parse(cls, f):
@@ -141,6 +149,9 @@ class BaseTx(object):
             self.Spendable(tx_out.coin_value, tx_out.script, h, tx_out_index, block_index_available)
             for tx_out_index, tx_out in enumerate(self.txs_out)]
 
+    def is_coinbase(self):
+        return len(self.txs_in) == 1 and self.txs_in[0].is_coinbase()
+
     def __str__(self):
         return "Tx [%s]" % self.id()
 
@@ -209,7 +220,9 @@ class BaseTx(object):
         for tx_in in self.txs_in:
             tx = tx_db.get(tx_in.previous_hash)
             if tx and tx.hash() == tx_in.previous_hash:
-                unspents.append(tx.txs_out[tx_in.previous_index])
+                spendable = self.Spendable.from_tx_out(
+                    tx.txs_out[tx_in.previous_index], tx_in.previous_hash, tx_in.previous_index)
+                unspents.append(spendable)
             elif ignore_missing:
                 unspents.append(None)
             else:
@@ -224,17 +237,21 @@ class BaseTx(object):
 
     def set_unspents(self, unspents):
         for unspent in unspents:
-            assert isinstance(unspent, self.Spendable)
+            assert isinstance(unspent, self.TxOut)
         if len(unspents) != len(self.txs_in):
             raise ValueError("wrong number of unspents")
         self.unspents = unspents
 
     def missing_unspent(self, idx):
+        if self.is_coinbase():
+            return True
         if len(self.unspents) <= idx:
             return True
         return self.unspents[idx] is None
 
     def missing_unspents(self):
+        if self.is_coinbase():
+            return False
         return (len(self.unspents) != len(self.txs_in) or
                 any(self.missing_unspent(idx) for idx, tx_in in enumerate(self.txs_in)))
 

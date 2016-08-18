@@ -25,13 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from .. import encoding
-
-from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
-
-from ..script.tools import disassemble, opcode_list
-from ..script.vm import verify_script
 
 ZERO = b'\0' * 32
 
@@ -40,11 +34,19 @@ class BaseTxIn(object):
     """
     The part of a Tx that specifies where the Bitcoin comes from.
     """
+    @classmethod
+    def coinbase_tx_in(class_, script):
+        tx = class_(previous_hash=ZERO, previous_index=4294967295, script=script)
+        return tx
+
     def __init__(self, previous_hash, previous_index, script=b'', sequence=4294967295):
         self.previous_hash = previous_hash
         self.previous_index = previous_index
         self.script = script
         self.sequence = sequence
+
+    def is_coinbase(self):
+        return self.previous_hash == ZERO
 
     def stream(self, f, blank_solutions=False):
         script = b'' if blank_solutions else self.script

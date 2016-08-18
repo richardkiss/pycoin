@@ -4,7 +4,7 @@ import argparse
 import datetime
 
 from pycoin.block import Block
-from pycoin.scripts.tx import dump_tx
+from pycoin.cmds.tx import dump_tx
 from pycoin.serialize import b2h, b2h_rev, stream_to_bytes
 
 

@@ -1,5 +1,6 @@
 
-from ..networks.bitcoin.Tx import Tx, ValidationFailureError  # noqa
+from ..base.exceptions import ValidationFailureError  # noqa
+from ..networks.bitcoin.Tx import Tx  # noqa
 from ..networks.bitcoin.Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY  # noqa
 
 from .TxIn import TxIn  # noqa
