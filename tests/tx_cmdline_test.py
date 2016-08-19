@@ -144,7 +144,7 @@ class CmdTxTest(unittest.TestCase):
     def launch_tool(self, tool_args, env={}):
         # set
         python_path = sys.executable
-        script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "pycoin", "scripts"))
+        script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "pycoin", "cmds"))
         args = tool_args.split()
         script_path = os.path.join(script_dir, args[0])
         output = subprocess.check_output([python_path, script_path] + args[1:], env=env)
