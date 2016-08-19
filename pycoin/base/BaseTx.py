@@ -266,7 +266,7 @@ class BaseTx(object):
         if unspent is None:
             raise ValueError("missing unspent of TxIn %d" % tx_in_idx)
         return unspent
-        
+
     def txs_in_as_spendable(self):
         return [
             self.Spendable.from_tx_out(tx_out, tx_in.previous_hash, tx_in.previous_index)
@@ -294,7 +294,7 @@ class BaseTx(object):
         Check the solution script for the TxIn corresponding to tx_in_idx.
         """
         raise NotImplemented
-    
+
     def sign(self, **kwargs):
         """
         Sign a standard transaction.
