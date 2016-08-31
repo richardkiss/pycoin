@@ -12,6 +12,7 @@ from pycoin import encoding
 from pycoin.ecdsa import is_public_pair_valid, generator_secp256k1, public_pair_for_x, secp256k1
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
+from pycoin.key.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, NETWORK_NAMES
 
@@ -204,6 +205,7 @@ def main():
         ' the literal string "create" to create a new wallet key using strong entropy sources;'
         ' P:wallet passphrase (NOT RECOMMENDED);'
         ' H:wallet passphrase in hex (NOT RECOMMENDED);'
+        ' E:electrum value (either a master public, master private, or initial data);'
         ' secret_exponent (in decimal or hex);'
         ' x,y where x,y form a public pair (y is a number or one of the strings "even" or "odd");'
         ' hash160 (as 40 hex characters)')
@@ -225,10 +227,9 @@ def main():
         raise e
 
     PREFIX_TRANSFORMS = (
-        ("P:", lambda s:
-            BIP32Node.from_master_secret(s.encode("utf8"), netcode=args.network)),
-        ("H:", lambda s:
-            BIP32Node.from_master_secret(h2b(s), netcode=args.network)),
+        ("P:", lambda s: BIP32Node.from_master_secret(s.encode("utf8"), netcode=args.network)),
+        ("H:", lambda s: BIP32Node.from_master_secret(h2b(s), netcode=args.network)),
+        ("E:", lambda s: key_from_text(s)),
         ("create", _create),
     )
 
