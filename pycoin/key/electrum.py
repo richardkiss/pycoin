@@ -30,7 +30,7 @@ class ElectrumWallet(Key):
         self._netcode = netcode
 
         if initial_key is not None:
-            master_private_key = initial_key_to_master_key(b2h(initial_key))
+            master_private_key = initial_key_to_master_key(initial_key)
         pp = None
         if master_public_key:
             pp = tuple(from_bytes_32(master_public_key[idx:idx+32]) for idx in (0, 32))
