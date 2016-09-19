@@ -4,9 +4,9 @@ import io
 import itertools
 import copy
 import unittest
+from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.key import Key
 from pycoin.serialize import h2b
-from pycoin.scripts.tx import DEFAULT_VERSION
 from pycoin.tx import Tx, TxIn, TxOut, SIGHASH_ALL, tx_utils
 from pycoin.tx.TxOut import standard_tx_out_script
 from pycoin.tx.Spendable import Spendable
