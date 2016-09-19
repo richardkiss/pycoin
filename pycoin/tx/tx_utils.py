@@ -130,7 +130,7 @@ def distribute_from_split_pool(tx, fee):
 
     zero_count = sum(1 for tx_out in tx.txs_out if tx_out.coin_value == 0)
     if zero_count > 0:
-        total_coin_value = sum(spendable.coin_value for spendable in tx.txs_in_as_spendable())
+        total_coin_value = sum(spendable.coin_value for spendable in tx.total_in())
         coins_allocated = sum(tx_out.coin_value for tx_out in tx.txs_out) + fee
         remaining_coins = total_coin_value - coins_allocated
         if remaining_coins < 0:

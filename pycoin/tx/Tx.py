@@ -427,11 +427,6 @@ class Tx(object):
         if self.missing_unspents():
             raise ValueError("wrong number of unspents. Call unspents_from_db or set_unspents.")
 
-    def txs_in_as_spendable(self):
-        return [
-            self.Spendable(tx_out.coin_value, tx_out.script, tx_in.previous_hash, tx_in.previous_index)
-            for tx_in, tx_out in zip(self.txs_in, self.unspents)]
-
     def stream_unspents(self, f):
         self.check_unspents()
         for tx_out in self.unspents:
