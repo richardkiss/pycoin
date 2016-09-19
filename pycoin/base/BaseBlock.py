@@ -65,6 +65,11 @@ class BaseBlockHeader(object):
         transaction information)."""
         raise NotImplemented()
 
+    @classmethod
+    def from_bin(class_, bytes):
+        f = io.BytesIO(bytes)
+        return class_.parse(f)
+
     def __init__(self):
         raise NotImplemented()
 

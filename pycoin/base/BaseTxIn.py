@@ -64,7 +64,7 @@ class BaseTxIn(object):
         tx_out_script: the script of the TxOut that corresponds to this input
         signature_hash: the hash of the partial transaction
         """
-        raise NotImplemented
+        raise NotImplemented()
 
     def __str__(self):
-        raise NotImplemented
+        raise NotImplemented()

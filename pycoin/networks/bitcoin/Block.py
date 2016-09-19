@@ -105,11 +105,6 @@ class Block(BlockHeader, BaseBlock):
         block.check_merkle_hash()
         return block
 
-    @classmethod
-    def from_bin(cls, bytes):
-        f = io.BytesIO(bytes)
-        return cls.parse(f)
-
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs):
         self.version = version
         self.previous_block_hash = previous_block_hash
