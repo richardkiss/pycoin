@@ -4,7 +4,8 @@ import struct
 import os
 
 from pycoin.block import Block, BlockHeader
-from pycoin.serialize import h2b
+from pycoin.blockchain.BlockChain import BlockChain
+from pycoin.serialize import h2b, b2h_rev
 
 
 logger = logging.getLogger(__file__)
@@ -21,7 +22,7 @@ class Blockfiles(object):
         file_index, offset = start_info
         self._file_index = file_index
         full_path = self._path_for_file_index()
-        self.f = open(full_path, "r+b")
+        self.f = open(full_path, "rb")
         self.f.seek(offset)
 
     def close(self):
@@ -71,7 +72,7 @@ class Blockfiles(object):
         return self._file_index, self.f.tell()
 
 
-def block_info_iterator(start_info, base_dir=None, MAGIC=h2b("f9beb4d9")):
+def block_info_iterator(start_info=(0,0), base_dir=None, MAGIC=h2b("f9beb4d9")):
     f = Blockfiles(base_dir, start_info)
     while 1:
         magic = f.read(4)
@@ -108,37 +109,30 @@ def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, 
         f.jump_to(initial_location)
         initial_header = BlockHeader.parse(f)
         break
-    index_table = {initial_header.previous_block_hash: (-1, None, None)}
-    head_hash = initial_header.previous_block_hash
-
-    max_index = -1
+    current_state = []
+    def change_state(bc, ops):
+        for op, bh, work in ops:
+            if op == 'add':
+                current_state.append(bh)
+                pass
+            else:
+                current_state.pop()
+    bc = BlockChain()
+    bc.add_change_callback(change_state)
+    bhs = []
+    index = 0
     for info in block_info_iterator(start_info, base_dir):
         bh = blockheader_for_offset_info(info, base_dir)
-        t = index_table.get(bh.previous_block_hash)
-        if t is None:
-            logger.debug("ignoring block with hash %s" % bh.id())
-            continue
-        (parent_index, info_1, parent_bh) = t
-        h = bh.hash()
-        index_table[h] = (parent_index + 1, info, bh)
-        max_index = max(max_index, parent_index + 1)
-        chain_length = max_index - index_table[head_hash][0]
-        if chain_length > cached_headers + batch_size:
-            last_hash = h
-            best_chain = [last_hash]
-            while last_hash != head_hash:
-                bh = index_table[last_hash][-1]
-                if bh is None:
-                    break
-                last_hash = bh.previous_block_hash
-                best_chain.append(last_hash)
-            best_chain.reverse()
-            for h in best_chain[:cached_headers]:
-                (parent_index, info_1, parent_bh) = index_table[h]
-                if info_1:
-                    f.jump_to(info_1)
+        bh.info = info
+        bhs.append(bh)
+        if len(bhs) > batch_size:
+            bc.add_headers(bhs)
+            bhs = []
+            if len(current_state) > cached_headers:
+                for bh in current_state[:cached_headers]:
+                    f.jump_to(bh.info)
                     block = block_class.parse(f)
                     yield block
-            index_table = dict((k, index_table.get(k))
-                               for k in best_chain[cached_headers:] if k in index_table)
-            head_hash = best_chain[cached_headers]
+                    index += 1
+                    bc.lock_to_index(index)
+                current_state = current_state[cached_headers:]
