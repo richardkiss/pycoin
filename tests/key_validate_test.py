@@ -9,7 +9,7 @@ from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.Key import InvalidPublicPairError, InvalidSecretExponentError
 from pycoin.key.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
-from pycoin.networks import pay_to_script_prefix_for_netcode, NETWORK_NAMES
+from pycoin.networks import pay_to_script_prefix_for_netcode, network_codes
 
 
 def change_prefix(address, new_prefix):
@@ -54,6 +54,7 @@ class KeyUtilsTest(unittest.TestCase):
             a = wif[:-1] + chr(ord(wif[-1])+1)
             self.assertEqual(is_wif_valid(a), None)
 
+        NETWORK_NAMES = network_codes()
         for netcode in NETWORK_NAMES:
             for se in range(1, 10):
                 key = Key(secret_exponent=se, netcode=netcode)
@@ -65,6 +66,7 @@ class KeyUtilsTest(unittest.TestCase):
 
 
     def test_is_public_private_bip32_valid(self):
+        NETWORK_NAMES = network_codes()
         WALLET_KEYS = ["foo", "1", "2", "3", "4", "5"]
 
         # not all networks support BIP32 yet

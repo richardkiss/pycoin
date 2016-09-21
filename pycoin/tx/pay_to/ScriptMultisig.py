@@ -5,7 +5,6 @@ from ..script.der import UnexpectedDER
 from ... import ecdsa
 from ... import encoding
 
-from ...networks import address_prefix_for_netcode
 from ...serialize import b2h
 
 from ..exceptions import SolvingError
@@ -141,14 +140,21 @@ class ScriptMultisig(ScriptType):
         solution = tools.compile(script)
         return solution
 
-    def info(self, netcode='BTC'):
+    def hash160s(self):
+        return [encoding.hash160(sec_key) for sec_key in self.sec_keys]
+
+    def addresses_f(self, netcode=None):
+        from pycoin.networks import address_prefix_for_netcode, get_default_netcode
+        if netcode is None:
+            netcode = get_default_netcode()
         address_prefix = address_prefix_for_netcode(netcode)
-        hash160s = [encoding.hash160(sk) for sk in self.sec_keys]
         addresses = [encoding.hash160_sec_to_bitcoin_address(h1, address_prefix=address_prefix)
-                     for h1 in hash160s]
-        return dict(type="multisig m of n", m=self.m, n=len(self.sec_keys), addresses=addresses,
-                    hash160s=hash160s, script=self._script, address_prefix=address_prefix,
-                    summary="%d of %s" % (self.n, addresses))
+                     for h1 in self.hash160s()]
+        return addresses
+
+    def info(self, netcode=None):
+        return dict(type="multisig m of n", n=len(self.sec_keys), m=self.m, addresses_f=self.addresses_f,
+                    hash160s=self.hash160s(), script=self._script)
 
     def __repr__(self):
         info = self.info()

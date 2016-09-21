@@ -83,8 +83,11 @@ class ScriptType(object):
             s = order - s
         return der.sigencode_der(r, s) + bytes_from_int(signature_type)
 
-    def address(self, netcode='BTC'):
-        return self.info(netcode=netcode)["address"]
+    def address(self, netcode=None):
+        from pycoin.networks.default import get_current_netcode
+        if netcode is None:
+            netcode = get_current_netcode()
+        return self.info(netcode=netcode)["address_f"](netcode)
 
     def solve(self, **kwargs):
         """

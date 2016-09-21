@@ -2,7 +2,6 @@ from ..script import tools
 
 from ... import encoding
 
-from ...networks import address_prefix_for_netcode
 from ...serialize import b2h
 
 from ..exceptions import SolvingError
@@ -64,11 +63,17 @@ class ScriptPayToAddress(ScriptType):
         solution = tools.bin_script([binary_signature, binary_public_pair_sec])
         return solution
 
-    def info(self, netcode='BTC'):
-        address_prefix = address_prefix_for_netcode(netcode)
-        address = encoding.hash160_sec_to_bitcoin_address(self.hash160, address_prefix=address_prefix)
-        return dict(type="pay to address", address=address, hash160=self.hash160,
-                    script=self._script, address_prefix=address_prefix, summary=address)
+    def info(self, netcode=None):
+        def address_f(netcode=netcode):
+            from pycoin.networks import address_prefix_for_netcode
+            from pycoin.networks.default import get_current_netcode
+            if netcode is None:
+                netcode = get_current_netcode()
+            address_prefix = address_prefix_for_netcode(netcode)
+            address = encoding.hash160_sec_to_bitcoin_address(self.hash160, address_prefix=address_prefix)
+            return address
+        return dict(type="pay to address", address="DEPRECATED call address_f instead",
+                    address_f=address_f, hash160=self.hash160, script=self._script)
 
     def __repr__(self):
         return "<Script: pay to %s>" % self.address()

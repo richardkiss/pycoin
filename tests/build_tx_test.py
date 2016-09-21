@@ -11,9 +11,10 @@ from pycoin.serialize import h2b
 
 from pycoin.tx import Tx, SIGHASH_ALL
 from pycoin.tx.TxIn import TxIn
-from pycoin.tx.TxOut import TxOut, standard_tx_out_script
+from pycoin.tx.TxOut import TxOut
 from pycoin.tx.exceptions import SolvingError
 from pycoin.tx.pay_to import build_hash160_lookup
+from pycoin.ui import standard_tx_out_script
 
 
 # block 80971

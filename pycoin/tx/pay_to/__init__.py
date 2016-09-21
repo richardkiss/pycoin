@@ -2,9 +2,6 @@
 from ... import ecdsa
 from ... import encoding
 
-from ...networks import DEFAULT_NETCODES, pay_to_script_prefix_for_netcode
-from ...key.validate import netcode_and_type_for_data
-
 from .ScriptPayToAddress import ScriptPayToAddress
 from .ScriptPayToPublicKey import ScriptPayToPublicKey
 from .ScriptPayToScript import ScriptPayToScript
@@ -18,14 +15,14 @@ SUBCLASSES = [
 ]
 
 
-def script_obj_from_address(text, netcodes=DEFAULT_NETCODES):
-    data = encoding.a2b_hashed_base58(text)
-    netcode, key_type = netcode_and_type_for_data(data, netcodes=netcodes)
+def script_obj_for_key_type_hash160(key_type, the_hash160):
+    if not isinstance(the_hash160, bytes) or len(the_hash160) != 20:
+        raise ValueError("bad hash160")
     if key_type == 'pay_to_script':
-        return ScriptPayToScript(hash160=data[1:])
+        return ScriptPayToScript(hash160=the_hash160)
     if key_type == 'address':
-        return ScriptPayToAddress(hash160=data[1:])
-    raise ValueError("bad text")
+        return ScriptPayToAddress(hash160=the_hash160)
+    raise ValueError("bad key_type")
 
 
 def script_obj_from_script(script):
@@ -36,11 +33,6 @@ def script_obj_from_script(script):
         except ValueError:
             pass
     return None
-
-
-def address_for_pay_to_script(script, netcode="BTC"):
-    address_prefix = pay_to_script_prefix_for_netcode(netcode)
-    return encoding.hash160_sec_to_bitcoin_address(encoding.hash160(script), address_prefix=address_prefix)
 
 
 def build_hash160_lookup(secret_exponents):

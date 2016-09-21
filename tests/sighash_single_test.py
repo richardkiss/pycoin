@@ -15,6 +15,7 @@ from pycoin.serialize import (
     b2h,
     b2h_rev,
 )
+from pycoin.ui import standard_tx_out_script
 from pycoin.tx import (
     Tx,
     TxIn,
@@ -25,7 +26,6 @@ from pycoin.tx.Tx import (
     SIGHASH_ANYONECANPAY,
     SIGHASH_SINGLE,
 )
-from pycoin.tx.TxOut import standard_tx_out_script
 from pycoin.tx.script.der import (
     sigdecode_der,
     sigencode_der,

@@ -2,7 +2,6 @@ from ..script import tools
 
 from ... import encoding
 
-from ...networks import pay_to_script_prefix_for_netcode
 from ...serialize import b2h
 
 from .ScriptType import ScriptType
@@ -50,11 +49,16 @@ class ScriptPayToScript(ScriptType):
             self._script = tools.compile(script_text)
         return self._script
 
-    def info(self, netcode="BTC"):
+    def address(self, netcode=None):
+        from pycoin.networks import pay_to_script_prefix_for_netcode
+        from pycoin.networks.default import get_current_netcode
+        if netcode is None:
+            netcode = get_current_netcode()
         address_prefix = pay_to_script_prefix_for_netcode(netcode)
-        address = encoding.hash160_sec_to_bitcoin_address(self.hash160, address_prefix=address_prefix)
-        return dict(type="pay to script", address=address, hash160=self.hash160,
-                    script=self._script, address_prefix=address_prefix, summary=address)
+        return encoding.hash160_sec_to_bitcoin_address(self.hash160, address_prefix=address_prefix)
+
+    def info(self):
+        return dict(type="pay to script", address_f=self.address, hash160=self.hash160, script=self._script)
 
     def __repr__(self):
         return "<Script: pay to %s>" % self.address()
