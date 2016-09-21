@@ -13,8 +13,7 @@ class Spendable(TxOut):
 
     def __init__(self, coin_value, script, tx_hash, tx_out_index, block_index_available=0,
                  does_seem_spent=False, block_index_spent=0):
-        self.coin_value = int(coin_value)
-        self.script = script
+        super(Spendable, self).__init__(coin_value, script)
         self.tx_hash = tx_hash
         self.tx_out_index = tx_out_index
         self.block_index_available = block_index_available
@@ -60,6 +59,11 @@ class Spendable(TxOut):
                    h2b_rev(d["tx_hash_hex"]), d["tx_out_index"],
                    d.get("block_index_available", 0), d.get("does_seem_spent", 0),
                    d.get("block_index_spent", 0))
+
+    @classmethod
+    def from_tx_out(cls, tx_out, previous_hash, previous_index, block_index_available=0):
+        return Spendable(
+            tx_out.coin_value, tx_out.script, previous_hash, previous_index, block_index_available)
 
     def as_text(self):
         return "/".join([b2h_rev(self.tx_hash), str(self.tx_out_index), b2h(self.script),
