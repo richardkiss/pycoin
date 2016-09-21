@@ -64,6 +64,11 @@ class BlockHeader(object):
             timestamp, difficulty, nonce) = struct.unpack("<L32s32sLLL", f.read(4+32+32+4*3))
         return cls(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
 
+    @classmethod
+    def from_bin(class_, bytes):
+        f = io.BytesIO(bytes)
+        return class_.parse(f)
+
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce):
         self.version = version
         self.previous_block_hash = previous_block_hash
@@ -77,25 +82,27 @@ class BlockHeader(object):
         if hasattr(self, "__hash"):
             del self.__hash
 
+    def _calculate_hash(self):
+        s = io.BytesIO()
+        self.stream_header(s)
+        return double_sha256(s.getvalue())
+
     def hash(self):
         """Calculate the hash for the block header. Note that this has the bytes
         in the opposite order from how the header is usually displayed (so the
         long string of 00 bytes is at the end, not the beginning)."""
         if not hasattr(self, "__hash"):
-            s = io.BytesIO()
-            self.stream_header(s)
-            self.__hash = double_sha256(s.getvalue())
+            self.__hash = self._calculate_hash()
         return self.__hash
 
     def stream_header(self, f):
         """Stream the block header in the standard way to the file-like object f."""
         stream_struct("L##LLL", f, self.version, self.previous_block_hash,
                       self.merkle_root, self.timestamp, self.difficulty, self.nonce)
-
     def stream(self, f):
         """Stream the block header in the standard way to the file-like object f.
         The Block subclass also includes the transactions."""
-        self.stream_header(f)
+        return self.stream_header(f)
 
     def as_bin(self):
         """Return the transaction as binary."""
@@ -118,10 +125,10 @@ class BlockHeader(object):
         return b2h_rev(self.previous_block_hash)
 
     def __str__(self):
-        return "BlockHeader [%s] (previous %s)" % (self.id(), self.previous_block_id())
+        return "%s [%s] (previous %s)" % (self.__class__.__name__, self.id(), self.previous_block_id())
 
     def __repr__(self):
-        return "BlockHeader [%s] (previous %s)" % (self.id(), self.previous_block_id())
+        return self.__str__()
 
 
 class Block(BlockHeader):
@@ -147,12 +154,8 @@ class Block(BlockHeader):
         block = cls(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs)
         for tx in txs:
             tx.block = block
+        block.check_merkle_hash()
         return block
-
-    @classmethod
-    def from_bin(cls, bytes):
-        f = io.BytesIO(bytes)
-        return cls.parse(f)
 
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs):
         self.version = version
@@ -162,6 +165,7 @@ class Block(BlockHeader):
         self.difficulty = difficulty
         self.nonce = nonce
         self.txs = txs
+        self.check_merkle_hash()
 
     def as_blockheader(self):
         return BlockHeader(self.version, self.previous_block_hash, self.merkle_root,
@@ -174,16 +178,6 @@ class Block(BlockHeader):
         for t in self.txs:
             t.stream(f)
 
-    def as_bin(self):
-        """Return the transaction as binary."""
-        f = io.BytesIO()
-        self.stream(f)
-        return f.getvalue()
-
-    def as_hex(self):
-        """Return the transaction as hex."""
-        return b2h(self.as_bin())
-
     def check_merkle_hash(self):
         """Raise a BadMerkleRootError if the Merkle hash of the
         transactions does not match the Merkle hash included in the block."""
@@ -192,10 +186,6 @@ class Block(BlockHeader):
             raise BadMerkleRootError(
                 "calculated %s but block contains %s" % (b2h(calculated_hash), b2h(self.merkle_root)))
 
-    def __str__(self):
-        return "Block [%s] (previous %s) [tx count: %d]" % (
-            self.id(), self.previous_block_id(), len(self.txs))
-
     def __repr__(self):
-        return "Block [%s] (previous %s) [tx count: %d] %s" % (
-            self.id(), self.previous_block_id(), len(self.txs), self.txs)
+        return "%s [%s] (previous %s) [tx count:%d] %s" % (
+            self.__class__.__name__, self.id(), self.previous_block_id(), len(self.txs), self.txs)
