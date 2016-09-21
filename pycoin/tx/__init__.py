@@ -26,8 +26,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from .exceptions import ValidationFailureError
 from .Spendable import Spendable
-from .Tx import Tx, ValidationFailureError
+from .Tx import Tx
 from .Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
 from .TxIn import TxIn
 from .TxOut import TxOut

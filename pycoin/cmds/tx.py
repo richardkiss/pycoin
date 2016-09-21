@@ -22,7 +22,7 @@ from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
 from pycoin.tx import Spendable, Tx, TxOut
-from pycoin.tx.Tx import BadSpendableError
+from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.tx.TxOut import standard_tx_out_script
 from pycoin.tx.script.tools import opcode_list
