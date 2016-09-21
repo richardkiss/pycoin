@@ -36,11 +36,16 @@ from ..networks import DEFAULT_NETCODES
 
 
 class TxOut(object):
+
+    COIN_VALUE_CAST_F = int
+
     """
     The part of a Tx that specifies where the Bitcoin goes to.
     """
+
     def __init__(self, coin_value, script):
-        self.coin_value = int(coin_value)
+        assert isinstance(script, bytes)
+        self.coin_value = self.COIN_VALUE_CAST_F(coin_value)
         self.script = script
 
     def stream(self, f):
@@ -51,7 +56,11 @@ class TxOut(object):
         return cls(*parse_struct("QS", f))
 
     def __str__(self):
-        return 'TxOut<%s mbtc "%s">' % (satoshi_to_mbtc(self.coin_value), tools.disassemble(self.script))
+        return '%s<%s mbtc "%s">' % (
+            self.__class__.__name__,
+            satoshi_to_mbtc(self.coin_value),
+            tools.disassemble(self.script)
+        )
 
     def address(self, netcode="BTC"):
         # attempt to return the destination address, or None on failure
