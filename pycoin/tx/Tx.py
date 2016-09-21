@@ -61,7 +61,7 @@ class Tx(object):
     Spendable = Spendable
 
     MAX_MONEY = MAX_MONEY
-    MAX_BLOCK_SIZE = MAX_BLOCK_SIZE
+    MAX_TX_SIZE = MAX_BLOCK_SIZE
 
     SIGHASH_ALL = SIGHASH_ALL
     SIGHASH_NONE = SIGHASH_NONE
@@ -328,15 +328,15 @@ class Tx(object):
             ", ".join(str(t) for t in self.txs_out))
 
     def _check_tx_inout_count(self):
-        if not self.txs_in:
-            raise ValidationFailureError("txs_in = []")
         if not self.txs_out:
             raise ValidationFailureError("txs_out = []")
+        if not self.is_coinbase() and not self.txs_in:
+            raise ValidationFailureError("txs_in = []")
 
     def _check_size_limit(self):
         size = len(self.as_bin())
-        if size > self.MAX_BLOCK_SIZE:
-            raise ValidationFailureError("size > MAX_BLOCK_SIZE")
+        if size > self.MAX_TX_SIZE:
+            raise ValidationFailureError("size > MAX_TX_SIZE")
 
     def _check_txs_out(self):
         # Check for negative or overflow output values
