@@ -15,16 +15,6 @@ SUBCLASSES = [
 ]
 
 
-def script_obj_for_key_type_hash160(key_type, the_hash160):
-    if not isinstance(the_hash160, bytes) or len(the_hash160) != 20:
-        raise ValueError("bad hash160")
-    if key_type == 'pay_to_script':
-        return ScriptPayToScript(hash160=the_hash160)
-    if key_type == 'address':
-        return ScriptPayToAddress(hash160=the_hash160)
-    raise ValueError("bad key_type")
-
-
 def script_obj_from_script(script):
     for sc in SUBCLASSES:
         try:
