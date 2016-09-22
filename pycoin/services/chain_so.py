@@ -12,7 +12,7 @@ from pycoin.tx import Spendable, Tx
 
 
 class ChainSoProvider(object):
-    def __init__(self, netcode="BTC"):
+    def __init__(self, netcode=None):
         NETWORK_PATHS = {
             "BTC": "BTC",
             "XTN": "BTCTEST",

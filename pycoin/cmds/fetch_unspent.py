@@ -12,7 +12,7 @@ def main():
     parser.add_argument("bitcoin_address", help='a bitcoin address', nargs="+")
 
     args = parser.parse_args()
-    netcode = "BTC"
+    netcode = None
 
     m = message_about_spendables_for_address_env(netcode)
     if m:

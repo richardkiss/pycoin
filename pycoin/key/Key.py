@@ -105,7 +105,7 @@ class Key(object):
         raise EncodingError("unknown text: %s" % text)
 
     @classmethod
-    def from_sec(class_, sec, netcode="BTC"):
+    def from_sec(class_, sec, netcode=None):
         """
         Create a key from an sec bytestream (which is an encoding of a public pair).
         """
