@@ -2,7 +2,6 @@
 from pycoin import encoding
 
 from pycoin.key.validate import netcode_and_type_for_text
-from pycoin.networks.registry import network_codes
 from pycoin.networks import pay_to_script_prefix_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.tx.pay_to import ScriptPayToAddress, ScriptPayToScript
@@ -22,7 +21,7 @@ def standard_tx_out_script(address, netcodes=None):
     return script_obj.script()
 
 
-def address_for_pay_to_script(script, netcode="BTC"):
+def address_for_pay_to_script(script, netcode=None):
     if netcode is None:
         netcode = get_current_netcode()
     address_prefix = pay_to_script_prefix_for_netcode(netcode)

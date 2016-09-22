@@ -6,6 +6,7 @@ try:
 except ImportError:
     from urllib.request import urlopen
 
+from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
 from pycoin.tx import Spendable, Tx
 
@@ -18,6 +19,8 @@ class ChainSoProvider(object):
             "DOGE": "DOGE",
             "XDT": "DOGETEST",
         }
+        if netcode is None:
+            netcode = get_current_netcode()
         self.network_path = NETWORK_PATHS.get(netcode)
 
     def base_url(self, method, args):

@@ -39,7 +39,7 @@ class ScriptType(object):
                 pass
 
     @classmethod
-    def from_script(cls, script, netcode="BTC"):
+    def from_script(cls, script):
         for sc in cls.subclasses():
             try:
                 st = sc.from_script(script)

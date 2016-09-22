@@ -2,6 +2,8 @@ import re
 import threading
 import warnings
 
+from pycoin.networks.default import get_current_netcode
+
 from .bitcoind import BitcoindProvider
 from .blockexplorer import BlockExplorerProvider
 from .blockchain_info import BlockchainInfoProvider
@@ -105,7 +107,9 @@ DESCRIPTOR_CRE_INIT_TUPLES = [
 ]
 
 
-def provider_for_descriptor_and_netcode(descriptor, netcode="BTC"):
+def provider_for_descriptor_and_netcode(descriptor, netcode=None):
+    if netcode is None:
+        netcode = get_current_netcode()
     for cre, f in DESCRIPTOR_CRE_INIT_TUPLES:
         m = cre.match(descriptor)
         if m:

@@ -6,17 +6,20 @@ try:
 except ImportError:
     from urllib.request import urlopen
 
-from pycoin.serialize import b2h_rev
+from pycoin.networks.default import get_current_netcode
+from pycoin.serialize import b2h_rev, h2b, h2b_rev
 from pycoin.tx import Tx, Spendable
-from pycoin.serialize import h2b, h2b_rev
 
 
 class BlockcypherProvider(object):
-    def __init__(self, api_key="", netcode="BTC"):
+    def __init__(self, api_key="", netcode=None):
         NETWORK_PATHS = {
             "BTC": "main",
             "XTN": "test3"
         }
+
+        if netcode is None:
+            netcode = get_current_netcode()
 
         self.network_path = NETWORK_PATHS.get(netcode)
         self.api_key = api_key

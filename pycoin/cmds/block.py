@@ -5,10 +5,12 @@ import datetime
 
 from pycoin.block import Block
 from pycoin.cmds.tx import dump_tx
+from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h, b2h_rev, stream_to_bytes
 
-
-def dump_block(block, network="BTC"):
+def dump_block(block, netcode=None):
+    if netcode is None:
+        netcode = get_current_netcode()
     blob = stream_to_bytes(block.stream)
     print("%d bytes   block hash %s" % (len(blob), block.id()))
     print("version %d" % block.version)
@@ -32,7 +34,7 @@ def main():
 
     for f in args.block_bin:
         block = Block.parse(f)
-        dump_block(block, network='BTC')
+        dump_block(block)
         print('')
 
 if __name__ == '__main__':

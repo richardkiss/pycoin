@@ -17,6 +17,7 @@ from pycoin.block import BlockHeader
 from pycoin.convention import btc_to_satoshi
 from pycoin.encoding import double_sha256
 from pycoin.merkle import merkle
+from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
 from pycoin.tx.script import tools
 from pycoin.tx import Spendable, Tx, TxIn, TxOut
@@ -24,6 +25,8 @@ from pycoin.tx import Spendable, Tx, TxIn, TxOut
 
 class InsightProvider(object):
     def __init__(self, base_url, netcode="BTC"):
+        if netcode is None:
+            netcode = get_current_netcode()
         while base_url[-1] == '/':
             base_url = base_url[:-1]
         self.base_url = base_url
