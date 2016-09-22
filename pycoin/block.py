@@ -99,6 +99,7 @@ class BlockHeader(object):
         """Stream the block header in the standard way to the file-like object f."""
         stream_struct("L##LLL", f, self.version, self.previous_block_hash,
                       self.merkle_root, self.timestamp, self.difficulty, self.nonce)
+
     def stream(self, f):
         """Stream the block header in the standard way to the file-like object f.
         The Block subclass also includes the transactions."""
