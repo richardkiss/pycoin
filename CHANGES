@@ -4,6 +4,7 @@ Version 0.71
 * rename scripts module to cmds to eliminate confusion with bitcoin script module
 * changed to more standard "M of N" for multisig
 * move networks.py to networks module
+* add network/registry.py to allow dynamic registration of non-bitcoin networks
 * move messages.py to messages module
 * add bloomfilter.py
 
