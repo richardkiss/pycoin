@@ -29,8 +29,10 @@ class ScriptNulldata(ScriptType):
             self._script = tools.compile(script_text)
         return self._script
 
-    def info(self, netcode="BTC"):
-        return dict(type="nulldata", script=self._script, summary=self.nulldata)
+    def info(self):
+        def address_f(netcode=None):
+            return "(nulldata %s)" % b2h(self.nulldata)
+        return dict(type="nulldata", address_f=address_f, script=self._script, summary=self.nulldata)
 
     def __repr__(self):
         return "<Script: nulldata %s>" % self.nulldata

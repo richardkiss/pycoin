@@ -19,7 +19,10 @@ class ScriptUnknown(ScriptType):
 
     def info(self, netcode='BTC'):
         address = "(unknown)"
-        return dict(type="unknown script", address=address, script=self._script, summary=address)
+        return dict(
+            type="unknown script", address=address,
+            address_f=lambda *args, **kwargs: address,
+            script=self._script, summary=address)
 
     def __repr__(self):
         return "<Script: unknown of size %d>" % len(self._script)
