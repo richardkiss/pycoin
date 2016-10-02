@@ -265,7 +265,7 @@ As a Dogecoin address:
 tx
 --
 
-The command-line utility ```tx``` will display transactions in human-readable form, fetch base transactions from pycoin's transaction cache or from web services (blockchain.info, blockr.io, biteasy.com are currently supported), merge transactions, add or delete inputs or outputs, and sign transactions.
+The command-line utility ```tx``` will display transactions in human-readable form, fetch base transactions from pycoin's transaction cache or from web services (blockchain.info, blockr.io, are currently supported), merge transactions, add or delete inputs or outputs, and sign transactions.
 
 Examples:
 
@@ -286,7 +286,7 @@ View the famous "pizza" transaction [PIZZA]:
 Oops! We don't have web services set up. Let's do that now.
 
     $ PYCOIN_CACHE_DIR=~/.pycoin_cache
-    $ PYCOIN_BTC_PROVIDERS="block.io blockchain.info biteasy.com blockexplorer.com"
+    $ PYCOIN_BTC_PROVIDERS="block.io blockchain.info blockexplorer.com"
     $ export PYCOIN_CACHE_DIR PYCOIN_BTC_PROVIDERS
 
 It's not done automatically so a command-line tool won't leak potentially private information about what transactions you're interested in to a third party web site. If you don't care, you could put these lines into your .profile.
