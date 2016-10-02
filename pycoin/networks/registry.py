@@ -24,6 +24,8 @@ def register_network(network_info):
     assert isinstance(network_info, Network)
     code = network_info.code
     if code in _NETWORK_NAME_LOOKUP:
+        if _NETWORK_NAME_LOOKUP[code] == network_info:
+            return
         raise ValueError("code %s already defined" % code)
     _NETWORK_NAME_LOOKUP[code] = network_info
     _NETWORK_CODES.append(code)
