@@ -2,8 +2,8 @@
 
 import unittest
 
+from pycoin.ecdsa import generator_secp256k1
 from pycoin.ecdsa.ellipticcurve import Point, NoSuchPointError
-from pycoin.ecdsa.secp256k1 import generator_secp256k1
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node

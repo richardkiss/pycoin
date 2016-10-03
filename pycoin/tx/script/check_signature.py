@@ -74,9 +74,8 @@ def check_valid_signature(sig):
 
 def check_low_der_signature(sig_pair):
     # IsLowDERSignature
-    from pycoin.ecdsa.secp256k1 import _p
     r, s = sig_pair
-    hi_s = _p - s
+    hi_s = ecdsa.generator_secp256k1.curve().p() - s
     if hi_s < s:
         raise ScriptError("signature has high S value")
 

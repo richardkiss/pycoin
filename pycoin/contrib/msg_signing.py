@@ -6,9 +6,8 @@ import re
 
 from binascii import b2a_base64, a2b_base64
 
-from .. import ecdsa
 from ..serialize.bitcoin_streamer import stream_bc_string
-from ..ecdsa import ellipticcurve, numbertheory
+from ..ecdsa import ellipticcurve, numbertheory, generator_secp256k1
 
 from ..networks import address_prefix_for_netcode, network_name_for_netcode
 from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256
@@ -111,11 +110,11 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
 
     # Use a deterministic K so our signatures are deterministic.
     try:
-        r, s, y_odd = _my_sign(ecdsa.generator_secp256k1, secret_exponent, mhash)
+        r, s, y_odd = _my_sign(generator_secp256k1, secret_exponent, mhash)
     except RuntimeError:
         # .. except if extremely unlucky
         k = from_bytes_32(os.urandom(32))
-        r, s, y_odd = _my_sign(ecdsa.generator_secp256k1, secret_exponent, mhash, _k=k)
+        r, s, y_odd = _my_sign(generator_secp256k1, secret_exponent, mhash, _k=k)
 
     is_compressed = not key._use_uncompressed(use_uncompressed)
     assert y_odd in (0, 1)
@@ -169,7 +168,7 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
     mhash = hash_for_signing(message, netcode) if message is not None else msg_hash
 
     # Calculate the specific public key used to sign this message.
-    pair = _extract_public_pair(ecdsa.generator_secp256k1, recid, r, s, mhash)
+    pair = _extract_public_pair(generator_secp256k1, recid, r, s, mhash)
 
     # Check signing public pair is the one expected for the signature. It must be an
     # exact match for this key's public pair... or else we are looking at a validly

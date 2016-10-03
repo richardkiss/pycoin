@@ -4,8 +4,7 @@ import hashlib
 import unittest
 
 from pycoin import intbytes
-from pycoin.ecdsa import generator_secp256k1, sign, verify, public_pair_for_secret_exponent
-from pycoin.ecdsa.ecdsa import deterministic_generate_k
+from pycoin.ecdsa import generator_secp256k1, sign, verify, public_pair_for_secret_exponent, deterministic_generate_k
 
 class ECDSATestCase(unittest.TestCase):
 
