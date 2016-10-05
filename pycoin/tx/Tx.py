@@ -371,10 +371,10 @@ class Tx(object):
         Adapted from Bicoin Code: main.cpp
         """
         self._check_tx_inout_count()
-        # Size limits
-        self._check_size_limit()
         self._check_txs_out()
         self._check_txs_in()
+        # Size limits
+        self._check_size_limit()
 
     """
     The functions below here deal with an optional additional parameter: "unspents".
