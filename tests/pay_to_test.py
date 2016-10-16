@@ -184,7 +184,7 @@ class ScriptTypesTest(unittest.TestCase):
 
     def test_nulldata(self):
         # note that because chr() is used samples with length > 255 will not work
-        for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'']:
+        for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
             sample_script = b'\x6a' + chr(len(sample)).encode() + sample
             nd = ScriptNulldata(sample)
             self.assertEqual(nd.nulldata, sample)
