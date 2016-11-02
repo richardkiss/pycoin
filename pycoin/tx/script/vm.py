@@ -161,7 +161,7 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                 continue
 
             if opcode == opcodes.OP_CODESEPARATOR:
-                begin_code_hash = pc - 1
+                begin_code_hash = pc
                 continue
 
             if opcode in MICROCODE_LOOKUP:
