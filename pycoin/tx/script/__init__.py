@@ -1,2 +1,2 @@
-
-class ScriptError(Exception): pass
+class ScriptError(Exception):
+    pass

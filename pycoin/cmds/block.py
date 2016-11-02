@@ -8,6 +8,7 @@ from pycoin.cmds.tx import dump_tx
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h, b2h_rev, stream_to_bytes
 
+
 def dump_block(block, netcode=None):
     if netcode is None:
         netcode = get_current_netcode()

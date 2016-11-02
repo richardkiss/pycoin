@@ -42,4 +42,3 @@ def get_current_netcode():
 
 def get_current_network():
     return network_for_netcode(get_current_netcode())
-

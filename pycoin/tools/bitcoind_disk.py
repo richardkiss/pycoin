@@ -72,7 +72,7 @@ class Blockfiles(object):
         return self._file_index, self.f.tell()
 
 
-def block_info_iterator(start_info=(0,0), base_dir=None, MAGIC=h2b("f9beb4d9")):
+def block_info_iterator(start_info=(0, 0), base_dir=None, MAGIC=h2b("f9beb4d9")):
     f = Blockfiles(base_dir, start_info)
     while 1:
         magic = f.read(4)
@@ -110,6 +110,7 @@ def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, 
         initial_header = BlockHeader.parse(f)
         break
     current_state = []
+
     def change_state(bc, ops):
         for op, bh, work in ops:
             if op == 'add':
