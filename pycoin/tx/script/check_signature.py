@@ -136,7 +136,8 @@ def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script
 
     # Drop the signature, since there's no way for a signature to sign itself
     # see: Bitcoin Core/script/interpreter.cpp::EvalScript()
-    tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
+    if not getattr(signature_for_hash_type_f, "skip_delete", False):
+        tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
 
     signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
 
@@ -164,8 +165,9 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
     strict_encoding = not not (flags & VERIFY_STRICTENC)
 
     # Drop the signatures, since there's no way for a signature to sign itself
-    for sig_blob in sig_blobs:
-        tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
+    if not getattr(signature_for_hash_type_f, "skip_delete", False):
+        for sig_blob in sig_blobs:
+            tmp_script = delete_subscript(tmp_script, bin_script([sig_blob]))
 
     sig_cache = {}
     sig_blob_indices = []
