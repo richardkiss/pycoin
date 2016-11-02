@@ -149,6 +149,9 @@ class ScriptMultisig(ScriptType):
 
     def addresses_f(self, netcode=None):
         from pycoin.networks import address_prefix_for_netcode
+        from pycoin.networks.default import get_current_netcode
+        if netcode is None:
+            netcode = get_current_netcode()
         address_prefix = address_prefix_for_netcode(netcode)
         addresses = [encoding.hash160_sec_to_bitcoin_address(h1, address_prefix=address_prefix)
                      for h1 in self.hash160s()]
