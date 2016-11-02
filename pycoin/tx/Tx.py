@@ -283,11 +283,11 @@ class Tx(object):
         if tx_in.verify(tx_out_script, signature_for_hash_type_f, self.lock_time):
             return
 
-        sign_value = self.signature_hash(script_to_hash, tx_in_idx, hash_type=hash_type)
         the_script = script_obj_from_script(tx_out_script)
         solution = the_script.solve(
-            hash160_lookup=hash160_lookup, sign_value=sign_value, signature_type=hash_type,
-            existing_script=self.txs_in[tx_in_idx].script, **kwargs)
+            hash160_lookup=hash160_lookup, signature_for_hash_type_f=signature_for_hash_type_f,
+            signature_type=hash_type, existing_script=self.txs_in[tx_in_idx].script,
+            script_to_hash=script_to_hash, **kwargs)
         return solution
 
     def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=None, **kwargs):

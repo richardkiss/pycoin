@@ -60,7 +60,7 @@ class ScriptMultisig(ScriptType):
             self._script = tools.compile(script_source)
         return self._script
 
-    def _find_signatures(self, script, sign_value):
+    def _find_signatures(self, script, signature_for_hash_type_f, script_to_hash):
         signatures = []
         secs_solved = set()
         pc = 0
@@ -74,6 +74,7 @@ class ScriptMultisig(ScriptType):
             for idx, sec_key in enumerate(self.sec_keys):
                 try:
                     public_pair = encoding.sec_to_public_pair(sec_key)
+                    sign_value = signature_for_hash_type_f(signature_type, script_to_hash)
                     v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
                     if v:
                         signatures.append((idx, data))
@@ -91,8 +92,8 @@ class ScriptMultisig(ScriptType):
             dict-like structure that returns a secret exponent for a hash160
         existing_script:
             existing solution to improve upon (optional)
-        sign_value:
-            the integer value to sign (derived from the transaction hash)
+        signature_for_hash_type_f:
+            function to return the sign value for a given signature hash
         signature_type:
             usually SIGHASH_ALL (1)
         signature_placeholder:
@@ -104,8 +105,9 @@ class ScriptMultisig(ScriptType):
         if db is None:
             raise SolvingError("missing hash160_lookup parameter")
 
-        sign_value = kwargs.get("sign_value")
+        signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f")
         signature_type = kwargs.get("signature_type")
+        script_to_hash = kwargs.get("script_to_hash")
 
         signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
 
@@ -113,7 +115,8 @@ class ScriptMultisig(ScriptType):
         existing_signatures = []
         existing_script = kwargs.get("existing_script")
         if existing_script:
-            existing_signatures, secs_solved = self._find_signatures(existing_script, sign_value)
+            existing_signatures, secs_solved = self._find_signatures(
+                existing_script, signature_for_hash_type_f, script_to_hash)
 
         for signature_order, sec_key in enumerate(self.sec_keys):
             if sec_key in secs_solved:
@@ -125,7 +128,8 @@ class ScriptMultisig(ScriptType):
             if result is None:
                 continue
             secret_exponent, public_pair, compressed = result
-            binary_signature = self._create_script_signature(secret_exponent, sign_value, signature_type)
+            binary_signature = self._create_script_signature(
+                secret_exponent, signature_for_hash_type_f, signature_type, script_to_hash)
             existing_signatures.append((signature_order, binary_signature))
 
         # make sure the existing signatures are in the right order

@@ -76,7 +76,9 @@ class ScriptType(object):
                 break
         raise ValueError("script doesn't match")
 
-    def _create_script_signature(self, secret_exponent, sign_value, signature_type):
+    def _create_script_signature(
+            self, secret_exponent, signature_for_hash_type_f, signature_type, script):
+        sign_value = signature_for_hash_type_f(signature_type, script)
         order = ecdsa.generator_secp256k1.order()
         r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
         if s + s > order:

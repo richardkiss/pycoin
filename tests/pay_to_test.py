@@ -15,6 +15,12 @@ from pycoin.tx.script import tools
 from pycoin.ui import address_for_pay_to_script, standard_tx_out_script, script_obj_from_address
 
 
+def const_f(v):
+    def f(*args, **kwargs):
+        return v
+    return f
+
+
 class ScriptTypesTest(unittest.TestCase):
 
     def test_script_type_pay_to_address(self):
@@ -37,7 +43,7 @@ class ScriptTypesTest(unittest.TestCase):
                 self.assertEqual(st.address(), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
-                solution = st.solve(hash160_lookup=hl, sign_value=sv, signature_type=SIGHASH_ALL)
+                solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
                 self.assertEqual(st.address(), addr)
@@ -62,7 +68,7 @@ class ScriptTypesTest(unittest.TestCase):
                 self.assertEqual(st.address(), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
-                solution = st.solve(hash160_lookup=hl, sign_value=sv, signature_type=SIGHASH_ALL)
+                solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
                 self.assertEqual(st.address(), addr)
@@ -72,7 +78,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx_out_script = b'v\xa9\x14\x91\xb2K\xf9\xf5(\x852\x96\n\xc6\x87\xab\xb05\x12{\x1d(\xa5\x88\xac'
         st = script_obj_from_script(tx_out_script)
         hl = build_hash160_lookup([1])
-        solution = st.solve(hash160_lookup=hl, sign_value=sv, signature_type=SIGHASH_ALL)
+        solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
         self.assertEqual(solution, b'G0D\x02 ^=\xf5\xb5[\xe6!@\x04,"\x0b\x1f\xdf\x10\\\xc8Q\x13\xafV*!\\\x1f\xc5\xb5\xc5"\xd1\xb3\xd3\x02 8\xc9YK\x15o\xae\xd7\xf3|0\x07z\xff\xbfj\xcfB\xbf\x17\xb1\xe69\xa1\xfc\xc6\xc5\x1ag\xab\xa2\x16\x01A\x04y\xbef~\xf9\xdc\xbb\xacU\xa0b\x95\xce\x87\x0b\x07\x02\x9b\xfc\xdb-\xce(\xd9Y\xf2\x81[\x16\xf8\x17\x98H:\xdaw&\xa3\xc4e]\xa4\xfb\xfc\x0e\x11\x08\xa8\xfd\x17\xb4H\xa6\x85T\x19\x9cG\xd0\x8f\xfb\x10\xd4\xb8')
 
     def test_validate_multisig(self):
