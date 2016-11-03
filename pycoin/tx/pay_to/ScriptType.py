@@ -69,8 +69,6 @@ class ScriptType(object):
                     break
                 r["PUBKEYHASH_LIST"].append(data1)
             elif opcode2 == opcodes.OP_NULLDATA:
-                if not (0 < l1 <= 40):
-                    break
                 r["NULLDATA_LIST"].append(data1)
             elif (opcode1, data1) != (opcode2, data2):
                 break
