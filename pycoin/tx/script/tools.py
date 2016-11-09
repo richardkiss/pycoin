@@ -193,7 +193,7 @@ def opcode_list(script):
         try:
             opcode, data, pc = get_opcode(script, pc)
         except ScriptError:
-            opcodes.append(binascii.hexlify(script[pc:]))
+            opcodes.append(binascii.hexlify(script[pc:]).decode("utf8"))
             break
         opcodes.append(disassemble_for_opcode_data(opcode, data))
     return opcodes
