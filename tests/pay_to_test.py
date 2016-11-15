@@ -183,13 +183,10 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertNotEqual(st, None)
 
     def test_nulldata(self):
+        OP_RETURN = tools.compile("OP_RETURN")
         # note that because chr() is used samples with length > 255 will not work
         for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
-            if len(sample) <= 75:
-                pushdata = b''
-            else:  # not testing payloads above 65k chars...
-                pushdata = b'\x4c'
-            sample_script = b'\x6a' + pushdata + chr(len(sample)).encode() + sample
+            sample_script = OP_RETURN + tools.bin_script([sample])
             nd = ScriptNulldata(sample)
             self.assertEqual(nd.nulldata, sample)
             self.assertEqual(nd.script(), sample_script)
