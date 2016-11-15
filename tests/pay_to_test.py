@@ -196,5 +196,21 @@ class ScriptTypesTest(unittest.TestCase):
             tx = Tx(0, [], [out])  # ensure we can create a tx
             self.assertEqual(nd.script(), tools.compile(tools.disassemble(nd.script())))  # convert between asm and back to ensure no bugs with compilation
 
+    def test_sign_bitcoind_partially_signed_2_of_2(self):
+        # Finish signing a 2 of 2 transaction, that already has one signature signed by bitcoind
+        # This tx can be found on testnet3 blockchain, txid: 9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2
+        raw_script = "522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c16885116552102b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452ae"
+        p2sh_lookup = build_p2sh_lookup([h2b(raw_script)])
+        partially_signed_raw_tx = "010000000196238f11a5fd3ceef4efd5a186a7e6b9217d900418e72aca917cd6a6e634e74100000000910047304402201b41b471d9dd93cf97eed7cfc39a5767a546f6bfbf3e0c91ff9ad23ab9770f1f02205ce565666271d055be1f25a7e52e34cbf659f6c70770ff59bd783a6fcd1be3dd0147522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c16885116552102b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452aeffffffff01a0bb0d00000000001976a9143b3beefd6f7802fa8706983a76a51467bfa36f8b88ac00000000"
+        tx = Tx.from_hex(partially_signed_raw_tx)
+        tx_out = TxOut(1000000, h2b("a914a10dfa21ee8c33b028b92562f6fe04e60563d3c087"))
+        tx.set_unspents([tx_out])
+        key = Key.from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx")
+        hash160_lookup = build_hash160_lookup([key.secret_exponent()])
+        self.assertEqual(tx.bad_signature_count(), 1)
+        tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
+        self.assertEqual(tx.bad_signature_count(), 0)
+        self.assertEqual(tx.id(), "9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2")
+
 if __name__ == "__main__":
     unittest.main()
