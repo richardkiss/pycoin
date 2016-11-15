@@ -8,7 +8,7 @@ from pycoin.tx.pay_to import ScriptPayToAddress, ScriptPayToScript
 
 
 def script_obj_from_address(address, netcodes=None):
-    netcode, key_type, data = netcode_and_type_for_text(address)
+    netcode, key_type, data = netcode_and_type_for_text(address, netcodes)
     if key_type == 'pay_to_script':
         return ScriptPayToScript(hash160=data)
     if key_type == 'address':

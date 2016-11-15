@@ -73,7 +73,7 @@ class BIP32Node(Key):
         # TODO: support subkey suffixes
 
         data = a2b_hashed_base58(b58_str)
-        netcode, key_type = netcode_and_type_for_data(data)
+        netcode, key_type, length = netcode_and_type_for_data(data)
 
         if key_type not in ("pub32", "prv32"):
             raise EncodingError("bad wallet key header")

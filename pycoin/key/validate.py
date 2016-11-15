@@ -7,29 +7,45 @@ from ..serialize import h2b
 DEFAULT_ADDRESS_TYPES = ["address", "pay_to_script"]
 
 
+def netcode_and_type_lookup_for_data(data):
+    """
+    Given some already-decoded raw data from a base58 string,
+    return a dictionary lookup from network codes to (T, L)
+    where T is the key type ("wif", "address", "public_pair", "prv32", "pub32")
+    and L is the length
+    """
+    prefixes = network_prefixes()
+    sizes = set(len(p) for p in prefixes)
+    d = {}
+    for length in sizes:
+        for netcode, the_type in prefixes.get(data[:length], []):
+            if the_type.endswith('_wit'):
+                if data[length+1:length+2] != b'\0':
+                    continue
+            d[netcode] = (the_type, length)
+    return d
+
+
 def netcode_and_type_for_data(data, netcodes=None):
     """
     Given some already-decoded raw data from a base58 string,
-    return (N, T) where N is the network code ("BTC" or "LTC") and
-    T is the data type ("wif", "address", "public_pair", "prv32", "pub32").
-    May also raise EncodingError.
+    return (N, T, L) where N is the network code ("BTC" or "LTC") and
+    T is the key type, and L is the length of the prefix found.
+    The netcodes are checked in order.
+    May also raise EncodingError if no prefix found.
     """
+    d = netcode_and_type_lookup_for_data(data)
     if netcodes is None:
         netcodes = network_codes()
-    prefixes = network_prefixes()
-    d = {}
-    for length in (4, 1):
-        for netcode, the_type in prefixes.get(data[:length], []):
-            d[netcode] = the_type
     for netcode in netcodes:
         v = d.get(netcode)
         if v:
-            return netcode, v
+            return netcode, v[0], v[1]
 
     raise encoding.EncodingError("unknown prefix")
 
 
-def netcode_and_type_for_text(text):
+def netcode_and_type_for_text(text, netcodes=None):
     # check for "public pair"
     try:
         LENGTH_LOOKUP = {
@@ -47,8 +63,7 @@ def netcode_and_type_for_text(text):
         pass
 
     data = encoding.a2b_hashed_base58(text)
-    netcode, the_type = netcode_and_type_for_data(data)
-    length = 1 if the_type in ["wif", "address", "pay_to_script"] else 4
+    netcode, the_type, length = netcode_and_type_for_data(data)
     return netcode, the_type, data[length:]
 
 
@@ -57,7 +72,7 @@ def _check_against(text, expected_type, allowable_netcodes):
         allowable_netcodes = network_codes()
     try:
         data = encoding.a2b_hashed_base58(text)
-        netcode, the_type = netcode_and_type_for_data(data, netcodes=allowable_netcodes)
+        netcode, the_type, length = netcode_and_type_for_data(data, netcodes=allowable_netcodes)
         if the_type in expected_type and netcode in allowable_netcodes:
             return netcode
     except encoding.EncodingError:

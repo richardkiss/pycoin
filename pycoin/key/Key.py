@@ -85,7 +85,7 @@ class Key(object):
         """
 
         data = a2b_hashed_base58(text)
-        netcode, key_type = netcode_and_type_for_data(data)
+        netcode, key_type, length = netcode_and_type_for_data(data)
         data = data[1:]
 
         if key_type in ("pub32", "prv32"):
