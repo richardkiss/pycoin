@@ -102,8 +102,6 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
     op_count = 0
     require_minimal = flags & VERIFY_MINIMALDATA
 
-    require_minimal = flags & VERIFY_MINIMALDATA
-
     try:
         while pc < len(script):
             old_pc = pc
