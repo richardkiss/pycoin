@@ -119,12 +119,12 @@ class Tx(object):
         warnings.simplefilter('default', DeprecationWarning)
         return cls.from_hex(hex_string)
 
-    def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=[]):
+    def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=None):
         self.version = version
         self.txs_in = txs_in
         self.txs_out = txs_out
         self.lock_time = lock_time
-        self.unspents = unspents
+        self.unspents = unspents or []
         for tx_in in self.txs_in:
             assert type(tx_in) == self.TxIn
         for tx_out in self.txs_out:
