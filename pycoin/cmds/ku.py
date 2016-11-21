@@ -14,7 +14,10 @@ from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
 from pycoin.key.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
-from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, network_codes
+from pycoin.networks import (
+    address_wit_prefix_for_netcode, full_network_name_for_netcode, network_name_for_netcode, network_codes
+)
+from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
 
 
 SEC_RE = re.compile(r"^(0[23][0-9a-fA-F]{64})|(04[0-9a-fA-F]{128})$")
@@ -154,6 +157,11 @@ def create_output(item, key, subkey_path=None):
         address = key.address(use_uncompressed=True)
         add_output("address_uncompressed", address, "%s address uncompressed" % network_name)
         output_dict["%s_address_uncompressed" % key._netcode] = address
+
+    if hash160_c and address_wit_prefix_for_netcode(key._netcode):
+        address = ScriptPayToAddressWit(b'\0', hash160_c).info()["address_f"](key._netcode)
+        add_output("address segwit", address, "%s segwit address" % network_name)
+        output_dict["%s_address_segwit" % key._netcode] = address
 
     return output_dict, output_order
 

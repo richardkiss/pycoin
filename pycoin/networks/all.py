@@ -13,6 +13,7 @@ BUILT_IN_NETWORKS = [
     Network(
         'BTC', "Bitcoin", "mainnet",
         b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E"),
+        b'\6', b'\x0a',
         BitcoinTx, BitcoinBlock,
         h2b('F9BEB4D9'), 8333, [
             "seed.bitcoin.sipa.be", "dnsseed.bitcoin.dashjr.org",
@@ -24,6 +25,7 @@ BUILT_IN_NETWORKS = [
     Network(
         "XTN", "Bitcoin", "testnet3",
         b'\xef', b'\x6f', b'\xc4', h2b("04358394"), h2b("043587CF"),
+        b'\3', b'\x28',
         BitcoinTx, BitcoinBlock,
         h2b('0B110907'), 18333, [
             "bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org",
@@ -35,7 +37,8 @@ BUILT_IN_NETWORKS = [
 
 def _transform_NetworkValues_to_Network(nv):
     defaults = dict(
-        tx=None, block=None, magic_header=None, dns_bootstrap=[], default_port=None)
+        tx=None, block=None, magic_header=None, dns_bootstrap=[], default_port=None,
+        address_wit=None, pay_to_script_wit=None)
     defaults.update(nv._asdict())
     return Network(**defaults)
 

@@ -29,7 +29,7 @@ def register_network(network_info):
         raise ValueError("code %s already defined" % code)
     _NETWORK_NAME_LOOKUP[code] = network_info
     _NETWORK_CODES.append(code)
-    for prop in "wif address pay_to_script prv32 pub32".split():
+    for prop in "wif address pay_to_script prv32 pub32 address_wit pay_to_script_wit".split():
         v = getattr(network_info, prop, None)
         if v is not None:
             if v not in _NETWORK_PREFIXES:
@@ -102,9 +102,19 @@ def address_prefix_for_netcode(netcode):
     return _lookup(netcode, "address")
 
 
+def address_wit_prefix_for_netcode(netcode):
+    "Return the 1 byte prefix for addresses for the given netcode (or None)"
+    return _lookup(netcode, "address_wit")
+
+
 def pay_to_script_prefix_for_netcode(netcode):
     "Return the 1 byte prefix for pay-to-script addresses for the given netcode (or None)"
     return _lookup(netcode, "pay_to_script")
+
+
+def pay_to_script_wit_prefix_for_netcode(netcode):
+    "Return the 1 byte prefix for addresses for the given netcode (or None)"
+    return _lookup(netcode, "pay_to_script_wit")
 
 
 def prv32_prefix_for_netcode(netcode):

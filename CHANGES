@@ -1,6 +1,7 @@
 Version 0.71
 ------------
 
+* add initial support for segregated witness ("segwit")
 * rename scripts module to cmds to eliminate confusion with bitcoin script module
 * changed to more standard "M of N" for multisig
 * move networks.py to networks module
