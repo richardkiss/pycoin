@@ -41,4 +41,6 @@ def build_hash160_lookup(secret_exponents):
 
 
 def build_p2sh_lookup(scripts):
-    return dict((encoding.hash160(s), s) for s in scripts)
+    d1 = dict((encoding.hash160(s), s) for s in scripts)
+    d1.update((hashlib.sha256(s).digest(), s) for s in scripts)
+    return d1

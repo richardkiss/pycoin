@@ -48,3 +48,19 @@ VERIFY_CLEANSTACK = (1 << 8)
 #
 # See BIP65 for details.
 VERIFY_CHECKLOCKTIMEVERIFY = (1 << 9)
+
+# support CHECKSEQUENCEVERIFY opcode
+# See BIP112 for details
+VERIFY_CHECKSEQUENCEVERIFY = (1 << 10)
+
+# Support segregated witness
+VERIFY_WITNESS = (1 << 11)
+
+# Making v1-v16 witness program non-standard
+VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM = (1 << 12)
+
+# Segwit script only: Require the argument of OP_IF/NOTIF to be exactly 0x01 or empty vector
+VERIFY_MINIMALIF = (1 << 13)
+
+# Signature(s) must be empty vector if an CHECK(MULTI)SIG operation failed
+VERIFY_NULLFAIL = (1 << 14)
