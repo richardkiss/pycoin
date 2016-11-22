@@ -55,6 +55,9 @@ class ScriptMultisig(ScriptType):
         if self._script is None:
             # create the script
             # TEMPLATE = m {pubkey}...{pubkey} n OP_CHECKMULTISIG
+            if len(self.sec_keys) < self.m:
+                raise ValueError("m value invalid: Swap M and N (M of N) to match convention")
+
             public_keys = [b2h(sk) for sk in self.sec_keys]
             script_source = "%d %s %d OP_CHECKMULTISIG" % (self.m, " ".join(public_keys), len(public_keys))
             self._script = tools.compile(script_source)
