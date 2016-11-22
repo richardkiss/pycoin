@@ -32,7 +32,10 @@ import warnings
 from ..convention import SATOSHI_PER_COIN
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
-from ..serialize.bitcoin_streamer import parse_struct, stream_struct
+from ..serialize.bitcoin_streamer import (
+    parse_struct, parse_bc_int, parse_bc_string,
+    stream_struct, stream_bc_string
+)
 from ..intbytes import byte_to_int, int_to_bytes
 
 from .exceptions import BadSpendableError, ValidationFailureError
@@ -54,6 +57,8 @@ SIGHASH_NONE = 2
 SIGHASH_SINGLE = 3
 SIGHASH_ANYONECANPAY = 0x80
 
+ZERO32 = b'\0' * 32
+
 
 class Tx(object):
     TxIn = TxIn
@@ -68,6 +73,8 @@ class Tx(object):
     SIGHASH_SINGLE = SIGHASH_SINGLE
     SIGHASH_ANYONECANPAY = SIGHASH_ANYONECANPAY
 
+    ALLOW_SEGWIT = True
+
     @classmethod
     def coinbase_tx(cls, public_key_sec, coin_value, coinbase_bytes=b'', version=1, lock_time=0):
         """
@@ -81,18 +88,38 @@ class Tx(object):
         return cls(version, [tx_in], [tx_out], lock_time)
 
     @classmethod
-    def parse(cls, f):
+    def parse(class_, f, allow_segwit=None):
         """Parse a Bitcoin transaction Tx from the file-like object f."""
-        version, count = parse_struct("LI", f)
+        if allow_segwit is None:
+            allow_segwit = class_.ALLOW_SEGWIT
+        txs_in = []
+        txs_out = []
+        version, = parse_struct("L", f)
+        v = ord(f.read(1))
+        is_segwit = allow_segwit and (v == 0)
+        if is_segwit:
+            flag = f.read(1)
+            if flag != b'\1':
+                raise ValueError("bad flag in segwit")
+            v = None
+        count = parse_bc_int(f, v=v)
         txs_in = []
         for i in range(count):
-            txs_in.append(cls.TxIn.parse(f))
-        count, = parse_struct("I", f)
+            txs_in.append(class_.TxIn.parse(f))
+        count = parse_bc_int(f)
         txs_out = []
         for i in range(count):
-            txs_out.append(cls.TxOut.parse(f))
+            txs_out.append(class_.TxOut.parse(f))
+
+        if is_segwit:
+            for tx_in in txs_in:
+                stack = []
+                count = parse_bc_int(f)
+                for i in range(count):
+                    stack.append(parse_bc_string(f))
+                tx_in.witness = stack
         lock_time, = parse_struct("L", f)
-        return cls(version, txs_in, txs_out, lock_time)
+        return class_(version, txs_in, txs_out, lock_time)
 
     @classmethod
     def from_bin(cls, blob):
@@ -130,27 +157,44 @@ class Tx(object):
         for tx_out in self.txs_out:
             assert type(tx_out) == self.TxOut
 
-    def stream(self, f, blank_solutions=False, include_unspents=False):
+    def stream(self, f, blank_solutions=False, include_unspents=False, include_witness_data=True):
         """Stream a Bitcoin transaction Tx to the file-like object f."""
-        stream_struct("LI", f, self.version, len(self.txs_in))
+        include_witnesses = include_witness_data and self.has_witness_data()
+        stream_struct("L", f, self.version)
+        if include_witnesses:
+            f.write(b'\0\1')
+        stream_struct("I", f, len(self.txs_in))
         for t in self.txs_in:
             t.stream(f, blank_solutions=blank_solutions)
         stream_struct("I", f, len(self.txs_out))
         for t in self.txs_out:
             t.stream(f)
+        if include_witnesses:
+            for tx_in in self.txs_in:
+                witness = tx_in.witness
+                stream_struct("I", f, len(witness))
+                for w in witness:
+                    stream_bc_string(f, w)
         stream_struct("L", f, self.lock_time)
         if include_unspents and not self.missing_unspents():
             self.stream_unspents(f)
 
-    def as_bin(self, include_unspents=False):
+    def as_bin(self, include_unspents=False, include_witness_data=True):
         """Return the transaction as binary."""
         f = io.BytesIO()
-        self.stream(f, include_unspents=include_unspents)
+        self.stream(f, include_unspents=include_unspents, include_witness_data=include_witness_data)
         return f.getvalue()
 
-    def as_hex(self, include_unspents=False):
+    def as_hex(self, include_unspents=False, include_witness_data=True):
         """Return the transaction as hex."""
-        return b2h(self.as_bin(include_unspents=include_unspents))
+        return b2h(self.as_bin(
+            include_unspents=include_unspents, include_witness_data=include_witness_data))
+
+    def set_witness(self, tx_idx_in, witness):
+        self.txs_in[tx_idx_in].witness = tuple(witness)
+
+    def has_witness_data(self):
+        return any(len(tx_in.witness) > 0 for tx_in in self.txs_in)
 
     def hash(self, hash_type=None):
         """Return the hash for this Tx object."""
@@ -159,6 +203,12 @@ class Tx(object):
         if hash_type:
             stream_struct("L", s, hash_type)
         return double_sha256(s.getvalue())
+
+    def w_hash(self):
+        return double_sha256(self.as_bin())
+
+    def w_id(self):
+        return b2h_rev(self.w_hash())
 
     def blanked_hash(self):
         """
@@ -243,6 +293,63 @@ class Tx(object):
         tmp_tx = self.__class__(self.version, txs_in, txs_out, self.lock_time)
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
+    def hash_prevouts(self, hash_type):
+        if hash_type & SIGHASH_ANYONECANPAY:
+            return ZERO32
+        f = io.BytesIO()
+        for tx_in in self.txs_in:
+            f.write(tx_in.previous_hash)
+            stream_struct("L", f, tx_in.previous_index)
+        return double_sha256(f.getvalue())
+
+    def hash_sequence(self, hash_type):
+        if (
+                (hash_type & SIGHASH_ANYONECANPAY) or
+                ((hash_type & 0x1f) == SIGHASH_SINGLE) or
+                ((hash_type & 0x1f) == SIGHASH_NONE)
+        ):
+            return ZERO32
+
+        f = io.BytesIO()
+        for tx_in in self.txs_in:
+            stream_struct("L", f, tx_in.sequence)
+        return double_sha256(f.getvalue())
+
+    def hash_outputs(self, hash_type, tx_in_idx):
+        txs_out = self.txs_out
+        if hash_type & 0x1f == SIGHASH_SINGLE:
+            if tx_in_idx >= len(txs_out):
+                return ZERO32
+            txs_out = txs_out[tx_in_idx:tx_in_idx+1]
+        elif hash_type & 0x1f == SIGHASH_NONE:
+            return ZERO32
+        f = io.BytesIO()
+        for tx_out in txs_out:
+            stream_struct("Q", f, tx_out.coin_value)
+            tools.write_push_data([tx_out.script], f)
+        return double_sha256(f.getvalue())
+
+    def segwit_signature_preimage(self, script, tx_in_idx, hash_type):
+        f = io.BytesIO()
+        stream_struct("L", f, self.version)
+        # calculate hash prevouts
+        f.write(self.hash_prevouts(hash_type))
+        f.write(self.hash_sequence(hash_type))
+        tx_in = self.txs_in[tx_in_idx]
+        f.write(tx_in.previous_hash)
+        stream_struct("L", f, tx_in.previous_index)
+        tx_out = self.unspents[tx_in_idx]
+        stream_bc_string(f, script)
+        stream_struct("Q", f, tx_out.coin_value)
+        stream_struct("L", f, tx_in.sequence)
+        f.write(self.hash_outputs(hash_type, tx_in_idx))
+        stream_struct("L", f, self.lock_time)
+        stream_struct("L", f, hash_type)
+        return f.getvalue()
+
+    def signature_for_hash_type_segwit(self, script, tx_in_idx, hash_type):
+        return from_bytes_32(double_sha256(self.segwit_signature_preimage(script, tx_in_idx, hash_type)))
+
     def solve(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=None, **kwargs):
         """
         Sign a standard transaction.
@@ -280,21 +387,32 @@ class Tx(object):
         def signature_for_hash_type_f(hash_type, script):
             return self.signature_hash(script, tx_in_idx, hash_type)
 
+        def witness_signature_for_hash_type(hash_type, script):
+            return self.signature_for_hash_type_segwit(script, tx_in_idx, hash_type)
+        witness_signature_for_hash_type.skip_delete = True
+
+        signature_for_hash_type_f.witness = witness_signature_for_hash_type
+
         if tx_in.verify(tx_out_script, signature_for_hash_type_f, self.lock_time):
             return
 
         the_script = script_obj_from_script(tx_out_script)
         solution = the_script.solve(
-            hash160_lookup=hash160_lookup, signature_for_hash_type_f=signature_for_hash_type_f,
-            signature_type=hash_type, existing_script=self.txs_in[tx_in_idx].script,
-            script_to_hash=script_to_hash, **kwargs)
+            hash160_lookup=hash160_lookup, signature_type=hash_type,
+            existing_script=self.txs_in[tx_in_idx].script, existing_witness=tx_in.witness,
+            script_to_hash=script_to_hash, signature_for_hash_type_f=signature_for_hash_type_f, **kwargs)
         return solution
 
     def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=None, **kwargs):
         if hash_type is None:
             hash_type = self.SIGHASH_ALL
-        self.txs_in[tx_in_idx].script = self.solve(hash160_lookup, tx_in_idx, tx_out_script,
-                                                   hash_type=hash_type, **kwargs)
+        r = self.solve(hash160_lookup, tx_in_idx, tx_out_script,
+                       hash_type=hash_type, **kwargs)
+        if isinstance(r, bytes):
+            self.txs_in[tx_in_idx].script = r
+        else:
+            self.txs_in[tx_in_idx].script = r[0]
+            self.set_witness(tx_in_idx, r[1])
 
     def verify_tx_in(self, tx_in_idx, tx_out_script, expected_hash_type=None):
         tx_in = self.txs_in[tx_in_idx]
@@ -449,6 +567,12 @@ class Tx(object):
 
         def signature_for_hash_type_f(hash_type, script):
             return self.signature_hash(script, tx_in_idx, hash_type)
+
+        def witness_signature_for_hash_type(hash_type, script):
+            return self.signature_for_hash_type_segwit(script, tx_in_idx, hash_type)
+        witness_signature_for_hash_type.skip_delete = True
+
+        signature_for_hash_type_f.witness = witness_signature_for_hash_type
 
         return tx_in.verify(tx_out_script, signature_for_hash_type_f, self.lock_time,
                             flags=flags, traceback_f=traceback_f)

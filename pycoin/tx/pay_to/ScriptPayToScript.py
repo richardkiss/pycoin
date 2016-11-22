@@ -38,8 +38,9 @@ class ScriptPayToScript(ScriptType):
             raise ValueError("underlying script cannot be determined for %s" % b2h(self.hash160))
         script_obj = script_obj_from_script(underlying_script)
         underlying_solution = script_obj.solve(**kwargs)
-        solution = underlying_solution + tools.bin_script([underlying_script])
-        return solution
+        if isinstance(underlying_solution, bytes):
+            return underlying_solution + tools.bin_script([underlying_script])
+        return underlying_solution[0] + tools.bin_script([underlying_script]), underlying_solution[1]
 
     def script(self):
         if self._script is None:

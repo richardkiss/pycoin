@@ -46,6 +46,7 @@ class TxIn(object):
         self.previous_index = previous_index
         self.script = script
         self.sequence = sequence
+        self.witness = ()
 
     @classmethod
     def coinbase_tx_in(class_, script):

@@ -1,16 +1,21 @@
+import hashlib
 
 from ... import ecdsa
 from ... import encoding
 
 from .ScriptPayToAddress import ScriptPayToAddress
+from .ScriptPayToAddressWit import ScriptPayToAddressWit
 from .ScriptPayToPublicKey import ScriptPayToPublicKey
 from .ScriptPayToScript import ScriptPayToScript
+from .ScriptPayToScriptWit import ScriptPayToScriptWit
 from .ScriptMultisig import ScriptMultisig
 from .ScriptUnknown import ScriptUnknown
 from .ScriptNulldata import ScriptNulldata
 
+
 SUBCLASSES = [
-    ScriptPayToAddress, ScriptPayToPublicKey, ScriptPayToScript,
+    ScriptPayToAddress, ScriptPayToAddressWit, ScriptPayToPublicKey,
+    ScriptPayToScript, ScriptPayToScriptWit,
     ScriptMultisig, ScriptNulldata, ScriptUnknown
 ]
 
