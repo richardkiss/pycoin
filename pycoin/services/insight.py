@@ -23,7 +23,7 @@ from pycoin.tx.script import tools
 from pycoin.tx import Spendable, Tx, TxIn, TxOut
 
 
-class InsightService(object):
+class InsightProvider(object):
     def __init__(self, base_url="https://insight.bitpay.com", netcode=None):
         if netcode is None:
             netcode = get_current_netcode()
