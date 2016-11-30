@@ -32,7 +32,7 @@ import inspect
 
 from . import ScriptError
 
-from .opcodes import OPCODE_TO_INT
+from .opcodes import INT_TO_OPCODE
 from .tools import bool_from_script_bytes, bool_to_script_bytes, int_to_script_bytes, int_from_script_bytes
 from ...encoding import hash160, double_sha256, ripemd160
 from ...serialize import h2b
@@ -543,7 +543,7 @@ def do_OP_0NOTEQUAL(stack, require_minimal):
 def build_ops_lookup():
     d = {}
     the_globals = globals()
-    for opcode_name, opcode_int in OPCODE_TO_INT.items():
+    for opcode_int, opcode_name in INT_TO_OPCODE.items():
         do_f_name = "do_%s" % opcode_name
         if do_f_name in the_globals:
             f = the_globals[do_f_name]
