@@ -476,7 +476,7 @@ class Tx(object):
         else:
             refs = set()
             for tx_in in self.txs_in:
-                if tx_in.previous_hash == b'0' * 32:
+                if tx_in.previous_hash == ZERO32:
                     raise ValidationFailureError("prevout is null")
                 pair = (tx_in.previous_hash, tx_in.previous_index)
                 if pair in refs:
@@ -631,13 +631,12 @@ class Tx(object):
         tx.set_unspents do not match the authenticated transactions, a
         ValidationFailureError is raised.
         """
-        ZERO = b'\0' * 32
         tx_hashes = set((tx_in.previous_hash for tx_in in self.txs_in))
 
         # build a local copy of the DB
         tx_lookup = {}
         for h in tx_hashes:
-            if h == ZERO:
+            if h == ZERO32:
                 continue
             the_tx = tx_db.get(h)
             if the_tx is None:
@@ -647,7 +646,7 @@ class Tx(object):
             tx_lookup[h] = the_tx
 
         for idx, tx_in in enumerate(self.txs_in):
-            if tx_in.previous_hash == ZERO:
+            if tx_in.previous_hash == ZERO32:
                 continue
             txs_out = tx_lookup[tx_in.previous_hash].txs_out
             if tx_in.previous_index > len(txs_out):
