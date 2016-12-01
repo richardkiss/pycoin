@@ -226,7 +226,9 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                     raise ScriptError("nSequence equal to 0xffffffff")
                 if len(stack) < 1:
                     raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
-                max_lock_time = int_from_script_bytes(stack.pop())
+                if len(stack[-1]) > 5:
+                    raise ScriptError("script number overflow")
+                max_lock_time = int_from_script_bytes(stack[-1])
                 if max_lock_time < 0:
                     raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
                 era_max = (max_lock_time >= 500000000)

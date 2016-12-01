@@ -96,6 +96,8 @@ class TxIn(object):
         tx_out_script: the script of the TxOut that corresponds to this input
         signature_hash: the hash of the partial transaction
         """
+        if self.sequence == 0xffffffff:
+            lock_time = None
         return verify_script(self.script, tx_out_script, signature_for_hash_type_f, lock_time=lock_time,
                              flags=flags, expected_hash_type=expected_hash_type, traceback_f=traceback_f,
                              witness=self.witness)
