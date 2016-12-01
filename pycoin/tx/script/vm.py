@@ -321,8 +321,6 @@ def verify_witness_program(
 
 def verify_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,
                   flags=None, expected_hash_type=None, traceback_f=None, witness=()):
-    had_witness = False
-
     stack = Stack()
 
     is_p2h = is_pay_to_script_hash(script_public_key)
@@ -350,7 +348,6 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         if flags & VERIFY_WITNESS:
             witness_version = witness_program_version(script_public_key)
             if witness_version is not None:
-                had_witness = True
                 witness_program = script_public_key[2:]
                 if len(script_signature) > 0:
                     raise ScriptError("script sig is not blank on segwit input")
