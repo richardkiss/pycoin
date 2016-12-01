@@ -199,7 +199,7 @@ class Tx(object):
     def hash(self, hash_type=None):
         """Return the hash for this Tx object."""
         s = io.BytesIO()
-        self.stream(s, include_witness_data=False)
+        self.stream(s)
         if hash_type is not None:
             stream_struct("L", s, hash_type)
         return double_sha256(s.getvalue())
