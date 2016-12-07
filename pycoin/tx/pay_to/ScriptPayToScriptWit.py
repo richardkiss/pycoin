@@ -65,7 +65,7 @@ class ScriptPayToScriptWit(ScriptType):
         return self._script
 
     def address(self, netcode=None):
-        return "0x%s" % b2h(self._script)
+        return "0x%s" % b2h(self.script())
 
     def info(self):
         return dict(type="pay to script (segwit)", address_f=self.address,
