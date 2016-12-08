@@ -276,6 +276,8 @@ def witness_program_version(script):
     if l < 4 or l > 42:
         return None
     first_opcode = byte_to_int(script[0])
+    if byte_to_int(script[1]) + 2 != l:
+        return None
     if first_opcode == opcodes.OP_0:
         return 0
     if opcodes.OP_1 <= first_opcode <= opcodes.OP_16:
