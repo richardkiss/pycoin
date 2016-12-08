@@ -33,7 +33,9 @@ from ...intbytes import byte_to_int
 from . import der
 from . import ScriptError
 
-from .flags import VERIFY_NULLDUMMY, VERIFY_STRICTENC, VERIFY_MINIMALDATA, VERIFY_DERSIG, VERIFY_LOW_S
+from .flags import (
+    VERIFY_NULLDUMMY, VERIFY_NULLFAIL, VERIFY_STRICTENC, VERIFY_MINIMALDATA, VERIFY_DERSIG, VERIFY_LOW_S
+)
 
 from .microcode import VCH_TRUE, VCH_FALSE
 from .tools import bin_script, delete_subscript, int_from_script_bytes
@@ -144,6 +146,9 @@ def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script
     if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair):
         stack.append(VCH_TRUE)
     else:
+        if flags & VERIFY_NULLFAIL:
+            if len(sig_blob) > 0:
+                raise ScriptError("bad signature not NULL")
         stack.append(VCH_FALSE)
 
 
