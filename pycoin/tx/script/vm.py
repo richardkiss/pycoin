@@ -294,7 +294,7 @@ def verify_witness_program(
             if len(witness) == 0:
                 raise ScriptError("witness program empty")
             script_public_key = witness[-1]
-            stack = list(witness[:-1])
+            stack = Stack(witness[:-1])
             if sha256(script_public_key).digest() != script_signature:
                 raise ScriptError("witness program mismatch")
         elif l == 20:
@@ -303,7 +303,7 @@ def verify_witness_program(
                 raise ScriptError("witness program mismatch")
             # "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(script_signature))
             script_public_key = b'v\xa9' + bin_script([script_signature]) + b'\x88\xac'
-            stack = list(witness)
+            stack = Stack(witness)
         else:
             raise ScriptError("witness program wrong length")
     elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
