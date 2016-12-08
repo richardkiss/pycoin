@@ -318,11 +318,15 @@ def verify_witness_program(
     eval_script(script_public_key, signature_for_hash_type_f.witness, lock_time, expected_hash_type,
                 stack, traceback_f=traceback_f, flags=flags, is_signature=True)
 
+    if len(stack) != 1:
+        raise ScriptError("stack not clean after evaulation")
+
     return len(stack) > 0 and bool_from_script_bytes(stack[-1])
 
 
 def verify_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,
                   flags=None, expected_hash_type=None, traceback_f=None, witness=()):
+    had_witness = False
     stack = Stack()
 
     is_p2h = is_pay_to_script_hash(script_public_key)
@@ -350,6 +354,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         if flags & VERIFY_WITNESS:
             witness_version = witness_program_version(script_public_key)
             if witness_version is not None:
+                had_witness = True
                 witness_program = script_public_key[2:]
                 if len(script_signature) > 0:
                     raise ScriptError("script sig is not blank on segwit input")
@@ -358,7 +363,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
                         signature_for_hash_type_f, lock_time, expected_hash_type,
                         traceback_f):
                     return False
-                return True
+                stack = stack[-1:]
 
     except ScriptError:
         return False
@@ -368,6 +373,9 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         return verify_script(alt_script_signature, alt_script_public_key, signature_for_hash_type_f,
                              lock_time, flags & ~VERIFY_P2SH, expected_hash_type=expected_hash_type,
                              traceback_f=traceback_f, witness=witness)
+
+    if (flags & VERIFY_WITNESS) and not had_witness and len(witness) > 0:
+        raise ScriptError("witness unexpected")
 
     if flags & VERIFY_CLEANSTACK and len(stack) != 1:
         raise ScriptError("stack not clean after evaulation")
