@@ -243,7 +243,7 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
             if opcode in VERIFY_OPS:
                 v = stack.pop()
                 if not bool_from_script_bytes(v):
-                    raise ScriptError("VERIFY failed at %d" % pc-1)
+                    raise ScriptError("VERIFY failed at %d" % (pc-1))
 
     except Exception:
         logger.exception("script failed for unknown reason")
