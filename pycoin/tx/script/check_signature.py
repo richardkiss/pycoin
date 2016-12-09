@@ -250,5 +250,10 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
         else:
             sig_ok = VCH_TRUE
 
+    if not sig_ok and flags & VERIFY_NULLFAIL:
+        for sig_blob in sig_blobs:
+            if len(sig_blob) > 0:
+                raise ScriptError("bad signature not NULL")
+
     stack.append(sig_ok)
     return key_count
