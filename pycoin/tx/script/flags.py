@@ -64,3 +64,6 @@ VERIFY_MINIMALIF = (1 << 13)
 
 # Signature(s) must be empty vector if an CHECK(MULTI)SIG operation failed
 VERIFY_NULLFAIL = (1 << 14)
+
+# Public keys in segregated witness scripts must be compressed
+VERIFY_WITNESS_PUBKEYTYPE = (1 << 15)

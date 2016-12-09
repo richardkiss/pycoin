@@ -40,8 +40,8 @@ from .check_signature import op_checksig, op_checkmultisig
 from .flags import (
     VERIFY_P2SH, VERIFY_DISCOURAGE_UPGRADABLE_NOPS, VERIFY_MINIMALDATA,
     VERIFY_SIGPUSHONLY, VERIFY_CHECKLOCKTIMEVERIFY, VERIFY_CLEANSTACK,
-    # VERIFY_CHECKSEQUENCEVERIFY,
-    VERIFY_WITNESS, VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM
+    VERIFY_WITNESS, VERIFY_MINIMALIF, VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM,
+    VERIFY_WITNESS_PUBKEYTYPE
 )
 from .microcode import MICROCODE_LOOKUP
 from .tools import get_opcode, bin_script, bool_from_script_bytes, int_from_script_bytes
@@ -145,7 +145,11 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
             if opcode in (opcodes.OP_IF, opcodes.OP_NOTIF):
                 v = False
                 if all_if_true:
-                    v = bool_from_script_bytes(stack.pop())
+                    item = stack.pop()
+                    if flags & VERIFY_MINIMALIF:
+                        if item not in (b'', b'\1'):
+                            raise ScriptError("non-minimal IF")
+                    v = bool_from_script_bytes(item)
                 if opcode == opcodes.OP_NOTIF:
                     v = not v
                 if_condition_stack.append(v)
@@ -337,16 +341,22 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
     if flags & VERIFY_SIGPUSHONLY:
         check_script_push_only(script_signature)
 
+    # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE unless we're in segwit
+    witness_flags = flags
+    flags &= ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
+
     try:
-        eval_script(script_signature, signature_for_hash_type_f, lock_time, expected_hash_type,
-                    stack, traceback_f=traceback_f, flags=flags, is_signature=True)
+        eval_script(script_signature, signature_for_hash_type_f, lock_time,
+                    expected_hash_type, stack, traceback_f=traceback_f, flags=flags,
+                    is_signature=True)
 
         if is_p2h and (flags & VERIFY_P2SH):
             signatures, alt_script_public_key = stack[:-1], stack[-1]
             alt_script_signature = bin_script(signatures)
 
-        eval_script(script_public_key, signature_for_hash_type_f, lock_time, expected_hash_type,
-                    stack, traceback_f=traceback_f, flags=flags, is_signature=False)
+        eval_script(script_public_key, signature_for_hash_type_f, lock_time,
+                    expected_hash_type, stack, traceback_f=traceback_f, flags=flags,
+                    is_signature=False)
 
         if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
             return False
@@ -359,7 +369,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
                 if len(script_signature) > 0:
                     raise ScriptError("script sig is not blank on segwit input")
                 if not verify_witness_program(
-                        witness, witness_version, witness_program, flags,
+                        witness, witness_version, witness_program, witness_flags,
                         signature_for_hash_type_f, lock_time, expected_hash_type,
                         traceback_f):
                     return False
@@ -371,7 +381,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
     if is_p2h and bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
         check_script_push_only(script_signature)
         return verify_script(alt_script_signature, alt_script_public_key, signature_for_hash_type_f,
-                             lock_time, flags & ~VERIFY_P2SH, expected_hash_type=expected_hash_type,
+                             lock_time, witness_flags & ~VERIFY_P2SH, expected_hash_type=expected_hash_type,
                              traceback_f=traceback_f, witness=witness)
 
     if (flags & VERIFY_WITNESS) and not had_witness and len(witness) > 0:

@@ -34,7 +34,8 @@ from . import der
 from . import ScriptError
 
 from .flags import (
-    VERIFY_NULLDUMMY, VERIFY_NULLFAIL, VERIFY_STRICTENC, VERIFY_MINIMALDATA, VERIFY_DERSIG, VERIFY_LOW_S
+    VERIFY_NULLDUMMY, VERIFY_NULLFAIL, VERIFY_STRICTENC, VERIFY_MINIMALDATA,
+    VERIFY_DERSIG, VERIFY_LOW_S, VERIFY_WITNESS_PUBKEYTYPE
 )
 
 from .microcode import VCH_TRUE, VCH_FALSE
@@ -127,6 +128,9 @@ def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script
         # if verify_strict flag is set, we fail the script immediately on bad encoding
         if verify_strict:
             check_public_key_encoding(pair_blob)
+        if flags & VERIFY_WITNESS_PUBKEYTYPE:
+            if byte_to_int(pair_blob[0]) not in (2, 3) or len(pair_blob) != 33:
+                raise ScriptError("uncompressed key in witness")
         sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
         public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
     except (der.UnexpectedDER, ValueError, EncodingError):
@@ -202,6 +206,9 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
             ppb_idx += 1
             if strict_encoding:
                 check_public_key_encoding(public_pair_blob)
+            if flags & VERIFY_WITNESS_PUBKEYTYPE:
+                if byte_to_int(public_pair_blob[0]) not in (2, 3) or len(public_pair_blob) != 33:
+                    raise ScriptError("uncompressed key in witness")
             try:
                 public_pair = sec_to_public_pair(public_pair_blob, strict=strict_encoding)
             except EncodingError:
