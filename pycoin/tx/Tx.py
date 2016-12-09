@@ -393,7 +393,9 @@ class Tx(object):
 
         signature_for_hash_type_f.witness = witness_signature_for_hash_type
 
-        if tx_in.verify(tx_out_script, signature_for_hash_type_f, self.lock_time):
+        if tx_in.verify(
+                tx_out_script, signature_for_hash_type_f, lock_time=self.lock_time,
+                tx_version=self.version):
             return
 
         the_script = script_obj_from_script(tx_out_script)
@@ -420,7 +422,8 @@ class Tx(object):
         def signature_for_hash_type_f(hash_type, script):
             return self.signature_hash(script, tx_in_idx, hash_type)
 
-        if not tx_in.verify(tx_out_script, signature_for_hash_type_f, expected_hash_type):
+        if not tx_in.verify(
+                tx_out_script, signature_for_hash_type_f, expected_hash_type, tx_version=self.version):
             raise ValidationFailureError(
                 "just signed script Tx %s TxIn index %d did not verify" % (
                     b2h_rev(tx_in.previous_hash), tx_in_idx))
@@ -574,8 +577,9 @@ class Tx(object):
 
         signature_for_hash_type_f.witness = witness_signature_for_hash_type
 
-        return tx_in.verify(tx_out_script, signature_for_hash_type_f, self.lock_time,
-                            flags=flags, traceback_f=traceback_f)
+        return tx_in.verify(
+            tx_out_script, signature_for_hash_type_f, lock_time=self.lock_time,
+            flags=flags, traceback_f=traceback_f, tx_version=self.version)
 
     def sign(self, hash160_lookup, hash_type=None, **kwargs):
         """

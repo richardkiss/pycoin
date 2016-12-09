@@ -38,10 +38,11 @@ from . import ScriptError
 
 from .check_signature import op_checksig, op_checkmultisig
 from .flags import (
+    SEQUENCE_LOCKTIME_DISABLE_FLAG, SEQUENCE_LOCKTIME_TYPE_FLAG,
     VERIFY_P2SH, VERIFY_DISCOURAGE_UPGRADABLE_NOPS, VERIFY_MINIMALDATA,
     VERIFY_SIGPUSHONLY, VERIFY_CHECKLOCKTIMEVERIFY, VERIFY_CLEANSTACK,
     VERIFY_WITNESS, VERIFY_MINIMALIF, VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM,
-    VERIFY_WITNESS_PUBKEYTYPE
+    VERIFY_WITNESS_PUBKEYTYPE, VERIFY_CHECKSEQUENCEVERIFY,
 )
 from .microcode import MICROCODE_LOOKUP
 from .tools import get_opcode, bin_script, bool_from_script_bytes, int_from_script_bytes
@@ -97,7 +98,8 @@ def verify_minimal_data(opcode, data):
 
 
 def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=[],
-                disallow_long_scripts=True, traceback_f=None, is_signature=False, flags=0):
+                disallow_long_scripts=True, traceback_f=None, is_signature=False, flags=0,
+                tx_sequence=None, tx_version=None):
     altstack = Stack()
     if disallow_long_scripts and len(script) > 10000:
         return False
@@ -243,6 +245,41 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                     raise ScriptError("nLockTime too soon")
                 continue
 
+            if opcode == opcodes.OP_CHECKSEQUENCEVERIFY:
+                if not (flags & VERIFY_CHECKSEQUENCEVERIFY):
+                    if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+                        raise ScriptError("discouraging nops")
+                    continue
+                if len(stack) < 1:
+                    raise ScriptError("empty stack on CHECKSEQUENCEVERIFY")
+                if len(stack[-1]) > 5:
+                    raise ScriptError("script number overflow")
+                sequence = int_from_script_bytes(stack[-1])
+                if sequence < 0:
+                    raise ScriptError("top stack item negative on CHECKSEQUENCEVERIFY")
+                if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+                    continue
+                # do the actual check
+                if tx_version < 2:
+                    raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version")
+                if tx_sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+                    raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
+
+                # this mask is applied to extract lock-time from the sequence field
+                SEQUENCE_LOCKTIME_MASK = 0xffff
+
+                mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
+                sequence_masked = sequence & mask
+                tx_sequence_masked = tx_sequence & mask
+                if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
+                         (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
+                        ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
+                         (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
+                    raise ScriptError("sequence numbers not comparable")
+                if sequence_masked > tx_sequence_masked:
+                    raise ScriptError("sequence number too small")
+                continue
+
             # BRAIN DAMAGE -- does it always get down here for each verify op? I think not
             if opcode in VERIFY_OPS:
                 v = stack.pop()
@@ -291,7 +328,7 @@ def witness_program_version(script):
 
 def verify_witness_program(
         witness, version, script_signature, flags, signature_for_hash_type_f,
-        lock_time, expected_hash_type, traceback_f):
+        lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version):
     if version == 0:
         l = len(script_signature)
         if l == 32:
@@ -320,7 +357,8 @@ def verify_witness_program(
             raise ScriptError("pushing too much data onto stack")
 
     eval_script(script_public_key, signature_for_hash_type_f.witness, lock_time, expected_hash_type,
-                stack, traceback_f=traceback_f, flags=flags, is_signature=True)
+                stack, traceback_f=traceback_f, flags=flags, is_signature=True,
+                tx_sequence=tx_sequence, tx_version=tx_version)
 
     if len(stack) != 1:
         raise ScriptError("stack not clean after evaulation")
@@ -329,7 +367,8 @@ def verify_witness_program(
 
 
 def verify_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,
-                  flags=None, expected_hash_type=None, traceback_f=None, witness=()):
+                  flags=None, expected_hash_type=None, traceback_f=None, witness=(),
+                  tx_sequence=None, tx_version=None):
     had_witness = False
     stack = Stack()
 
@@ -348,7 +387,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
     try:
         eval_script(script_signature, signature_for_hash_type_f, lock_time,
                     expected_hash_type, stack, traceback_f=traceback_f, flags=flags,
-                    is_signature=True)
+                    is_signature=True, tx_sequence=tx_sequence, tx_version=tx_version)
 
         if is_p2h and (flags & VERIFY_P2SH):
             signatures, alt_script_public_key = stack[:-1], stack[-1]
@@ -356,7 +395,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
 
         eval_script(script_public_key, signature_for_hash_type_f, lock_time,
                     expected_hash_type, stack, traceback_f=traceback_f, flags=flags,
-                    is_signature=False)
+                    is_signature=False, tx_sequence=tx_sequence, tx_version=tx_version)
 
         if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
             return False
@@ -371,7 +410,7 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
                 if not verify_witness_program(
                         witness, witness_version, witness_program, witness_flags,
                         signature_for_hash_type_f, lock_time, expected_hash_type,
-                        traceback_f):
+                        traceback_f, tx_sequence, tx_version):
                     return False
                 stack = stack[-1:]
 
@@ -382,7 +421,8 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
         check_script_push_only(script_signature)
         return verify_script(alt_script_signature, alt_script_public_key, signature_for_hash_type_f,
                              lock_time, witness_flags & ~VERIFY_P2SH, expected_hash_type=expected_hash_type,
-                             traceback_f=traceback_f, witness=witness)
+                             traceback_f=traceback_f, witness=witness,
+                             tx_sequence=tx_sequence, tx_version=tx_version)
 
     if (flags & VERIFY_WITNESS) and not had_witness and len(witness) > 0:
         raise ScriptError("witness unexpected")
