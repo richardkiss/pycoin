@@ -1,2 +1,5 @@
 class ScriptError(Exception):
-    pass
+    def error_code(self):
+        if len(self.args) > 1:
+            return self.args[1]
+        return None

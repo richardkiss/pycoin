@@ -33,6 +33,7 @@ from hashlib import sha256
 
 from ...intbytes import byte_to_int, int_to_bytes
 
+from . import errno
 from . import opcodes
 from . import ScriptError
 
@@ -326,7 +327,7 @@ def witness_program_version(script):
     return None
 
 
-def verify_witness_program(
+def check_witness_program(
         witness, version, script_signature, flags, signature_for_hash_type_f,
         lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version):
     if version == 0:
@@ -350,7 +351,7 @@ def verify_witness_program(
     elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
         raise ScriptError("this version witness program not yet supported")
     else:
-        return True
+        return
 
     for s in stack:
         if len(s) > 520:
@@ -363,12 +364,12 @@ def verify_witness_program(
     if len(stack) != 1:
         raise ScriptError("stack not clean after evaulation")
 
-    return len(stack) > 0 and bool_from_script_bytes(stack[-1])
+    if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
+        raise ScriptError("eval false", errno.EVAL_FALSE)
 
 
-def verify_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,
-                  flags=None, expected_hash_type=None, traceback_f=None, witness=(),
-                  tx_sequence=None, tx_version=None):
+def check_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,
+                 flags, expected_hash_type, traceback_f, witness, tx_sequence, tx_version):
     had_witness = False
     stack = Stack()
 
@@ -384,45 +385,41 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
     witness_flags = flags
     flags &= ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
 
-    try:
-        eval_script(script_signature, signature_for_hash_type_f, lock_time,
-                    expected_hash_type, stack, traceback_f=traceback_f, flags=flags,
-                    is_signature=True, tx_sequence=tx_sequence, tx_version=tx_version)
+    eval_script(script_signature, signature_for_hash_type_f, lock_time,
+                expected_hash_type, stack, traceback_f=traceback_f, flags=flags,
+                is_signature=True, tx_sequence=tx_sequence, tx_version=tx_version)
 
-        if is_p2h and (flags & VERIFY_P2SH):
-            signatures, alt_script_public_key = stack[:-1], stack[-1]
-            alt_script_signature = bin_script(signatures)
+    if is_p2h and (flags & VERIFY_P2SH):
+        signatures, alt_script_public_key = stack[:-1], stack[-1]
+        alt_script_signature = bin_script(signatures)
 
-        eval_script(script_public_key, signature_for_hash_type_f, lock_time,
-                    expected_hash_type, stack, traceback_f=traceback_f, flags=flags,
-                    is_signature=False, tx_sequence=tx_sequence, tx_version=tx_version)
+    eval_script(script_public_key, signature_for_hash_type_f, lock_time,
+                expected_hash_type, stack, traceback_f=traceback_f, flags=flags,
+                is_signature=False, tx_sequence=tx_sequence, tx_version=tx_version)
 
-        if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
-            return False
+    if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
+        raise ScriptError("eval false", errno.EVAL_FALSE)
 
-        if flags & VERIFY_WITNESS:
-            witness_version = witness_program_version(script_public_key)
-            if witness_version is not None:
-                had_witness = True
-                witness_program = script_public_key[2:]
-                if len(script_signature) > 0:
-                    raise ScriptError("script sig is not blank on segwit input")
-                if not verify_witness_program(
-                        witness, witness_version, witness_program, witness_flags,
-                        signature_for_hash_type_f, lock_time, expected_hash_type,
-                        traceback_f, tx_sequence, tx_version):
-                    return False
-                stack = stack[-1:]
-
-    except ScriptError:
-        return False
+    if flags & VERIFY_WITNESS:
+        witness_version = witness_program_version(script_public_key)
+        if witness_version is not None:
+            had_witness = True
+            witness_program = script_public_key[2:]
+            if len(script_signature) > 0:
+                raise ScriptError("script sig is not blank on segwit input")
+            check_witness_program(
+                witness, witness_version, witness_program, witness_flags,
+                signature_for_hash_type_f, lock_time, expected_hash_type,
+                traceback_f, tx_sequence, tx_version)
+            stack = stack[-1:]
 
     if is_p2h and bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
         check_script_push_only(script_signature)
-        return verify_script(alt_script_signature, alt_script_public_key, signature_for_hash_type_f,
-                             lock_time, witness_flags & ~VERIFY_P2SH, expected_hash_type=expected_hash_type,
-                             traceback_f=traceback_f, witness=witness,
-                             tx_sequence=tx_sequence, tx_version=tx_version)
+        check_script(
+            alt_script_signature, alt_script_public_key, signature_for_hash_type_f, lock_time,
+            witness_flags & ~VERIFY_P2SH, expected_hash_type=expected_hash_type,
+            traceback_f=traceback_f, witness=witness, tx_sequence=tx_sequence, tx_version=tx_version)
+        return
 
     if (flags & VERIFY_WITNESS) and not had_witness and len(witness) > 0:
         raise ScriptError("witness unexpected")
@@ -430,4 +427,17 @@ def verify_script(script_signature, script_public_key, signature_for_hash_type_f
     if flags & VERIFY_CLEANSTACK and len(stack) != 1:
         raise ScriptError("stack not clean after evaulation")
 
-    return len(stack) > 0 and bool_from_script_bytes(stack[-1])
+    if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
+        raise ScriptError("eval false", errno.EVAL_FALSE)
+
+
+def verify_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,
+                  flags=None, expected_hash_type=None, traceback_f=None, witness=(),
+                  tx_sequence=None, tx_version=None):
+    try:
+        check_script(
+            script_signature, script_public_key, signature_for_hash_type_f, lock_time,
+            flags, expected_hash_type, traceback_f, witness, tx_sequence, tx_version)
+    except ScriptError:
+        return False
+    return True

@@ -10,6 +10,7 @@ from pycoin.serialize import h2b
 
 from pycoin.tx import TxIn, TxOut, Tx
 from pycoin.tx.script import ScriptError
+from pycoin.tx.script import errno
 from pycoin.tx.script import flags
 from pycoin.tx.script.tools import compile, disassemble
 from pycoin.tx.script.vm import eval_script
