@@ -116,200 +116,195 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
     op_count = 0
     require_minimal = flags & VERIFY_MINIMALDATA
 
-    try:
-        while pc < len(script):
-            old_pc = pc
-            opcode, data, pc = get_opcode(script, pc)
-            if traceback_f:
-                traceback_f(old_pc, opcode, data, stack, altstack, if_condition_stack, is_signature)
-            # deal with if_condition_stack first
-            all_if_true = functools.reduce(lambda x, y: x and y, if_condition_stack, True)
+    while pc < len(script):
+        old_pc = pc
+        opcode, data, pc = get_opcode(script, pc)
+        if traceback_f:
+            traceback_f(old_pc, opcode, data, stack, altstack, if_condition_stack, is_signature)
+        # deal with if_condition_stack first
+        all_if_true = functools.reduce(lambda x, y: x and y, if_condition_stack, True)
 
-            if opcode > opcodes.OP_16:
-                op_count += 1
-                if op_count > 201:
-                    raise ScriptError("script contains too many operations", errno.OP_COUNT)
+        if opcode > opcodes.OP_16:
+            op_count += 1
+            if op_count > 201:
+                raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
-            if len(stack) + len(altstack) > 1000:
-                raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
+        if len(stack) + len(altstack) > 1000:
+            raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
 
-            if opcode in BAD_OPCODE_VALUES:
-                raise ScriptError("invalid opcode %s at %d" % (
-                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
+        if opcode in BAD_OPCODE_VALUES:
+            raise ScriptError("invalid opcode %s at %d" % (
+                    opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
 
-            if opcode in DISABLED_OPCODE_VALUES:
-                raise ScriptError("invalid opcode %s at %d" % (
-                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.DISABLED_OPCODE)
+        if opcode in DISABLED_OPCODE_VALUES:
+            raise ScriptError("invalid opcode %s at %d" % (
+                    opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.DISABLED_OPCODE)
 
-            if data and len(data) > 520 and disallow_long_scripts:
-                raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
+        if data and len(data) > 520 and disallow_long_scripts:
+            raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
-            if len(if_condition_stack):
-                if opcode == opcodes.OP_ELSE:
-                    if_condition_stack[-1] = not if_condition_stack[-1]
-                    continue
-                if opcode == opcodes.OP_ENDIF:
-                    if_condition_stack.pop()
-                    continue
-                if not all_if_true and not (opcodes.OP_IF <= opcode <= opcodes.OP_ENDIF):
-                    continue
-
-            if opcode in (opcodes.OP_IF, opcodes.OP_NOTIF):
-                v = False
-                if all_if_true:
-                    if len(stack) < 1:
-                        raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
-                    item = stack.pop()
-                    if flags & VERIFY_MINIMALIF:
-                        if item not in (b'', b'\1'):
-                            raise ScriptError("non-minimal IF", errno.MINIMALIF)
-                    v = bool_from_script_bytes(item)
-                if opcode == opcodes.OP_NOTIF:
-                    v = not v
-                if_condition_stack.append(v)
+        if len(if_condition_stack):
+            if opcode == opcodes.OP_ELSE:
+                if_condition_stack[-1] = not if_condition_stack[-1]
+                continue
+            if opcode == opcodes.OP_ENDIF:
+                if_condition_stack.pop()
+                continue
+            if not all_if_true and not (opcodes.OP_IF <= opcode <= opcodes.OP_ENDIF):
                 continue
 
-            if opcode in BAD_OPCODES_OUTSIDE_IF:
-                raise ScriptError("invalid opcode %s at %d" % (
-                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
-
-            if opcode > 76 and opcode not in opcodes.INT_TO_OPCODE:
-                raise ScriptError("invalid opcode %s at %d" % (
-                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
-
-            if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
-                raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
-
-            if data is not None:
-                if require_minimal:
-                    verify_minimal_data(opcode, data)
-                stack.append(data)
-                continue
-
-            if opcode == opcodes.OP_CODESEPARATOR:
-                begin_code_hash = pc
-                continue
-
-            if opcode in MICROCODE_LOOKUP:
-                f = MICROCODE_LOOKUP[opcode]
-                if f.require_minimal:
-                    f(stack, require_minimal=require_minimal)
-                else:
-                    f(stack)
-
-                if opcode in VERIFY_OPS:
-                    v = bool_from_script_bytes(stack.pop())
-                    if not v:
-                        err = errno.EQUALVERIFY if opcode is opcodes.OP_EQUALVERIFY else errno.VERIFY
-                        raise ScriptError("VERIFY failed at %d" % (pc-1), err)
-                continue
-
-            if opcode == opcodes.OP_TOALTSTACK:
-                altstack.append(stack.pop())
-                continue
-
-            if opcode == opcodes.OP_FROMALTSTACK:
-                if len(altstack) < 1:
-                    raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
-                stack.append(altstack.pop())
-                continue
-
-            if opcode == opcodes.OP_1NEGATE:
-                stack.append(b'\x81')
-                continue
-
-            if opcode > opcodes.OP_1NEGATE and opcode <= opcodes.OP_16:
-                stack.append(int_to_bytes(opcode + 1 - opcodes.OP_1))
-                continue
-
-            if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
-                raise ScriptError(
-                    "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
-
-            if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
-                # Subset of script starting at the most recent codeseparator
-                op_checksig(stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:],
-                            flags)
-                if opcode == opcodes.OP_CHECKSIGVERIFY:
-                    if not bool_from_script_bytes(stack.pop()):
-                        raise ScriptError("VERIFY failed at %d" % (pc-1), errno.VERIFY)
-                continue
-
-            if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
-                # Subset of script starting at the most recent codeseparator
-                n_ops = op_checkmultisig(
-                    stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:], flags)
-                op_count += n_ops
-                if op_count > 201:
-                    raise ScriptError("script contains too many operations", errno.OP_COUNT)
-
-            if opcode == opcodes.OP_CHECKLOCKTIMEVERIFY:
-                if not (flags & VERIFY_CHECKLOCKTIMEVERIFY):
-                    if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
-                        raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
-                    continue
-                if lock_time is None:
-                    raise ScriptError("nSequence equal to 0xffffffff")
+        if opcode in (opcodes.OP_IF, opcodes.OP_NOTIF):
+            v = False
+            if all_if_true:
                 if len(stack) < 1:
-                    raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
-                if len(stack[-1]) > 5:
-                    raise ScriptError("script number overflow")
-                max_lock_time = int_from_script_bytes(stack[-1])
-                if max_lock_time < 0:
-                    raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
-                era_max = (max_lock_time >= 500000000)
-                era_lock_time = (lock_time >= 500000000)
-                if era_max != era_lock_time:
-                    raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
-                if max_lock_time > lock_time:
-                    raise ScriptError("nLockTime too soon")
-                continue
+                    raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
+                item = stack.pop()
+                if flags & VERIFY_MINIMALIF:
+                    if item not in (b'', b'\1'):
+                        raise ScriptError("non-minimal IF", errno.MINIMALIF)
+                v = bool_from_script_bytes(item)
+            if opcode == opcodes.OP_NOTIF:
+                v = not v
+            if_condition_stack.append(v)
+            continue
 
-            if opcode == opcodes.OP_CHECKSEQUENCEVERIFY:
-                if not (flags & VERIFY_CHECKSEQUENCEVERIFY):
-                    if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
-                        raise ScriptError("discouraging nops")
-                    continue
-                if len(stack) < 1:
-                    raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
-                if len(stack[-1]) > 5:
-                    raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
-                sequence = int_from_script_bytes(stack[-1], require_minimal=require_minimal)
-                if sequence < 0:
-                    raise ScriptError(
-                        "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
-                if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
-                    continue
-                # do the actual check
-                if tx_version < 2:
-                    raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
-                if tx_sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
-                    raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
+        if opcode in BAD_OPCODES_OUTSIDE_IF:
+            raise ScriptError("invalid opcode %s at %d" % (
+                    opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
 
-                # this mask is applied to extract lock-time from the sequence field
-                SEQUENCE_LOCKTIME_MASK = 0xffff
+        if opcode > 76 and opcode not in opcodes.INT_TO_OPCODE:
+            raise ScriptError("invalid opcode %s at %d" % (
+                    opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
 
-                mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
-                sequence_masked = sequence & mask
-                tx_sequence_masked = tx_sequence & mask
-                if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
-                         (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
-                        ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
-                         (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
-                    raise ScriptError("sequence numbers not comparable")
-                if sequence_masked > tx_sequence_masked:
-                    raise ScriptError("sequence number too small")
-                continue
+        if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
+            raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
 
-            # BRAIN DAMAGE -- does it always get down here for each verify op? I think not
+        if data is not None:
+            if require_minimal:
+                verify_minimal_data(opcode, data)
+            stack.append(data)
+            continue
+
+        if opcode == opcodes.OP_CODESEPARATOR:
+            begin_code_hash = pc
+            continue
+
+        if opcode in MICROCODE_LOOKUP:
+            f = MICROCODE_LOOKUP[opcode]
+            if f.require_minimal:
+                f(stack, require_minimal=require_minimal)
+            else:
+                f(stack)
+
             if opcode in VERIFY_OPS:
-                v = stack.pop()
-                if not bool_from_script_bytes(v):
-                    raise ScriptError("VERIFY failed at %d" % (pc-1), errno.VERIFY)
+                v = bool_from_script_bytes(stack.pop())
+                if not v:
+                    err = errno.EQUALVERIFY if opcode is opcodes.OP_EQUALVERIFY else errno.VERIFY
+                    raise ScriptError("VERIFY failed at %d" % (pc-1), err)
+            continue
 
-    except Exception:
-        logger.exception("script failed for unknown reason")
-        raise
+        if opcode == opcodes.OP_TOALTSTACK:
+            altstack.append(stack.pop())
+            continue
+
+        if opcode == opcodes.OP_FROMALTSTACK:
+            if len(altstack) < 1:
+                raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
+            stack.append(altstack.pop())
+            continue
+
+        if opcode == opcodes.OP_1NEGATE:
+            stack.append(b'\x81')
+            continue
+
+        if opcode > opcodes.OP_1NEGATE and opcode <= opcodes.OP_16:
+            stack.append(int_to_bytes(opcode + 1 - opcodes.OP_1))
+            continue
+
+        if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
+            raise ScriptError(
+                "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
+
+        if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
+            # Subset of script starting at the most recent codeseparator
+            op_checksig(stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:],
+                        flags)
+            if opcode == opcodes.OP_CHECKSIGVERIFY:
+                if not bool_from_script_bytes(stack.pop()):
+                    raise ScriptError("VERIFY failed at %d" % (pc-1), errno.VERIFY)
+            continue
+
+        if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
+            # Subset of script starting at the most recent codeseparator
+            n_ops = op_checkmultisig(
+                stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:], flags)
+            op_count += n_ops
+            if op_count > 201:
+                raise ScriptError("script contains too many operations", errno.OP_COUNT)
+
+        if opcode == opcodes.OP_CHECKLOCKTIMEVERIFY:
+            if not (flags & VERIFY_CHECKLOCKTIMEVERIFY):
+                if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+                    raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
+                continue
+            if lock_time is None:
+                raise ScriptError("nSequence equal to 0xffffffff")
+            if len(stack) < 1:
+                raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
+            if len(stack[-1]) > 5:
+                raise ScriptError("script number overflow")
+            max_lock_time = int_from_script_bytes(stack[-1])
+            if max_lock_time < 0:
+                raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
+            era_max = (max_lock_time >= 500000000)
+            era_lock_time = (lock_time >= 500000000)
+            if era_max != era_lock_time:
+                raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
+            if max_lock_time > lock_time:
+                raise ScriptError("nLockTime too soon")
+            continue
+
+        if opcode == opcodes.OP_CHECKSEQUENCEVERIFY:
+            if not (flags & VERIFY_CHECKSEQUENCEVERIFY):
+                if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+                    raise ScriptError("discouraging nops")
+                continue
+            if len(stack) < 1:
+                raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
+            if len(stack[-1]) > 5:
+                raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
+            sequence = int_from_script_bytes(stack[-1], require_minimal=require_minimal)
+            if sequence < 0:
+                raise ScriptError(
+                    "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
+            if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+                continue
+            # do the actual check
+            if tx_version < 2:
+                raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
+            if tx_sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+                raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
+
+            # this mask is applied to extract lock-time from the sequence field
+            SEQUENCE_LOCKTIME_MASK = 0xffff
+
+            mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
+            sequence_masked = sequence & mask
+            tx_sequence_masked = tx_sequence & mask
+            if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
+                     (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
+                    ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
+                     (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
+                raise ScriptError("sequence numbers not comparable")
+            if sequence_masked > tx_sequence_masked:
+                raise ScriptError("sequence number too small")
+            continue
+
+        # BRAIN DAMAGE -- does it always get down here for each verify op? I think not
+        if opcode in VERIFY_OPS:
+            v = stack.pop()
+            if not bool_from_script_bytes(v):
+                raise ScriptError("VERIFY failed at %d" % (pc-1), errno.VERIFY)
 
     if len(if_condition_stack):
         raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
