@@ -38,8 +38,6 @@ from ...intbytes import (
     bytes_from_int, bytes_to_ints, from_bytes, int_to_bytes
 )
 
-logger = logging.getLogger(__name__)
-
 
 def get_opcode(script, pc):
     """Step through the script, returning a tuple with the next opcode, the next

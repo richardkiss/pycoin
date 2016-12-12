@@ -27,7 +27,6 @@ THE SOFTWARE.
 """
 
 import functools
-import logging
 
 from hashlib import sha256
 
@@ -48,8 +47,6 @@ from .flags import (
 from .microcode import MICROCODE_LOOKUP
 from .tools import get_opcode, bin_script, bool_from_script_bytes, int_from_script_bytes
 
-
-logger = logging.getLogger(__name__)
 
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split())))
