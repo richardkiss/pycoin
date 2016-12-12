@@ -30,6 +30,7 @@ import binascii
 import hashlib
 import inspect
 
+from . import errno
 from . import ScriptError
 
 from .opcodes import INT_TO_OPCODE
@@ -48,7 +49,7 @@ do_OP_NOP6 = do_OP_NOP7 = do_OP_NOP8 = do_OP_NOP9 = do_OP_NOP10 = lambda s: None
 def nonnegative_int_from_script_bytes(b, require_minimal):
     v = int_from_script_bytes(b, require_minimal=require_minimal)
     if v < 0:
-        raise ScriptError("unexpectedly got negative value")
+        raise ScriptError("unexpectedly got negative value", errno.INVALID_STACK_OPERATION)
     return v
 
 
@@ -57,19 +58,19 @@ def do_OP_0(stack):
 
 
 def do_OP_RESERVED(stack):
-    raise ScriptError("OP_RESERVED encountered")
+    raise ScriptError("OP_RESERVED encountered", errno.BAD_OPCODE)
 
 
 def do_OP_VER(stack):
-    raise ScriptError("OP_VER encountered")
+    raise ScriptError("OP_VER encountered", errno.BAD_OPCODE)
 
 
 def do_OP_RESERVED1(stack):
-    raise ScriptError("OP_RESERVED1 encountered")
+    raise ScriptError("OP_RESERVED1 encountered", errno.BAD_OPCODE)
 
 
 def do_OP_RESERVED2(stack):
-    raise ScriptError("OP_RESERVED2 encountered")
+    raise ScriptError("OP_RESERVED2 encountered", errno.BAD_OPCODE)
 
 
 def do_OP_VERIFY(stack):
@@ -77,7 +78,7 @@ def do_OP_VERIFY(stack):
 
 
 def do_OP_RETURN(stack):
-    raise ScriptError("OP_RETURN encountered")
+    raise ScriptError("OP_RETURN encountered", errno.OP_RETURN)
 
 
 def do_OP_2DROP(stack):
@@ -415,7 +416,7 @@ do_OP_EQUALVERIFY = do_OP_EQUAL
 def pop_check_bounds(stack, require_minimal):
     v = stack.pop()
     if len(v) > 4:
-        raise ScriptError("overflow in binop")
+        raise ScriptError("overflow in binop", errno.UNKNOWN_ERROR)
     return int_from_script_bytes(v, require_minimal=require_minimal)
 
 

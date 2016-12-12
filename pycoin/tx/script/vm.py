@@ -54,9 +54,14 @@ logger = logging.getLogger(__name__)
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split())))
 
-INVALID_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+BAD_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in ("OP_VERIF OP_VERNOTIF ".split())))
+
+DISABLED_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL "
-    "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT OP_VERIF OP_VERNOTIF".split())))
+    "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
+
+BAD_OPCODES_OUTSIDE_IF = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+    "OP_NULLDATA OP_PUBKEYHASH OP_PUBKEY OP_INVALIDOPCODE".split())))
 
 NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
@@ -67,13 +72,13 @@ class Stack(list):
         try:
             return super(Stack, self).pop(*args, **kwargs)
         except IndexError:
-            raise ScriptError("pop from empty stack")
+            raise ScriptError("pop from empty stack", errno.INVALID_STACK_OPERATION)
 
     def __getitem__(self, *args, **kwargs):
         try:
             return super(Stack, self).__getitem__(*args, **kwargs)
         except IndexError:
-            raise ScriptError("getitem out of range")
+            raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)
 
 
 def verify_minimal_data(opcode, data):
@@ -95,7 +100,7 @@ def verify_minimal_data(opcode, data):
         return
     if 256 < ld < 65536 and opcode == opcodes.OP_PUSHDATA2:
         return
-    raise ScriptError("not minimal push of %s" % repr(data))
+    raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
 
 
 def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=[],
@@ -103,7 +108,7 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                 tx_sequence=None, tx_version=None):
     altstack = Stack()
     if disallow_long_scripts and len(script) > 10000:
-        return False
+        raise ScriptError("script too long", errno.SCRIPT_SIZE)
 
     pc = 0
     begin_code_hash = pc
@@ -123,17 +128,21 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
             if opcode > opcodes.OP_16:
                 op_count += 1
                 if op_count > 201:
-                    raise ScriptError("script contains too many operations")
+                    raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
             if len(stack) + len(altstack) > 1000:
-                raise ScriptError("stack has > 1000 items")
+                raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
 
-            if opcode in INVALID_OPCODE_VALUES:
+            if opcode in BAD_OPCODE_VALUES:
                 raise ScriptError("invalid opcode %s at %d" % (
-                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1))
+                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
+
+            if opcode in DISABLED_OPCODE_VALUES:
+                raise ScriptError("invalid opcode %s at %d" % (
+                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.DISABLED_OPCODE)
 
             if data and len(data) > 520 and disallow_long_scripts:
-                raise ScriptError("pushing too much data onto stack")
+                raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
             if len(if_condition_stack):
                 if opcode == opcodes.OP_ELSE:
@@ -148,22 +157,28 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
             if opcode in (opcodes.OP_IF, opcodes.OP_NOTIF):
                 v = False
                 if all_if_true:
+                    if len(stack) < 1:
+                        raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
                     item = stack.pop()
                     if flags & VERIFY_MINIMALIF:
                         if item not in (b'', b'\1'):
-                            raise ScriptError("non-minimal IF")
+                            raise ScriptError("non-minimal IF", errno.MINIMALIF)
                     v = bool_from_script_bytes(item)
                 if opcode == opcodes.OP_NOTIF:
                     v = not v
                 if_condition_stack.append(v)
                 continue
 
+            if opcode in BAD_OPCODES_OUTSIDE_IF:
+                raise ScriptError("invalid opcode %s at %d" % (
+                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
+
             if opcode > 76 and opcode not in opcodes.INT_TO_OPCODE:
                 raise ScriptError("invalid opcode %s at %d" % (
-                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1))
+                        opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
 
             if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
-                raise ScriptError("discouraging nops")
+                raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
 
             if data is not None:
                 if require_minimal:
@@ -185,7 +200,8 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                 if opcode in VERIFY_OPS:
                     v = bool_from_script_bytes(stack.pop())
                     if not v:
-                        raise ScriptError("VERIFY failed at %d" % (pc-1))
+                        err = errno.EQUALVERIFY if opcode is opcodes.OP_EQUALVERIFY else errno.VERIFY
+                        raise ScriptError("VERIFY failed at %d" % (pc-1), err)
                 continue
 
             if opcode == opcodes.OP_TOALTSTACK:
@@ -193,6 +209,8 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                 continue
 
             if opcode == opcodes.OP_FROMALTSTACK:
+                if len(altstack) < 1:
+                    raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
                 stack.append(altstack.pop())
                 continue
 
@@ -205,7 +223,8 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                 continue
 
             if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
-                raise ScriptError("%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode])
+                raise ScriptError(
+                    "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
 
             if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
                 # Subset of script starting at the most recent codeseparator
@@ -213,7 +232,7 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                             flags)
                 if opcode == opcodes.OP_CHECKSIGVERIFY:
                     if not bool_from_script_bytes(stack.pop()):
-                        raise ScriptError("VERIFY failed at %d" % (pc-1))
+                        raise ScriptError("VERIFY failed at %d" % (pc-1), errno.VERIFY)
                 continue
 
             if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
@@ -222,12 +241,12 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                     stack, signature_for_hash_type_f, expected_hash_type, script[begin_code_hash:], flags)
                 op_count += n_ops
                 if op_count > 201:
-                    raise ScriptError("script contains too many operations")
+                    raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
             if opcode == opcodes.OP_CHECKLOCKTIMEVERIFY:
                 if not (flags & VERIFY_CHECKLOCKTIMEVERIFY):
                     if (flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
-                        raise ScriptError("discouraging nops")
+                        raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
                     continue
                 if lock_time is None:
                     raise ScriptError("nSequence equal to 0xffffffff")
@@ -252,17 +271,18 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                         raise ScriptError("discouraging nops")
                     continue
                 if len(stack) < 1:
-                    raise ScriptError("empty stack on CHECKSEQUENCEVERIFY")
+                    raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
                 if len(stack[-1]) > 5:
-                    raise ScriptError("script number overflow")
-                sequence = int_from_script_bytes(stack[-1])
+                    raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
+                sequence = int_from_script_bytes(stack[-1], require_minimal=require_minimal)
                 if sequence < 0:
-                    raise ScriptError("top stack item negative on CHECKSEQUENCEVERIFY")
+                    raise ScriptError(
+                        "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
                 if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
                     continue
                 # do the actual check
                 if tx_version < 2:
-                    raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version")
+                    raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
                 if tx_sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
                     raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
 
@@ -285,19 +305,17 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
             if opcode in VERIFY_OPS:
                 v = stack.pop()
                 if not bool_from_script_bytes(v):
-                    raise ScriptError("VERIFY failed at %d" % (pc-1))
+                    raise ScriptError("VERIFY failed at %d" % (pc-1), errno.VERIFY)
 
     except Exception:
         logger.exception("script failed for unknown reason")
         raise
 
     if len(if_condition_stack):
-        raise ScriptError("missing ENDIF")
+        raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
 
     if len(stack) + len(altstack) > 1000:
-        raise ScriptError("stack has > 1000 items")
-
-    return len(stack) != 0
+        raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
 
 
 def check_script_push_only(script):
@@ -305,7 +323,7 @@ def check_script_push_only(script):
     while pc < len(script):
         opcode, data, pc = get_opcode(script, pc)
         if opcode > opcodes.OP_16:
-            raise ScriptError("signature has non-push opcodes")
+            raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 
 
 def is_pay_to_script_hash(script_public_key):
@@ -334,38 +352,39 @@ def check_witness_program(
         l = len(script_signature)
         if l == 32:
             if len(witness) == 0:
-                raise ScriptError("witness program empty")
+                raise ScriptError("witness program empty", errno.WITNESS_PROGRAM_WITNESS_EMPTY)
             script_public_key = witness[-1]
             stack = Stack(witness[:-1])
             if sha256(script_public_key).digest() != script_signature:
-                raise ScriptError("witness program mismatch")
+                raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
         elif l == 20:
             # special case for pay-to-pubkeyhash; signature + pubkey in witness
             if len(witness) != 2:
-                raise ScriptError("witness program mismatch")
+                raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
             # "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(script_signature))
             script_public_key = b'v\xa9' + bin_script([script_signature]) + b'\x88\xac'
             stack = Stack(witness)
         else:
-            raise ScriptError("witness program wrong length")
+            raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
     elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
-        raise ScriptError("this version witness program not yet supported")
+        raise ScriptError(
+            "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
     else:
         return
 
     for s in stack:
         if len(s) > 520:
-            raise ScriptError("pushing too much data onto stack")
+            raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
     eval_script(script_public_key, signature_for_hash_type_f.witness, lock_time, expected_hash_type,
                 stack, traceback_f=traceback_f, flags=flags, is_signature=True,
                 tx_sequence=tx_sequence, tx_version=tx_version)
 
-    if len(stack) != 1:
-        raise ScriptError("stack not clean after evaulation")
-
     if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
         raise ScriptError("eval false", errno.EVAL_FALSE)
+
+    if len(stack) != 1:
+        raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
 
 
 def check_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,
@@ -406,7 +425,8 @@ def check_script(script_signature, script_public_key, signature_for_hash_type_f,
             had_witness = True
             witness_program = script_public_key[2:]
             if len(script_signature) > 0:
-                raise ScriptError("script sig is not blank on segwit input")
+                err = errno.WITNESS_MALLEATED if flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
+                raise ScriptError("script sig is not blank on segwit input", err)
             check_witness_program(
                 witness, witness_version, witness_program, witness_flags,
                 signature_for_hash_type_f, lock_time, expected_hash_type,
@@ -422,10 +442,10 @@ def check_script(script_signature, script_public_key, signature_for_hash_type_f,
         return
 
     if (flags & VERIFY_WITNESS) and not had_witness and len(witness) > 0:
-        raise ScriptError("witness unexpected")
+        raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
 
     if flags & VERIFY_CLEANSTACK and len(stack) != 1:
-        raise ScriptError("stack not clean after evaulation")
+        raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
 
     if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
         raise ScriptError("eval false", errno.EVAL_FALSE)

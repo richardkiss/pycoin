@@ -14,7 +14,7 @@ from pycoin.tx.script import errno
 from pycoin.tx.script import flags
 from pycoin.tx.script.tools import compile, disassemble
 from pycoin.tx.script.vm import eval_script
-from pycoin.tx.script.vm import verify_script
+from pycoin.tx.script.vm import check_script
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
@@ -42,11 +42,13 @@ def build_spending_tx(script_in_bin, credit_tx):
     return spend_tx
 
 
-def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expected, comment):
+def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expected, actual, message, comment):
     return
     print()
     print(flags_string)
     print("EXPECTED: %s" % expected)
+    print("ACTUAL: %s" % actual)
+    print("MESSAGE: %s" % message)
     print(comment)
     print(disassemble(compile(script_in)))
     print(disassemble(compile(script_out)))
@@ -62,14 +64,41 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
         pdb.set_trace()
     print("test failed: '%s' '%s' : %s  %s" % (script_in, script_out, comment, flags_string))
     try:
-        r = spend_tx.is_signature_ok(tx_in_idx=0, traceback_f=tbf, flags=flags)
+        check_solution(spend_tx, tx_in_idx=0, traceback_f=tbf, flags=flags)
     except Exception as ex:
         print(ex)
     try:
-        r = spend_tx.is_signature_ok(tx_in_idx=0, traceback_f=tbf, flags=flags)
+        check_solution(spend_tx, tx_in_idx=0, traceback_f=tbf, flags=flags)
     except Exception as ex:
         print(ex)
         import pdb; pdb.set_trace()
+
+
+def check_solution(self, tx_in_idx, flags, traceback_f=None):
+    tx_out_script = self.unspents[tx_in_idx].script
+
+    def signature_for_hash_type_f(hash_type, script):
+        return self.signature_hash(script, tx_in_idx, hash_type)
+
+    def witness_signature_for_hash_type(hash_type, script):
+        return self.signature_for_hash_type_segwit(script, tx_in_idx, hash_type)
+    witness_signature_for_hash_type.skip_delete = True
+
+    signature_for_hash_type_f.witness = witness_signature_for_hash_type
+
+    tx_version = self.version
+
+    # code that should be in TxIn
+    def tx_in_check_script(self, tx_out_script, signature_for_hash_type_f, lock_time, expected_hash_type=None,
+                           traceback_f=None, flags=None, tx_version=None):
+        if self.sequence == 0xffffffff:
+            lock_time = None
+        check_script(self.script, tx_out_script, signature_for_hash_type_f, lock_time=lock_time,
+                     flags=flags, expected_hash_type=expected_hash_type, traceback_f=traceback_f,
+                     witness=self.witness, tx_sequence=self.sequence, tx_version=tx_version)
+
+    tx_in_check_script(self.txs_in[tx_in_idx], tx_out_script, signature_for_hash_type_f, lock_time=self.lock_time,
+                       flags=flags, traceback_f=traceback_f, tx_version=self.version)
 
 
 def make_script_test(script_in, script_out, flags_string, comment, expected, coin_value, script_witness):
@@ -82,16 +111,19 @@ def make_script_test(script_in, script_out, flags_string, comment, expected, coi
             credit_tx = build_credit_tx(script_out_bin, coin_value)
             spend_tx = build_spending_tx(script_in_bin, credit_tx)
             spend_tx.txs_in[0].witness = script_witness_bin
-            r = spend_tx.is_signature_ok(tx_in_idx=0, flags=flags)
-        except ScriptError:
-            r = False
+            msg = ''
+            check_solution(spend_tx, tx_in_idx=0, flags=flags)
+            r = 0
+        except ScriptError as se:
+            r = se.error_code()
+            msg = se.args[0]
         except:
             r = -1
         # for now, just deal with 0 versus nonzero
-        expect_valid = (expected == 'OK')
-        if r != expect_valid:
-            dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expected, comment)
-        self.assertEqual(r, expect_valid)
+        expect_error = getattr(errno, expected)
+        if r != expect_error:
+            dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expected, r, msg, comment)
+        self.assertEqual(r, expect_error)
     return f
 
 def items_from_json(path):

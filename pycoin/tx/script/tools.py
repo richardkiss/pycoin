@@ -32,6 +32,7 @@ import logging
 import struct
 
 from . import ScriptError
+from . import errno
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
 from ...intbytes import (
     bytes_from_int, bytes_to_ints, from_bytes, int_to_bytes
@@ -60,7 +61,7 @@ def get_opcode(script, pc):
             pc += 4
         data = script[pc:pc+size]
         if len(data) < size:
-            raise ScriptError("unexpected end of data when literal expected")
+            raise ScriptError("unexpected end of data when literal expected", errno.BAD_OPCODE)
         pc += size
     return opcode, data, pc
 
@@ -83,7 +84,7 @@ def int_from_script_bytes(s, require_minimal=False):
     if require_minimal:
         if v == 0:
             if len(s) <= 1 or ((s[1] & 0x80) == 0):
-                raise ScriptError("non-minimally encoded")
+                raise ScriptError("non-minimally encoded", errno.UNKNOWN_ERROR)
     is_negative = ((i & 0x80) > 0)
     for b in s[1:]:
         v <<= 8
