@@ -5,7 +5,7 @@ import os
 
 from pycoin.block import Block, BlockHeader
 from pycoin.blockchain.BlockChain import BlockChain
-from pycoin.serialize import h2b, b2h_rev
+from pycoin.serialize import h2b
 
 
 logger = logging.getLogger(__file__)
@@ -107,7 +107,7 @@ def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, 
     f = Blockfiles(base_dir, start_info)
     for initial_location in block_info_iterator(start_info, base_dir):
         f.jump_to(initial_location)
-        initial_header = BlockHeader.parse(f)
+        BlockHeader.parse(f)
         break
     current_state = []
 

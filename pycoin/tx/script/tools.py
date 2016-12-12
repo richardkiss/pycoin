@@ -28,7 +28,6 @@ THE SOFTWARE.
 
 import binascii
 import io
-import logging
 import struct
 
 from . import ScriptError
