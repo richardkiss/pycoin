@@ -316,23 +316,21 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
     while pc < len(script):
         old_pc = pc
         opcode, data, pc = get_opcode(script, pc)
-        if data and len(data) > 520 and disallow_long_scripts:
-            raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
         if traceback_f:
             traceback_f(old_pc, opcode, data, stack, altstack, if_condition_stack, is_signature)
+
+        if data and len(data) > 520 and disallow_long_scripts:
+            raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
         if opcode > opcodes.OP_16:
             op_count += 1
-            if op_count > 201:
-                raise ScriptError("script contains too many operations", errno.OP_COUNT)
-        if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
-            n_ops = stack[-1:]
+        stack_top = stack[-1] if stack else b''
         eval_instruction(ss, old_pc)
 
         if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
-            op_count += int_from_script_bytes(n_ops[-1])
-            if op_count > 201:
-                raise ScriptError("script contains too many operations", errno.OP_COUNT)
+            op_count += int_from_script_bytes(stack_top)
+        if op_count > 201:
+            raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
     if len(if_condition_stack):
         raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
