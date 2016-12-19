@@ -117,7 +117,7 @@ class ScriptState(object):
         self.pc = 0  # ### BRAIN DAMAGE
 
 
-def eval_instruction(ss, pc, disallow_long_scripts):
+def eval_instruction(ss, pc):
     opcode, data, new_pc = get_opcode(ss.script, pc)
     ss.pc = new_pc
 
@@ -135,9 +135,6 @@ def eval_instruction(ss, pc, disallow_long_scripts):
     if opcode in DISABLED_OPCODE_VALUES:
         raise ScriptError("invalid opcode %s at %d" % (
                 opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.DISABLED_OPCODE)
-
-    if data and len(data) > 520 and disallow_long_scripts:
-        raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
     if len(ss.if_condition_stack):
         if opcode == opcodes.OP_ELSE:
@@ -319,6 +316,9 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
     while pc < len(script):
         old_pc = pc
         opcode, data, pc = get_opcode(script, pc)
+        if data and len(data) > 520 and disallow_long_scripts:
+            raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
+
         if traceback_f:
             traceback_f(old_pc, opcode, data, stack, altstack, if_condition_stack, is_signature)
         if opcode > opcodes.OP_16:
@@ -327,7 +327,8 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
                 raise ScriptError("script contains too many operations", errno.OP_COUNT)
         if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
             n_ops = stack[-1:]
-        eval_instruction(ss, old_pc, disallow_long_scripts=disallow_long_scripts)
+        eval_instruction(ss, old_pc)
+
         if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
             op_count += int_from_script_bytes(n_ops[-1])
             if op_count > 201:
