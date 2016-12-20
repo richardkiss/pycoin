@@ -173,6 +173,13 @@ def make_instruction_lookup():
         verify(ss)
     instruction_lookup[opcodes.OP_CHECKMULTISIGVERIFY] = f
 
+
+    def discourage_nops(ss):
+        if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
+            raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
+    for opcode in NOP_SET:
+        instruction_lookup[opcode] = discourage_nops
+
     def check_locktime_verify(ss):
         if not (ss.flags & VERIFY_CHECKLOCKTIMEVERIFY):
             if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
@@ -233,19 +240,6 @@ def make_instruction_lookup():
     instruction_lookup[opcodes.OP_CHECKSEQUENCEVERIFY] = check_sequence_verify
     return instruction_lookup
 
-    if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
-        raise ScriptError(
-            "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
-
-    if opcode in VERIFY_OPS:
-        v = bool_from_script_bytes(ss.stack.pop())
-        if not v:
-            err = errno.EQUALVERIFY if opcode is opcodes.OP_EQUALVERIFY else errno.VERIFY
-            raise ScriptError("VERIFY failed at %d" % (pc-1), err)
-
-
-        
-    return instruction_lookup
 
 DEFAULT_MICROCODE = make_instruction_lookup()
 
@@ -274,9 +268,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
             return
         if not all_if_true and not (opcodes.OP_IF <= opcode <= opcodes.OP_ENDIF):
             return
-
-    if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
-        raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
 
     f(ss)
 
