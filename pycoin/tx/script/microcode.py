@@ -51,10 +51,6 @@ def nonnegative_int_from_script_bytes(b, require_minimal):
     return v
 
 
-def do_OP_0(stack):
-    stack.append(b'')
-
-
 def do_OP_RESERVED(stack):
     raise ScriptError("OP_RESERVED encountered", errno.BAD_OPCODE)
 

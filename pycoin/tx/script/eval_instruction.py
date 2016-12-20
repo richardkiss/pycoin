@@ -87,36 +87,45 @@ def make_instruction_lookup():
         bad_opcode.outside_conditional = even_outside_conditional
         return bad_opcode
 
-    BAD_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in ("OP_VERIF OP_VERNOTIF ".split())))
-    for opcode in BAD_OPCODE_VALUES:
-        instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=True)
-
     DISABLED_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
         "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL "
         "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
 
-    for opcode in DISABLED_OPCODE_VALUES:
-        instruction_lookup[opcode] = make_bad_opcode(
-            opcode, even_outside_conditional=True, err=errno.DISABLED_OPCODE)
-
     BAD_OPCODES_OUTSIDE_IF = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
         "OP_NULLDATA OP_PUBKEYHASH OP_PUBKEY OP_INVALIDOPCODE".split())))
 
-    for opcode in BAD_OPCODES_OUTSIDE_IF:
-        instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=False)
-
     NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
         "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
+
+    def make_from_microcode(f):
+        if f.require_minimal:
+            def the_f(ss):
+                return f(ss.stack, require_minimal=ss.flags & VERIFY_MINIMALDATA)
+        else:
+            def the_f(ss):
+                return f(ss.stack)
+        return the_f
+    for opcode in MICROCODE_LOOKUP.keys():
+        instruction_lookup[opcode] = make_from_microcode(MICROCODE_LOOKUP[opcode])
+
+    BAD_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in ("OP_VERIF OP_VERNOTIF ".split())))
+    for opcode in BAD_OPCODE_VALUES:
+        instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=True)
 
     for opcode in range(76, 256):
         if opcode not in opcodes.INT_TO_OPCODE:
             instruction_lookup[opcode] = make_bad_opcode(opcode)
 
+    for opcode in DISABLED_OPCODE_VALUES:
+        instruction_lookup[opcode] = make_bad_opcode(
+            opcode, even_outside_conditional=True, err=errno.DISABLED_OPCODE)
+
+    for opcode in BAD_OPCODES_OUTSIDE_IF:
+        instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=False)
+
     return instruction_lookup
 
 DEFAULT_MICROCODE = make_instruction_lookup()
-
-
 
 
 def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
@@ -173,13 +182,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
     if opcode == opcodes.OP_CODESEPARATOR:
         ss.begin_code_hash = pc + 1
         return
-
-    if opcode in MICROCODE_LOOKUP:
-        f = MICROCODE_LOOKUP[opcode]
-        if f.require_minimal:
-            f(ss.stack, require_minimal=require_minimal)
-        else:
-            f(ss.stack)
 
     if opcode == opcodes.OP_TOALTSTACK:
         ss.altstack.append(ss.stack.pop())
