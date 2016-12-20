@@ -48,15 +48,6 @@ from .tools import get_opcode, bool_from_script_bytes, int_from_script_bytes
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split())))
 
-BAD_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in ("OP_VERIF OP_VERNOTIF ".split())))
-
-DISABLED_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL "
-    "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
-
-BAD_OPCODES_OUTSIDE_IF = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_NULLDATA OP_PUBKEYHASH OP_PUBKEY OP_INVALIDOPCODE".split())))
-
 NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
 
@@ -105,7 +96,8 @@ def make_instruction_lookup():
         "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
 
     for opcode in DISABLED_OPCODE_VALUES:
-        instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=True, err=errno.DISABLED_OPCODE)
+        instruction_lookup[opcode] = make_bad_opcode(
+            opcode, even_outside_conditional=True, err=errno.DISABLED_OPCODE)
 
     BAD_OPCODES_OUTSIDE_IF = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
         "OP_NULLDATA OP_PUBKEYHASH OP_PUBKEY OP_INVALIDOPCODE".split())))
@@ -115,6 +107,10 @@ def make_instruction_lookup():
 
     NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
         "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
+
+    for opcode in range(76, 256):
+        if opcode not in opcodes.INT_TO_OPCODE:
+            instruction_lookup[opcode] = make_bad_opcode(opcode)
 
     return instruction_lookup
 
@@ -165,10 +161,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
         ss.if_condition_stack.append(v)
         return
 
-    if opcode > 76 and opcode not in opcodes.INT_TO_OPCODE:
-        raise ScriptError("invalid opcode %s at %d" % (
-                opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), pc-1), errno.BAD_OPCODE)
-
     if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
         raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
 
@@ -189,30 +181,19 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
         else:
             f(ss.stack)
 
-        if opcode in VERIFY_OPS:
-            v = bool_from_script_bytes(ss.stack.pop())
-            if not v:
-                err = errno.EQUALVERIFY if opcode is opcodes.OP_EQUALVERIFY else errno.VERIFY
-                raise ScriptError("VERIFY failed at %d" % (pc-1), err)
-            return
-
     if opcode == opcodes.OP_TOALTSTACK:
         ss.altstack.append(ss.stack.pop())
-        return
 
     if opcode == opcodes.OP_FROMALTSTACK:
         if len(ss.altstack) < 1:
             raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
         ss.stack.append(ss.altstack.pop())
-        return
 
     if opcode == opcodes.OP_1NEGATE:
         ss.stack.append(b'\x81')
-        return
 
     if opcode > opcodes.OP_1NEGATE and opcode <= opcodes.OP_16:
         ss.stack.append(int_to_bytes(opcode + 1 - opcodes.OP_1))
-        return
 
     if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
         raise ScriptError(
@@ -223,10 +204,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
         ss.expected_hash_type = None  # ### BRAIN DAMAGE
         op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
                     ss.script[ss.begin_code_hash:], ss.flags)
-        if opcode == opcodes.OP_CHECKSIGVERIFY:
-            if not bool_from_script_bytes(ss.stack.pop()):
-                raise ScriptError("VERIFY failed at %d" % (pc-1), errno.VERIFY)
-        return
 
     if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
         # Subset of script starting at the most recent codeseparator
@@ -254,7 +231,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
             raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
         if max_lock_time > ss.lock_time:
             raise ScriptError("nLockTime too soon")
-        return
 
     if opcode == opcodes.OP_CHECKSEQUENCEVERIFY:
         if not (ss.flags & VERIFY_CHECKSEQUENCEVERIFY):
@@ -290,10 +266,9 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
             raise ScriptError("sequence numbers not comparable")
         if sequence_masked > tx_sequence_masked:
             raise ScriptError("sequence number too small")
-        return
 
-    # BRAIN DAMAGE -- does it always get down here for each verify op? I think not
     if opcode in VERIFY_OPS:
-        v = ss.stack.pop()
-        if not bool_from_script_bytes(v):
-            raise ScriptError("VERIFY failed at %d" % (pc-1), errno.VERIFY)
+        v = bool_from_script_bytes(ss.stack.pop())
+        if not v:
+            err = errno.EQUALVERIFY if opcode is opcodes.OP_EQUALVERIFY else errno.VERIFY
+            raise ScriptError("VERIFY failed at %d" % (pc-1), err)
