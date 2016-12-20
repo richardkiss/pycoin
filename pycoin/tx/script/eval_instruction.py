@@ -173,13 +173,7 @@ def make_instruction_lookup():
         verify(ss)
     instruction_lookup[opcodes.OP_CHECKMULTISIGVERIFY] = f
 
-    return instruction_lookup
-
-    if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
-        raise ScriptError(
-            "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
-
-    if opcode == opcodes.OP_CHECKLOCKTIMEVERIFY:
+    def check_locktime_verify(ss):
         if not (ss.flags & VERIFY_CHECKLOCKTIMEVERIFY):
             if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
                 raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
@@ -199,16 +193,18 @@ def make_instruction_lookup():
             raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
         if max_lock_time > ss.lock_time:
             raise ScriptError("nLockTime too soon")
+    instruction_lookup[opcodes.OP_CHECKLOCKTIMEVERIFY] = check_locktime_verify
 
-    if opcode == opcodes.OP_CHECKSEQUENCEVERIFY:
+    def check_sequence_verify(ss):
         if not (ss.flags & VERIFY_CHECKSEQUENCEVERIFY):
             if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
-                raise ScriptError("discouraging nops")
+                raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
             return
         if len(ss.stack) < 1:
             raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
         if len(ss.stack[-1]) > 5:
             raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
+        require_minimal = ss.flags & VERIFY_MINIMALDATA
         sequence = int_from_script_bytes(ss.stack[-1], require_minimal=require_minimal)
         if sequence < 0:
             raise ScriptError(
@@ -234,6 +230,12 @@ def make_instruction_lookup():
             raise ScriptError("sequence numbers not comparable")
         if sequence_masked > tx_sequence_masked:
             raise ScriptError("sequence number too small")
+    instruction_lookup[opcodes.OP_CHECKSEQUENCEVERIFY] = check_sequence_verify
+    return instruction_lookup
+
+    if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
+        raise ScriptError(
+            "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
 
     if opcode in VERIFY_OPS:
         v = bool_from_script_bytes(ss.stack.pop())
@@ -273,6 +275,9 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
         if not all_if_true and not (opcodes.OP_IF <= opcode <= opcodes.OP_ENDIF):
             return
 
+    if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
+        raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
+
     f(ss)
 
     if opcode in (opcodes.OP_IF, opcodes.OP_NOTIF):
@@ -289,9 +294,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
             v = not v
         ss.if_condition_stack.append(v)
 
-    if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
-        raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
-
     if data is not None:
         if require_minimal:
             verify_minimal_data(opcode, data)
@@ -303,62 +305,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
     if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
         raise ScriptError(
             "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
-
-    if opcode == opcodes.OP_CHECKLOCKTIMEVERIFY:
-        if not (ss.flags & VERIFY_CHECKLOCKTIMEVERIFY):
-            if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
-                raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
-            return
-        if ss.lock_time is None:
-            raise ScriptError("nSequence equal to 0xffffffff")
-        if len(ss.stack) < 1:
-            raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
-        if len(ss.stack[-1]) > 5:
-            raise ScriptError("script number overflow")
-        max_lock_time = int_from_script_bytes(ss.stack[-1])
-        if max_lock_time < 0:
-            raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
-        era_max = (max_lock_time >= 500000000)
-        era_lock_time = (ss.lock_time >= 500000000)
-        if era_max != era_lock_time:
-            raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
-        if max_lock_time > ss.lock_time:
-            raise ScriptError("nLockTime too soon")
-
-    if opcode == opcodes.OP_CHECKSEQUENCEVERIFY:
-        if not (ss.flags & VERIFY_CHECKSEQUENCEVERIFY):
-            if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
-                raise ScriptError("discouraging nops")
-            return
-        if len(ss.stack) < 1:
-            raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
-        if len(ss.stack[-1]) > 5:
-            raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
-        sequence = int_from_script_bytes(ss.stack[-1], require_minimal=require_minimal)
-        if sequence < 0:
-            raise ScriptError(
-                "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
-        if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
-            return
-        # do the actual check
-        if ss.tx_version < 2:
-            raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
-        if ss.tx_sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
-            raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
-
-        # this mask is applied to extract lock-time from the sequence field
-        SEQUENCE_LOCKTIME_MASK = 0xffff
-
-        mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
-        sequence_masked = sequence & mask
-        tx_sequence_masked = ss.tx_sequence & mask
-        if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
-                 (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
-                ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
-                 (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
-            raise ScriptError("sequence numbers not comparable")
-        if sequence_masked > tx_sequence_masked:
-            raise ScriptError("sequence number too small")
 
     if opcode in VERIFY_OPS:
         v = bool_from_script_bytes(ss.stack.pop())
