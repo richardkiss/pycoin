@@ -46,7 +46,7 @@ from .tools import get_opcode, bool_from_script_bytes, int_from_script_bytes
 
 
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split())))
+    "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_VERIFY".split())))
 
 NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
@@ -72,6 +72,12 @@ def verify_minimal_data(opcode, data):
     if 256 < ld < 65536 and opcode == opcodes.OP_PUSHDATA2:
         return
     raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
+
+
+def verify(ss):
+    v = bool_from_script_bytes(ss.stack.pop())
+    if not v:
+        raise ScriptError("VERIFY failed at %d" % (ss.pc-1), errno.VERIFY)
 
 
 def make_instruction_lookup():
@@ -123,6 +129,120 @@ def make_instruction_lookup():
     for opcode in BAD_OPCODES_OUTSIDE_IF:
         instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=False)
 
+    def f(ss):
+        ss.begin_code_hash = ss.pc
+    instruction_lookup[opcodes.OP_CODESEPARATOR] = f
+
+    def f(ss):
+        ss.altstack.append(ss.stack.pop())
+    instruction_lookup[opcodes.OP_TOALTSTACK] = f
+
+    def f(ss):
+        if len(ss.altstack) < 1:
+            raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
+        ss.stack.append(ss.altstack.pop())
+    instruction_lookup[opcodes.OP_FROMALTSTACK] = f
+
+    def f(ss):
+        ss.stack.append(b'\x81')
+    instruction_lookup[opcodes.OP_1NEGATE] = f
+
+    def f(ss):
+        ss.expected_hash_type = None  # ### BRAIN DAMAGE
+        op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
+                    ss.script[ss.begin_code_hash:], ss.flags)
+    instruction_lookup[opcodes.OP_CHECKSIG] = f
+
+    def f(ss):
+        ss.expected_hash_type = None  # ### BRAIN DAMAGE
+        op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
+                    ss.script[ss.begin_code_hash:], ss.flags)
+        verify(ss)
+    instruction_lookup[opcodes.OP_CHECKSIGVERIFY] = f
+
+    def f(ss):
+        ss.expected_hash_type = None  # ### BRAIN DAMAGE
+        op_checkmultisig(ss.stack, ss.signature_f,
+                         ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
+    instruction_lookup[opcodes.OP_CHECKMULTISIG] = f
+
+    def f(ss):
+        ss.expected_hash_type = None  # ### BRAIN DAMAGE
+        op_checkmultisig(ss.stack, ss.signature_f,
+                         ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
+        verify(ss)
+    instruction_lookup[opcodes.OP_CHECKMULTISIGVERIFY] = f
+
+    return instruction_lookup
+
+    if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
+        raise ScriptError(
+            "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
+
+    if opcode == opcodes.OP_CHECKLOCKTIMEVERIFY:
+        if not (ss.flags & VERIFY_CHECKLOCKTIMEVERIFY):
+            if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+                raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
+            return
+        if ss.lock_time is None:
+            raise ScriptError("nSequence equal to 0xffffffff")
+        if len(ss.stack) < 1:
+            raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
+        if len(ss.stack[-1]) > 5:
+            raise ScriptError("script number overflow")
+        max_lock_time = int_from_script_bytes(ss.stack[-1])
+        if max_lock_time < 0:
+            raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
+        era_max = (max_lock_time >= 500000000)
+        era_lock_time = (ss.lock_time >= 500000000)
+        if era_max != era_lock_time:
+            raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
+        if max_lock_time > ss.lock_time:
+            raise ScriptError("nLockTime too soon")
+
+    if opcode == opcodes.OP_CHECKSEQUENCEVERIFY:
+        if not (ss.flags & VERIFY_CHECKSEQUENCEVERIFY):
+            if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+                raise ScriptError("discouraging nops")
+            return
+        if len(ss.stack) < 1:
+            raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
+        if len(ss.stack[-1]) > 5:
+            raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
+        sequence = int_from_script_bytes(ss.stack[-1], require_minimal=require_minimal)
+        if sequence < 0:
+            raise ScriptError(
+                "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
+        if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+            return
+        # do the actual check
+        if ss.tx_version < 2:
+            raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
+        if ss.tx_sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+            raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
+
+        # this mask is applied to extract lock-time from the sequence field
+        SEQUENCE_LOCKTIME_MASK = 0xffff
+
+        mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
+        sequence_masked = sequence & mask
+        tx_sequence_masked = ss.tx_sequence & mask
+        if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
+                 (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
+                ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
+                 (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
+            raise ScriptError("sequence numbers not comparable")
+        if sequence_masked > tx_sequence_masked:
+            raise ScriptError("sequence number too small")
+
+    if opcode in VERIFY_OPS:
+        v = bool_from_script_bytes(ss.stack.pop())
+        if not v:
+            err = errno.EQUALVERIFY if opcode is opcodes.OP_EQUALVERIFY else errno.VERIFY
+            raise ScriptError("VERIFY failed at %d" % (pc-1), err)
+
+
+        
     return instruction_lookup
 
 DEFAULT_MICROCODE = make_instruction_lookup()
@@ -168,7 +288,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
         if opcode == opcodes.OP_NOTIF:
             v = not v
         ss.if_condition_stack.append(v)
-        return
 
     if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
         raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
@@ -177,22 +296,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
         if require_minimal:
             verify_minimal_data(opcode, data)
         ss.stack.append(data)
-        return
-
-    if opcode == opcodes.OP_CODESEPARATOR:
-        ss.begin_code_hash = pc + 1
-        return
-
-    if opcode == opcodes.OP_TOALTSTACK:
-        ss.altstack.append(ss.stack.pop())
-
-    if opcode == opcodes.OP_FROMALTSTACK:
-        if len(ss.altstack) < 1:
-            raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
-        ss.stack.append(ss.altstack.pop())
-
-    if opcode == opcodes.OP_1NEGATE:
-        ss.stack.append(b'\x81')
 
     if opcode > opcodes.OP_1NEGATE and opcode <= opcodes.OP_16:
         ss.stack.append(int_to_bytes(opcode + 1 - opcodes.OP_1))
@@ -200,18 +303,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
     if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
         raise ScriptError(
             "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
-
-    if opcode in (opcodes.OP_CHECKSIG, opcodes.OP_CHECKSIGVERIFY):
-        # Subset of script starting at the most recent codeseparator
-        ss.expected_hash_type = None  # ### BRAIN DAMAGE
-        op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
-                    ss.script[ss.begin_code_hash:], ss.flags)
-
-    if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
-        # Subset of script starting at the most recent codeseparator
-        ss.expected_hash_type = None  # ### BRAIN DAMAGE
-        op_checkmultisig(ss.stack, ss.signature_f,
-                         ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
 
     if opcode == opcodes.OP_CHECKLOCKTIMEVERIFY:
         if not (ss.flags & VERIFY_CHECKLOCKTIMEVERIFY):
