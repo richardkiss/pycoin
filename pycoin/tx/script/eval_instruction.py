@@ -46,7 +46,7 @@ from .tools import get_opcode, bool_from_script_bytes, int_from_script_bytes
 
 
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_VERIFY".split())))
+    "OP_NUMEQUALVERIFY OP_VERIFY".split())))
 
 
 def verify_minimal_data(opcode, data):
@@ -306,13 +306,12 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
     opcode, data, new_pc = get_opcode(ss.script, pc)
     ss.pc = new_pc
 
-    require_minimal = ss.flags & VERIFY_MINIMALDATA
-
     if len(ss.stack) + len(ss.altstack) > 1000:
         raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
 
-    f = DEFAULT_MICROCODE.get(opcode, lambda *args, **kwargs: 0)
     all_if_true = functools.reduce(lambda x, y: x and y, ss.if_condition_stack, True)
+
+    f = DEFAULT_MICROCODE.get(opcode, lambda *args, **kwargs: 0)
     if getattr(f, "outside_conditional", False) or all_if_true:
         f(ss)
 
@@ -320,7 +319,7 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
         return
 
     if data is not None:
-        if require_minimal:
+        if ss.flags & VERIFY_MINIMALDATA:
             verify_minimal_data(opcode, data)
         ss.stack.append(data)
 

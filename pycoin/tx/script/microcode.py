@@ -363,7 +363,11 @@ def do_OP_EQUAL(stack):
     stack.append(bool_to_script_bytes(v1 == v2))
 
 
-do_OP_EQUALVERIFY = do_OP_EQUAL
+def do_OP_EQUALVERIFY(stack):
+    do_OP_EQUAL(stack)
+    v = bool_from_script_bytes(stack.pop())
+    if not v:
+        raise ScriptError("VERIFY failed", errno.EQUALVERIFY)
 
 
 def pop_check_bounds(stack, require_minimal):
