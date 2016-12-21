@@ -68,7 +68,9 @@ def do_OP_RESERVED2(stack):
 
 
 def do_OP_VERIFY(stack):
-    pass
+    v = bool_from_script_bytes(stack.pop())
+    if not v:
+        raise ScriptError("VERIFY failed", errno.VERIFY)
 
 
 def do_OP_RETURN(stack):
@@ -400,7 +402,6 @@ do_OP_RSHIFT = make_bin_op(lambda x, y: x >> y)
 do_OP_BOOLAND = make_bool_bin_op(lambda x, y: x and y)
 do_OP_BOOLOR = make_bool_bin_op(lambda x, y: x or y)
 do_OP_NUMEQUAL = make_bool_bin_op(lambda x, y: x == y)
-do_OP_NUMEQUALVERIFY = make_bool_bin_op(lambda x, y: x == y)
 do_OP_NUMNOTEQUAL = make_bool_bin_op(lambda x, y: x != y)
 do_OP_LESSTHAN = make_bool_bin_op(lambda x, y: x < y)
 do_OP_GREATERTHAN = make_bool_bin_op(lambda x, y: x > y)
@@ -408,6 +409,13 @@ do_OP_LESSTHANOREQUAL = make_bool_bin_op(lambda x, y: x <= y)
 do_OP_GREATERTHANOREQUAL = make_bool_bin_op(lambda x, y: x >= y)
 do_OP_MIN = make_bin_op(min)
 do_OP_MAX = make_bin_op(max)
+
+
+def do_OP_NUMEQUALVERIFY(stack, require_minimal):
+    do_OP_NUMEQUAL(stack, require_minimal=require_minimal)
+    v = bool_from_script_bytes(stack.pop())
+    if not v:
+        raise ScriptError("VERIFY failed", errno.VERIFY)
 
 
 def do_OP_WITHIN(stack, require_minimal):

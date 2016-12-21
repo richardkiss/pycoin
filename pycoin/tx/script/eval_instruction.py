@@ -45,10 +45,6 @@ from .microcode import MICROCODE_LOOKUP
 from .tools import get_opcode, bool_from_script_bytes, int_from_script_bytes
 
 
-VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_NUMEQUALVERIFY OP_VERIFY".split())))
-
-
 def verify_minimal_data(opcode, data):
     ld = len(data)
     if ld == 0 and opcode == opcodes.OP_0:
@@ -322,9 +318,3 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
         if ss.flags & VERIFY_MINIMALDATA:
             verify_minimal_data(opcode, data)
         ss.stack.append(data)
-
-    if opcode in VERIFY_OPS:
-        v = bool_from_script_bytes(ss.stack.pop())
-        if not v:
-            err = errno.EQUALVERIFY if opcode is opcodes.OP_EQUALVERIFY else errno.VERIFY
-            raise ScriptError("VERIFY failed at %d" % (pc-1), err)
