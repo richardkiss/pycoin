@@ -177,58 +177,6 @@ def op_endif(ss):
 op_endif.outside_conditional = True
 
 
-def make_instruction_lookup():
-    instruction_lookup = {}
-
-    for opcode in MICROCODE_LOOKUP.keys():
-        instruction_lookup[opcode] = make_from_microcode(MICROCODE_LOOKUP[opcode])
-
-    BAD_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in ("OP_VERIF OP_VERNOTIF ".split())))
-    for opcode in BAD_OPCODE_VALUES:
-        instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=True)
-
-    for opcode in range(76, 256):
-        if opcode not in opcodes.INT_TO_OPCODE:
-            instruction_lookup[opcode] = make_bad_opcode(opcode)
-
-    DISABLED_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-        "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL "
-        "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
-    for opcode in DISABLED_OPCODE_VALUES:
-        instruction_lookup[opcode] = make_bad_opcode(
-            opcode, even_outside_conditional=True, err=errno.DISABLED_OPCODE)
-
-    BAD_OPCODES_OUTSIDE_IF = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-        "OP_NULLDATA OP_PUBKEYHASH OP_PUBKEY OP_INVALIDOPCODE".split())))
-    for opcode in BAD_OPCODES_OUTSIDE_IF:
-        instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=False)
-
-    instruction_lookup[opcodes.OP_CODESEPARATOR] = op_code_separator
-    instruction_lookup[opcodes.OP_TOALTSTACK] = op_toaltstack
-    instruction_lookup[opcodes.OP_FROMALTSTACK] = op_fromaltstack
-    instruction_lookup[opcodes.OP_1NEGATE] = op_1negate
-    instruction_lookup[opcodes.OP_CHECKSIG] = op_checksig_1
-    instruction_lookup[opcodes.OP_CHECKSIGVERIFY] = op_checksigverify
-    instruction_lookup[opcodes.OP_CHECKMULTISIG] = op_checkmultisig_1
-    instruction_lookup[opcodes.OP_CHECKMULTISIGVERIFY] = op_checkmultisig_verify
-
-    NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-        "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
-    for opcode in NOP_SET:
-        instruction_lookup[opcode] = discourage_nops
-
-    instruction_lookup[opcodes.OP_CHECKLOCKTIMEVERIFY] = check_locktime_verify
-    instruction_lookup[opcodes.OP_CHECKSEQUENCEVERIFY] = check_sequence_verify
-
-    instruction_lookup[opcodes.OP_IF] = make_if()
-    instruction_lookup[opcodes.OP_NOTIF] = make_if(reverse_bool=True)
-
-    instruction_lookup[opcodes.OP_ELSE] = op_else
-    instruction_lookup[opcodes.OP_ENDIF] = op_endif
-
-    return instruction_lookup
-
-
 def check_locktime_verify(ss):
     if not (ss.flags & VERIFY_CHECKLOCKTIMEVERIFY):
         if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
@@ -286,6 +234,59 @@ def check_sequence_verify(ss):
         raise ScriptError("sequence numbers not comparable")
     if sequence_masked > tx_sequence_masked:
         raise ScriptError("sequence number too small")
+
+
+def make_instruction_lookup():
+    instruction_lookup = {}
+
+    for opcode in MICROCODE_LOOKUP.keys():
+        instruction_lookup[opcode] = make_from_microcode(MICROCODE_LOOKUP[opcode])
+
+    BAD_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in ("OP_VERIF OP_VERNOTIF ".split())))
+    for opcode in BAD_OPCODE_VALUES:
+        instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=True)
+
+    for opcode in range(76, 256):
+        if opcode not in opcodes.INT_TO_OPCODE:
+            instruction_lookup[opcode] = make_bad_opcode(opcode)
+
+    DISABLED_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+        "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL "
+        "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
+    for opcode in DISABLED_OPCODE_VALUES:
+        instruction_lookup[opcode] = make_bad_opcode(
+            opcode, even_outside_conditional=True, err=errno.DISABLED_OPCODE)
+
+    BAD_OPCODES_OUTSIDE_IF = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+        "OP_NULLDATA OP_PUBKEYHASH OP_PUBKEY OP_INVALIDOPCODE".split())))
+    for opcode in BAD_OPCODES_OUTSIDE_IF:
+        instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=False)
+
+    instruction_lookup[opcodes.OP_CODESEPARATOR] = op_code_separator
+    instruction_lookup[opcodes.OP_TOALTSTACK] = op_toaltstack
+    instruction_lookup[opcodes.OP_FROMALTSTACK] = op_fromaltstack
+    instruction_lookup[opcodes.OP_1NEGATE] = op_1negate
+    instruction_lookup[opcodes.OP_CHECKSIG] = op_checksig_1
+    instruction_lookup[opcodes.OP_CHECKSIGVERIFY] = op_checksigverify
+    instruction_lookup[opcodes.OP_CHECKMULTISIG] = op_checkmultisig_1
+    instruction_lookup[opcodes.OP_CHECKMULTISIGVERIFY] = op_checkmultisig_verify
+
+    NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+        "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
+    for opcode in NOP_SET:
+        instruction_lookup[opcode] = discourage_nops
+
+    instruction_lookup[opcodes.OP_CHECKLOCKTIMEVERIFY] = check_locktime_verify
+    instruction_lookup[opcodes.OP_CHECKSEQUENCEVERIFY] = check_sequence_verify
+
+    instruction_lookup[opcodes.OP_IF] = make_if()
+    instruction_lookup[opcodes.OP_NOTIF] = make_if(reverse_bool=True)
+
+    instruction_lookup[opcodes.OP_ELSE] = op_else
+    instruction_lookup[opcodes.OP_ENDIF] = op_endif
+
+    return instruction_lookup
+
 
 DEFAULT_MICROCODE = make_instruction_lookup()
 
