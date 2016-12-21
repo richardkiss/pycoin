@@ -144,6 +144,36 @@ def discourage_nops(ss):
         raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
 
 
+def make_if(reverse_bool=False):
+    def f(ss):
+        v = False
+        all_if_true = functools.reduce(lambda x, y: x and y, ss.if_condition_stack, True)
+        if all_if_true:
+            if len(ss.stack) < 1:
+                raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
+            item = ss.stack.pop()
+            if ss.flags & VERIFY_MINIMALIF:
+                if item not in (b'', b'\1'):
+                    raise ScriptError("non-minimal IF", errno.MINIMALIF)
+            v = bool_from_script_bytes(item)
+        if reverse_bool:
+            v = not v
+        ss.if_condition_stack.append(v)
+    return f
+
+
+def op_else(ss):
+    if len(ss.if_condition_stack) == 0:
+        raise ScriptError("OP_ELSE without OP_IF", errno.UNBALANCED_CONDITIONAL)
+    ss.if_condition_stack[-1] = not ss.if_condition_stack[-1]
+
+
+def op_endif(ss):
+    if len(ss.if_condition_stack) == 0:
+        raise ScriptError("OP_ENDIF without OP_IF", errno.UNBALANCED_CONDITIONAL)
+    ss.if_condition_stack[-1] = not ss.if_condition_stack[-1]
+
+
 def make_instruction_lookup():
     instruction_lookup = {}
 
@@ -187,25 +217,11 @@ def make_instruction_lookup():
     instruction_lookup[opcodes.OP_CHECKLOCKTIMEVERIFY] = check_locktime_verify
     instruction_lookup[opcodes.OP_CHECKSEQUENCEVERIFY] = check_sequence_verify
 
-    def make_if(reverse_bool=False):
-        def f(ss):
-            v = False
-            all_if_true = functools.reduce(lambda x, y: x and y, ss.if_condition_stack, True)
-            if all_if_true:
-                if len(ss.stack) < 1:
-                    raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
-                item = ss.stack.pop()
-                if ss.flags & VERIFY_MINIMALIF:
-                    if item not in (b'', b'\1'):
-                        raise ScriptError("non-minimal IF", errno.MINIMALIF)
-                v = bool_from_script_bytes(item)
-            if reverse_bool:
-                v = not v
-            ss.if_condition_stack.append(v)
-        return f
-
     instruction_lookup[opcodes.OP_IF] = make_if()
     instruction_lookup[opcodes.OP_NOTIF] = make_if(reverse_bool=True)
+
+    #instruction_lookup[opcodes.OP_ELSE] = op_else
+    #instruction_lookup[opcodes.OP_ENDIF] = op_endif
 
     return instruction_lookup
 
