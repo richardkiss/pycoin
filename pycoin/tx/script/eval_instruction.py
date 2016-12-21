@@ -186,6 +186,27 @@ def make_instruction_lookup():
 
     instruction_lookup[opcodes.OP_CHECKLOCKTIMEVERIFY] = check_locktime_verify
     instruction_lookup[opcodes.OP_CHECKSEQUENCEVERIFY] = check_sequence_verify
+
+    def make_if(reverse_bool=False):
+        def f(ss):
+            v = False
+            all_if_true = functools.reduce(lambda x, y: x and y, ss.if_condition_stack, True)
+            if all_if_true:
+                if len(ss.stack) < 1:
+                    raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
+                item = ss.stack.pop()
+                if ss.flags & VERIFY_MINIMALIF:
+                    if item not in (b'', b'\1'):
+                        raise ScriptError("non-minimal IF", errno.MINIMALIF)
+                v = bool_from_script_bytes(item)
+            if reverse_bool:
+                v = not v
+            ss.if_condition_stack.append(v)
+        return f
+
+    instruction_lookup[opcodes.OP_IF] = make_if()
+    instruction_lookup[opcodes.OP_NOTIF] = make_if(reverse_bool=True)
+
     return instruction_lookup
 
 
@@ -276,20 +297,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
             return
 
     f(ss)
-
-    if opcode in (opcodes.OP_IF, opcodes.OP_NOTIF):
-        v = False
-        if all_if_true:
-            if len(ss.stack) < 1:
-                raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
-            item = ss.stack.pop()
-            if ss.flags & VERIFY_MINIMALIF:
-                if item not in (b'', b'\1'):
-                    raise ScriptError("non-minimal IF", errno.MINIMALIF)
-            v = bool_from_script_bytes(item)
-        if opcode == opcodes.OP_NOTIF:
-            v = not v
-        ss.if_condition_stack.append(v)
 
     if data is not None:
         if require_minimal:
