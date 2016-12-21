@@ -48,9 +48,6 @@ from .tools import get_opcode, bool_from_script_bytes, int_from_script_bytes
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_VERIFY".split())))
 
-NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
-
 
 def verify_minimal_data(opcode, data):
     ld = len(data)
@@ -80,37 +77,76 @@ def verify(ss):
         raise ScriptError("VERIFY failed at %d" % (ss.pc-1), errno.VERIFY)
 
 
+def make_bad_opcode(opcode, even_outside_conditional=False, err=errno.BAD_OPCODE):
+    def bad_opcode(ss):
+        raise ScriptError("invalid opcode %s at %d" % (
+            opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), ss.pc-1), err)
+    bad_opcode.outside_conditional = even_outside_conditional
+    return bad_opcode
+
+
+def make_from_microcode(f):
+    if f.require_minimal:
+        def the_f(ss):
+            return f(ss.stack, require_minimal=ss.flags & VERIFY_MINIMALDATA)
+    else:
+        def the_f(ss):
+            return f(ss.stack)
+    return the_f
+
+
+def op_code_separator(ss):
+    ss.begin_code_hash = ss.pc
+
+
+def op_toaltstack(ss):
+    ss.altstack.append(ss.stack.pop())
+
+
+def op_fromaltstack(ss):
+    if len(ss.altstack) < 1:
+        raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
+    ss.stack.append(ss.altstack.pop())
+
+
+def op_1negate(ss):
+    ss.stack.append(b'\x81')
+
+
+def op_checksig_1(ss):
+    ss.expected_hash_type = None  # ### BRAIN DAMAGE
+    op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
+                ss.script[ss.begin_code_hash:], ss.flags)
+
+
+def op_checksigverify(ss):
+    ss.expected_hash_type = None  # ### BRAIN DAMAGE
+    op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
+                ss.script[ss.begin_code_hash:], ss.flags)
+    verify(ss)
+
+
+def op_checkmultisig_1(ss):
+    ss.expected_hash_type = None  # ### BRAIN DAMAGE
+    op_checkmultisig(ss.stack, ss.signature_f,
+                     ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
+
+
+def op_checkmultisig_verify(ss):
+    ss.expected_hash_type = None  # ### BRAIN DAMAGE
+    op_checkmultisig(ss.stack, ss.signature_f,
+                     ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
+    verify(ss)
+
+
+def discourage_nops(ss):
+    if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+        raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
+
+
 def make_instruction_lookup():
     instruction_lookup = {}
 
-    VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-        "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split())))
-
-    def make_bad_opcode(opcode, even_outside_conditional=False, err=errno.BAD_OPCODE):
-        def bad_opcode(ss):
-            raise ScriptError("invalid opcode %s at %d" % (
-                opcodes.INT_TO_OPCODE.get(opcode, hex(opcode)), ss.pc-1), err)
-        bad_opcode.outside_conditional = even_outside_conditional
-        return bad_opcode
-
-    DISABLED_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-        "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL "
-        "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
-
-    BAD_OPCODES_OUTSIDE_IF = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-        "OP_NULLDATA OP_PUBKEYHASH OP_PUBKEY OP_INVALIDOPCODE".split())))
-
-    NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-        "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
-
-    def make_from_microcode(f):
-        if f.require_minimal:
-            def the_f(ss):
-                return f(ss.stack, require_minimal=ss.flags & VERIFY_MINIMALDATA)
-        else:
-            def the_f(ss):
-                return f(ss.stack)
-        return the_f
     for opcode in MICROCODE_LOOKUP.keys():
         instruction_lookup[opcode] = make_from_microcode(MICROCODE_LOOKUP[opcode])
 
@@ -122,124 +158,94 @@ def make_instruction_lookup():
         if opcode not in opcodes.INT_TO_OPCODE:
             instruction_lookup[opcode] = make_bad_opcode(opcode)
 
+    DISABLED_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+        "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL "
+        "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
     for opcode in DISABLED_OPCODE_VALUES:
         instruction_lookup[opcode] = make_bad_opcode(
             opcode, even_outside_conditional=True, err=errno.DISABLED_OPCODE)
 
+    BAD_OPCODES_OUTSIDE_IF = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+        "OP_NULLDATA OP_PUBKEYHASH OP_PUBKEY OP_INVALIDOPCODE".split())))
     for opcode in BAD_OPCODES_OUTSIDE_IF:
         instruction_lookup[opcode] = make_bad_opcode(opcode, even_outside_conditional=False)
 
-    def f(ss):
-        ss.begin_code_hash = ss.pc
-    instruction_lookup[opcodes.OP_CODESEPARATOR] = f
+    instruction_lookup[opcodes.OP_CODESEPARATOR] = op_code_separator
+    instruction_lookup[opcodes.OP_TOALTSTACK] = op_toaltstack
+    instruction_lookup[opcodes.OP_FROMALTSTACK] = op_fromaltstack
+    instruction_lookup[opcodes.OP_1NEGATE] = op_1negate
+    instruction_lookup[opcodes.OP_CHECKSIG] = op_checksig_1
+    instruction_lookup[opcodes.OP_CHECKSIGVERIFY] = op_checksigverify
+    instruction_lookup[opcodes.OP_CHECKMULTISIG] = op_checkmultisig_1
+    instruction_lookup[opcodes.OP_CHECKMULTISIGVERIFY] = op_checkmultisig_verify
 
-    def f(ss):
-        ss.altstack.append(ss.stack.pop())
-    instruction_lookup[opcodes.OP_TOALTSTACK] = f
-
-    def f(ss):
-        if len(ss.altstack) < 1:
-            raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
-        ss.stack.append(ss.altstack.pop())
-    instruction_lookup[opcodes.OP_FROMALTSTACK] = f
-
-    def f(ss):
-        ss.stack.append(b'\x81')
-    instruction_lookup[opcodes.OP_1NEGATE] = f
-
-    def f(ss):
-        ss.expected_hash_type = None  # ### BRAIN DAMAGE
-        op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
-                    ss.script[ss.begin_code_hash:], ss.flags)
-    instruction_lookup[opcodes.OP_CHECKSIG] = f
-
-    def f(ss):
-        ss.expected_hash_type = None  # ### BRAIN DAMAGE
-        op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
-                    ss.script[ss.begin_code_hash:], ss.flags)
-        verify(ss)
-    instruction_lookup[opcodes.OP_CHECKSIGVERIFY] = f
-
-    def f(ss):
-        ss.expected_hash_type = None  # ### BRAIN DAMAGE
-        op_checkmultisig(ss.stack, ss.signature_f,
-                         ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
-    instruction_lookup[opcodes.OP_CHECKMULTISIG] = f
-
-    def f(ss):
-        ss.expected_hash_type = None  # ### BRAIN DAMAGE
-        op_checkmultisig(ss.stack, ss.signature_f,
-                         ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
-        verify(ss)
-    instruction_lookup[opcodes.OP_CHECKMULTISIGVERIFY] = f
-
-
-    def discourage_nops(ss):
-        if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS) and opcode in NOP_SET:
-            raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
+    NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
+        "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
     for opcode in NOP_SET:
         instruction_lookup[opcode] = discourage_nops
 
-    def check_locktime_verify(ss):
-        if not (ss.flags & VERIFY_CHECKLOCKTIMEVERIFY):
-            if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
-                raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
-            return
-        if ss.lock_time is None:
-            raise ScriptError("nSequence equal to 0xffffffff")
-        if len(ss.stack) < 1:
-            raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
-        if len(ss.stack[-1]) > 5:
-            raise ScriptError("script number overflow")
-        max_lock_time = int_from_script_bytes(ss.stack[-1])
-        if max_lock_time < 0:
-            raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
-        era_max = (max_lock_time >= 500000000)
-        era_lock_time = (ss.lock_time >= 500000000)
-        if era_max != era_lock_time:
-            raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
-        if max_lock_time > ss.lock_time:
-            raise ScriptError("nLockTime too soon")
     instruction_lookup[opcodes.OP_CHECKLOCKTIMEVERIFY] = check_locktime_verify
-
-    def check_sequence_verify(ss):
-        if not (ss.flags & VERIFY_CHECKSEQUENCEVERIFY):
-            if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
-                raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
-            return
-        if len(ss.stack) < 1:
-            raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
-        if len(ss.stack[-1]) > 5:
-            raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
-        require_minimal = ss.flags & VERIFY_MINIMALDATA
-        sequence = int_from_script_bytes(ss.stack[-1], require_minimal=require_minimal)
-        if sequence < 0:
-            raise ScriptError(
-                "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
-        if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
-            return
-        # do the actual check
-        if ss.tx_version < 2:
-            raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
-        if ss.tx_sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
-            raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
-
-        # this mask is applied to extract lock-time from the sequence field
-        SEQUENCE_LOCKTIME_MASK = 0xffff
-
-        mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
-        sequence_masked = sequence & mask
-        tx_sequence_masked = ss.tx_sequence & mask
-        if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
-                 (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
-                ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
-                 (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
-            raise ScriptError("sequence numbers not comparable")
-        if sequence_masked > tx_sequence_masked:
-            raise ScriptError("sequence number too small")
     instruction_lookup[opcodes.OP_CHECKSEQUENCEVERIFY] = check_sequence_verify
     return instruction_lookup
 
+
+def check_locktime_verify(ss):
+    if not (ss.flags & VERIFY_CHECKLOCKTIMEVERIFY):
+        if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+            raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
+        return
+    if ss.lock_time is None:
+        raise ScriptError("nSequence equal to 0xffffffff")
+    if len(ss.stack) < 1:
+        raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
+    if len(ss.stack[-1]) > 5:
+        raise ScriptError("script number overflow")
+    max_lock_time = int_from_script_bytes(ss.stack[-1])
+    if max_lock_time < 0:
+        raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
+    era_max = (max_lock_time >= 500000000)
+    era_lock_time = (ss.lock_time >= 500000000)
+    if era_max != era_lock_time:
+        raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
+    if max_lock_time > ss.lock_time:
+        raise ScriptError("nLockTime too soon")
+
+
+def check_sequence_verify(ss):
+    if not (ss.flags & VERIFY_CHECKSEQUENCEVERIFY):
+        if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+            raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
+        return
+    if len(ss.stack) < 1:
+        raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
+    if len(ss.stack[-1]) > 5:
+        raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
+    require_minimal = ss.flags & VERIFY_MINIMALDATA
+    sequence = int_from_script_bytes(ss.stack[-1], require_minimal=require_minimal)
+    if sequence < 0:
+        raise ScriptError(
+            "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
+    if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+        return
+    # do the actual check
+    if ss.tx_version < 2:
+        raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
+    if ss.tx_sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+        raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
+
+    # this mask is applied to extract lock-time from the sequence field
+    SEQUENCE_LOCKTIME_MASK = 0xffff
+
+    mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
+    sequence_masked = sequence & mask
+    tx_sequence_masked = ss.tx_sequence & mask
+    if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
+             (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
+            ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
+             (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
+        raise ScriptError("sequence numbers not comparable")
+    if sequence_masked > tx_sequence_masked:
+        raise ScriptError("sequence number too small")
 
 DEFAULT_MICROCODE = make_instruction_lookup()
 
