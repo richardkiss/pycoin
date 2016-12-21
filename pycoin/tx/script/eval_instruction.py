@@ -159,6 +159,7 @@ def make_if(reverse_bool=False):
         if reverse_bool:
             v = not v
         ss.if_condition_stack.append(v)
+    f.outside_conditional = True
     return f
 
 
@@ -166,12 +167,14 @@ def op_else(ss):
     if len(ss.if_condition_stack) == 0:
         raise ScriptError("OP_ELSE without OP_IF", errno.UNBALANCED_CONDITIONAL)
     ss.if_condition_stack[-1] = not ss.if_condition_stack[-1]
+op_else.outside_conditional = True
 
 
 def op_endif(ss):
     if len(ss.if_condition_stack) == 0:
         raise ScriptError("OP_ENDIF without OP_IF", errno.UNBALANCED_CONDITIONAL)
-    ss.if_condition_stack[-1] = not ss.if_condition_stack[-1]
+    ss.if_condition_stack.pop()
+op_endif.outside_conditional = True
 
 
 def make_instruction_lookup():
@@ -220,8 +223,8 @@ def make_instruction_lookup():
     instruction_lookup[opcodes.OP_IF] = make_if()
     instruction_lookup[opcodes.OP_NOTIF] = make_if(reverse_bool=True)
 
-    #instruction_lookup[opcodes.OP_ELSE] = op_else
-    #instruction_lookup[opcodes.OP_ENDIF] = op_endif
+    instruction_lookup[opcodes.OP_ELSE] = op_else
+    instruction_lookup[opcodes.OP_ENDIF] = op_endif
 
     return instruction_lookup
 
@@ -292,27 +295,17 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
     ss.pc = new_pc
 
     require_minimal = ss.flags & VERIFY_MINIMALDATA
-    # deal with if_condition_stack first
-    all_if_true = functools.reduce(lambda x, y: x and y, ss.if_condition_stack, True)
 
     if len(ss.stack) + len(ss.altstack) > 1000:
         raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
 
     f = DEFAULT_MICROCODE.get(opcode, lambda *args, **kwargs: 0)
-    if getattr(f, "outside_conditional", False):
+    all_if_true = functools.reduce(lambda x, y: x and y, ss.if_condition_stack, True)
+    if getattr(f, "outside_conditional", False) or all_if_true:
         f(ss)
 
-    if len(ss.if_condition_stack):
-        if opcode == opcodes.OP_ELSE:
-            ss.if_condition_stack[-1] = not ss.if_condition_stack[-1]
-            return
-        if opcode == opcodes.OP_ENDIF:
-            ss.if_condition_stack.pop()
-            return
-        if not all_if_true and not (opcodes.OP_IF <= opcode <= opcodes.OP_ENDIF):
-            return
-
-    f(ss)
+    if not all_if_true:
+        return
 
     if data is not None:
         if require_minimal:
@@ -321,10 +314,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
 
     if opcode > opcodes.OP_1NEGATE and opcode <= opcodes.OP_16:
         ss.stack.append(int_to_bytes(opcode + 1 - opcodes.OP_1))
-
-    if opcode in (opcodes.OP_ELSE, opcodes.OP_ENDIF):
-        raise ScriptError(
-            "%s without OP_IF" % opcodes.INT_TO_OPCODE[opcode], errno.UNBALANCED_CONDITIONAL)
 
     if opcode in VERIFY_OPS:
         v = bool_from_script_bytes(ss.stack.pop())
