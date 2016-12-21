@@ -236,6 +236,14 @@ def check_sequence_verify(ss):
         raise ScriptError("sequence number too small")
 
 
+def make_push_const(opcode):
+    v = int_to_bytes(opcode + 1 - opcodes.OP_1)
+
+    def f(ss):
+        ss.stack.append(v)
+    return f
+
+
 def make_instruction_lookup():
     instruction_lookup = {}
 
@@ -285,6 +293,9 @@ def make_instruction_lookup():
     instruction_lookup[opcodes.OP_ELSE] = op_else
     instruction_lookup[opcodes.OP_ENDIF] = op_endif
 
+    for opcode in range(opcodes.OP_1, opcodes.OP_16+1):
+        instruction_lookup[opcode] = make_push_const(opcode)
+
     return instruction_lookup
 
 
@@ -312,9 +323,6 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
         if require_minimal:
             verify_minimal_data(opcode, data)
         ss.stack.append(data)
-
-    if opcode > opcodes.OP_1NEGATE and opcode <= opcodes.OP_16:
-        ss.stack.append(int_to_bytes(opcode + 1 - opcodes.OP_1))
 
     if opcode in VERIFY_OPS:
         v = bool_from_script_bytes(ss.stack.pop())
