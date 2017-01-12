@@ -118,6 +118,9 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
         if opcode > opcodes.OP_16:
             op_count += 1
         stack_top = stack[-1] if stack else b''
+
+        if len(stack) + len(altstack) > 1000:
+            raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
         eval_instruction(ss, old_pc)
 
         if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):

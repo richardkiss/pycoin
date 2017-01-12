@@ -302,19 +302,13 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
     opcode, data, new_pc = get_opcode(ss.script, pc)
     ss.pc = new_pc
 
-    if len(ss.stack) + len(ss.altstack) > 1000:
-        raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
-
     all_if_true = functools.reduce(lambda x, y: x and y, ss.if_condition_stack, True)
+    if data is not None and all_if_true:
+        if ss.flags & VERIFY_MINIMALDATA:
+            verify_minimal_data(opcode, data)
+        ss.stack.append(data)
 
     f = DEFAULT_MICROCODE.get(opcode, lambda *args, **kwargs: 0)
     if getattr(f, "outside_conditional", False) or all_if_true:
         f(ss)
 
-    if not all_if_true:
-        return
-
-    if data is not None:
-        if ss.flags & VERIFY_MINIMALDATA:
-            verify_minimal_data(opcode, data)
-        ss.stack.append(data)
