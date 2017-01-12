@@ -2,13 +2,19 @@ import io
 import json
 
 try:
-    from urllib2 import urlopen
+    from urllib2 import urlopen, Request
 except ImportError:
-    from urllib.request import urlopen
+    from urllib.request import urlopen, Request
 
 from pycoin.convention import btc_to_satoshi
 from pycoin.tx import Tx, Spendable
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
+
+
+def url_open(url):
+    req = Request(url)
+    req.add_header('User-agent', 'curl/7.51.0')
+    return urlopen(req)
 
 
 class BlockrioProvider(object):
@@ -25,7 +31,7 @@ class BlockrioProvider(object):
         """
         url_append = "unspent/%s" % address
         URL = "%s/address/%s" % (self.url, url_append)
-        r = json.loads(urlopen(URL).read().decode("utf8"))
+        r = json.loads(url_open(URL).read().decode("utf8"))
         spendables = []
         for u in r.get("data", {}).get("unspent", []):
             coin_value = btc_to_satoshi(u.get("amount"))
@@ -38,7 +44,7 @@ class BlockrioProvider(object):
     def tx_for_tx_hash(self, tx_hash):
         "Get a Tx by its hash."
         URL = "%s/tx/raw/%s" % (self.url, b2h_rev(tx_hash))
-        r = json.loads(urlopen(URL).read().decode("utf8"))
+        r = json.loads(url_open(URL).read().decode("utf8"))
         tx = Tx.parse(io.BytesIO(h2b(r.get("data").get("tx").get("hex"))))
         return tx
 
