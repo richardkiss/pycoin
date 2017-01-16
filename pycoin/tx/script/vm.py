@@ -217,6 +217,24 @@ def check_witness_program(
         raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
 
 
+def check_witness(stack, script_public_key, script_signature, witness, witness_flags, signature_for_hash_type_f,
+                  lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version):
+    witness_version = witness_program_version(script_public_key)
+    had_witness = False
+    if witness_version is not None:
+        had_witness = True
+        witness_program = script_public_key[2:]
+        if len(script_signature) > 0:
+            err = errno.WITNESS_MALLEATED if witness_flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
+            raise ScriptError("script sig is not blank on segwit input", err)
+        check_witness_program(
+            witness, witness_version, witness_program, witness_flags,
+            signature_for_hash_type_f, lock_time, expected_hash_type,
+            traceback_f, tx_sequence, tx_version)
+        stack[:] = stack[-1:]
+    return had_witness
+
+
 def check_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,
                  flags, expected_hash_type, traceback_f, witness, tx_sequence, tx_version):
     had_witness = False
@@ -250,18 +268,9 @@ def check_script(script_signature, script_public_key, signature_for_hash_type_f,
         raise ScriptError("eval false", errno.EVAL_FALSE)
 
     if flags & VERIFY_WITNESS:
-        witness_version = witness_program_version(script_public_key)
-        if witness_version is not None:
-            had_witness = True
-            witness_program = script_public_key[2:]
-            if len(script_signature) > 0:
-                err = errno.WITNESS_MALLEATED if flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
-                raise ScriptError("script sig is not blank on segwit input", err)
-            check_witness_program(
-                witness, witness_version, witness_program, witness_flags,
-                signature_for_hash_type_f, lock_time, expected_hash_type,
-                traceback_f, tx_sequence, tx_version)
-            stack = stack[-1:]
+        had_witness = check_witness(stack, script_public_key, script_signature, witness, witness_flags,
+                                    signature_for_hash_type_f, lock_time, expected_hash_type, traceback_f,
+                                    tx_sequence, tx_version)
 
     if is_p2h and bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
         check_script_push_only(script_signature)
