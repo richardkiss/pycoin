@@ -128,6 +128,10 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
         if op_count > 201:
             raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
+    post_script_check(stack, altstack, if_condition_stack)
+
+
+def post_script_check(stack, altstack, if_condition_stack):
     if len(if_condition_stack):
         raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
 
@@ -162,27 +166,36 @@ def witness_program_version(script):
     return None
 
 
+def check_witness_program_v0(
+        witness, script_signature, flags, signature_for_hash_type_f,
+        lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version):
+    l = len(script_signature)
+    if l == 32:
+        if len(witness) == 0:
+            raise ScriptError("witness program empty", errno.WITNESS_PROGRAM_WITNESS_EMPTY)
+        script_public_key = witness[-1]
+        if sha256(script_public_key).digest() != script_signature:
+            raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
+        stack = Stack(witness[:-1])
+    elif l == 20:
+        # special case for pay-to-pubkeyhash; signature + pubkey in witness
+        if len(witness) != 2:
+            raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
+        # "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(script_signature))
+        script_public_key = b'v\xa9' + bin_script([script_signature]) + b'\x88\xac'
+        stack = Stack(witness)
+    else:
+        raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
+    return stack, script_public_key
+
+
 def check_witness_program(
         witness, version, script_signature, flags, signature_for_hash_type_f,
         lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version):
     if version == 0:
-        l = len(script_signature)
-        if l == 32:
-            if len(witness) == 0:
-                raise ScriptError("witness program empty", errno.WITNESS_PROGRAM_WITNESS_EMPTY)
-            script_public_key = witness[-1]
-            stack = Stack(witness[:-1])
-            if sha256(script_public_key).digest() != script_signature:
-                raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-        elif l == 20:
-            # special case for pay-to-pubkeyhash; signature + pubkey in witness
-            if len(witness) != 2:
-                raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-            # "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(script_signature))
-            script_public_key = b'v\xa9' + bin_script([script_signature]) + b'\x88\xac'
-            stack = Stack(witness)
-        else:
-            raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
+        stack, script_public_key = check_witness_program_v0(
+            witness, script_signature, flags, signature_for_hash_type_f,
+            lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version)
     elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
         raise ScriptError(
             "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
