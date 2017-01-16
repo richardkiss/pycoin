@@ -163,6 +163,8 @@ def op_else(ss):
     if len(ss.if_condition_stack) == 0:
         raise ScriptError("OP_ELSE without OP_IF", errno.UNBALANCED_CONDITIONAL)
     ss.if_condition_stack[-1] = not ss.if_condition_stack[-1]
+
+
 op_else.outside_conditional = True
 
 
@@ -170,6 +172,8 @@ def op_endif(ss):
     if len(ss.if_condition_stack) == 0:
         raise ScriptError("OP_ENDIF without OP_IF", errno.UNBALANCED_CONDITIONAL)
     ss.if_condition_stack.pop()
+
+
 op_endif.outside_conditional = True
 
 
@@ -311,4 +315,3 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
     f = DEFAULT_MICROCODE.get(opcode, lambda *args, **kwargs: 0)
     if getattr(f, "outside_conditional", False) or all_if_true:
         f(ss)
-

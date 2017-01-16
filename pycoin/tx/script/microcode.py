@@ -392,6 +392,7 @@ def make_bool_bin_op(binop):
         stack.append(bool_to_script_bytes(binop(v2, v1)))
     return f
 
+
 do_OP_ADD = make_bin_op(lambda x, y: x + y)
 do_OP_SUB = make_bin_op(lambda x, y: x - y)
 do_OP_MUL = make_bin_op(lambda x, y: x * y)
@@ -489,6 +490,7 @@ def make_unary_num_op(unary_f):
         stack.append(int_to_script_bytes(unary_f(pop_check_bounds(stack, require_minimal))))
     return f
 
+
 do_OP_1ADD = make_unary_num_op(lambda x: x + 1)
 do_OP_1SUB = make_unary_num_op(lambda x: x - 1)
 do_OP_2MUL = make_unary_num_op(lambda x: x << 1)
@@ -516,6 +518,7 @@ def build_ops_lookup():
             f.require_minimal = len(inspect.getargspec(f).args) > 1
             d[opcode_int] = f
     return d
+
 
 MICROCODE_LOOKUP = build_ops_lookup()
 

@@ -158,4 +158,5 @@ def populate_module():
     for opcode, val in OPCODE_LIST:
         g[opcode] = val
 
+
 populate_module()
