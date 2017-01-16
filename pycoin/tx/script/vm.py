@@ -27,22 +27,20 @@ THE SOFTWARE.
 """
 
 
-from hashlib import sha256
-
 from ...intbytes import byte_to_int
 from .flags import (
     VERIFY_P2SH, VERIFY_SIGPUSHONLY, VERIFY_CLEANSTACK,
-    VERIFY_WITNESS, VERIFY_MINIMALIF, VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM,
-    VERIFY_WITNESS_PUBKEYTYPE
+    VERIFY_WITNESS, VERIFY_MINIMALIF, VERIFY_WITNESS_PUBKEYTYPE
 )
 
 from . import errno
 from . import opcodes
 from . import ScriptError
-from .eval_instruction import eval_instruction
+from .Stack import Stack
+from .eval_instruction import eval_script
+from .segwit import check_witness
 
-
-from .tools import get_opcode, bin_script, bool_from_script_bytes, int_from_script_bytes
+from .tools import get_opcode, bin_script, bool_from_script_bytes
 
 
 VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
@@ -61,84 +59,6 @@ NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
     "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
 
 
-class Stack(list):
-    def pop(self, *args, **kwargs):
-        try:
-            return super(Stack, self).pop(*args, **kwargs)
-        except IndexError:
-            raise ScriptError("pop from empty stack", errno.INVALID_STACK_OPERATION)
-
-    def __getitem__(self, *args, **kwargs):
-        try:
-            return super(Stack, self).__getitem__(*args, **kwargs)
-        except IndexError:
-            raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)
-
-
-class ScriptState(object):
-    def __init__(self, script, signature_f, lock_time, stack, altstack,
-                 flags, tx_sequence, tx_version, if_condition_stack, which_script):
-        self.script = script
-        self.signature_f = signature_f
-        self.lock_time = lock_time
-        self.stack = stack
-        self.altstack = altstack
-        self.flags = flags
-        self.tx_sequence = tx_sequence
-        self.tx_version = tx_version
-        self.if_condition_stack = if_condition_stack
-        self.which_script = which_script
-        self.begin_code_hash = 0  # ### BRAIN DAMAGE
-        self.pc = 0  # ### BRAIN DAMAGE
-
-
-def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=[],
-                disallow_long_scripts=True, traceback_f=None, is_signature=False, flags=0,
-                tx_sequence=None, tx_version=None):
-    altstack = Stack()
-    if disallow_long_scripts and len(script) > 10000:
-        raise ScriptError("script too long", errno.SCRIPT_SIZE)
-
-    pc = 0
-    if_condition_stack = []
-    op_count = 0
-
-    ss = ScriptState(script, signature_for_hash_type_f, lock_time, stack, altstack,
-                     flags, tx_sequence, tx_version, if_condition_stack, which_script="FOO")
-
-    while pc < len(script):
-        old_pc = pc
-        opcode, data, pc = get_opcode(script, pc)
-
-        if traceback_f:
-            traceback_f(old_pc, opcode, data, stack, altstack, if_condition_stack, is_signature)
-
-        if data and len(data) > 520 and disallow_long_scripts:
-            raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
-        if opcode > opcodes.OP_16:
-            op_count += 1
-        stack_top = stack[-1] if stack else b''
-
-        if len(stack) + len(altstack) > 1000:
-            raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
-        eval_instruction(ss, old_pc)
-
-        if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
-            op_count += int_from_script_bytes(stack_top)
-        if op_count > 201:
-            raise ScriptError("script contains too many operations", errno.OP_COUNT)
-
-    post_script_check(stack, altstack, if_condition_stack)
-
-
-def post_script_check(stack, altstack, if_condition_stack):
-    if len(if_condition_stack):
-        raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
-
-    if len(stack) + len(altstack) > 1000:
-        raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
-
-
 def check_script_push_only(script):
     pc = 0
     while pc < len(script):
@@ -150,89 +70,6 @@ def check_script_push_only(script):
 def is_pay_to_script_hash(script_public_key):
     return (len(script_public_key) == 23 and byte_to_int(script_public_key[0]) == opcodes.OP_HASH160 and
             byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
-
-
-def witness_program_version(script):
-    l = len(script)
-    if l < 4 or l > 42:
-        return None
-    first_opcode = byte_to_int(script[0])
-    if byte_to_int(script[1]) + 2 != l:
-        return None
-    if first_opcode == opcodes.OP_0:
-        return 0
-    if opcodes.OP_1 <= first_opcode <= opcodes.OP_16:
-        return first_opcode - opcodes.OP_1 + 1
-    return None
-
-
-def check_witness_program_v0(
-        witness, script_signature, flags, signature_for_hash_type_f,
-        lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version):
-    l = len(script_signature)
-    if l == 32:
-        if len(witness) == 0:
-            raise ScriptError("witness program empty", errno.WITNESS_PROGRAM_WITNESS_EMPTY)
-        script_public_key = witness[-1]
-        if sha256(script_public_key).digest() != script_signature:
-            raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-        stack = Stack(witness[:-1])
-    elif l == 20:
-        # special case for pay-to-pubkeyhash; signature + pubkey in witness
-        if len(witness) != 2:
-            raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-        # "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(script_signature))
-        script_public_key = b'v\xa9' + bin_script([script_signature]) + b'\x88\xac'
-        stack = Stack(witness)
-    else:
-        raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
-    return stack, script_public_key
-
-
-def check_witness_program(
-        witness, version, script_signature, flags, signature_for_hash_type_f,
-        lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version):
-    if version == 0:
-        stack, script_public_key = check_witness_program_v0(
-            witness, script_signature, flags, signature_for_hash_type_f,
-            lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version)
-    elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
-        raise ScriptError(
-            "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
-    else:
-        return
-
-    for s in stack:
-        if len(s) > 520:
-            raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
-
-    eval_script(script_public_key, signature_for_hash_type_f.witness, lock_time, expected_hash_type,
-                stack, traceback_f=traceback_f, flags=flags, is_signature=True,
-                tx_sequence=tx_sequence, tx_version=tx_version)
-
-    if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
-        raise ScriptError("eval false", errno.EVAL_FALSE)
-
-    if len(stack) != 1:
-        raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
-
-
-def check_witness(stack, script_public_key, script_signature, witness, witness_flags, signature_for_hash_type_f,
-                  lock_time, expected_hash_type, traceback_f, tx_sequence, tx_version):
-    witness_version = witness_program_version(script_public_key)
-    had_witness = False
-    if witness_version is not None:
-        had_witness = True
-        witness_program = script_public_key[2:]
-        if len(script_signature) > 0:
-            err = errno.WITNESS_MALLEATED if witness_flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
-            raise ScriptError("script sig is not blank on segwit input", err)
-        check_witness_program(
-            witness, witness_version, witness_program, witness_flags,
-            signature_for_hash_type_f, lock_time, expected_hash_type,
-            traceback_f, tx_sequence, tx_version)
-        stack[:] = stack[-1:]
-    return had_witness
 
 
 def check_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,

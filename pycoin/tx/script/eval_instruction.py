@@ -33,6 +33,7 @@ from ...intbytes import byte_to_int, int_to_bytes
 from . import errno
 from . import opcodes
 from . import ScriptError
+from .Stack import Stack
 
 from .check_signature import op_checksig, op_checkmultisig
 from .flags import (
@@ -315,3 +316,77 @@ def eval_instruction(ss, pc, microcode=DEFAULT_MICROCODE):
     f = DEFAULT_MICROCODE.get(opcode, lambda *args, **kwargs: 0)
     if getattr(f, "outside_conditional", False) or all_if_true:
         f(ss)
+
+
+"""
+WHICH SCRIPT:
+I: tx in script
+O: tx out script
+H: pay to script hash script
+D: witness data
+W: witness script
+"""
+
+
+class ScriptState(object):
+    def __init__(self, script, signature_f, lock_time, stack, altstack,
+                 flags, tx_sequence, tx_version, if_condition_stack, which_script):
+        self.script = script
+        self.signature_f = signature_f
+        self.lock_time = lock_time
+        self.stack = stack
+        self.altstack = altstack
+        self.flags = flags
+        self.tx_sequence = tx_sequence
+        self.tx_version = tx_version
+        self.if_condition_stack = if_condition_stack
+        self.which_script = which_script
+        self.begin_code_hash = 0  # ### BRAIN DAMAGE
+        self.pc = 0  # ### BRAIN DAMAGE
+
+
+def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=[],
+                disallow_long_scripts=True, traceback_f=None, is_signature=False, flags=0,
+                tx_sequence=None, tx_version=None):
+    altstack = Stack()
+    if disallow_long_scripts and len(script) > 10000:
+        raise ScriptError("script too long", errno.SCRIPT_SIZE)
+
+    pc = 0
+    if_condition_stack = []
+    op_count = 0
+
+    ss = ScriptState(script, signature_for_hash_type_f, lock_time, stack, altstack,
+                     flags, tx_sequence, tx_version, if_condition_stack, which_script="FOO")
+
+    while pc < len(script):
+        old_pc = pc
+        opcode, data, pc = get_opcode(script, pc)
+
+        if traceback_f:
+            traceback_f(old_pc, opcode, data, stack, altstack, if_condition_stack, is_signature)
+
+        if data and len(data) > 520 and disallow_long_scripts:
+            raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
+        if opcode > opcodes.OP_16:
+            op_count += 1
+        stack_top = stack[-1] if stack else b''
+
+        if len(stack) + len(altstack) > 1000:
+            raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
+        eval_instruction(ss, old_pc)
+
+        if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
+            op_count += int_from_script_bytes(stack_top)
+        if op_count > 201:
+            raise ScriptError("script contains too many operations", errno.OP_COUNT)
+
+    post_script_check(stack, altstack, if_condition_stack)
+
+
+def post_script_check(stack, altstack, if_condition_stack):
+    if len(if_condition_stack):
+        raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
+
+    if len(stack) + len(altstack) > 1000:
+        raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
