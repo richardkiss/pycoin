@@ -345,6 +345,14 @@ class ScriptState(object):
         self.pc = 0  # ### BRAIN DAMAGE
 
 
+def post_script_check(stack, altstack, if_condition_stack):
+    if len(if_condition_stack):
+        raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
+
+    if len(stack) + len(altstack) > 1000:
+        raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)
+
+
 def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=[],
                 disallow_long_scripts=True, traceback_f=None, is_signature=False, flags=0,
                 tx_sequence=None, tx_version=None):
@@ -382,11 +390,3 @@ def eval_script(script, signature_for_hash_type_f, lock_time, expected_hash_type
             raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
     post_script_check(stack, altstack, if_condition_stack)
-
-
-def post_script_check(stack, altstack, if_condition_stack):
-    if len(if_condition_stack):
-        raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
-
-    if len(stack) + len(altstack) > 1000:
-        raise ScriptError("stack has > 1000 items", errno.STACK_SIZE)

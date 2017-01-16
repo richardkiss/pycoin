@@ -37,7 +37,7 @@ from . import errno
 from . import opcodes
 from . import ScriptError
 from .Stack import Stack
-from .eval_instruction import eval_script
+from .eval_script import eval_script
 from .segwit import check_witness
 
 from .tools import get_opcode, bin_script, bool_from_script_bytes
