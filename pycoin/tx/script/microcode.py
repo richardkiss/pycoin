@@ -167,7 +167,7 @@ def do_OP_DEPTH(stack):
     >>> s = [1, 2, 1, 2, 1, 2]
     >>> do_OP_DEPTH(s)
     >>> print(s)
-    [1, 2, 1, 2, 1, 2, 6]
+    [1, 2, 1, 2, 1, 2, b'\\x06']
     """
     stack.append(int_to_script_bytes(len(stack)))
 
@@ -216,10 +216,10 @@ def do_OP_OVER(stack):
 
 def do_OP_PICK(stack, require_minimal):
     """
-    >>> s = ['a', 'b', 'c', 'd', b'\2']
-    >>> do_OP_PICK(s)
+    >>> s = [b'a', b'b', b'c', b'd', b'\2']
+    >>> do_OP_PICK(s, require_minimal=True)
     >>> print(s)
-    ['a', 'b', 'c', 'd', 'b']
+    [b'a', b'b', b'c', b'd', b'b']
     """
     v = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     stack.append(stack[-v-1])
@@ -227,10 +227,10 @@ def do_OP_PICK(stack, require_minimal):
 
 def do_OP_ROLL(stack, require_minimal):
     """
-    >>> s = ['a', 'b', 'c', 'd', b'\2']
-    >>> do_OP_ROLL(s)
+    >>> s = [b'a', b'b', b'c', b'd', b'\2']
+    >>> do_OP_ROLL(s, require_minimal=True)
     >>> print(s)
-    ['a', 'c', 'd', 'b']
+    [b'a', b'c', b'd', b'b']
     """
     v = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     stack.append(stack.pop(-v-1))
@@ -282,45 +282,45 @@ def do_OP_CAT(stack):
     stack.append(v2 + v1)
 
 
-def do_OP_SUBSTR(stack):
+def do_OP_SUBSTR(stack, require_minimal):
     """
-    >>> s = ['abcdef', b'\3', b'\2']
-    >>> do_OP_SUBSTR(s)
+    >>> s = [b'abcdef', b'\3', b'\2']
+    >>> do_OP_SUBSTR(s, require_minimal=True)
     >>> print(s)
-    ['de']
+    [b'de']
     """
-    pos = nonnegative_int_from_script_bytes(stack.pop())
-    length = nonnegative_int_from_script_bytes(stack.pop())
+    pos = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
+    length = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     stack.append(stack.pop()[length:length+pos])
 
 
-def do_OP_LEFT(stack):
+def do_OP_LEFT(stack, require_minimal):
     """
-    >>> s = [b'abcdef', b'\\3']
-    >>> do_OP_LEFT(s)
+    >>> s = [b'abcdef', b'\3']
+    >>> do_OP_LEFT(s, require_minimal=True)
     >>> print(len(s)==1 and s[0]==b'abc')
     True
-    >>> s = [b'abcdef', b'\\0']
-    >>> do_OP_LEFT(s)
+    >>> s = [b'abcdef', b'']
+    >>> do_OP_LEFT(s, require_minimal=True)
     >>> print(len(s) ==1 and s[0]==b'')
     True
     """
-    pos = nonnegative_int_from_script_bytes(stack.pop())
+    pos = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     stack.append(stack.pop()[:pos])
 
 
-def do_OP_RIGHT(stack):
+def do_OP_RIGHT(stack, require_minimal):
     """
     >>> s = [b'abcdef', b'\\3']
-    >>> do_OP_RIGHT(s)
+    >>> do_OP_RIGHT(s, require_minimal=True)
     >>> print(s==[b'def'])
     True
     >>> s = [b'abcdef', b'\\0']
-    >>> do_OP_RIGHT(s)
+    >>> do_OP_RIGHT(s, require_minimal=False)
     >>> print(s==[b''])
     True
     """
-    pos = nonnegative_int_from_script_bytes(stack.pop())
+    pos = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     if pos > 0:
         stack.append(stack.pop()[-pos:])
     else:
@@ -330,13 +330,14 @@ def do_OP_RIGHT(stack):
 
 def do_OP_SIZE(stack):
     """
+    >>> import binascii
     >>> s = [b'abcdef']
     >>> do_OP_SIZE(s)
     >>> print(s == [b'abcdef', b'\x06'])
     True
     >>> s = [b'abcdef'*1000]
     >>> do_OP_SIZE(s)
-    >>> print(binascii.hexlify(s[-1]) == b'1770')
+    >>> print(binascii.hexlify(s[-1]) == b'7017')
     True
     """
     stack.append(int_to_script_bytes(len(stack[-1])))
@@ -421,12 +422,12 @@ def do_OP_NUMEQUALVERIFY(stack, require_minimal):
 
 def do_OP_WITHIN(stack, require_minimal):
     """
-    >>> s = [b'c', b'b', b'a']
-    >>> do_OP_WITHIN(s)
+    >>> s = [b'b', b'a', b'c']
+    >>> do_OP_WITHIN(s, False)
     >>> print(s == [VCH_TRUE])
     True
-    >>> s = [b'b', b'c', b'a']
-    >>> do_OP_WITHIN(s)
+    >>> s = [b'd', b'a', b'c']
+    >>> do_OP_WITHIN(s, False)
     >>> print(s == [VCH_FALSE])
     True
     """
