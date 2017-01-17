@@ -43,22 +43,6 @@ from .segwit import check_witness
 from .tools import get_opcode, bin_script, bool_from_script_bytes
 
 
-VERIFY_OPS = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_NUMEQUALVERIFY OP_EQUALVERIFY OP_CHECKSIGVERIFY OP_VERIFY OP_CHECKMULTISIGVERIFY".split())))
-
-BAD_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in ("OP_VERIF OP_VERNOTIF ".split())))
-
-DISABLED_OPCODE_VALUES = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_CAT OP_SUBSTR OP_LEFT OP_RIGHT OP_INVERT OP_AND OP_OR OP_XOR OP_2MUL OP_2DIV OP_MUL "
-    "OP_DIV OP_MOD OP_LSHIFT OP_RSHIFT".split())))
-
-BAD_OPCODES_OUTSIDE_IF = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_NULLDATA OP_PUBKEYHASH OP_PUBKEY OP_INVALIDOPCODE".split())))
-
-NOP_SET = frozenset((opcodes.OPCODE_TO_INT[s] for s in (
-    "OP_NOP1 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9 OP_NOP10".split())))
-
-
 def check_script_push_only(script):
     pc = 0
     while pc < len(script):
