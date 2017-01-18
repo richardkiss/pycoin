@@ -49,6 +49,8 @@ def test_against_myself():
             ok = verify_message(k, sig2, msg)
             assert ok
 
+            ok = verify_message(k, bytes(sig2, 'utf-8'), msg)
+            assert ok
 
 def test_msg_parse():
     """

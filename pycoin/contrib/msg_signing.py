@@ -214,7 +214,7 @@ def _decode_signature(signature):
         Decode the internal fields of the base64-encoded signature.
     """
 
-    if signature[0] not in ('G', 'H', 'I'):
+    if signature[0] not in ('G','H','I', 71,72,73):
         # Because we know the first char is in range(27, 35), we know
         # valid first character is in this set.
         raise TypeError("Expected base64 value as signature", signature)
