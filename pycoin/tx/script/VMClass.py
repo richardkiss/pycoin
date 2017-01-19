@@ -77,10 +77,10 @@ class SolutionChecker(object):
         return stack, puzzle_script
 
     def check_witness_program(
-            self, version, witness_solution_stack, witness_program, flags, tx_context):
+            self, version, witness_program, tx_in_context, tx_context, flags):
         if version == 0:
             stack, puzzle_script = self.check_witness_program_v0(
-                witness_solution_stack, witness_program, flags, tx_context)
+                tx_in_context.witness_solution_stack, witness_program, flags, tx_context)
         elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
             raise ScriptError(
                 "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
@@ -94,7 +94,7 @@ class SolutionChecker(object):
         vm = VM()
         vm_context = VMContext()
         vm_context.flags = flags
-        vm_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f.witness
+        vm_context.signature_for_hash_type_f = tx_in_context.signature_for_hash_type_f.witness
         vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=stack)
 
         if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
@@ -117,7 +117,7 @@ class SolutionChecker(object):
             return first_opcode - opcodes.OP_1 + 1
         return None
 
-    def check_witness(self, tx_in_context, tx_context, vm_context, flags):
+    def check_witness(self, tx_in_context, tx_context, flags):
         witness_version = self.witness_program_version(tx_in_context.puzzle_script)
         had_witness = False
         if witness_version is not None:
@@ -127,7 +127,7 @@ class SolutionChecker(object):
                 err = errno.WITNESS_MALLEATED if flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
                 raise ScriptError("script sig is not blank on segwit input", err)
             self.check_witness_program(
-                witness_version, tx_in_context.witness_solution_stack, witness_program, flags, tx_context)
+                witness_version, witness_program, tx_in_context, tx_context, flags)
         return had_witness
 
     def _check_solution(self, tx_in_context, tx_context, flags):
@@ -152,7 +152,7 @@ class SolutionChecker(object):
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
         vm_context.flags = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
         vm_context.is_solution_script = True
-        vm_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f
+        vm_context.signature_for_hash_type_f = tx_in_context.signature_for_hash_type_f
 
         vm = VM()
         stack = vm.eval_script(solution_script, tx_context, vm_context)
@@ -167,7 +167,7 @@ class SolutionChecker(object):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         if flags & VERIFY_WITNESS:
-            had_witness = self.check_witness(tx_in_context, tx_context, vm_context, flags)
+            had_witness = self.check_witness(tx_in_context, tx_context, flags)
 
         if is_p2h and bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
             self.check_script_push_only(solution_script)
@@ -177,6 +177,7 @@ class SolutionChecker(object):
             p2sh_tx_in_context.puzzle_script = p2sh_puzzle_script
             p2sh_tx_in_context.solution_script = p2sh_solution_script
             p2sh_tx_in_context.witness_solution_stack = tx_in_context.witness_solution_stack
+            p2sh_tx_in_context.signature_for_hash_type_f = tx_in_context.signature_for_hash_type_f
             self._check_solution(p2sh_tx_in_context, tx_context, p2sh_flags)
             return
 
@@ -230,12 +231,11 @@ class VM(object):
         self.stack = initial_stack or Stack()
         self.script = script
         self.signature_for_hash_type_f = vm_context.signature_for_hash_type_f
-        self.lock_time = tx_context.lock_time
         self.altstack = Stack()
         self.if_condition_stack = []
         self.op_count = 0
-        self.flags = vm_context.flags
         self.begin_code_hash = 0
+        self.flags = vm_context.flags
 
         while self.pc < len(self.script):
             opcode, data, pc = get_opcode(self.script, self.pc)
@@ -260,7 +260,7 @@ class VM(object):
         self.post_script_check()
         return self.stack
 
-    def eval_instruction(self):  # ss, pc, microcode=DEFAULT_MICROCODE):
+    def eval_instruction(self):
         opcode, data, new_pc = get_opcode(self.script, self.pc)
 
         all_if_true = functools.reduce(lambda x, y: x and y, self.if_condition_stack, True)

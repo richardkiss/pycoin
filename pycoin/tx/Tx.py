@@ -428,6 +428,28 @@ class Tx(object):
                 "just signed script Tx %s TxIn index %d did not verify" % (
                     b2h_rev(tx_in.previous_hash), tx_in_idx))
 
+    def check_solution(self, tx_in_idx, traceback_f=None, flags=None):
+        tx_in = self.txs_in[tx_in_idx]
+        unspent = self.unspents[tx_in_idx]
+        tx_out_script = unspent.script
+
+        def signature_for_hash_type_f(hash_type, script):
+            return self.signature_hash(script, tx_in_idx, hash_type)
+
+        def witness_signature_for_hash_type(hash_type, script):
+            return self.signature_for_hash_type_segwit(script, tx_in_idx, hash_type)
+        witness_signature_for_hash_type.skip_delete = True
+
+        signature_for_hash_type_f.witness = witness_signature_for_hash_type
+
+        # ## BRAIN DAMAGE
+        from .script.VMClass import TxContext
+        tx_context = TxContext()
+        tx_context.lock_time = self.lock_time
+        tx_context.version = self.version
+        return tx_in.check_solution(
+            tx_out_script, signature_for_hash_type_f, tx_context, traceback_f=traceback_f, flags=flags)
+
     def total_out(self):
         return sum(tx_out.coin_value for tx_out in self.txs_out)
 

@@ -183,7 +183,7 @@ def check_locktime_verify(ss):
         if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
             raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
         return
-    if ss.lock_time is None:
+    if ss.tx_context.sequence == 0xffffffff:
         raise ScriptError("nSequence equal to 0xffffffff")
     if len(ss.stack) < 1:
         raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
