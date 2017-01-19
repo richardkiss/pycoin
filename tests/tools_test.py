@@ -6,7 +6,12 @@ from pycoin.serialize import h2b
 from pycoin.intbytes import int_to_bytes, bytes_from_ints
 from pycoin.tx.script.tools import bin_script, compile, disassemble, int_to_script_bytes, int_from_script_bytes
 from pycoin.tx.script.opcodes import INT_TO_OPCODE, OPCODE_LIST
-from pycoin.tx.script.vm import eval_script
+from pycoin.tx.script.VMClass import VM, TxInContext
+
+
+class myVM(VM):
+    MAX_SCRIPT_LENGTH = int(1e9)
+    MAX_BLOB_LENGTH = int(1e9)
 
 
 class ToolsTest(unittest.TestCase):
@@ -15,8 +20,13 @@ class ToolsTest(unittest.TestCase):
 
         def test_bytes(as_bytes):
             script = bin_script([as_bytes])
-            stack = []
-            eval_script(script, None, lock_time=0, stack=stack, disallow_long_scripts=False)
+            ## BRAIN DAMAGE: UGLY
+            vm = myVM()
+            tx_in_context = TxInContext()
+            tx_in_context.tx_context = None
+            tx_in_context.signature_for_hash_type_f = None
+            tx_in_context.flags = 0
+            stack = vm.eval_script(script, tx_in_context, tx_in_context)
             assert len(stack) == 1
             assert stack[0] == as_bytes
 

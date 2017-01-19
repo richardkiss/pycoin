@@ -13,8 +13,6 @@ from pycoin.tx.script import ScriptError
 from pycoin.tx.script import errno
 from pycoin.tx.script import flags
 from pycoin.tx.script.tools import compile, disassemble
-from pycoin.tx.script.vm import eval_script
-from pycoin.tx.script.vm import check_script
 from pycoin.tx.script.VMClass import SolutionChecker, TxContext, TxInContext
 
 

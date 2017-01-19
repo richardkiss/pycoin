@@ -7,7 +7,7 @@ from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitc
 from pycoin.serialize import b2h
 from pycoin.tx.script.tools import get_opcode, bin_script
 from pycoin.tx.script.opcodes import INT_TO_OPCODE
-from pycoin.tx.script.vm import eval_script, is_pay_to_script_hash
+from pycoin.tx.script.VMClass import SolutionChecker  # eval_script, is_pay_to_script_hash
 
 from pycoin.tx.script.check_signature import parse_signature_blob
 from pycoin.tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
@@ -65,7 +65,7 @@ def instruction_for_opcode(opcode, data):
 
 
 def annotation_f_for_scripts(input_script, output_script, signature_for_hash_type_f):
-    is_p2sh = is_pay_to_script_hash(output_script)
+    is_p2sh = SolutionChecker.is_pay_to_script_hash(output_script)
     in_ap = b'\0'
     out_ap = b'\0'
     if is_p2sh:
@@ -117,11 +117,13 @@ def disassemble_scripts(input_script, output_script, lock_time, signature_for_ha
         yield pre_annotations, pc, opcode, instruction_for_opcode(opcode, data), post_annotations
         pc = new_pc
 
-    if not is_pay_to_script_hash(output_script):
+    if not SolutionChecker.is_pay_to_script_hash(output_script):
         return
 
     stack = []
-    eval_script(input_script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=stack)
+    ## BRAIN DAMAGE
+    sc = SolutionChecker()
+    sc.eval_script(input_script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=stack)
     if stack:
         signatures, new_output_script = stack[:-1], stack[-1]
         new_input_script = bin_script(signatures)
