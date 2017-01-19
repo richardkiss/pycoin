@@ -583,25 +583,14 @@ class Tx(object):
         tx_in = self.txs_in[tx_in_idx]
         if tx_in.is_coinbase():
             return True
-        if len(self.unspents) <= tx_in_idx:
+        if len(self.unspents) <= tx_in_idx or self.unspents[tx_in_idx] is None:
             return False
-        unspent = self.unspents[tx_in_idx]
-        if unspent is None:
+        from .script import ScriptError
+        try:
+            self.check_solution(tx_in_idx, traceback_f=traceback_f, flags=flags)
+            return True
+        except ScriptError:
             return False
-        tx_out_script = self.unspents[tx_in_idx].script
-
-        def signature_for_hash_type_f(hash_type, script):
-            return self.signature_hash(script, tx_in_idx, hash_type)
-
-        def witness_signature_for_hash_type(hash_type, script):
-            return self.signature_for_hash_type_segwit(script, tx_in_idx, hash_type)
-        witness_signature_for_hash_type.skip_delete = True
-
-        signature_for_hash_type_f.witness = witness_signature_for_hash_type
-
-        return tx_in.verify(
-            tx_out_script, signature_for_hash_type_f, lock_time=self.lock_time,
-            flags=flags, traceback_f=traceback_f, tx_version=self.version)
 
     def sign(self, hash160_lookup, hash_type=None, **kwargs):
         """

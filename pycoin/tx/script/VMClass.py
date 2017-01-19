@@ -95,7 +95,7 @@ class SolutionChecker(object):
         vm_context = VMContext()
         vm_context.flags = flags
         vm_context.signature_for_hash_type_f = tx_in_context.signature_for_hash_type_f.witness
-        vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=stack)
+        vm.eval_script(puzzle_script, tx_in_context, vm_context, initial_stack=stack)
 
         if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
@@ -130,7 +130,7 @@ class SolutionChecker(object):
                 witness_version, witness_program, tx_in_context, tx_context, flags)
         return had_witness
 
-    def _check_solution(self, tx_in_context, tx_context, flags):
+    def _check_solution(self, tx_in_context, flags):
         """
         solution_script: alleged solution to the puzzle_script
         puzzle_script: the script protecting the coins
@@ -155,19 +155,19 @@ class SolutionChecker(object):
         vm_context.signature_for_hash_type_f = tx_in_context.signature_for_hash_type_f
 
         vm = VM()
-        stack = vm.eval_script(solution_script, tx_context, vm_context)
+        stack = vm.eval_script(solution_script, tx_in_context, vm_context)
 
         if is_p2h and (flags & VERIFY_P2SH):
             p2sh_solution_blob, p2sh_puzzle_script = stack[:-1], stack[-1]
             p2sh_solution_script = bin_script(p2sh_solution_blob)
 
-        stack = vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=stack)
+        stack = vm.eval_script(puzzle_script, tx_in_context, vm_context, initial_stack=stack)
 
         if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         if flags & VERIFY_WITNESS:
-            had_witness = self.check_witness(tx_in_context, tx_context, flags)
+            had_witness = self.check_witness(tx_in_context, tx_in_context, flags)
 
         if is_p2h and bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
             self.check_script_push_only(solution_script)
@@ -178,7 +178,9 @@ class SolutionChecker(object):
             p2sh_tx_in_context.solution_script = p2sh_solution_script
             p2sh_tx_in_context.witness_solution_stack = tx_in_context.witness_solution_stack
             p2sh_tx_in_context.signature_for_hash_type_f = tx_in_context.signature_for_hash_type_f
-            self._check_solution(p2sh_tx_in_context, tx_context, p2sh_flags)
+            p2sh_tx_in_context.tx_context = tx_in_context.tx_context
+            p2sh_tx_in_context.sequence = tx_in_context.sequence
+            self._check_solution(p2sh_tx_in_context, p2sh_flags)
             return
 
         if (flags & VERIFY_WITNESS) and not had_witness and len(tx_in_context.witness_solution_stack) > 0:
@@ -220,14 +222,15 @@ class VM(object):
             return
         raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
 
-    def eval_script(self, script, tx_context, vm_context, initial_stack=None):
+    def eval_script(self, script, tx_in_context, vm_context, initial_stack=None):
         from pycoin.tx.script.Stack import Stack
 
         if len(script) > self.MAX_SCRIPT_LENGTH:
             raise ScriptError("script too long", errno.SCRIPT_SIZE)
 
         self.pc = 0
-        self.tx_context = tx_context
+        self.tx_context = tx_in_context.tx_context
+        self.tx_in_context = tx_in_context
         self.stack = initial_stack or Stack()
         self.script = script
         self.signature_for_hash_type_f = vm_context.signature_for_hash_type_f

@@ -93,7 +93,7 @@ def make_from_microcode(f):
 
 
 def op_code_separator(ss):
-    ss.begin_code_hash = ss.pc
+    ss.begin_code_hash = ss.pc + 1
 
 
 def op_toaltstack(ss):
@@ -183,7 +183,7 @@ def check_locktime_verify(ss):
         if (ss.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
             raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
         return
-    if ss.tx_context.sequence == 0xffffffff:
+    if ss.tx_in_context.sequence == 0xffffffff:
         raise ScriptError("nSequence equal to 0xffffffff")
     if len(ss.stack) < 1:
         raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
@@ -193,10 +193,10 @@ def check_locktime_verify(ss):
     if max_lock_time < 0:
         raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
     era_max = (max_lock_time >= 500000000)
-    era_lock_time = (ss.lock_time >= 500000000)
+    era_lock_time = (ss.tx_context.lock_time >= 500000000)
     if era_max != era_lock_time:
         raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
-    if max_lock_time > ss.lock_time:
+    if max_lock_time > ss.tx_context.lock_time:
         raise ScriptError("nLockTime too soon")
 
 
@@ -219,7 +219,7 @@ def check_sequence_verify(ss):
     # do the actual check
     if ss.tx_context.version < 2:
         raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
-    if ss.tx_context.sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+    if ss.tx_in_context.sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
         raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
 
     # this mask is applied to extract lock-time from the sequence field
@@ -227,7 +227,7 @@ def check_sequence_verify(ss):
 
     mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
     sequence_masked = sequence & mask
-    tx_sequence_masked = ss.tx_sequence & mask
+    tx_sequence_masked = ss.tx_in_context.sequence & mask
     if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
              (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
             ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and

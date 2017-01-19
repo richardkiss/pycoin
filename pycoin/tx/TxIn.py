@@ -32,7 +32,6 @@ from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .script.tools import disassemble, opcode_list
-from .script.vm import verify_script
 
 ZERO = b'\0' * 32
 
@@ -96,11 +95,16 @@ class TxIn(object):
         tx_out_script: the script of the TxOut that corresponds to this input
         signature_hash: the hash of the partial transaction
         """
-        if self.sequence == 0xffffffff:
-            lock_time = None
-        return verify_script(self.script, tx_out_script, signature_for_hash_type_f, lock_time=lock_time,
-                             flags=flags, expected_hash_type=expected_hash_type, traceback_f=traceback_f,
-                             witness=self.witness, tx_sequence=self.sequence, tx_version=tx_version)
+        from .script.VMClass import TxContext
+        from .script import ScriptError
+        tx_context = TxContext()
+        tx_context.lock_time = lock_time
+        tx_context.version = tx_version
+        try:
+            self.check_solution(tx_out_script, signature_for_hash_type_f, tx_context, traceback_f=traceback_f, flags=flags)
+            return True
+        except ScriptError:
+            return False
 
     def check_solution(self, tx_out_script, signature_for_hash_type_f, tx_context, traceback_f=None, flags=None):
         from .script.flags import VERIFY_P2SH, VERIFY_WITNESS
@@ -119,7 +123,8 @@ class TxIn(object):
         tx_in_context.witness_solution_stack = self.witness
         tx_in_context.sequence = self.sequence
         tx_in_context.signature_for_hash_type_f = signature_for_hash_type_f
-        checker._check_solution(tx_in_context, tx_context, flags)
+        tx_in_context.tx_context = tx_context
+        checker._check_solution(tx_in_context, flags)
 
     def __str__(self):
         if self.is_coinbase():
