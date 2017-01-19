@@ -172,13 +172,12 @@ class SolutionChecker(object):
         if is_p2h and bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
             self.check_script_push_only(solution_script)
             vm_context.is_psh_script = True
-            flags = vm_context.flags
-            flags &= ~VERIFY_P2SH
+            p2sh_flags = flags & ~VERIFY_P2SH
             p2sh_tx_in_context = TxInContext()
             p2sh_tx_in_context.puzzle_script = p2sh_puzzle_script
             p2sh_tx_in_context.solution_script = p2sh_solution_script
             p2sh_tx_in_context.witness_solution_stack = tx_in_context.witness_solution_stack
-            self._check_solution(p2sh_tx_in_context, tx_context, flags)
+            self._check_solution(p2sh_tx_in_context, tx_context, p2sh_flags)
             return
 
         if (flags & VERIFY_WITNESS) and not had_witness and len(tx_in_context.witness_solution_stack) > 0:
