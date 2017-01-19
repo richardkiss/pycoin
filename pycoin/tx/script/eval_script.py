@@ -112,26 +112,26 @@ def op_1negate(ss):
 
 def op_checksig_1(ss):
     ss.expected_hash_type = None  # ### BRAIN DAMAGE
-    op_checksig(ss.stack, ss.tx_context.signature_for_hash_type_f, ss.expected_hash_type,
+    op_checksig(ss.stack, ss.signature_for_hash_type_f, ss.expected_hash_type,
                 ss.script[ss.begin_code_hash:], ss.flags)
 
 
 def op_checksigverify(ss):
     ss.expected_hash_type = None  # ### BRAIN DAMAGE
-    op_checksig(ss.stack, ss.tx_context.signature_for_hash_type_f, ss.expected_hash_type,
+    op_checksig(ss.stack, ss.signature_for_hash_type_f, ss.expected_hash_type,
                 ss.script[ss.begin_code_hash:], ss.flags)
     verify(ss)
 
 
 def op_checkmultisig_1(ss):
     ss.expected_hash_type = None  # ### BRAIN DAMAGE
-    op_checkmultisig(ss.stack, ss.tx_context.signature_for_hash_type_f,
+    op_checkmultisig(ss.stack, ss.signature_for_hash_type_f,
                      ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
 
 
 def op_checkmultisig_verify(ss):
     ss.expected_hash_type = None  # ### BRAIN DAMAGE
-    op_checkmultisig(ss.stack, ss.tx_context.signature_for_hash_type_f,
+    op_checkmultisig(ss.stack, ss.signature_for_hash_type_f,
                      ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
     verify(ss)
 

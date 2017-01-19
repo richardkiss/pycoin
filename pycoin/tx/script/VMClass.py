@@ -79,7 +79,7 @@ class SolutionChecker(object):
     def check_witness_program(
             self, version, witness_solution_stack, witness_program, flags, tx_context):
         if version == 0:
-            stack, witness_puzzle_script = self.check_witness_program_v0(
+            stack, puzzle_script = self.check_witness_program_v0(
                 witness_solution_stack, witness_program, flags, tx_context)
         elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
             raise ScriptError(
@@ -94,7 +94,8 @@ class SolutionChecker(object):
         vm = VM()
         vm_context = VMContext()
         vm_context.flags = flags
-        vm.eval_script(witness_puzzle_script, tx_context, vm_context, initial_stack=stack)
+        vm_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f.witness
+        vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=stack)
 
         if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
@@ -121,12 +122,12 @@ class SolutionChecker(object):
         had_witness = False
         if witness_version is not None:
             had_witness = True
-            witness_puzzle = tx_in_context.puzzle_script[2:]
+            witness_program = tx_in_context.puzzle_script[2:]
             if len(tx_in_context.solution_script) > 0:
                 err = errno.WITNESS_MALLEATED if flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
                 raise ScriptError("script sig is not blank on segwit input", err)
             self.check_witness_program(
-                witness_version, tx_in_context.witness_solution_stack, witness_puzzle, flags, tx_context)
+                witness_version, tx_in_context.witness_solution_stack, witness_program, flags, tx_context)
         return had_witness
 
     def _check_solution(self, tx_in_context, tx_context, flags):
@@ -151,6 +152,7 @@ class SolutionChecker(object):
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
         vm_context.flags = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
         vm_context.is_solution_script = True
+        vm_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f
 
         vm = VM()
         stack = vm.eval_script(solution_script, tx_context, vm_context)
@@ -228,7 +230,7 @@ class VM(object):
         self.tx_context = tx_context
         self.stack = initial_stack or Stack()
         self.script = script
-        self.signature_for_hash_type_f = tx_context.signature_for_hash_type_f
+        self.signature_for_hash_type_f = vm_context.signature_for_hash_type_f
         self.lock_time = tx_context.lock_time
         self.altstack = Stack()
         self.if_condition_stack = []
@@ -283,4 +285,3 @@ class VM(object):
             raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
 
         self.check_stack_size()
-
