@@ -15,6 +15,7 @@ from pycoin.tx.script import flags
 from pycoin.tx.script.tools import compile, disassemble
 from pycoin.tx.script.vm import eval_script
 from pycoin.tx.script.vm import check_script
+from pycoin.tx.script.VMClass import SolutionChecker, TxContext, TxInContext
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
@@ -91,11 +92,22 @@ def check_solution(self, tx_in_idx, flags, traceback_f=None):
     # code that should be in TxIn
     def tx_in_check_script(self, tx_out_script, signature_for_hash_type_f, lock_time, expected_hash_type=None,
                            traceback_f=None, flags=None, tx_version=None):
+        checker = SolutionChecker()
+        # BRAIN DAMAGE: this check should be refactored to elsewhere
         if self.sequence == 0xffffffff:
             lock_time = None
-        check_script(self.script, tx_out_script, signature_for_hash_type_f, lock_time=lock_time,
-                     flags=flags, expected_hash_type=expected_hash_type, traceback_f=traceback_f,
-                     witness=self.witness, tx_sequence=self.sequence, tx_version=tx_version)
+        tx_context = TxContext()
+        tx_context.lock_time = lock_time
+        tx_context.sequence = self.sequence
+        tx_context.version = tx_version
+        tx_context.signature_for_hash_type_f = signature_for_hash_type_f
+        import pdb
+        # pdb.set_trace()
+        tx_in_context = TxInContext()
+        tx_in_context.puzzle_script = tx_out_script
+        tx_in_context.solution_script = self.script
+        tx_in_context.witness_solution_stack = self.witness
+        checker._check_solution(tx_in_context, tx_context, flags)
 
     tx_in_check_script(self.txs_in[tx_in_idx], tx_out_script, signature_for_hash_type_f, lock_time=self.lock_time,
                        flags=flags, traceback_f=traceback_f, tx_version=self.version)

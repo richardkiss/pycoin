@@ -112,26 +112,26 @@ def op_1negate(ss):
 
 def op_checksig_1(ss):
     ss.expected_hash_type = None  # ### BRAIN DAMAGE
-    op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
+    op_checksig(ss.stack, ss.tx_context.signature_for_hash_type_f, ss.expected_hash_type,
                 ss.script[ss.begin_code_hash:], ss.flags)
 
 
 def op_checksigverify(ss):
     ss.expected_hash_type = None  # ### BRAIN DAMAGE
-    op_checksig(ss.stack, ss.signature_f, ss.expected_hash_type,
+    op_checksig(ss.stack, ss.tx_context.signature_for_hash_type_f, ss.expected_hash_type,
                 ss.script[ss.begin_code_hash:], ss.flags)
     verify(ss)
 
 
 def op_checkmultisig_1(ss):
     ss.expected_hash_type = None  # ### BRAIN DAMAGE
-    op_checkmultisig(ss.stack, ss.signature_f,
+    op_checkmultisig(ss.stack, ss.tx_context.signature_for_hash_type_f,
                      ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
 
 
 def op_checkmultisig_verify(ss):
     ss.expected_hash_type = None  # ### BRAIN DAMAGE
-    op_checkmultisig(ss.stack, ss.signature_f,
+    op_checkmultisig(ss.stack, ss.tx_context.signature_for_hash_type_f,
                      ss.expected_hash_type, ss.script[ss.begin_code_hash:], ss.flags)
     verify(ss)
 
@@ -217,9 +217,9 @@ def check_sequence_verify(ss):
     if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
         return
     # do the actual check
-    if ss.tx_version < 2:
+    if ss.tx_context.version < 2:
         raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
-    if ss.tx_sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+    if ss.tx_context.sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
         raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
 
     # this mask is applied to extract lock-time from the sequence field
