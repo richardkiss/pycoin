@@ -95,36 +95,22 @@ class TxIn(object):
         tx_out_script: the script of the TxOut that corresponds to this input
         signature_hash: the hash of the partial transaction
         """
-        from .script.VMClass import TxContext
+        from .script.VMClass import SolutionChecker, TxContext
         from .script import ScriptError
         tx_context = TxContext()
         tx_context.lock_time = lock_time
         tx_context.version = tx_version
+        tx_context.signature_for_hash_type_f = signature_for_hash_type_f
+        tx_context.puzzle_script = tx_out_script
+        tx_context.solution_script = self.script
+        tx_context.witness_solution_stack = self.witness
+        tx_context.sequence = self.sequence
+        checker = SolutionChecker()
         try:
-            self.check_solution(tx_out_script, signature_for_hash_type_f, tx_context, traceback_f=traceback_f, flags=flags)
+            checker._check_solution(tx_context, flags=flags, traceback_f=traceback_f)
             return True
         except ScriptError:
             return False
-
-    def check_solution(self, tx_out_script, signature_for_hash_type_f, tx_context, traceback_f=None, flags=None):
-        from .script.flags import VERIFY_P2SH, VERIFY_WITNESS
-        if flags is None:
-            flags = VERIFY_P2SH | VERIFY_WITNESS
-        from .script.VMClass import SolutionChecker, TxInContext
-        checker = SolutionChecker()
-        # BRAIN DAMAGE: this check should be refactored to elsewhere
-        # if self.sequence == 0xffffffff:
-        #   lock_time = None
-        # import pdb
-        # pdb.set_trace()
-        tx_in_context = TxInContext()
-        tx_in_context.puzzle_script = tx_out_script
-        tx_in_context.solution_script = self.script
-        tx_in_context.witness_solution_stack = self.witness
-        tx_in_context.sequence = self.sequence
-        tx_in_context.signature_for_hash_type_f = signature_for_hash_type_f
-        tx_in_context.tx_context = tx_context
-        checker._check_solution(tx_in_context, flags)
 
     def __str__(self):
         if self.is_coinbase():

@@ -443,12 +443,17 @@ class Tx(object):
         signature_for_hash_type_f.witness = witness_signature_for_hash_type
 
         # ## BRAIN DAMAGE
-        from .script.VMClass import TxContext
+        from .script.VMClass import SolutionChecker, TxContext
         tx_context = TxContext()
         tx_context.lock_time = self.lock_time
         tx_context.version = self.version
-        return tx_in.check_solution(
-            tx_out_script, signature_for_hash_type_f, tx_context, traceback_f=traceback_f, flags=flags)
+        tx_context.puzzle_script = tx_out_script
+        tx_context.solution_script = tx_in.script
+        tx_context.witness_solution_stack = tx_in.witness
+        tx_context.sequence = tx_in.sequence
+        tx_context.signature_for_hash_type_f = signature_for_hash_type_f
+        checker = SolutionChecker()
+        checker._check_solution(tx_context, flags)
 
     def total_out(self):
         return sum(tx_out.coin_value for tx_out in self.txs_out)

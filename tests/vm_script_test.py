@@ -13,7 +13,7 @@ from pycoin.tx.script import ScriptError
 from pycoin.tx.script import errno
 from pycoin.tx.script import flags
 from pycoin.tx.script.tools import compile, disassemble
-from pycoin.tx.script.VMClass import SolutionChecker, TxContext, TxInContext
+from pycoin.tx.script.VMClass import SolutionChecker, TxContext
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
