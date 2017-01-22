@@ -1,6 +1,6 @@
 from pycoin.intbytes import byte_to_int
 
-from ..script import tools
+from ..script.VM import VM
 
 from ...serialize import b2h
 
@@ -43,13 +43,13 @@ class ScriptPayToScriptWit(ScriptType):
 
         kwargs["signature_for_hash_type_f"] = kwargs["signature_for_hash_type_f"].witness
         kwargs["script_to_hash"] = underlying_script
-        kwargs["existing_script"] = tools.bin_script(kwargs["existing_witness"])
+        kwargs["existing_script"] = VM.bin_script(kwargs["existing_witness"])
         underlying_solution = script_obj.solve(**kwargs)
         # we need to unwrap the solution
         solution = []
         pc = 0
         while pc < len(underlying_solution):
-            opcode, data, pc = tools.get_opcode(underlying_solution, pc)
+            opcode, data, pc = VM.get_opcode(underlying_solution, pc)
             solution.append(data)
         solution.append(underlying_script)
         return (b"", solution)
@@ -59,7 +59,7 @@ class ScriptPayToScriptWit(ScriptType):
             # create the script
             STANDARD_SCRIPT_OUT = "OP_0 %s"
             script_text = STANDARD_SCRIPT_OUT % b2h(self.hash256)
-            self._script = tools.compile(script_text)
+            self._script = VM.compile(script_text)
         return self._script
 
     def address(self, netcode=None):
