@@ -10,7 +10,7 @@ from pycoin.tx.script.VMClass import VM, TxContext
 
 bin_script = VM.bin_script
 compile = VM.compile
-disassemble = VM.compile
+disassemble = VM.disassemble
 
 class myVM(VM):
     MAX_SCRIPT_LENGTH = int(1e9)
@@ -28,6 +28,7 @@ class ToolsTest(unittest.TestCase):
             tx_context = TxContext()
             tx_context.signature_for_hash_type_f = None
             tx_context.flags = 0
+            tx_context.traceback_f = None
             stack = vm.eval_script(script, tx_context, tx_context)
             assert len(stack) == 1
             assert stack[0] == as_bytes
