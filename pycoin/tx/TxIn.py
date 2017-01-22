@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Deal with the part of a Tx that specifies where the Bitcoin comes from.
 
@@ -30,8 +29,8 @@ from .. import encoding
 
 from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
+from .script.VM import VM
 
-#from .script.tools import disassemble, opcode_list
 
 ZERO = b'\0' * 32
 
@@ -40,6 +39,9 @@ class TxIn(object):
     """
     The part of a Tx that specifies where the Bitcoin comes from.
     """
+
+    VM = VM
+
     def __init__(self, previous_hash, previous_index, script=b'', sequence=4294967295):
         self.previous_hash = previous_hash
         self.previous_index = previous_index
@@ -116,4 +118,4 @@ class TxIn(object):
         if self.is_coinbase():
             return 'TxIn<COINBASE: %s>' % b2h(self.script)
         return 'TxIn<%s[%d] "%s">' % (
-            b2h_rev(self.previous_hash), self.previous_index, disassemble(self.script))
+            b2h_rev(self.previous_hash), self.previous_index, self.VM.disassemble(self.script))

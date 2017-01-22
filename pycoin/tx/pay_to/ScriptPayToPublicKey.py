@@ -1,4 +1,4 @@
-from ..script import tools
+from ..script.VM import VM
 
 from ... import encoding
 from ...serialize import b2h
@@ -12,7 +12,7 @@ class ScriptPayToPublicKey(ScriptType):
     """
     This is generally used in coinbase transactions only.
     """
-    TEMPLATE = tools.compile("OP_PUBKEY OP_CHECKSIG")
+    TEMPLATE = VM.compile("OP_PUBKEY OP_CHECKSIG")
 
     def __init__(self, sec):
         self.sec = sec
@@ -41,7 +41,7 @@ class ScriptPayToPublicKey(ScriptType):
             # create the script
             STANDARD_SCRIPT_OUT = "%s OP_CHECKSIG"
             script_text = STANDARD_SCRIPT_OUT % b2h(self.sec)
-            self._script = tools.compile(script_text)
+            self._script = VM.compile(script_text)
         return self._script
 
     def solve(self, **kwargs):
@@ -69,7 +69,7 @@ class ScriptPayToPublicKey(ScriptType):
 
         secret_exponent, public_pair, compressed = result
 
-        solution = tools.bin_script([self._create_script_signature(
+        solution = VM.bin_script([self._create_script_signature(
             secret_exponent, signature_for_hash_type_f, signature_type, script_to_hash)])
         return solution
 
