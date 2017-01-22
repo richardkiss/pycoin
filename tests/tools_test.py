@@ -4,10 +4,13 @@ import unittest
 
 from pycoin.serialize import h2b
 from pycoin.intbytes import int_to_bytes, bytes_from_ints
-from pycoin.tx.script.tools import bin_script, compile, disassemble, int_to_script_bytes, int_from_script_bytes
-from pycoin.tx.script.opcodes import INT_TO_OPCODE, OPCODE_LIST
+from pycoin.tx.script.ints import int_to_script_bytes, int_from_script_bytes
+from pycoin.tx.script.opcodes import OPCODE_LIST
 from pycoin.tx.script.VMClass import VM, TxContext
 
+bin_script = VM.bin_script
+compile = VM.compile
+disassemble = VM.compile
 
 class myVM(VM):
     MAX_SCRIPT_LENGTH = int(1e9)
@@ -67,7 +70,7 @@ class ToolsTest(unittest.TestCase):
         long_hex_260 = build_hex(260, 13, 93)
         long_hex_270 = build_hex(270, 11, 47)
         check("%s %s" % (long_hex_260, long_hex_270))
-        s = set(INT_TO_OPCODE.values())
+        s = set(x[-1] for x in OPCODE_LIST)
         for opcode, code in OPCODE_LIST:
             # skip reassigned NOPs
             if opcode not in s:

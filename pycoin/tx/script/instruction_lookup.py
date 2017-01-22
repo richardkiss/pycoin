@@ -1,7 +1,11 @@
+# -*- coding: utf-8 -*-
 """
+Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
+
+
 The MIT License (MIT)
 
-Copyright (c) 2017 by Richard Kiss
+Copyright (c) 2013 by Richard Kiss
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,3 +25,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+
+from . import stackops, checksigops, miscops
+from . import ScriptError
+from . import errno
+
+
+def make_bad_instruction(v):
+    def f(vm_state):
+        raise ScriptError("invalid instruction x%02x at %d" % (v, vm_state.pc), errno.BAD_OPCODE)
+    return f
+
+
+def make_instruction_lookup(opcode_pairs):
+    # start with all opcodes invalid
+    instruction_lookup = [make_bad_instruction(i) for i in range(256)]
+    for i in range(0, 76):
+        instruction_lookup[i] = lambda s: 0
+    opcode_lookups = {}
+    opcode_lookups.update(stackops.all_opcodes())
+    opcode_lookups.update(checksigops.collect_opcodes())
+    opcode_lookups.update(miscops.collect_opcodes())
+    for opcode_name, opcode_value in opcode_pairs:
+        if opcode_name in opcode_lookups:
+            instruction_lookup[opcode_value] = opcode_lookups[opcode_name]
+    return instruction_lookup

@@ -47,6 +47,7 @@ from .exceptions import SolvingError
 from .pay_to import script_obj_from_script, ScriptPayToScript
 from .script import opcodes
 from .script import tools
+from .script.VMClass import SolutionChecker, TxContext
 
 
 MAX_MONEY = 21000000 * SATOSHI_PER_COIN
@@ -64,6 +65,7 @@ class Tx(object):
     TxIn = TxIn
     TxOut = TxOut
     Spendable = Spendable
+    SolutionChecker = SolutionChecker
 
     MAX_MONEY = MAX_MONEY
     MAX_TX_SIZE = MAX_BLOCK_SIZE
@@ -326,7 +328,7 @@ class Tx(object):
         f = io.BytesIO()
         for tx_out in txs_out:
             stream_struct("Q", f, tx_out.coin_value)
-            tools.write_push_data([tx_out.script], f)
+            self.SolutionChecker.VM.write_push_data([tx_out.script], f)
         return double_sha256(f.getvalue())
 
     def segwit_signature_preimage(self, script, tx_in_idx, hash_type):
@@ -429,6 +431,11 @@ class Tx(object):
                     b2h_rev(tx_in.previous_hash), tx_in_idx))
 
     def check_solution(self, tx_in_idx, traceback_f=None, flags=None):
+        tx_context = self.tx_context_for_idx(tx_in_idx)
+        checker = self.SolutionChecker()
+        checker._check_solution(tx_context, flags, traceback_f=traceback_f)
+
+    def tx_context_for_idx(self, tx_in_idx):
         tx_in = self.txs_in[tx_in_idx]
         unspent = self.unspents[tx_in_idx]
         tx_out_script = unspent.script
@@ -442,8 +449,6 @@ class Tx(object):
 
         signature_for_hash_type_f.witness = witness_signature_for_hash_type
 
-        # ## BRAIN DAMAGE
-        from .script.VMClass import SolutionChecker, TxContext
         tx_context = TxContext()
         tx_context.lock_time = self.lock_time
         tx_context.version = self.version
@@ -452,8 +457,7 @@ class Tx(object):
         tx_context.witness_solution_stack = tx_in.witness
         tx_context.sequence = tx_in.sequence
         tx_context.signature_for_hash_type_f = signature_for_hash_type_f
-        checker = SolutionChecker()
-        checker._check_solution(tx_context, flags)
+        return tx_context
 
     def total_out(self):
         return sum(tx_out.coin_value for tx_out in self.txs_out)

@@ -8,7 +8,7 @@ from ..serialize import b2h_rev
 from pycoin.tx.pay_to import (
     script_obj_from_script, ScriptMultisig, ScriptPayToAddress, ScriptPayToPublicKey
 )
-from pycoin.tx.script.check_signature import parse_signature_blob
+from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
 from pycoin.tx.script.tools import get_opcode
 

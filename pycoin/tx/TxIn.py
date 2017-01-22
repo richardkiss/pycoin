@@ -31,7 +31,7 @@ from .. import encoding
 from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
-from .script.tools import disassemble, opcode_list
+#from .script.tools import disassemble, opcode_list
 
 ZERO = b'\0' * 32
 

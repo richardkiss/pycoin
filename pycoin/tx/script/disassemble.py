@@ -5,11 +5,11 @@ from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitc
                              sec_to_public_pair, is_sec_compressed)
 
 from pycoin.serialize import b2h
-from pycoin.tx.script.tools import get_opcode, bin_script
-from pycoin.tx.script.opcodes import INT_TO_OPCODE
+#from pycoin.tx.script.tools import get_opcode, bin_script
+#from pycoin.tx.script.opcodes import INT_TO_OPCODE
 from pycoin.tx.script.VMClass import SolutionChecker  # eval_script, is_pay_to_script_hash
 
-from pycoin.tx.script.check_signature import parse_signature_blob
+from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
 
 

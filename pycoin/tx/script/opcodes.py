@@ -146,10 +146,6 @@ OPCODE_LIST = [
   ("OP_INVALIDOPCODE", 255),
 ]
 
-OPCODE_TO_INT = dict(o for o in OPCODE_LIST)
-
-INT_TO_OPCODE = dict(reversed(i) for i in OPCODE_LIST)
-
 
 def populate_module():
     """Make all the opcodes globals in this module to make it possible to
