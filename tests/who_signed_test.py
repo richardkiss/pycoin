@@ -12,7 +12,6 @@ from pycoin.tx.Spendable import Spendable
 from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata
 from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup, script_obj_from_script
-from pycoin.tx.script import tools
 from pycoin.ui import address_for_pay_to_script, standard_tx_out_script, script_obj_from_address
 
 

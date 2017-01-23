@@ -13,7 +13,6 @@ from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata
 from pycoin.tx.pay_to import build_hash160_lookup
 from pycoin.tx.pay_to import script_obj_from_address, script_obj_from_script
-from pycoin.tx.script import tools
 from pycoin.ui import standard_tx_out_script
 
 

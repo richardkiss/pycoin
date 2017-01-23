@@ -5,8 +5,7 @@ from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitc
                              sec_to_public_pair, is_sec_compressed)
 
 from pycoin.serialize import b2h
-#from pycoin.tx.script.tools import get_opcode, bin_script
-#from pycoin.tx.script.opcodes import INT_TO_OPCODE
+from pycoin.tx.script.VM import VM
 from pycoin.tx.script.VMClass import SolutionChecker  # eval_script, is_pay_to_script_hash
 
 from pycoin.tx.script.checksigops import parse_signature_blob
@@ -60,7 +59,7 @@ def add_sec_annotations(a1, data, address_prefix):
 
 def instruction_for_opcode(opcode, data):
     if data is None or len(data) == 0:
-        return INT_TO_OPCODE.get(opcode, "(UNKNOWN OPCODE)")
+        return VM.INT_TO_OPCODE.get(opcode, "(UNKNOWN OPCODE)")
     return "[PUSH_%d] %s" % (opcode, binascii.hexlify(data))
 
 
@@ -105,14 +104,14 @@ def disassemble_scripts(input_script, output_script, lock_time, signature_for_ha
         input_script, output_script, signature_for_hash_type_f)
     pc = 0
     while pc < len(input_script):
-        opcode, data, new_pc = get_opcode(input_script, pc)
+        opcode, data, new_pc = VM.get_opcode(input_script, pc)
         pre_annotations, post_annotations = input_annotations_f(pc, opcode, data)
         yield pre_annotations, pc, opcode, instruction_for_opcode(opcode, data), post_annotations
         pc = new_pc
 
     pc = 0
     while pc < len(output_script):
-        opcode, data, new_pc = get_opcode(output_script, pc)
+        opcode, data, new_pc = VM.get_opcode(output_script, pc)
         pre_annotations, post_annotations = output_annotations_f(pc, opcode, data)
         yield pre_annotations, pc, opcode, instruction_for_opcode(opcode, data), post_annotations
         pc = new_pc
@@ -126,7 +125,7 @@ def disassemble_scripts(input_script, output_script, lock_time, signature_for_ha
     sc.eval_script(input_script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=stack)
     if stack:
         signatures, new_output_script = stack[:-1], stack[-1]
-        new_input_script = bin_script(signatures)
+        new_input_script = VM.bin_script(signatures)
     else:
         signatures, new_output_script, new_input_script = [], b'', b''
 

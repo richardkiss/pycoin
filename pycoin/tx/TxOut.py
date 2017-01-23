@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Deal with the part of a Tx that specifies where the Bitcoin goes to.
 
@@ -31,7 +30,7 @@ from ..convention import satoshi_to_mbtc
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .pay_to import script_obj_from_script
-from .script import tools
+from .script.VM import VM
 
 
 class TxOut(object):
@@ -58,7 +57,7 @@ class TxOut(object):
         return '%s<%s mbtc "%s">' % (
             self.__class__.__name__,
             satoshi_to_mbtc(self.coin_value),
-            tools.disassemble(self.script)
+            VM.disassemble(self.script)
         )
 
     def address(self, netcode=None):
