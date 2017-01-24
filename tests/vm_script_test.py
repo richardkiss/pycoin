@@ -12,8 +12,8 @@ from pycoin.tx import TxIn, TxOut, Tx
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script import errno
 from pycoin.tx.script import flags
-from pycoin.tx.script.VMClass import SolutionChecker, TxContext, VM
-
+from pycoin.tx.script.SolutionChecker import SolutionChecker, TxContext
+from pycoin.tx.script.VM import VM
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'

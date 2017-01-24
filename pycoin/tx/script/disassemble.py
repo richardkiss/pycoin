@@ -6,7 +6,7 @@ from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitc
 
 from pycoin.serialize import b2h
 from pycoin.tx.script.VM import VM
-from pycoin.tx.script.VMClass import SolutionChecker  # eval_script, is_pay_to_script_hash
+from pycoin.tx.script.SolutionChecker import SolutionChecker
 
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
@@ -120,7 +120,7 @@ def disassemble_scripts(input_script, output_script, lock_time, signature_for_ha
         return
 
     stack = []
-    ## BRAIN DAMAGE
+    # ## BRAIN DAMAGE
     sc = SolutionChecker()
     sc.eval_script(input_script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=stack)
     if stack:

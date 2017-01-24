@@ -6,7 +6,8 @@ from pycoin.serialize import h2b
 from pycoin.intbytes import int_to_bytes, bytes_from_ints
 from pycoin.tx.script.ints import int_to_script_bytes, int_from_script_bytes
 from pycoin.tx.script.opcodes import OPCODE_LIST
-from pycoin.tx.script.VMClass import VM, TxContext
+from pycoin.tx.script.SolutionChecker import TxContext
+from pycoin.tx.script.VM import VM
 
 bin_script = VM.bin_script
 compile = VM.compile

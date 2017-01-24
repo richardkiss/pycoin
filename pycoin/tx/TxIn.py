@@ -97,7 +97,7 @@ class TxIn(object):
         tx_out_script: the script of the TxOut that corresponds to this input
         signature_hash: the hash of the partial transaction
         """
-        from .script.VMClass import SolutionChecker, TxContext
+        from .script.SolutionChecker import SolutionChecker, TxContext
         from .script import ScriptError
         tx_context = TxContext()
         tx_context.lock_time = lock_time

@@ -40,7 +40,7 @@ from pycoin.intbytes import bytes_from_int, byte_to_int
 from pycoin.serialize import h2b_rev, h2b
 from pycoin.tx import Tx, TxIn, ValidationFailureError
 from pycoin.tx.Spendable import Spendable
-from pycoin.tx.script.VMClass import VM
+from pycoin.tx.script.VM import VM
 
 
 DEBUG_TX_ID_LIST = []

@@ -7,11 +7,12 @@ from .flags import VERIFY_MINIMALDATA
 
 from ...intbytes import byte_to_int, bytes_from_int, bytes_to_ints, int_to_bytes, from_bytes
 
-from .ints import int_from_script_bytes, int_to_script_bytes
+from .ints import int_to_script_bytes
 from . import ScriptError
 from . import errno
 from . import opcodes
 from .instruction_lookup import make_instruction_lookup
+from .Stack import Stack
 
 
 def compile_expression(t):
@@ -38,6 +39,8 @@ class VM(object):
     MAX_OP_COUNT = 201
     MAX_STACK_SIZE = 1000
     OPCODE_LIST = opcodes.OPCODE_LIST
+
+    Stack = Stack
 
     @classmethod
     def build_microcode(class_):
@@ -197,16 +200,14 @@ class VM(object):
         return bytes(new_script)
 
     def eval_script(self, script, tx_context, vm_context, initial_stack=None):
-        from pycoin.tx.script.Stack import Stack
-
         if len(script) > self.MAX_SCRIPT_LENGTH:
             raise ScriptError("script too long", errno.SCRIPT_SIZE)
 
         self.pc = 0
         self.tx_context = tx_context
-        self.stack = initial_stack or Stack()
+        self.stack = initial_stack or self.Stack()
         self.script = script
-        self.altstack = Stack()
+        self.altstack = self.Stack()
         self.if_condition_stack = []
         self.op_count = 0
         self.begin_code_hash = 0
