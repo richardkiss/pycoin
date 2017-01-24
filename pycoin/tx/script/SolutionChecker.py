@@ -29,6 +29,9 @@ class VMContext(object):
 class SolutionChecker(object):
     VM = VM
 
+    v0_len20_prefix = VM.compile("OP_DUP OP_HASH160")
+    v0_len20_postfix = VM.compile("OP_EQUALVERIFY OP_CHECKSIG")
+
     def __init__(self):
         pass
 
@@ -54,8 +57,7 @@ class SolutionChecker(object):
             # special case for pay-to-pubkeyhash; signature + pubkey in witness
             if len(witness_solution_stack) != 2:
                 raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-            # "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(script_signature))
-            puzzle_script = b'v\xa9' + VM.bin_script([witness_program]) + b'\x88\xac'
+            puzzle_script = self.v0_len20_prefix + VM.bin_script([witness_program]) + self.v0_len20_postfix
             stack = Stack(witness_solution_stack)
         else:
             raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
