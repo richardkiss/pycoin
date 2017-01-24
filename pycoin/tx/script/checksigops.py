@@ -231,6 +231,9 @@ def do_OP_CHECKMULTISIG(vm_state):
 
     require_minimal = flags & VERIFY_MINIMALDATA
     key_count = int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
+
+    vm_state.op_count += key_count
+
     if key_count < 0 or key_count > 20:
         raise ScriptError("key_count not in range 0 to 20", errno.PUBKEY_COUNT)
 

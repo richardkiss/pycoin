@@ -206,40 +206,31 @@ class VM(object):
         self.tx_context = tx_context
         self.stack = initial_stack or Stack()
         self.script = script
-        self.signature_for_hash_type_f = vm_context.signature_for_hash_type_f
         self.altstack = Stack()
         self.if_condition_stack = []
         self.op_count = 0
         self.begin_code_hash = 0
         self.flags = vm_context.flags
-
-        traceback_f = vm_context.traceback_f
+        self.traceback_f = vm_context.traceback_f
+        self.signature_for_hash_type_f = vm_context.signature_for_hash_type_f
 
         while self.pc < len(self.script):
-            opcode, data, pc = self.get_opcode(self.script, self.pc)
-
-            if traceback_f:
-                traceback_f(opcode, data, pc, self)
-
-            if data and len(data) > self.MAX_BLOB_LENGTH:
-                raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
-            if opcode > opcodes.OP_16:
-                self.op_count += 1
-            stack_top = self.stack[-1] if self.stack else b''
-
-            self.check_stack_size()
             self.eval_instruction()
-
-            if opcode in (opcodes.OP_CHECKMULTISIG, opcodes.OP_CHECKMULTISIGVERIFY):
-                self.op_count += int_from_script_bytes(stack_top)
-            if self.op_count > self.MAX_OP_COUNT:
-                raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
         self.post_script_check()
         return self.stack
 
     def eval_instruction(self):
-        opcode, data, new_pc = self.get_opcode(self.script, self.pc)
+        opcode, data, pc = self.get_opcode(self.script, self.pc)
+        if data and len(data) > self.MAX_BLOB_LENGTH:
+            raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
+        if opcode > opcodes.OP_16:
+            self.op_count += 1
+
+        self.check_stack_size()
+
+        if self.traceback_f:
+            self.traceback_f(opcode, data, pc, self)
 
         all_if_true = functools.reduce(lambda x, y: x and y, self.if_condition_stack, True)
         if data is not None and all_if_true:
@@ -251,7 +242,10 @@ class VM(object):
         if getattr(f, "outside_conditional", False) or all_if_true:
             f(self)
 
-        self.pc = new_pc
+        self.pc = pc
+
+        if self.op_count > self.MAX_OP_COUNT:
+            raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
     def check_stack_size(self):
         if len(self.stack) + len(self.altstack) > self.MAX_STACK_SIZE:
