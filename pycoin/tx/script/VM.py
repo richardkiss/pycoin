@@ -6,7 +6,6 @@ from .flags import VERIFY_MINIMALDATA
 
 from ...intbytes import byte_to_int, bytes_from_int, bytes_to_ints, int_to_bytes, from_bytes
 
-from .ints import int_to_script_bytes
 from . import ScriptError
 from . import errno
 from . import opcodes
@@ -22,8 +21,64 @@ class VM(object):
     MAX_STACK_SIZE = 1000
     OPCODE_LIST = opcodes.OPCODE_LIST
 
+    VM_TRUE = b'\1'
+    VM_FALSE = b''
+
     ConditionalStack = ConditionalStack
     Stack = Stack
+
+    @classmethod
+    def bool_from_script_bytes(class_, v, require_minimal=False):
+        return bool(class_.int_from_script_bytes(v, require_minimal=require_minimal))
+
+    @classmethod
+    def bool_to_script_bytes(class_, v):
+        return class_.VM_TRUE if v else class_.VM_FALSE
+
+    @classmethod
+    def int_from_script_bytes(class_, s, require_minimal=False):
+        if len(s) == 0:
+            return 0
+        s = bytearray(s)
+        s.reverse()
+        i = s[0]
+        v = i & 0x7f
+        if require_minimal:
+            if v == 0:
+                if len(s) <= 1 or ((s[1] & 0x80) == 0):
+                    raise ScriptError("non-minimally encoded", errno.UNKNOWN_ERROR)
+        is_negative = ((i & 0x80) > 0)
+        for b in s[1:]:
+            v <<= 8
+            v += b
+        if is_negative:
+            v = -v
+        return v
+
+    @classmethod
+    def nonnegative_int_from_script_bytes(class_, b, require_minimal):
+        v = class_.int_from_script_bytes(b, require_minimal=require_minimal)
+        if v < 0:
+            raise ScriptError("unexpectedly got negative value", errno.INVALID_STACK_OPERATION)
+        return v
+
+    @classmethod
+    def int_to_script_bytes(class_, v):
+        if v == 0:
+            return b''
+        is_negative = (v < 0)
+        if is_negative:
+            v = -v
+        l = bytearray()
+        while v >= 256:
+            l.append(v & 0xff)
+            v >>= 8
+        l.append(v & 0xff)
+        if l[-1] >= 128:
+            l.append(0x80 if is_negative else 0)
+        elif is_negative:
+            l[-1] |= 0x80
+        return bytes(l)
 
     @classmethod
     def compile_expression(class_, t):
@@ -34,7 +89,7 @@ class VM(object):
         try:
             t0 = int(t)
             if abs(t0) <= 0xffffffffffffffff and t[0] != '0':
-                return int_to_script_bytes(t0)
+                return class_.int_to_script_bytes(t0)
         except (SyntaxError, ValueError):
             pass
         try:

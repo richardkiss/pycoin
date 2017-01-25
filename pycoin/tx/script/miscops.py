@@ -27,8 +27,6 @@ THE SOFTWARE.
 
 from ...intbytes import byte_to_int
 
-from .ints import int_to_script_bytes
-
 from . import errno
 from . import opcodes
 from . import ScriptError
@@ -39,7 +37,6 @@ from .flags import (
     VERIFY_CHECKLOCKTIMEVERIFY,
     VERIFY_MINIMALIF, VERIFY_CHECKSEQUENCEVERIFY,
 )
-from .ints import bool_from_script_bytes, int_from_script_bytes
 
 
 def verify_minimal_data(opcode, data):
@@ -65,7 +62,7 @@ def verify_minimal_data(opcode, data):
 
 
 def verify(vm_state):
-    v = bool_from_script_bytes(vm_state.stack.pop())
+    v = vm_state.bool_from_script_bytes(vm_state.stack.pop())
     if not v:
         raise ScriptError("VERIFY failed at %d" % (vm_state.pc-1), errno.VERIFY)
 
@@ -108,7 +105,7 @@ def make_if(reverse_bool=False):
             if vm_state.flags & VERIFY_MINIMALIF:
                 if item not in (b'', b'\1'):
                     raise ScriptError("non-minimal IF", errno.MINIMALIF)
-            the_bool = bool_from_script_bytes(item)
+            the_bool = vm_state.bool_from_script_bytes(item)
         vm_state.conditional_stack.OP_IF(the_bool, reverse_bool=reverse_bool)
     f.outside_conditional = True
     return f
@@ -139,7 +136,7 @@ def do_OP_CHECKLOCKTIMEVERIFY(vm_state):
         raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
     if len(vm_state.stack[-1]) > 5:
         raise ScriptError("script number overflow")
-    max_lock_time = int_from_script_bytes(vm_state.stack[-1])
+    max_lock_time = vm_state.int_from_script_bytes(vm_state.stack[-1])
     if max_lock_time < 0:
         raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
     era_max = (max_lock_time >= 500000000)
@@ -160,7 +157,7 @@ def do_OP_CHECKSEQUENCEVERIFY(vm_state):
     if len(vm_state.stack[-1]) > 5:
         raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
     require_minimal = vm_state.flags & VERIFY_MINIMALDATA
-    sequence = int_from_script_bytes(vm_state.stack[-1], require_minimal=require_minimal)
+    sequence = vm_state.int_from_script_bytes(vm_state.stack[-1], require_minimal=require_minimal)
     if sequence < 0:
         raise ScriptError(
             "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
@@ -188,9 +185,9 @@ def do_OP_CHECKSEQUENCEVERIFY(vm_state):
 
 
 def make_push_const(v):
-    v1 = int_to_script_bytes(v)
-
     def f(vm_state):
+        # BRAIN DAMAGE: this is lame
+        v1 = vm_state.int_to_script_bytes(v)
         vm_state.stack.append(v1)
     return f
 

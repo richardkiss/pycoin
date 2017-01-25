@@ -10,7 +10,6 @@ from .VM import VM
 
 from ...intbytes import byte_to_int
 
-from .ints import bool_from_script_bytes
 from . import ScriptError
 from . import errno
 from . import opcodes
@@ -86,7 +85,7 @@ class SolutionChecker(object):
 
         vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=stack)
 
-        if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
+        if len(stack) == 0 or not VM.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         if len(stack) != 1:
@@ -154,13 +153,13 @@ class SolutionChecker(object):
 
         stack = vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=stack)
 
-        if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
+        if len(stack) == 0 or not VM.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         if flags & VERIFY_WITNESS:
             had_witness = self.check_witness(tx_context, flags, traceback_f)
 
-        if is_p2h and bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
+        if is_p2h and VM.bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
             self.VM.check_script_push_only(solution_script)
             vm_context.is_psh_script = True
             p2sh_flags = flags & ~VERIFY_P2SH
@@ -181,5 +180,5 @@ class SolutionChecker(object):
         if flags & VERIFY_CLEANSTACK and len(stack) != 1:
             raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
 
-        if len(stack) == 0 or not bool_from_script_bytes(stack[-1]):
+        if len(stack) == 0 or not VM.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
