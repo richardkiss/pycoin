@@ -15,24 +15,6 @@ from .ConditionalStack import ConditionalStack
 from .Stack import Stack
 
 
-def compile_expression(t):
-    if (t[0], t[-1]) == ('[', ']'):
-        return binascii.unhexlify(t[1:-1])
-    if t.startswith("'") and t.endswith("'"):
-        return t[1:-1].encode("utf8")
-    try:
-        t0 = int(t)
-        if abs(t0) <= 18446744073709551615 and t[0] != '0':
-            return int_to_script_bytes(t0)
-    except (SyntaxError, ValueError):
-        pass
-    try:
-        return binascii.unhexlify(t)
-    except Exception:
-        pass
-    raise SyntaxError("unknown expression %s" % t)
-
-
 class VM(object):
     MAX_SCRIPT_LENGTH = 10000
     MAX_BLOB_LENGTH = 520
@@ -42,6 +24,24 @@ class VM(object):
 
     ConditionalStack = ConditionalStack
     Stack = Stack
+
+    @classmethod
+    def compile_expression(class_, t):
+        if (t[0], t[-1]) == ('[', ']'):
+            return binascii.unhexlify(t[1:-1])
+        if t.startswith("'") and t.endswith("'"):
+            return t[1:-1].encode("utf8")
+        try:
+            t0 = int(t)
+            if abs(t0) <= 0xffffffffffffffff and t[0] != '0':
+                return int_to_script_bytes(t0)
+        except (SyntaxError, ValueError):
+            pass
+        try:
+            return binascii.unhexlify(t)
+        except Exception:
+            pass
+        raise SyntaxError("unknown expression %s" % t)
 
     @classmethod
     def build_microcode(class_):
@@ -154,7 +154,7 @@ class VM(object):
                 d = binascii.unhexlify(t[2:])
                 f.write(d)
             else:
-                v = compile_expression(t)
+                v = class_.compile_expression(t)
                 class_.write_push_data([v], f)
         return f.getvalue()
 

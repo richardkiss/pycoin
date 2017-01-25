@@ -86,21 +86,3 @@ def int_to_script_bytes(v):
     elif is_negative:
         l[-1] |= 0x80
     return bytes(l)
-
-
-def compile_expression(t):
-    if (t[0], t[-1]) == ('[', ']'):
-        return binascii.unhexlify(t[1:-1])
-    if t.startswith("'") and t.endswith("'"):
-        return t[1:-1].encode("utf8")
-    try:
-        t0 = int(t)
-        if abs(t0) <= 18446744073709551615 and t[0] != '0':
-            return int_to_script_bytes(t0)
-    except (SyntaxError, ValueError):
-        pass
-    try:
-        return binascii.unhexlify(t)
-    except Exception:
-        pass
-    raise SyntaxError("unknown expression %s" % t)
