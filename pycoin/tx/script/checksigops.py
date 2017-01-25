@@ -39,8 +39,6 @@ from .flags import (
     VERIFY_DERSIG, VERIFY_LOW_S, VERIFY_WITNESS_PUBKEYTYPE
 )
 
-from .ints import VM_TRUE, VM_FALSE, bool_from_script_bytes, int_from_script_bytes
-
 
 def check_valid_signature(sig):
     # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
@@ -140,7 +138,7 @@ def do_OP_CHECKSIG(vm_state):
         sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
         public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
     except (der.UnexpectedDER, ValueError, EncodingError):
-        stack.append(VM_FALSE)
+        stack.append(vm_state.VM_FALSE)
         return
 
     # Drop the signature, since there's no way for a signature to sign itself
@@ -151,12 +149,12 @@ def do_OP_CHECKSIG(vm_state):
     signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
 
     if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair):
-        stack.append(VM_TRUE)
+        stack.append(vm_state.VM_TRUE)
     else:
         if flags & VERIFY_NULLFAIL:
             if len(sig_blob) > 0:
                 raise ScriptError("bad signature not NULL", errno.NULLFAIL)
-        stack.append(VM_FALSE)
+        stack.append(vm_state.VM_FALSE)
 
 
 def sig_blob_matches(vm_state, sig_blobs, public_pair_blobs, tmp_script,
@@ -230,7 +228,7 @@ def do_OP_CHECKMULTISIG(vm_state):
     tmp_script = vm_state.script[vm_state.begin_code_hash:]
 
     require_minimal = flags & VERIFY_MINIMALDATA
-    key_count = int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
+    key_count = vm_state.int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
 
     vm_state.op_count += key_count
 
@@ -241,7 +239,7 @@ def do_OP_CHECKMULTISIG(vm_state):
     for i in range(key_count):
         public_pair_blobs.append(stack.pop())
 
-    signature_count = int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
+    signature_count = vm_state.int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     if signature_count < 0 or signature_count > key_count:
         raise ScriptError(
             "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
@@ -260,7 +258,7 @@ def do_OP_CHECKMULTISIG(vm_state):
     sig_blob_indices = sig_blob_matches(
         vm_state, sig_blobs, public_pair_blobs, tmp_script, flags, exit_early=True)
 
-    sig_ok = VM_FALSE
+    sig_ok = vm_state.VM_FALSE
     if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):
         # bitcoin requires the signatures to be in the same order as the public keys
         # so let's make sure the indices are strictly increasing
@@ -268,7 +266,7 @@ def do_OP_CHECKMULTISIG(vm_state):
             if sig_blob_indices[i] >= sig_blob_indices[i+1]:
                 break
         else:
-            sig_ok = VM_TRUE
+            sig_ok = vm_state.VM_TRUE
 
     if not sig_ok and flags & VERIFY_NULLFAIL:
         for sig_blob in sig_blobs:
@@ -280,14 +278,14 @@ def do_OP_CHECKMULTISIG(vm_state):
 
 def do_OP_CHECKMULTISIGVERIFY(vm_state):
     do_OP_CHECKMULTISIG(vm_state)
-    v = bool_from_script_bytes(vm_state.stack.pop())
+    v = vm_state.bool_from_script_bytes(vm_state.stack.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.VERIFY)
 
 
 def do_OP_CHECKSIGVERIFY(vm_state):
     do_OP_CHECKSIG(vm_state)
-    v = bool_from_script_bytes(vm_state.stack.pop())
+    v = vm_state.bool_from_script_bytes(vm_state.stack.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.VERIFY)
 
