@@ -120,11 +120,11 @@ def check_public_key_encoding(blob):
     raise ScriptError("invalid public key blob", errno.PUBKEYTYPE)
 
 
-def do_OP_CHECKSIG(vm_state):
-    stack = vm_state.stack
-    flags = vm_state.flags
-    signature_for_hash_type_f = vm_state.signature_for_hash_type_f
-    tmp_script = vm_state.script[vm_state.begin_code_hash:]
+def do_OP_CHECKSIG(vm):
+    stack = vm.stack
+    flags = vm.flags
+    signature_for_hash_type_f = vm.signature_for_hash_type_f
+    tmp_script = vm.script[vm.begin_code_hash:]
     try:
         pair_blob = stack.pop()
         sig_blob = stack.pop()
@@ -138,26 +138,26 @@ def do_OP_CHECKSIG(vm_state):
         sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
         public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
     except (der.UnexpectedDER, ValueError, EncodingError):
-        stack.append(vm_state.VM_FALSE)
+        stack.append(vm.VM_FALSE)
         return
 
     # Drop the signature, since there's no way for a signature to sign itself
     # see: Bitcoin Core/script/interpreter.cpp::EvalScript()
     if not getattr(signature_for_hash_type_f, "skip_delete", False):
-        tmp_script = vm_state.delete_subscript(tmp_script, vm_state.bin_script([sig_blob]))
+        tmp_script = vm.delete_subscript(tmp_script, vm.bin_script([sig_blob]))
 
     signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
 
     if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair):
-        stack.append(vm_state.VM_TRUE)
+        stack.append(vm.VM_TRUE)
     else:
         if flags & VERIFY_NULLFAIL:
             if len(sig_blob) > 0:
                 raise ScriptError("bad signature not NULL", errno.NULLFAIL)
-        stack.append(vm_state.VM_FALSE)
+        stack.append(vm.VM_FALSE)
 
 
-def sig_blob_matches(vm_state, sig_blobs, public_pair_blobs, tmp_script,
+def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script,
                      flags, exit_early=False):
     """
     sig_blobs: signature blobs
@@ -175,9 +175,9 @@ def sig_blob_matches(vm_state, sig_blobs, public_pair_blobs, tmp_script,
     strict_encoding = not not (flags & VERIFY_STRICTENC)
 
     # Drop the signatures, since there's no way for a signature to sign itself
-    if not getattr(vm_state.signature_for_hash_type_f, "skip_delete", False):
+    if not getattr(vm.signature_for_hash_type_f, "skip_delete", False):
         for sig_blob in sig_blobs:
-            tmp_script = vm_state.delete_subscript(tmp_script, vm_state.bin_script([sig_blob]))
+            tmp_script = vm.delete_subscript(tmp_script, vm.bin_script([sig_blob]))
 
     sig_cache = {}
     sig_blob_indices = []
@@ -194,7 +194,7 @@ def sig_blob_matches(vm_state, sig_blobs, public_pair_blobs, tmp_script,
             continue
 
         if signature_type not in sig_cache:
-            sig_cache[signature_type] = vm_state.signature_for_hash_type_f(signature_type, script=tmp_script)
+            sig_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, script=tmp_script)
 
         try:
             ppp = ecdsa.possible_public_pairs_for_signature(
@@ -222,15 +222,15 @@ def sig_blob_matches(vm_state, sig_blobs, public_pair_blobs, tmp_script,
     return sig_blob_indices
 
 
-def do_OP_CHECKMULTISIG(vm_state):
-    stack = vm_state.stack
-    flags = vm_state.flags
-    tmp_script = vm_state.script[vm_state.begin_code_hash:]
+def do_OP_CHECKMULTISIG(vm):
+    stack = vm.stack
+    flags = vm.flags
+    tmp_script = vm.script[vm.begin_code_hash:]
 
     require_minimal = flags & VERIFY_MINIMALDATA
-    key_count = vm_state.int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
+    key_count = vm.int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
 
-    vm_state.op_count += key_count
+    vm.op_count += key_count
 
     if key_count < 0 or key_count > 20:
         raise ScriptError("key_count not in range 0 to 20", errno.PUBKEY_COUNT)
@@ -239,7 +239,7 @@ def do_OP_CHECKMULTISIG(vm_state):
     for i in range(key_count):
         public_pair_blobs.append(stack.pop())
 
-    signature_count = vm_state.int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
+    signature_count = vm.int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     if signature_count < 0 or signature_count > key_count:
         raise ScriptError(
             "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
@@ -256,9 +256,9 @@ def do_OP_CHECKMULTISIG(vm_state):
 
     stack.pop()
     sig_blob_indices = sig_blob_matches(
-        vm_state, sig_blobs, public_pair_blobs, tmp_script, flags, exit_early=True)
+        vm, sig_blobs, public_pair_blobs, tmp_script, flags, exit_early=True)
 
-    sig_ok = vm_state.VM_FALSE
+    sig_ok = vm.VM_FALSE
     if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):
         # bitcoin requires the signatures to be in the same order as the public keys
         # so let's make sure the indices are strictly increasing
@@ -266,7 +266,7 @@ def do_OP_CHECKMULTISIG(vm_state):
             if sig_blob_indices[i] >= sig_blob_indices[i+1]:
                 break
         else:
-            sig_ok = vm_state.VM_TRUE
+            sig_ok = vm.VM_TRUE
 
     if not sig_ok and flags & VERIFY_NULLFAIL:
         for sig_blob in sig_blobs:
@@ -276,16 +276,16 @@ def do_OP_CHECKMULTISIG(vm_state):
     stack.append(sig_ok)
 
 
-def do_OP_CHECKMULTISIGVERIFY(vm_state):
-    do_OP_CHECKMULTISIG(vm_state)
-    v = vm_state.bool_from_script_bytes(vm_state.stack.pop())
+def do_OP_CHECKMULTISIGVERIFY(vm):
+    do_OP_CHECKMULTISIG(vm)
+    v = vm.bool_from_script_bytes(vm.stack.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.VERIFY)
 
 
-def do_OP_CHECKSIGVERIFY(vm_state):
-    do_OP_CHECKSIG(vm_state)
-    v = vm_state.bool_from_script_bytes(vm_state.stack.pop())
+def do_OP_CHECKSIGVERIFY(vm):
+    do_OP_CHECKSIG(vm)
+    v = vm.bool_from_script_bytes(vm.stack.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.VERIFY)
 

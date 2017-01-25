@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from . import stackops, checksigops, miscops
+from . import intops, stackops, checksigops, miscops
 from . import ScriptError
 from . import errno
 
@@ -37,6 +37,14 @@ def make_bad_instruction(v):
     return f
 
 
+def collect_opcodes(module):
+    d = {}
+    for k in dir(module):
+        if k.startswith("do_OP"):
+            d[k[3:]] = getattr(module, k)
+    return d
+
+
 def make_instruction_lookup(opcode_pairs):
     # start with all opcodes invalid
     instruction_lookup = [make_bad_instruction(i) for i in range(256)]
@@ -45,6 +53,7 @@ def make_instruction_lookup(opcode_pairs):
     opcode_lookups = {}
     opcode_lookups.update(stackops.all_opcodes())
     opcode_lookups.update(checksigops.collect_opcodes())
+    opcode_lookups.update(collect_opcodes(intops))
     opcode_lookups.update(miscops.collect_opcodes())
     for opcode_name, opcode_value in opcode_pairs:
         if opcode_name in opcode_lookups:

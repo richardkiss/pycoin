@@ -61,112 +61,112 @@ def verify_minimal_data(opcode, data):
     raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
 
 
-def verify(vm_state):
-    v = vm_state.bool_from_script_bytes(vm_state.stack.pop())
+def verify(vm):
+    v = vm.bool_from_script_bytes(vm.stack.pop())
     if not v:
-        raise ScriptError("VERIFY failed at %d" % (vm_state.pc-1), errno.VERIFY)
+        raise ScriptError("VERIFY failed at %d" % (vm.pc-1), errno.VERIFY)
 
 
 def make_bad_opcode(opcode, even_outside_conditional=False, err=errno.BAD_OPCODE):
-    def bad_opcode(vm_state):
-        raise ScriptError("invalid opcode %s at %d" % (opcode, vm_state.pc-1), err)
+    def bad_opcode(vm):
+        raise ScriptError("invalid opcode %s at %d" % (opcode, vm.pc-1), err)
     bad_opcode.outside_conditional = even_outside_conditional
     return bad_opcode
 
 
-def do_OP_CODESEPARATOR(vm_state):
-    vm_state.begin_code_hash = vm_state.pc + 1
+def do_OP_CODESEPARATOR(vm):
+    vm.begin_code_hash = vm.pc + 1
 
 
-def do_OP_TOALTSTACK(vm_state):
-    vm_state.altstack.append(vm_state.stack.pop())
+def do_OP_TOALTSTACK(vm):
+    vm.altstack.append(vm.stack.pop())
 
 
-def do_OP_FROMALTSTACK(vm_state):
-    if len(vm_state.altstack) < 1:
+def do_OP_FROMALTSTACK(vm):
+    if len(vm.altstack) < 1:
         raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
-    vm_state.stack.append(vm_state.altstack.pop())
+    vm.stack.append(vm.altstack.pop())
 
 
-def discourage_nops(vm_state):
-    if (vm_state.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+def discourage_nops(vm):
+    if (vm.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
         raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
 
 
 def make_if(reverse_bool=False):
-    def f(vm_state):
-        stack = vm_state.stack
-        conditional_stack = vm_state.conditional_stack
+    def f(vm):
+        stack = vm.stack
+        conditional_stack = vm.conditional_stack
         the_bool = False
         if conditional_stack.all_if_true():
             if len(stack) < 1:
                 raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
             item = stack.pop()
-            if vm_state.flags & VERIFY_MINIMALIF:
+            if vm.flags & VERIFY_MINIMALIF:
                 if item not in (b'', b'\1'):
                     raise ScriptError("non-minimal IF", errno.MINIMALIF)
-            the_bool = vm_state.bool_from_script_bytes(item)
-        vm_state.conditional_stack.OP_IF(the_bool, reverse_bool=reverse_bool)
+            the_bool = vm.bool_from_script_bytes(item)
+        vm.conditional_stack.OP_IF(the_bool, reverse_bool=reverse_bool)
     f.outside_conditional = True
     return f
 
 
-def do_OP_ELSE(vm_state):
-    vm_state.conditional_stack.OP_ELSE()
+def do_OP_ELSE(vm):
+    vm.conditional_stack.OP_ELSE()
 
 
 do_OP_ELSE.outside_conditional = True
 
 
-def do_OP_ENDIF(vm_state):
-    vm_state.conditional_stack.OP_ENDIF()
+def do_OP_ENDIF(vm):
+    vm.conditional_stack.OP_ENDIF()
 
 
 do_OP_ENDIF.outside_conditional = True
 
 
-def do_OP_CHECKLOCKTIMEVERIFY(vm_state):
-    if not (vm_state.flags & VERIFY_CHECKLOCKTIMEVERIFY):
-        if (vm_state.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+def do_OP_CHECKLOCKTIMEVERIFY(vm):
+    if not (vm.flags & VERIFY_CHECKLOCKTIMEVERIFY):
+        if (vm.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
             raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
         return
-    if vm_state.tx_context.sequence == 0xffffffff:
+    if vm.tx_context.sequence == 0xffffffff:
         raise ScriptError("nSequence equal to 0xffffffff")
-    if len(vm_state.stack) < 1:
+    if len(vm.stack) < 1:
         raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
-    if len(vm_state.stack[-1]) > 5:
+    if len(vm.stack[-1]) > 5:
         raise ScriptError("script number overflow")
-    max_lock_time = vm_state.int_from_script_bytes(vm_state.stack[-1])
+    max_lock_time = vm.int_from_script_bytes(vm.stack[-1])
     if max_lock_time < 0:
         raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
     era_max = (max_lock_time >= 500000000)
-    era_lock_time = (vm_state.tx_context.lock_time >= 500000000)
+    era_lock_time = (vm.tx_context.lock_time >= 500000000)
     if era_max != era_lock_time:
         raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
-    if max_lock_time > vm_state.tx_context.lock_time:
+    if max_lock_time > vm.tx_context.lock_time:
         raise ScriptError("nLockTime too soon")
 
 
-def do_OP_CHECKSEQUENCEVERIFY(vm_state):
-    if not (vm_state.flags & VERIFY_CHECKSEQUENCEVERIFY):
-        if (vm_state.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
+def do_OP_CHECKSEQUENCEVERIFY(vm):
+    if not (vm.flags & VERIFY_CHECKSEQUENCEVERIFY):
+        if (vm.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
             raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
         return
-    if len(vm_state.stack) < 1:
+    if len(vm.stack) < 1:
         raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
-    if len(vm_state.stack[-1]) > 5:
+    if len(vm.stack[-1]) > 5:
         raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
-    require_minimal = vm_state.flags & VERIFY_MINIMALDATA
-    sequence = vm_state.int_from_script_bytes(vm_state.stack[-1], require_minimal=require_minimal)
+    require_minimal = vm.flags & VERIFY_MINIMALDATA
+    sequence = vm.int_from_script_bytes(vm.stack[-1], require_minimal=require_minimal)
     if sequence < 0:
         raise ScriptError(
             "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
     if sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
         return
     # do the actual check
-    if vm_state.tx_context.version < 2:
+    if vm.tx_context.version < 2:
         raise ScriptError("CHECKSEQUENCEVERIFY: bad tx version", errno.UNSATISFIED_LOCKTIME)
-    if vm_state.tx_context.sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
+    if vm.tx_context.sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
         raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
 
     # this mask is applied to extract lock-time from the sequence field
@@ -174,7 +174,7 @@ def do_OP_CHECKSEQUENCEVERIFY(vm_state):
 
     mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
     sequence_masked = sequence & mask
-    tx_sequence_masked = vm_state.tx_context.sequence & mask
+    tx_sequence_masked = vm.tx_context.sequence & mask
     if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
              (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
             ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
@@ -185,10 +185,10 @@ def do_OP_CHECKSEQUENCEVERIFY(vm_state):
 
 
 def make_push_const(v):
-    def f(vm_state):
+    def f(vm):
         # BRAIN DAMAGE: this is lame
-        v1 = vm_state.int_to_script_bytes(v)
-        vm_state.stack.append(v1)
+        v1 = vm.int_to_script_bytes(v)
+        vm.stack.append(v1)
     return f
 
 

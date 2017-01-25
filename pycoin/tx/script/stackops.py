@@ -32,10 +32,6 @@ from . import errno
 from . import ScriptError
 
 from .flags import VERIFY_MINIMALDATA
-from .ints import (
-    bool_from_script_bytes, bool_to_script_bytes,
-    int_to_script_bytes, int_from_script_bytes, nonnegative_int_from_script_bytes
-)
 from ...encoding import hash160, double_sha256, ripemd160
 
 
@@ -47,6 +43,7 @@ for i in range(1, 11):
     exec("def do_OP_NOP%d(s): pass" % i)
 
 
+# BRAIN DAMAGE
 def do_OP_1NEGATE(stack):
     stack.append(b'\x81')
 
@@ -65,12 +62,6 @@ def do_OP_RESERVED1(stack):
 
 def do_OP_RESERVED2(stack):
     raise ScriptError("OP_RESERVED2 encountered", errno.BAD_OPCODE)
-
-
-def do_OP_VERIFY(stack):
-    v = bool_from_script_bytes(stack.pop())
-    if not v:
-        raise ScriptError("VERIFY failed", errno.VERIFY)
 
 
 def do_OP_RETURN(stack):
@@ -162,16 +153,6 @@ def do_OP_IFDUP(stack):
         stack.append(stack[-1])
 
 
-def do_OP_DEPTH(stack):
-    """
-    >>> s = [1, 2, 1, 2, 1, 2]
-    >>> do_OP_DEPTH(s)
-    >>> print(s)
-    [1, 2, 1, 2, 1, 2, b'\\x06']
-    """
-    stack.append(int_to_script_bytes(len(stack)))
-
-
 def do_OP_DROP(stack):
     """
     >>> s = [1, 2]
@@ -212,28 +193,6 @@ def do_OP_OVER(stack):
     [1, 2, 1]
     """
     stack.append(stack[-2])
-
-
-def do_OP_PICK(stack, require_minimal):
-    """
-    >>> s = [b'a', b'b', b'c', b'd', b'\2']
-    >>> do_OP_PICK(s, require_minimal=True)
-    >>> print(s)
-    [b'a', b'b', b'c', b'd', b'b']
-    """
-    v = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
-    stack.append(stack[-v-1])
-
-
-def do_OP_ROLL(stack, require_minimal):
-    """
-    >>> s = [b'a', b'b', b'c', b'd', b'\2']
-    >>> do_OP_ROLL(s, require_minimal=True)
-    >>> print(s)
-    [b'a', b'c', b'd', b'b']
-    """
-    v = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
-    stack.append(stack.pop(-v-1))
 
 
 def do_OP_ROT(stack):
@@ -280,160 +239,6 @@ def do_OP_CAT(stack):
     v1 = stack.pop()
     v2 = stack.pop()
     stack.append(v2 + v1)
-
-
-def do_OP_SUBSTR(stack, require_minimal):
-    """
-    >>> s = [b'abcdef', b'\3', b'\2']
-    >>> do_OP_SUBSTR(s, require_minimal=True)
-    >>> print(s)
-    [b'de']
-    """
-    pos = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
-    length = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
-    stack.append(stack.pop()[length:length+pos])
-
-
-def do_OP_LEFT(stack, require_minimal):
-    """
-    >>> s = [b'abcdef', b'\3']
-    >>> do_OP_LEFT(s, require_minimal=True)
-    >>> print(len(s)==1 and s[0]==b'abc')
-    True
-    >>> s = [b'abcdef', b'']
-    >>> do_OP_LEFT(s, require_minimal=True)
-    >>> print(len(s) ==1 and s[0]==b'')
-    True
-    """
-    pos = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
-    stack.append(stack.pop()[:pos])
-
-
-def do_OP_RIGHT(stack, require_minimal):
-    """
-    >>> s = [b'abcdef', b'\\3']
-    >>> do_OP_RIGHT(s, require_minimal=True)
-    >>> print(s==[b'def'])
-    True
-    >>> s = [b'abcdef', b'\\0']
-    >>> do_OP_RIGHT(s, require_minimal=False)
-    >>> print(s==[b''])
-    True
-    """
-    pos = nonnegative_int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
-    if pos > 0:
-        stack.append(stack.pop()[-pos:])
-    else:
-        stack.pop()
-        stack.append(b'')
-
-
-def do_OP_SIZE(stack):
-    """
-    >>> import binascii
-    >>> s = [b'abcdef']
-    >>> do_OP_SIZE(s)
-    >>> print(s == [b'abcdef', b'\x06'])
-    True
-    >>> s = [b'abcdef'*1000]
-    >>> do_OP_SIZE(s)
-    >>> print(binascii.hexlify(s[-1]) == b'7017')
-    True
-    """
-    stack.append(int_to_script_bytes(len(stack[-1])))
-
-
-def make_same_size(v1, v2):
-    larger = max(len(v1), len(v2))
-    nulls = b'\0' * larger
-    v1 = (v1 + nulls)[:larger]
-    v2 = (v2 + nulls)[:larger]
-    return v1, v2
-
-
-def do_OP_EQUAL(stack):
-    """
-    >>> s = [b'string1', b'string1']
-    >>> do_OP_EQUAL(s)
-    >>> print(s == [b'\1'])
-    True
-    >>> s = [b'string1', b'string2']
-    >>> do_OP_EQUAL(s)
-    >>> print(s == [b''])
-    True
-    """
-    v1, v2 = [stack.pop() for i in range(2)]
-    stack.append(bool_to_script_bytes(v1 == v2))
-
-
-def do_OP_EQUALVERIFY(stack):
-    do_OP_EQUAL(stack)
-    v = bool_from_script_bytes(stack.pop())
-    if not v:
-        raise ScriptError("VERIFY failed", errno.EQUALVERIFY)
-
-
-def pop_check_bounds(stack, require_minimal):
-    v = stack.pop()
-    if len(v) > 4:
-        raise ScriptError("overflow in binop", errno.UNKNOWN_ERROR)
-    return int_from_script_bytes(v, require_minimal=require_minimal)
-
-
-def make_bin_op(binop):
-    def f(stack, require_minimal):
-        v1, v2 = [pop_check_bounds(stack, require_minimal) for i in range(2)]
-        stack.append(int_to_script_bytes(binop(v2, v1)))
-    return f
-
-
-def make_bool_bin_op(binop):
-    def f(stack, require_minimal):
-        v1, v2 = [pop_check_bounds(stack, require_minimal) for i in range(2)]
-        stack.append(bool_to_script_bytes(binop(v2, v1)))
-    return f
-
-
-do_OP_ADD = make_bin_op(lambda x, y: x + y)
-do_OP_SUB = make_bin_op(lambda x, y: x - y)
-do_OP_MUL = make_bin_op(lambda x, y: x * y)
-do_OP_DIV = make_bin_op(lambda x, y: x // y)
-do_OP_MOD = make_bin_op(lambda x, y: x % y)
-do_OP_LSHIFT = make_bin_op(lambda x, y: x << y)
-do_OP_RSHIFT = make_bin_op(lambda x, y: x >> y)
-do_OP_BOOLAND = make_bool_bin_op(lambda x, y: x and y)
-do_OP_BOOLOR = make_bool_bin_op(lambda x, y: x or y)
-do_OP_NUMEQUAL = make_bool_bin_op(lambda x, y: x == y)
-do_OP_NUMNOTEQUAL = make_bool_bin_op(lambda x, y: x != y)
-do_OP_LESSTHAN = make_bool_bin_op(lambda x, y: x < y)
-do_OP_GREATERTHAN = make_bool_bin_op(lambda x, y: x > y)
-do_OP_LESSTHANOREQUAL = make_bool_bin_op(lambda x, y: x <= y)
-do_OP_GREATERTHANOREQUAL = make_bool_bin_op(lambda x, y: x >= y)
-do_OP_MIN = make_bin_op(min)
-do_OP_MAX = make_bin_op(max)
-
-
-def do_OP_NUMEQUALVERIFY(stack, require_minimal):
-    do_OP_NUMEQUAL(stack, require_minimal=require_minimal)
-    v = bool_from_script_bytes(stack.pop())
-    if not v:
-        raise ScriptError("VERIFY failed", errno.VERIFY)
-
-
-def do_OP_WITHIN(stack, require_minimal):
-    """
-    >>> s = [b'b', b'a', b'c']
-    >>> do_OP_WITHIN(s, False)
-    >>> print(s == [b'\1'])
-    True
-    >>> s = [b'd', b'a', b'c']
-    >>> do_OP_WITHIN(s, False)
-    >>> print(s == [b''])
-    True
-    """
-    v3, v2, v1 = [int_from_script_bytes(stack.pop(), require_minimal=require_minimal) for i in range(3)]
-    ok = (v2 <= v1 < v3)
-    stack.append(bool_to_script_bytes(ok))
 
 
 def do_OP_RIPEMD160(stack):
@@ -486,37 +291,14 @@ def do_OP_HASH256(stack):
     stack.append(double_sha256(stack.pop()))
 
 
-def make_unary_num_op(unary_f):
-    def f(stack, require_minimal):
-        stack.append(int_to_script_bytes(unary_f(pop_check_bounds(stack, require_minimal))))
-    return f
-
-
-do_OP_1ADD = make_unary_num_op(lambda x: x + 1)
-do_OP_1SUB = make_unary_num_op(lambda x: x - 1)
-do_OP_2MUL = make_unary_num_op(lambda x: x << 1)
-do_OP_2DIV = make_unary_num_op(lambda x: x >> 1)
-do_OP_NEGATE = make_unary_num_op(lambda x: -x)
-do_OP_ABS = make_unary_num_op(lambda x: abs(x))
-
-
-def do_OP_NOT(stack, require_minimal):
-    return stack.append(bool_to_script_bytes(not pop_check_bounds(stack, require_minimal)))
-
-
-def do_OP_0NOTEQUAL(stack, require_minimal):
-    return stack.append(int_to_script_bytes(bool_from_script_bytes(
-                stack.pop(), require_minimal=require_minimal)))
-
-
 def transform_stack_op(f):
     f.require_minimal = len(inspect.getargspec(f).args) > 1
     if f.require_minimal:
-        def the_f(vm_state):
-            return f(vm_state.stack, require_minimal=vm_state.flags & VERIFY_MINIMALDATA)
+        def the_f(vm):
+            return f(vm.stack, require_minimal=vm.flags & VERIFY_MINIMALDATA)
     else:
-        def the_f(vm_state):
-            return f(vm_state.stack)
+        def the_f(vm):
+            return f(vm.stack)
     return the_f
 
 
