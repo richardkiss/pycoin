@@ -4,7 +4,6 @@ import unittest
 
 from pycoin.serialize import h2b
 from pycoin.intbytes import int_to_bytes, bytes_from_ints
-from pycoin.tx.script.ints import int_to_script_bytes, int_from_script_bytes
 from pycoin.tx.script.opcodes import OPCODE_LIST
 from pycoin.tx.script.SolutionChecker import TxContext
 from pycoin.tx.script.VM import VM
@@ -103,14 +102,14 @@ class ToolsTest(unittest.TestCase):
 
     def test_int_to_from_script_bytes(self):
         for i in range(-127, 127):
-            self.assertEqual(int_from_script_bytes(int_to_script_bytes(i)), i)
+            self.assertEqual(VM.int_from_script_bytes(VM.int_to_script_bytes(i)), i)
         for i in range(-1024, 1024, 16):
-            self.assertEqual(int_from_script_bytes(int_to_script_bytes(i)), i)
+            self.assertEqual(VM.int_from_script_bytes(VM.int_to_script_bytes(i)), i)
         for i in range(-1024*1024, 1024*1024, 10000):
-            self.assertEqual(int_from_script_bytes(int_to_script_bytes(i)), i)
-        self.assertEqual(int_to_script_bytes(1), b"\1")
-        self.assertEqual(int_to_script_bytes(127), b"\x7f")
-        self.assertEqual(int_to_script_bytes(128), b"\x80\x00")
+            self.assertEqual(VM.int_from_script_bytes(VM.int_to_script_bytes(i)), i)
+        self.assertEqual(VM.int_to_script_bytes(1), b"\1")
+        self.assertEqual(VM.int_to_script_bytes(127), b"\x7f")
+        self.assertEqual(VM.int_to_script_bytes(128), b"\x80\x00")
 
 
 if __name__ == "__main__":
