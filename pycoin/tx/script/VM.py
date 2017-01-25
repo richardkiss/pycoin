@@ -103,6 +103,8 @@ class VM(object):
         class_.INSTRUCTION_LOOKUP = make_instruction_lookup(class_.OPCODE_LIST)
         class_.OPCODE_TO_INT = dict(o for o in class_.OPCODE_LIST)
         class_.INT_TO_OPCODE = dict(reversed(i) for i in class_.OPCODE_LIST)
+        for k, v in class_.OPCODE_LIST:
+            setattr(class_, k, v)
 
     @classmethod
     def check_script_push_only(class_, script):
@@ -143,16 +145,16 @@ class VM(object):
         opcode = ord(script[pc:pc+1])
         pc += 1
         data = None
-        if opcode <= class_.OPCODE_TO_INT["OP_PUSHDATA4"]:
-            if opcode < class_.OPCODE_TO_INT["OP_PUSHDATA1"]:
+        if opcode <= class_.OP_PUSHDATA4:
+            if opcode < class_.OP_PUSHDATA1:
                 size = opcode
-            elif opcode == class_.OPCODE_TO_INT["OP_PUSHDATA1"]:
+            elif opcode == class_.OP_PUSHDATA1:
                 size = from_bytes(script[pc:pc+1], byteorder="little")
                 pc += 1
-            elif opcode == class_.OPCODE_TO_INT["OP_PUSHDATA2"]:
+            elif opcode == class_.OP_PUSHDATA2:
                 size = from_bytes(script[pc:pc+2], byteorder="little")
                 pc += 2
-            elif opcode == class_.OPCODE_TO_INT["OP_PUSHDATA4"]:
+            elif opcode == class_.OP_PUSHDATA4:
                 size = from_bytes(script[pc:pc+4], byteorder="little")
                 pc += 4
             data = script[pc:pc+size]
@@ -166,7 +168,7 @@ class VM(object):
         # return bytes that causes the given data to be pushed onto the stack
         for t in data_list:
             if len(t) == 0:
-                f.write(bytes_from_int(class_.OPCODE_TO_INT["OP_0"]))
+                f.write(bytes_from_int(class_.OP_0))
                 continue
             if len(t) == 1:
                 v = bytes_to_ints(t)[0]
@@ -175,16 +177,16 @@ class VM(object):
                     continue
             if len(t) <= 255:
                 if len(t) > 75:
-                    f.write(bytes_from_int(class_.OPCODE_TO_INT["OP_PUSHDATA1"]))
+                    f.write(bytes_from_int(class_.OP_PUSHDATA1))
                 f.write(int_to_bytes(len(t)))
                 f.write(t)
             elif len(t) <= 65535:
-                f.write(bytes_from_int(class_.OPCODE_TO_INT["OP_PUSHDATA2"]))
+                f.write(bytes_from_int(class_.OP_PUSHDATA2))
                 f.write(struct.pack("<H", len(t)))
                 f.write(t)
             else:
                 # This will never be used in practice as it makes the scripts too long.
-                f.write(bytes_from_int(class_.OPCODE_TO_INT["OP_PUSHDATA4"]))
+                f.write(bytes_from_int(class_.OP_PUSHDATA4))
                 f.write(struct.pack("<L", len(t)))
                 f.write(t)
 
