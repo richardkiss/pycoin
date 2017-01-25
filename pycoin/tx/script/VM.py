@@ -1,5 +1,4 @@
 import binascii
-import functools
 import io
 import struct
 
@@ -12,7 +11,7 @@ from . import ScriptError
 from . import errno
 from . import opcodes
 from .instruction_lookup import make_instruction_lookup
-from .IfStack import IfStack
+from .ConditionalStack import ConditionalStack
 from .Stack import Stack
 
 
@@ -41,7 +40,7 @@ class VM(object):
     MAX_STACK_SIZE = 1000
     OPCODE_LIST = opcodes.OPCODE_LIST
 
-    IfStack = IfStack
+    ConditionalStack = ConditionalStack
     Stack = Stack
 
     @classmethod
@@ -210,7 +209,7 @@ class VM(object):
         self.stack = initial_stack or self.Stack()
         self.script = script
         self.altstack = self.Stack()
-        self.if_condition_stack = self.IfStack()
+        self.conditional_stack = self.ConditionalStack()
         self.op_count = 0
         self.begin_code_hash = 0
         self.flags = vm_context.flags
@@ -235,7 +234,7 @@ class VM(object):
         if self.traceback_f:
             self.traceback_f(opcode, data, pc, self)
 
-        all_if_true = self.if_condition_stack.all_if_true()
+        all_if_true = self.conditional_stack.all_if_true()
         if data is not None and all_if_true:
             if self.flags & VERIFY_MINIMALDATA:
                 self.verify_minimal_data(opcode, data)
@@ -255,7 +254,7 @@ class VM(object):
             raise ScriptError("stack has > %d items" % self.MAX_STACK_SIZE, errno.STACK_SIZE)
 
     def post_script_check(self):
-        self.if_condition_stack.check_final_state()
+        self.conditional_stack.check_final_state()
         self.check_stack_size()
 
 

@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 """
-Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
+Implement some misc opcodes in the bitcoin scripting language.
 
 
 The MIT License (MIT)
 
-Copyright (c) 2013 by Richard Kiss
+Copyright (c) 2013-2017 by Richard Kiss
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +24,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-
-import functools
 
 from ...intbytes import byte_to_int
 
@@ -102,9 +99,9 @@ def discourage_nops(vm_state):
 def make_if(reverse_bool=False):
     def f(vm_state):
         stack = vm_state.stack
-        if_condition_stack = vm_state.if_condition_stack
+        conditional_stack = vm_state.conditional_stack
         the_bool = False
-        if if_condition_stack.all_if_true():
+        if conditional_stack.all_if_true():
             if len(stack) < 1:
                 raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
             item = stack.pop()
@@ -112,20 +109,20 @@ def make_if(reverse_bool=False):
                 if item not in (b'', b'\1'):
                     raise ScriptError("non-minimal IF", errno.MINIMALIF)
             the_bool = bool_from_script_bytes(item)
-        vm_state.if_condition_stack.OP_IF(the_bool, reverse_bool=reverse_bool)
+        vm_state.conditional_stack.OP_IF(the_bool, reverse_bool=reverse_bool)
     f.outside_conditional = True
     return f
 
 
 def do_OP_ELSE(vm_state):
-    vm_state.if_condition_stack.OP_ELSE()
+    vm_state.conditional_stack.OP_ELSE()
 
 
 do_OP_ELSE.outside_conditional = True
 
 
 def do_OP_ENDIF(vm_state):
-    vm_state.if_condition_stack.OP_ENDIF()
+    vm_state.conditional_stack.OP_ENDIF()
 
 
 do_OP_ENDIF.outside_conditional = True

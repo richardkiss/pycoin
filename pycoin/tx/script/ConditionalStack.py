@@ -3,7 +3,7 @@ from . import errno
 from . import ScriptError
 
 
-class IfStack(object):
+class ConditionalStack(object):
     def __init__(self):
         self.true_count = 0
         self.false_count = 0

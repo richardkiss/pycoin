@@ -62,7 +62,7 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
     print("Input%s:" % ('s' if len(tx.txs_in) != 1 else ''))
     missing_unspents = tx.missing_unspents()
 
-    def trace_script(old_pc, opcode, data, stack, altstack, if_condition_stack, is_signature):
+    def trace_script(old_pc, opcode, data, stack, altstack, conditional_stack, is_signature):
         print("%3d : %02x  %s" % (old_pc, opcode, VM.disassemble_for_opcode_data(opcode, data)))
         if use_pdb:
             import pdb
@@ -70,8 +70,7 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
             print("stack: [%s]" % ', '.join(b2h(s) for s in stack))
             if len(altstack) > 0:
                 print("altstack: %s" % altstack)
-            if len(if_condition_stack) > 0:
-                print("condition stack: %s" % ', '.join(int(s) for s in if_condition_stack))
+            print("condition stack: %s" % conditional_stack)
             pdb.set_trace()
 
     traceback_f = trace_script if do_trace or use_pdb else None
