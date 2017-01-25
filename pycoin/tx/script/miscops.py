@@ -100,37 +100,32 @@ def discourage_nops(vm_state):
 
 
 def make_if(reverse_bool=False):
-    def f(ss):
-        v = False
-        all_if_true = functools.reduce(lambda x, y: x and y, ss.if_condition_stack, True)
-        if all_if_true:
-            if len(ss.stack) < 1:
+    def f(vm_state):
+        stack = vm_state.stack
+        if_condition_stack = vm_state.if_condition_stack
+        the_bool = False
+        if if_condition_stack.all_if_true():
+            if len(stack) < 1:
                 raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
-            item = ss.stack.pop()
-            if ss.flags & VERIFY_MINIMALIF:
+            item = stack.pop()
+            if vm_state.flags & VERIFY_MINIMALIF:
                 if item not in (b'', b'\1'):
                     raise ScriptError("non-minimal IF", errno.MINIMALIF)
-            v = bool_from_script_bytes(item)
-        if reverse_bool:
-            v = not v
-        ss.if_condition_stack.append(v)
+            the_bool = bool_from_script_bytes(item)
+        vm_state.if_condition_stack.OP_IF(the_bool, reverse_bool=reverse_bool)
     f.outside_conditional = True
     return f
 
 
 def do_OP_ELSE(vm_state):
-    if len(vm_state.if_condition_stack) == 0:
-        raise ScriptError("OP_ELSE without OP_IF", errno.UNBALANCED_CONDITIONAL)
-    vm_state.if_condition_stack[-1] = not vm_state.if_condition_stack[-1]
+    vm_state.if_condition_stack.OP_ELSE()
 
 
 do_OP_ELSE.outside_conditional = True
 
 
 def do_OP_ENDIF(vm_state):
-    if len(vm_state.if_condition_stack) == 0:
-        raise ScriptError("OP_ENDIF without OP_IF", errno.UNBALANCED_CONDITIONAL)
-    vm_state.if_condition_stack.pop()
+    vm_state.if_condition_stack.OP_ENDIF()
 
 
 do_OP_ENDIF.outside_conditional = True
