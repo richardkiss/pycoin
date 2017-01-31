@@ -65,3 +65,12 @@ class BlockcypherProvider(object):
         url = self.base_url("addrs/%s" % (address + url_append))
         result = json.loads(urlopen(url).read().decode("utf8"))
         return result
+
+    def broadcast_tx(self, tx):
+        """
+        broadcast a transaction to the network
+        """
+        url = self.base_url("txs/push")
+        data = {"tx": tx.as_hex()}
+        result = json.loads(urlopen(url, data=json.dumps(data)).read().decode("utf8"))
+        return result
