@@ -5,6 +5,7 @@ This is an implementation of a bunch of utility routines that may be useful when
 alt-coins. It has been tested with Python 2.7, 3.3, 3.4 and 3.5.
 
 See also http://github.com/richardkiss/pycoinnet/ for a library that speaks the bitcoin protocol.
+For a more detailed step-by-step walkthrough to setting up a development environment, setting up, and using the project, please see the following: github.com/richardkiss/pycoin/blob/master/STEP-BY-STEP.md
 
 High Level
 ==========
@@ -52,6 +53,7 @@ You can also use ```pycoin.tx.tx_utils``` which has ```create_tx``` and ```creat
 very easy way to create signed transactions.
 
 The command-line utility ```tx``` is a Swiss Army knife of transaction utilities. See also COMMAND-LINE-TOOLS.md.
+More specific examples, though possibly out of date (July 8, 2013), can be found at blog.richardkiss.com/?p=313. 
 
 
 Services
