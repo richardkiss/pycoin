@@ -1,6 +1,7 @@
 Version 0.80
 ------------
 
+* change how ScriptNullData works (arbitrary data now allowed after OP_RETURN)
 * use latest version of tests from bitcoind (script_tests.json, tx_invalid.json,
   and tx_valid.json)
 * add CHECKSEQUENCEVERIFY working

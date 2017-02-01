@@ -39,28 +39,6 @@ from .flags import (
 )
 
 
-def verify_minimal_data(opcode, data):
-    ld = len(data)
-    if ld == 0 and opcode == opcodes.OP_0:
-        return
-    if ld == 1:
-        v = byte_to_int(data[0])
-        if v == 0x81:
-            if opcode == opcodes.OP_1NEGATE:
-                return
-        elif v == 0 or v > 16:
-            return
-        elif v == (opcode - 1 + opcodes.OP_1):
-            return
-    if 1 < ld < 0x4c and opcode == ld:
-        return
-    if 0x4c <= ld < 256 and opcode == opcodes.OP_PUSHDATA1:
-        return
-    if 256 < ld < 65536 and opcode == opcodes.OP_PUSHDATA2:
-        return
-    raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
-
-
 def verify(vm):
     v = vm.bool_from_script_bytes(vm.stack.pop())
     if not v:
@@ -220,10 +198,8 @@ def extra_opcodes():
     for i in (1, 2, 4):
         d["OP_PUSHDATA%d" % i] = lambda s: 0
 
-    for v in range(1, 128):
+    for v in range(0, 128):
         d["OP_%d" % v] = make_push_const(v)
-    # BRAIN DAMAGE: stupid hack for now. Need to make this less lame
-    d["OP_0"] = lambda s: 0
     return d
 
 

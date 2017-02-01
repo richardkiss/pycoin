@@ -114,27 +114,11 @@ class VM(object):
             if opcode > opcodes.OP_16:
                 raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 
-    @staticmethod
-    def verify_minimal_data(opcode, data):
-        ld = len(data)
-        if ld == 0 and opcode == opcodes.OP_0:
-            return
-        if ld == 1:
-            v = byte_to_int(data[0])
-            if v == 0x81:
-                if opcode == opcodes.OP_1NEGATE:
-                    return
-            elif v == 0 or v > 16:
-                return
-            elif v == (opcode - 1 + opcodes.OP_1):
-                return
-        if 1 < ld < 0x4c and opcode == ld:
-            return
-        if 0x4c <= ld < 256 and opcode == opcodes.OP_PUSHDATA1:
-            return
-        if 256 < ld < 65536 and opcode == opcodes.OP_PUSHDATA2:
-            return
-        raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
+    @classmethod
+    def verify_minimal_data(class_, opcode, data):
+        script = class_.bin_script([data])
+        if byte_to_int(script[0]) != opcode:
+            raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
 
     @classmethod
     def get_opcode(class_, script, pc):
@@ -142,25 +126,13 @@ class VM(object):
         Step through the script, returning a tuple with the next opcode, the next
         piece of data (if the opcode represents data), and the new PC.
         """
-        opcode = ord(script[pc:pc+1])
-        pc += 1
-        data = None
-        if opcode <= class_.OP_PUSHDATA4:
-            if opcode < class_.OP_PUSHDATA1:
-                size = opcode
-            elif opcode == class_.OP_PUSHDATA1:
-                size = from_bytes(script[pc:pc+1], byteorder="little")
-                pc += 1
-            elif opcode == class_.OP_PUSHDATA2:
-                size = from_bytes(script[pc:pc+2], byteorder="little")
-                pc += 2
-            elif opcode == class_.OP_PUSHDATA4:
-                size = from_bytes(script[pc:pc+4], byteorder="little")
-                pc += 4
-            data = script[pc:pc+size]
-            if len(data) < size:
-                raise ScriptError("unexpected end of data when literal expected", errno.BAD_OPCODE)
-            pc += size
+        opcode = byte_to_int(script[pc])
+        f = class_.INSTRUCTION_DECODE_LOOKUP.get(opcode)
+        if f:
+            pc, data = f(script, pc)
+        else:
+            pc += 1
+            data = None
         return opcode, data, pc
 
     @classmethod
@@ -171,9 +143,13 @@ class VM(object):
                 f.write(bytes_from_int(class_.OP_0))
                 continue
             if len(t) == 1:
-                v = bytes_to_ints(t)[0]
-                if v <= 16:
-                    f.write(bytes_from_int(class_.OPCODE_TO_INT["OP_%d" % v]))
+                v = class_.int_from_script_bytes(t)
+                if v == -1:
+                    v = "1NEGATE"
+                opcode_str = "OP_%s" % v
+                opcode = class_.OPCODE_TO_INT.get(opcode_str)
+                if opcode:
+                    f.write(bytes_from_int(opcode))
                     continue
             if len(t) <= 255:
                 if len(t) > 75:
@@ -315,5 +291,36 @@ class VM(object):
         self.check_stack_size()
 
 
+def make_instruction_decode_lookup(OPCODE_TO_INT):
+    d = {}
+
+    def make_decode_OP_declarator(dec_length):
+        def decode_OP_PUSHDATA(script, pc):
+            pc += 1
+            size = from_bytes(script[pc:pc+dec_length], byteorder="little")
+            pc += dec_length
+            data = script[pc:pc+size]
+            if len(data) < size:
+                raise ScriptError("unexpected end of data when literal expected", errno.BAD_OPCODE)
+            return pc+size, data
+        return decode_OP_PUSHDATA
+
+    def make_decode_OP_fixed_length(k):
+        def decode(script, pc):
+            pc += 1
+            return pc+k, script[pc:pc+k]
+        return decode
+
+    for size in (1, 2, 4):
+        d[OPCODE_TO_INT["OP_PUSHDATA%d" % size]] = make_decode_OP_declarator(size)
+
+    # BRAIN DAMAGE: this is stupidly hardcoded
+    for k in range(1, 76):
+        d[k] = make_decode_OP_fixed_length(k)
+
+    return d
+
+
 # BRAIN DAMAGE
 VM.build_microcode()
+VM.INSTRUCTION_DECODE_LOOKUP = make_instruction_decode_lookup(VM.OPCODE_TO_INT)

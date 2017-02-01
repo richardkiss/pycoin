@@ -1,6 +1,7 @@
 from pycoin.intbytes import byte_to_int
 
 from ..script.VM import VM
+from ..script.SolutionChecker import VMContext
 
 from ...serialize import b2h
 
@@ -39,18 +40,18 @@ class ScriptPayToScriptWit(ScriptType):
         if underlying_script is None:
             raise ValueError("underlying script cannot be determined for %s" % b2h(self.hash256))
         script_obj = script_obj_from_script(underlying_script)
-        print(script_obj)
 
         kwargs["signature_for_hash_type_f"] = kwargs["signature_for_hash_type_f"].witness
         kwargs["script_to_hash"] = underlying_script
         kwargs["existing_script"] = VM.bin_script(kwargs["existing_witness"])
         underlying_solution = script_obj.solve(**kwargs)
         # we need to unwrap the solution
-        solution = []
-        pc = 0
-        while pc < len(underlying_solution):
-            opcode, data, pc = VM.get_opcode(underlying_solution, pc)
-            solution.append(data)
+        vm = VM()
+        vm_context = VMContext()
+        vm_context.flags = 0
+        vm_context.traceback_f = None
+        vm_context.signature_for_hash_type_f = lambda *args, **kwargs: 0
+        solution = vm.eval_script(underlying_solution, None, vm_context)
         solution.append(underlying_script)
         return (b"", solution)
 
