@@ -16,7 +16,7 @@ class BlockrioProvider(object):
         url_stub = {"BTC": "btc.blockr.io", "XTN": "tbtc.blockr.io"}.get(netcode)
         if url_stub is None:
             raise ValueError("unsupported netcode %s" % netcode)
-        self.url = "http://%s/api/v1" % url_stub
+        self.url = "https://%s/api/v1" % url_stub
 
     def spendables_for_address(self, address):
         """
