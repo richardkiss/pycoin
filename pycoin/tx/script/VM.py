@@ -264,8 +264,9 @@ class VM(object):
 
         self.check_stack_size()
 
+        f = self.INSTRUCTION_LOOKUP[opcode]
         if self.traceback_f:
-            self.traceback_f(opcode, data, pc, self)
+            f = self.traceback_f(opcode, data, pc, self) or f
 
         all_if_true = self.conditional_stack.all_if_true()
         if data is not None and all_if_true:
@@ -273,7 +274,6 @@ class VM(object):
                 self.verify_minimal_data(opcode, data)
             self.stack.append(data)
 
-        f = self.INSTRUCTION_LOOKUP[opcode]
         if getattr(f, "outside_conditional", False) or all_if_true:
             f(self)
 

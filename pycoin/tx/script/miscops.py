@@ -25,10 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from ...intbytes import byte_to_int
-
 from . import errno
-from . import opcodes
 from . import ScriptError
 
 from .flags import (
@@ -37,12 +34,6 @@ from .flags import (
     VERIFY_CHECKLOCKTIMEVERIFY,
     VERIFY_MINIMALIF, VERIFY_CHECKSEQUENCEVERIFY,
 )
-
-
-def verify(vm):
-    v = vm.bool_from_script_bytes(vm.stack.pop())
-    if not v:
-        raise ScriptError("VERIFY failed at %d" % (vm.pc-1), errno.VERIFY)
 
 
 def make_bad_opcode(opcode, even_outside_conditional=False, err=errno.BAD_OPCODE):
