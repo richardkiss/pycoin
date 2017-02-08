@@ -18,15 +18,16 @@ from pycoin.tx import Spendable, Tx, TxIn, TxOut
 
 
 class InsightProvider(object):
-    def __init__(self, base_url="https://insight.bitpay.com", netcode=None):
+    def __init__(self, base_url="https://insight.bitpay.com", base_path="/api/", netcode=None):
         if netcode is None:
             netcode = get_current_netcode()
         while base_url[-1] == '/':
             base_url = base_url[:-1]
         self.base_url = base_url
+        self.base_path = base_path
 
     def get_blockchain_tip(self):
-        URL = "%s/api/status?q=getLastBlockHash" % self.base_url
+        URL = "%s%sstatus?q=getLastBlockHash" % (self.base_url, self.base_path)
         d = urlopen(URL).read().decode("utf8")
         r = json.loads(d)
         return h2b_rev(r.get("lastblockhash"))
@@ -35,7 +36,7 @@ class InsightProvider(object):
         return self.get_blockheader_with_transaction_hashes(block_hash)[0]
 
     def get_blockheader_with_transaction_hashes(self, block_hash):
-        URL = "%s/api/block/%s" % (self.base_url, b2h_rev(block_hash))
+        URL = "%s%sblock/%s" % (self.base_url, self.base_path, b2h_rev(block_hash))
         r = json.loads(urlopen(URL).read().decode("utf8"))
         version = r.get("version")
         previous_block_hash = h2b_rev(r.get("previousblockhash"))
@@ -57,7 +58,7 @@ class InsightProvider(object):
         return self.get_blockheader_with_transaction_hashes(block_hash)[0].height
 
     def tx_for_tx_hash(self, tx_hash):
-        URL = "%s/api/tx/%s" % (self.base_url, b2h_rev(tx_hash))
+        URL = "%s%stx/%s" % (self.base_url, self.base_path, b2h_rev(tx_hash))
         r = json.loads(urlopen(URL).read().decode("utf8"))
         tx = tx_from_json_dict(r)
         if tx.hash() == tx_hash:
@@ -72,7 +73,7 @@ class InsightProvider(object):
         Return a list of Spendable objects for the
         given bitcoin address.
         """
-        URL = "%s/api/addr/%s/utxo" % (self.base_url, bitcoin_address)
+        URL = "%s%saddr/%s/utxo" % (self.base_url, self.base_path, bitcoin_address)
         r = json.loads(urlopen(URL).read().decode("utf8"))
         spendables = []
         for u in r:
@@ -94,7 +95,7 @@ class InsightProvider(object):
         tx.stream(s)
         tx_as_hex = b2h(s.getvalue())
         data = urlencode(dict(rawtx=tx_as_hex)).encode("utf8")
-        URL = "%s/api/tx/send" % self.base_url
+        URL = "%s%stx/send" % (self.base_url, self.base_path)
         try:
             d = urlopen(URL, data=data).read()
             return d
