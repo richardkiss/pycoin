@@ -45,7 +45,7 @@ NETWORKS = (
 
     # DRK Dash testnet : DRKV/DRKP
     NetworkValues(
-        "Dash", "testnet", "tDASH", b'\xef', b'\x8b', b'\x13', h2b("3a8061a0"), h2b("3a805837")),
+        "Dash", "testnet", "tDASH", b'\xef', b'\x8c', b'\x13', h2b("3a8061a0"), h2b("3a805837")),
 
     # MEC Megacoin mainnet : mecv/mecp
     NetworkValues("Megacoin", "mainnet", "MEC", b'\xb2', b'\x32', None, h2b("03a04db7"), h2b("03a04d8b")),
@@ -76,5 +76,6 @@ NETWORKS = (
     NetworkValues("Argentum", "mainnet", "ARG", b'\x97', b'\x17', b'\5', h2b("0488ADE4"), h2b("0488B21E")),
 
     # ZEC Zcash mainnet : xprv/xpub
-    NetworkValues("Zcash", "mainnet", "ZEC", b'\x80', b'\x1C\xB8', b'\x1C\xBD', h2b("0488ADE4"), h2b("0488B21E")),
+    NetworkValues("Zcash", "mainnet", "ZEC", b'\x80', b'\x1C\xB8',
+                  b'\x1C\xBD', h2b("0488ADE4"), h2b("0488B21E")),
 )

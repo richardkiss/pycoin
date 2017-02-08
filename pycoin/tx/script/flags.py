@@ -48,3 +48,31 @@ VERIFY_CLEANSTACK = (1 << 8)
 #
 # See BIP65 for details.
 VERIFY_CHECKLOCKTIMEVERIFY = (1 << 9)
+
+# support CHECKSEQUENCEVERIFY opcode
+# See BIP112 for details
+VERIFY_CHECKSEQUENCEVERIFY = (1 << 10)
+
+# Support segregated witness
+VERIFY_WITNESS = (1 << 11)
+
+# Making v1-v16 witness program non-standard
+VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM = (1 << 12)
+
+# Segwit script only: Require the argument of OP_IF/NOTIF to be exactly 0x01 or empty vector
+VERIFY_MINIMALIF = (1 << 13)
+
+# Signature(s) must be empty vector if an CHECK(MULTI)SIG operation failed
+VERIFY_NULLFAIL = (1 << 14)
+
+# Public keys in segregated witness scripts must be compressed
+VERIFY_WITNESS_PUBKEYTYPE = (1 << 15)
+
+# If sequence encodes a relative lock-time and this flag
+# is set, the relative lock-time has units of 512 seconds,
+# otherwise it specifies blocks with a granularity of 1.
+SEQUENCE_LOCKTIME_TYPE_FLAG = (1 << 22)
+
+# If this flag set, sequence is NOT interpreted as a
+# relative lock-time.
+SEQUENCE_LOCKTIME_DISABLE_FLAG = (1 << 31)

@@ -55,12 +55,15 @@ class ScriptMultisig(ScriptType):
         if self._script is None:
             # create the script
             # TEMPLATE = m {pubkey}...{pubkey} n OP_CHECKMULTISIG
+            if len(self.sec_keys) < self.m:
+                raise ValueError("m value invalid: Swap M and N (M of N) to match convention")
+
             public_keys = [b2h(sk) for sk in self.sec_keys]
             script_source = "%d %s %d OP_CHECKMULTISIG" % (self.m, " ".join(public_keys), len(public_keys))
             self._script = tools.compile(script_source)
         return self._script
 
-    def _find_signatures(self, script, sign_value):
+    def _find_signatures(self, script, signature_for_hash_type_f, script_to_hash):
         signatures = []
         secs_solved = set()
         pc = 0
@@ -69,19 +72,20 @@ class ScriptMultisig(ScriptType):
         # ignore the first opcode
         while pc < len(script) and seen < self.m:
             opcode, data, pc = tools.get_opcode(script, pc)
-            sig_pair, signature_type = parse_signature_blob(data)
-            seen += 1
-            for idx, sec_key in enumerate(self.sec_keys):
-                try:
+            try:
+                sig_pair, signature_type = parse_signature_blob(data)
+                seen += 1
+                for idx, sec_key in enumerate(self.sec_keys):
                     public_pair = encoding.sec_to_public_pair(sec_key)
+                    sign_value = signature_for_hash_type_f(signature_type, script_to_hash)
                     v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
                     if v:
                         signatures.append((idx, data))
                         secs_solved.add(sec_key)
                         break
-                except (encoding.EncodingError, UnexpectedDER):
-                    # if public_pair is invalid, we just ignore it
-                    pass
+            except (encoding.EncodingError, UnexpectedDER):
+                # if public_pair is invalid, we just ignore it
+                pass
         return signatures, secs_solved
 
     def solve(self, **kwargs):
@@ -91,8 +95,8 @@ class ScriptMultisig(ScriptType):
             dict-like structure that returns a secret exponent for a hash160
         existing_script:
             existing solution to improve upon (optional)
-        sign_value:
-            the integer value to sign (derived from the transaction hash)
+        signature_for_hash_type_f:
+            function to return the sign value for a given signature hash
         signature_type:
             usually SIGHASH_ALL (1)
         signature_placeholder:
@@ -104,8 +108,9 @@ class ScriptMultisig(ScriptType):
         if db is None:
             raise SolvingError("missing hash160_lookup parameter")
 
-        sign_value = kwargs.get("sign_value")
+        signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f")
         signature_type = kwargs.get("signature_type")
+        script_to_hash = kwargs.get("script_to_hash")
 
         signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
 
@@ -113,7 +118,8 @@ class ScriptMultisig(ScriptType):
         existing_signatures = []
         existing_script = kwargs.get("existing_script")
         if existing_script:
-            existing_signatures, secs_solved = self._find_signatures(existing_script, sign_value)
+            existing_signatures, secs_solved = self._find_signatures(
+                existing_script, signature_for_hash_type_f, script_to_hash)
 
         for signature_order, sec_key in enumerate(self.sec_keys):
             if sec_key in secs_solved:
@@ -125,7 +131,8 @@ class ScriptMultisig(ScriptType):
             if result is None:
                 continue
             secret_exponent, public_pair, compressed = result
-            binary_signature = self._create_script_signature(secret_exponent, sign_value, signature_type)
+            binary_signature = self._create_script_signature(
+                secret_exponent, signature_for_hash_type_f, signature_type, script_to_hash)
             existing_signatures.append((signature_order, binary_signature))
 
         # make sure the existing signatures are in the right order
@@ -145,6 +152,9 @@ class ScriptMultisig(ScriptType):
 
     def addresses_f(self, netcode=None):
         from pycoin.networks import address_prefix_for_netcode
+        from pycoin.networks.default import get_current_netcode
+        if netcode is None:
+            netcode = get_current_netcode()
         address_prefix = address_prefix_for_netcode(netcode)
         addresses = [encoding.hash160_sec_to_bitcoin_address(h1, address_prefix=address_prefix)
                      for h1 in self.hash160s()]

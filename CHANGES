@@ -1,6 +1,10 @@
-Version 0.71
+Version 0.80
 ------------
 
+* use latest version of tests from bitcoind (script_tests.json, tx_invalid.json,
+  and tx_valid.json)
+* add CHECKSEQUENCEVERIFY working
+* add initial support for segregated witness ("segwit")
 * rename scripts module to cmds to eliminate confusion with bitcoin script module
 * changed to more standard "M of N" for multisig
 * move networks.py to networks module

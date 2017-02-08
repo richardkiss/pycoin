@@ -4,8 +4,9 @@ import struct
 from .streamer import Streamer
 
 
-def parse_bc_int(f):
-    v = ord(f.read(1))
+def parse_bc_int(f, v=None):
+    if v is None:
+        v = ord(f.read(1))
     if v == 253:
         v = struct.unpack("<H", f.read(2))[0]
     elif v == 254:

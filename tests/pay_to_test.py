@@ -15,6 +15,12 @@ from pycoin.tx.script import tools
 from pycoin.ui import address_for_pay_to_script, standard_tx_out_script, script_obj_from_address
 
 
+def const_f(v):
+    def f(*args, **kwargs):
+        return v
+    return f
+
+
 class ScriptTypesTest(unittest.TestCase):
 
     def test_script_type_pay_to_address(self):
@@ -37,7 +43,7 @@ class ScriptTypesTest(unittest.TestCase):
                 self.assertEqual(st.address(), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
-                solution = st.solve(hash160_lookup=hl, sign_value=sv, signature_type=SIGHASH_ALL)
+                solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
                 self.assertEqual(st.address(), addr)
@@ -62,7 +68,7 @@ class ScriptTypesTest(unittest.TestCase):
                 self.assertEqual(st.address(), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
-                solution = st.solve(hash160_lookup=hl, sign_value=sv, signature_type=SIGHASH_ALL)
+                solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
                 self.assertEqual(st.address(), addr)
@@ -72,7 +78,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx_out_script = b'v\xa9\x14\x91\xb2K\xf9\xf5(\x852\x96\n\xc6\x87\xab\xb05\x12{\x1d(\xa5\x88\xac'
         st = script_obj_from_script(tx_out_script)
         hl = build_hash160_lookup([1])
-        solution = st.solve(hash160_lookup=hl, sign_value=sv, signature_type=SIGHASH_ALL)
+        solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
         self.assertEqual(solution, b'G0D\x02 ^=\xf5\xb5[\xe6!@\x04,"\x0b\x1f\xdf\x10\\\xc8Q\x13\xafV*!\\\x1f\xc5\xb5\xc5"\xd1\xb3\xd3\x02 8\xc9YK\x15o\xae\xd7\xf3|0\x07z\xff\xbfj\xcfB\xbf\x17\xb1\xe69\xa1\xfc\xc6\xc5\x1ag\xab\xa2\x16\x01A\x04y\xbef~\xf9\xdc\xbb\xacU\xa0b\x95\xce\x87\x0b\x07\x02\x9b\xfc\xdb-\xce(\xd9Y\xf2\x81[\x16\xf8\x17\x98H:\xdaw&\xa3\xc4e]\xa4\xfb\xfc\x0e\x11\x08\xa8\xfd\x17\xb4H\xa6\x85T\x19\x9cG\xd0\x8f\xfb\x10\xd4\xb8')
 
     def test_validate_multisig(self):
@@ -177,9 +183,10 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertNotEqual(st, None)
 
     def test_nulldata(self):
+        OP_RETURN = tools.compile("OP_RETURN")
         # note that because chr() is used samples with length > 255 will not work
-        for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q']:
-            sample_script = b'\x6a' + chr(len(sample)).encode() + sample
+        for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
+            sample_script = OP_RETURN + tools.bin_script([sample])
             nd = ScriptNulldata(sample)
             self.assertEqual(nd.nulldata, sample)
             self.assertEqual(nd.script(), sample_script)
@@ -188,6 +195,22 @@ class ScriptTypesTest(unittest.TestCase):
             out = TxOut(1, nd.script())
             tx = Tx(0, [], [out])  # ensure we can create a tx
             self.assertEqual(nd.script(), tools.compile(tools.disassemble(nd.script())))  # convert between asm and back to ensure no bugs with compilation
+
+    def test_sign_bitcoind_partially_signed_2_of_2(self):
+        # Finish signing a 2 of 2 transaction, that already has one signature signed by bitcoind
+        # This tx can be found on testnet3 blockchain, txid: 9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2
+        raw_script = "522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c16885116552102b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452ae"
+        p2sh_lookup = build_p2sh_lookup([h2b(raw_script)])
+        partially_signed_raw_tx = "010000000196238f11a5fd3ceef4efd5a186a7e6b9217d900418e72aca917cd6a6e634e74100000000910047304402201b41b471d9dd93cf97eed7cfc39a5767a546f6bfbf3e0c91ff9ad23ab9770f1f02205ce565666271d055be1f25a7e52e34cbf659f6c70770ff59bd783a6fcd1be3dd0147522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c16885116552102b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452aeffffffff01a0bb0d00000000001976a9143b3beefd6f7802fa8706983a76a51467bfa36f8b88ac00000000"
+        tx = Tx.from_hex(partially_signed_raw_tx)
+        tx_out = TxOut(1000000, h2b("a914a10dfa21ee8c33b028b92562f6fe04e60563d3c087"))
+        tx.set_unspents([tx_out])
+        key = Key.from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx")
+        hash160_lookup = build_hash160_lookup([key.secret_exponent()])
+        self.assertEqual(tx.bad_signature_count(), 1)
+        tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
+        self.assertEqual(tx.bad_signature_count(), 0)
+        self.assertEqual(tx.id(), "9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2")
 
 if __name__ == "__main__":
     unittest.main()

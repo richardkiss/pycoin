@@ -1,16 +1,21 @@
+import hashlib
 
 from ... import ecdsa
 from ... import encoding
 
 from .ScriptPayToAddress import ScriptPayToAddress
+from .ScriptPayToAddressWit import ScriptPayToAddressWit
 from .ScriptPayToPublicKey import ScriptPayToPublicKey
 from .ScriptPayToScript import ScriptPayToScript
+from .ScriptPayToScriptWit import ScriptPayToScriptWit
 from .ScriptMultisig import ScriptMultisig
 from .ScriptUnknown import ScriptUnknown
 from .ScriptNulldata import ScriptNulldata
 
+
 SUBCLASSES = [
-    ScriptPayToAddress, ScriptPayToPublicKey, ScriptPayToScript,
+    ScriptPayToAddress, ScriptPayToAddressWit, ScriptPayToPublicKey,
+    ScriptPayToScript, ScriptPayToScriptWit,
     ScriptMultisig, ScriptNulldata, ScriptUnknown
 ]
 
@@ -36,4 +41,6 @@ def build_hash160_lookup(secret_exponents):
 
 
 def build_p2sh_lookup(scripts):
-    return dict((encoding.hash160(s), s) for s in scripts)
+    d1 = dict((encoding.hash160(s), s) for s in scripts)
+    d1.update((hashlib.sha256(s).digest(), s) for s in scripts)
+    return d1

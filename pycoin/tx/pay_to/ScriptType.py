@@ -69,14 +69,14 @@ class ScriptType(object):
                     break
                 r["PUBKEYHASH_LIST"].append(data1)
             elif opcode2 == opcodes.OP_NULLDATA:
-                if not (0 < l1 <= 40):
-                    break
                 r["NULLDATA_LIST"].append(data1)
             elif (opcode1, data1) != (opcode2, data2):
                 break
         raise ValueError("script doesn't match")
 
-    def _create_script_signature(self, secret_exponent, sign_value, signature_type):
+    def _create_script_signature(
+            self, secret_exponent, signature_for_hash_type_f, signature_type, script):
+        sign_value = signature_for_hash_type_f(signature_type, script)
         order = ecdsa.generator_secp256k1.order()
         r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
         if s + s > order:

@@ -142,7 +142,7 @@ def _make_parser(streamer, the_struct):
     struct_items = [s.split(":") for s in the_struct.split()]
     names = [s[0] for s in struct_items]
     types = ''.join(s[1] for s in struct_items)
-    
+
     def f(message_stream):
         return streamer.parse_as_dict(names, types, message_stream)
     return f

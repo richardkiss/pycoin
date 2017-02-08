@@ -5,7 +5,7 @@ import unittest
 from pycoin.serialize import h2b
 from pycoin.intbytes import int_to_bytes, bytes_from_ints
 from pycoin.tx.script.tools import bin_script, compile, disassemble, int_to_script_bytes, int_from_script_bytes
-from pycoin.tx.script.opcodes import OPCODE_LIST
+from pycoin.tx.script.opcodes import INT_TO_OPCODE, OPCODE_LIST
 from pycoin.tx.script.vm import eval_script
 
 
@@ -58,7 +58,11 @@ class ToolsTest(unittest.TestCase):
         long_hex_260 = build_hex(260, 13, 93)
         long_hex_270 = build_hex(270, 11, 47)
         check("%s %s" % (long_hex_260, long_hex_270))
+        s = set(INT_TO_OPCODE.values())
         for opcode, code in OPCODE_LIST:
+            # skip reassigned NOPs
+            if opcode not in s:
+                continue
             if opcode.startswith("OP_PUSHDATA"):
                 # these disassemble differently
                 continue

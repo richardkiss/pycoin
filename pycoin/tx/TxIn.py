@@ -46,6 +46,7 @@ class TxIn(object):
         self.previous_index = previous_index
         self.script = script
         self.sequence = sequence
+        self.witness = ()
 
     @classmethod
     def coinbase_tx_in(class_, script):
@@ -88,15 +89,18 @@ class TxIn(object):
     bitcoin_address = address
 
     def verify(self, tx_out_script, signature_for_hash_type_f, lock_time, expected_hash_type=None,
-               traceback_f=None, flags=None):
+               traceback_f=None, flags=None, tx_version=None):
         """
         Return True or False depending upon whether this TxIn verifies.
 
         tx_out_script: the script of the TxOut that corresponds to this input
         signature_hash: the hash of the partial transaction
         """
+        if self.sequence == 0xffffffff:
+            lock_time = None
         return verify_script(self.script, tx_out_script, signature_for_hash_type_f, lock_time=lock_time,
-                             flags=flags, expected_hash_type=expected_hash_type, traceback_f=traceback_f)
+                             flags=flags, expected_hash_type=expected_hash_type, traceback_f=traceback_f,
+                             witness=self.witness, tx_sequence=self.sequence, tx_version=tx_version)
 
     def __str__(self):
         if self.is_coinbase():

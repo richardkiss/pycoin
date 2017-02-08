@@ -13,7 +13,7 @@ class BlockExplorerProvider(object):
         url_stub = {"BTC": "blockexplorer.com", "XTN": "testnet.blockexplorer.com"}.get(netcode)
         if url_stub is None:
             raise ValueError("unsupported netcode %s" % netcode)
-        self.url = "http://%s/api" % url_stub
+        self.url = "https://%s/api" % url_stub
 
     def tx_for_tx_hash(self, tx_hash):
         """

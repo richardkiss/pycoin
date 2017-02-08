@@ -26,16 +26,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import binascii
 import hashlib
 import inspect
 
+from . import errno
 from . import ScriptError
 
-from .opcodes import OPCODE_TO_INT
+from .opcodes import INT_TO_OPCODE
 from .tools import bool_from_script_bytes, bool_to_script_bytes, int_to_script_bytes, int_from_script_bytes
 from ...encoding import hash160, double_sha256, ripemd160
-from ...serialize import h2b
 
 
 VCH_TRUE = b'\1'
@@ -48,7 +47,7 @@ do_OP_NOP6 = do_OP_NOP7 = do_OP_NOP8 = do_OP_NOP9 = do_OP_NOP10 = lambda s: None
 def nonnegative_int_from_script_bytes(b, require_minimal):
     v = int_from_script_bytes(b, require_minimal=require_minimal)
     if v < 0:
-        raise ScriptError("unexpectedly got negative value")
+        raise ScriptError("unexpectedly got negative value", errno.INVALID_STACK_OPERATION)
     return v
 
 
@@ -57,19 +56,19 @@ def do_OP_0(stack):
 
 
 def do_OP_RESERVED(stack):
-    raise ScriptError("OP_RESERVED encountered")
+    raise ScriptError("OP_RESERVED encountered", errno.BAD_OPCODE)
 
 
 def do_OP_VER(stack):
-    raise ScriptError("OP_VER encountered")
+    raise ScriptError("OP_VER encountered", errno.BAD_OPCODE)
 
 
 def do_OP_RESERVED1(stack):
-    raise ScriptError("OP_RESERVED1 encountered")
+    raise ScriptError("OP_RESERVED1 encountered", errno.BAD_OPCODE)
 
 
 def do_OP_RESERVED2(stack):
-    raise ScriptError("OP_RESERVED2 encountered")
+    raise ScriptError("OP_RESERVED2 encountered", errno.BAD_OPCODE)
 
 
 def do_OP_VERIFY(stack):
@@ -77,7 +76,7 @@ def do_OP_VERIFY(stack):
 
 
 def do_OP_RETURN(stack):
-    raise ScriptError("OP_RETURN encountered")
+    raise ScriptError("OP_RETURN encountered", errno.OP_RETURN)
 
 
 def do_OP_2DROP(stack):
@@ -345,53 +344,12 @@ def do_OP_SIZE(stack):
     stack.append(int_to_script_bytes(len(stack[-1])))
 
 
-def do_OP_INVERT(stack):
-    """
-    >>> s = [h2b('5dcf39822aebc166')]
-    >>> do_OP_INVERT(s)
-    >>> print(binascii.hexlify(s[0]) == b'a230c67dd5143e99')
-    True
-    """
-    v = stack.pop()
-    # use bytes_from_ints and bytes_to_ints so it works with
-    # Python 2.7 and 3.3. Ugh
-    stack.append(bytes_from_ints((s ^ 0xff) for s in bytes_to_ints(v)))
-
-
 def make_same_size(v1, v2):
     larger = max(len(v1), len(v2))
     nulls = b'\0' * larger
     v1 = (v1 + nulls)[:larger]
     v2 = (v2 + nulls)[:larger]
     return v1, v2
-
-
-def make_bitwise_bin_op(binop):
-    """
-    >>> s = [h2b('5dcf39832aebc166'), h2b('ff00f086') ]
-    >>> do_OP_AND(s)
-    >>> print(binascii.hexlify(s[0]) == b'5d00308200000000')
-    True
-    >>> s = [h2b('5dcf39832aebc166'), h2b('ff00f086') ]
-    >>> do_OP_OR(s)
-    >>> print(binascii.hexlify(s[0]) == b'ffcff9872aebc166')
-    True
-    >>> s = [h2b('5dcf39832aebc166'), h2b('ff00f086') ]
-    >>> do_OP_XOR(s)
-    >>> print(binascii.hexlify(s[0]) == b'a2cfc9052aebc166')
-    True
-    >>> s = []
-    """
-    def f(stack):
-        v1 = stack.pop()
-        v2 = stack.pop()
-        v1, v2 = make_same_size(v1, v2)
-        stack.append(bytes_from_ints(binop(c1, c2) for c1, c2 in zip(bytes_to_ints(v1), bytes_to_ints(v2))))
-    return f
-
-do_OP_AND = make_bitwise_bin_op(lambda x, y: x & y)
-do_OP_OR = make_bitwise_bin_op(lambda x, y: x | y)
-do_OP_XOR = make_bitwise_bin_op(lambda x, y: x ^ y)
 
 
 def do_OP_EQUAL(stack):
@@ -415,7 +373,7 @@ do_OP_EQUALVERIFY = do_OP_EQUAL
 def pop_check_bounds(stack, require_minimal):
     v = stack.pop()
     if len(v) > 4:
-        raise ScriptError("overflow in binop")
+        raise ScriptError("overflow in binop", errno.UNKNOWN_ERROR)
     return int_from_script_bytes(v, require_minimal=require_minimal)
 
 
@@ -543,7 +501,7 @@ def do_OP_0NOTEQUAL(stack, require_minimal):
 def build_ops_lookup():
     d = {}
     the_globals = globals()
-    for opcode_name, opcode_int in OPCODE_TO_INT.items():
+    for opcode_int, opcode_name in INT_TO_OPCODE.items():
         do_f_name = "do_%s" % opcode_name
         if do_f_name in the_globals:
             f = the_globals[do_f_name]

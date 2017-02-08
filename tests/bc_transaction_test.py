@@ -44,6 +44,9 @@ from pycoin.tx.script.opcodes import OPCODE_TO_INT
 from pycoin.tx.script.tools import compile
 
 
+DEBUG_TX_ID_LIST = []
+
+
 TX_VALID_JSON = os.path.dirname(__file__) + '/data/tx_valid.json'
 TX_INVALID_JSON = os.path.dirname(__file__) + '/data/tx_invalid.json'
 
@@ -77,7 +80,7 @@ def txs_from_json(path):
             assert len(tvec) == 3
             prevouts = tvec[0]
             for prevout in prevouts:
-                assert len(prevout) == 3
+                assert len(prevout) in (3, 4)
 
             tx_hex = tvec[1]
 
@@ -91,7 +94,10 @@ def txs_from_json(path):
             spendable_db = {}
             blank_spendable = Spendable(0, b'', b'\0' * 32, 0)
             for prevout in prevouts:
-                spendable = Spendable(coin_value=1000000,
+                coin_value = 1000000
+                if len(prevout) == 4:
+                    coin_value = prevout[3]
+                spendable = Spendable(coin_value=coin_value,
                                       script=compile(prevout[2]),
                                       tx_hash=h2b_rev(prevout[0]), tx_out_index=prevout[1])
                 spendable_db[(spendable.tx_hash, spendable.tx_out_index)] = spendable
@@ -117,21 +123,23 @@ def make_f(tx, flags, comments, expect_ok=True):
             why = "bad sig count = %d" % bs
         if (why != None) == expect_ok:
             why = why or "tx unexpectedly validated"
-            f = open("tx-%s-%s.bin" % (tx.id(), "ok" if expect_ok else "bad"), "wb")
+            f = open("tx-%s-%x-%s.bin" % (tx.id(), flags, "ok" if expect_ok else "bad"), "wb")
             f.write(tx.as_bin(include_unspents=True))
             f.close()
-            self.fail("fail on %s because of %s with hex %s: %s" % (tx.id(), why, tx_hex, comments))
+            self.fail("fail on %s because of %s with hex %s: %s" % (tx.w_id(), why, tx_hex, comments))
+    if DEBUG_TX_ID_LIST and tx.w_id() not in DEBUG_TX_ID_LIST:
+        return lambda self: 0
     return test_f
 
 
 def inject():
     for idx, (tx, flags, comments) in enumerate(txs_from_json(TX_VALID_JSON)):
-        name_of_f = "test_valid_%02d_%s" % (idx, tx.id())
+        name_of_f = "test_valid_%02d_%s" % (idx, tx.w_id())
         setattr(TestTx, name_of_f, make_f(tx, flags, comments))
         print("adding %s" % name_of_f)
 
     for idx, (tx, flags, comments) in enumerate(txs_from_json(TX_INVALID_JSON)):
-        name_of_f = "test_invalid_%02d_%s" % (idx, tx.id())
+        name_of_f = "test_invalid_%02d_%s" % (idx, tx.w_id())
         setattr(TestTx, name_of_f, make_f(tx, flags, comments, expect_ok=False))
         print("adding %s" % name_of_f)
 
