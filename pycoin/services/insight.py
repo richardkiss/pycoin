@@ -5,13 +5,7 @@ import decimal
 import json
 import io
 
-try:
-    from urllib2 import HTTPError, urlopen
-    from urllib import urlencode
-except ImportError:
-    from urllib.request import urlopen
-    from urllib.error import HTTPError
-    from urllib.parse import urlencode
+from .agent import request, urlencode, urlopen
 
 from pycoin.block import BlockHeader
 from pycoin.convention import btc_to_satoshi
@@ -104,7 +98,7 @@ class InsightProvider(object):
         try:
             d = urlopen(URL, data=data).read()
             return d
-        except HTTPError as err:
+        except request.HTTPError as err:
             if err.code == 400:
                 raise ValueError(err.readline())
             raise err

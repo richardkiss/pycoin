@@ -1,8 +1,5 @@
 import json
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib2 import urlopen
+from .agent import urlopen
 
 from pycoin.serialize import b2h_rev
 from pycoin.tx.Tx import Tx
