@@ -113,11 +113,12 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
                 for opcode in opcode_list(tx_in.script):
                     if not opcode.startswith("OP_"):
                         try:
-                            signatures.append(parse_signature_blob(h2b(opcode)))
+                            signatures.append(parse_signature_blob(h2b(opcode[1:-1])))
                         except UnexpectedDER:
                             pass
                 if signatures:
-                    sig_types_identical = (zip(*signatures)[1]).count(signatures[0][1]) == len(signatures)
+                    sig_types_identical = (
+                        tuple(zip(*signatures))[1].count(signatures[0][1]) == len(signatures))
                     i = 1 if len(signatures) > 1 else ''
                     for sig_pair, sig_type in signatures:
                         print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
@@ -248,6 +249,9 @@ def create_parser():
     parser.add_argument('-C', "--cache", help='force the resultant transaction into the transaction cache.'
                         ' Mostly for testing.', action='store_true'),
 
+    parser.add_argument("--db", type=Tx.from_hex, help='force the transaction expressed by the given hex '
+                        'into a RAM-based transaction cache. Mostly for testing.', action="append"),
+
     parser.add_argument('-u', "--show-unspents", action='store_true',
                         help='show TxOut items for this transaction in Spendable form.')
 
@@ -365,6 +369,12 @@ def parse_context(args, parser):
     # we create the tx_db lazily
     tx_db = None
 
+    if args.db:
+        the_ram_tx_db = dict((tx.hash(), tx) for tx in args.db)
+        if tx_db is None:
+            tx_db = get_tx_db(args.network)
+        tx_db.lookup_methods.append(the_ram_tx_db.get)
+
     for arg in args.argument:
 
         # hex transaction id
@@ -446,7 +456,7 @@ def parse_context(args, parser):
             spendables.extend(spendables_for_address(address))
 
     for tx in txs:
-        if tx.missing_unspents() and args.augment:
+        if tx.missing_unspents() and (args.augment or tx_db):
             if tx_db is None:
                 warning_tx_cache = message_about_tx_cache_env()
                 warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
@@ -602,6 +612,7 @@ def main():
     for m in [warning_tx_cache, warning_tx_for_tx_hash, warning_spendables]:
         if m:
             print("warning: %s" % m, file=sys.stderr)
+
 
 if __name__ == '__main__':
     main()
