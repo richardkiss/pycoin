@@ -26,13 +26,13 @@ signature_template = '''\
 
 def parse_signed_message(msg_in):
     """
-        Take an "armoured" message and split into the message body, signing address
-        and the base64 signature. Should work on all altcoin networks, and should
-        accept both Inputs.IO and Multibit formats but not Armory.
+    Take an "armoured" message and split into the message body, signing address
+    and the base64 signature. Should work on all altcoin networks, and should
+    accept both Inputs.IO and Multibit formats but not Armory.
 
-        Looks like RFC2550 <https://www.ietf.org/rfc/rfc2440.txt> was an "inspiration"
-        for this, so in case of confusion it's a reference, but I've never found
-        a real spec for this. Should be a BIP really.
+    Looks like RFC2550 <https://www.ietf.org/rfc/rfc2440.txt> was an "inspiration"
+    for this, so in case of confusion it's a reference, but I've never found
+    a real spec for this. Should be a BIP really.
     """
 
     # Convert to Unix line feeds from DOS style, iff we find them, but
@@ -96,8 +96,8 @@ def parse_signed_message(msg_in):
 
 def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_hash=None):
     """
-        Return a signature, encoded in Base64, which can be verified by anyone using the
-        public key.
+    Return a signature, encoded in Base64, which can be verified by anyone using the
+    public key.
     """
     secret_exponent = key.secret_exponent()
     if not secret_exponent:
@@ -133,7 +133,7 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
 
     if not isinstance(sig, str):
         # python3 b2a wrongness
-        sig = str(sig, 'ascii')
+        sig = sig.decode('utf8')
 
     if not verbose or message is None:
         return sig
@@ -145,9 +145,9 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
 
 def verify_message(key_or_address, signature, message=None, msg_hash=None, netcode=None):
     """
-        Take a signature, encoded in Base64, and verify it against a
-        key object (which implies the public key),
-        or a specific base58-encoded pubkey hash.
+    Take a signature, encoded in Base64, and verify it against a
+    key object (which implies the public key),
+    or a specific base58-encoded pubkey hash.
     """
 
     if isinstance(key_or_address, Key):
@@ -214,12 +214,6 @@ def _decode_signature(signature):
         Decode the internal fields of the base64-encoded signature.
     """
 
-    if signature[0] not in ('G','H','I', 71,72,73):
-        # Because we know the first char is in range(27, 35), we know
-        # valid first character is in this set.
-        raise TypeError("Expected base64 value as signature", signature)
-
-    # base 64 decode
     sig = a2b_base64(signature)
     if len(sig) != 65:
         raise ValueError("Wrong length, expected 65")
@@ -284,8 +278,8 @@ def hash_for_signing(msg, netcode='BTC'):
     magic = msg_magic_for_netcode(netcode)
 
     fd = io.BytesIO()
-    stream_bc_string(fd, bytearray(magic, 'ascii'))
-    stream_bc_string(fd, bytearray(msg, 'utf-8'))
+    stream_bc_string(fd, bytearray(magic, 'utf8'))
+    stream_bc_string(fd, bytearray(msg, 'utf8'))
 
     # return as a number, since it's an input to signing algos like that anyway
     return from_bytes_32(double_sha256(fd.getvalue()))
@@ -359,5 +353,3 @@ def _my_sign(generator, secret_exponent, val, _k=None):
         raise RuntimeError("amazingly unlucky random number s")
 
     return (r, s, p1.y() % 2)
-
-# EOF
