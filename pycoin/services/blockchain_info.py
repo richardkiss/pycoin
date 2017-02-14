@@ -2,12 +2,7 @@ import io
 import json
 import warnings
 
-try:
-    from urllib2 import urlopen, HTTPError
-    from urllib import urlencode
-except ImportError:
-    from urllib.request import urlopen, HTTPError
-    from urllib.parse import urlencode
+from .agent import request, urlencode, urlopen
 
 from pycoin.serialize import b2h, h2b
 from pycoin.tx import Spendable
@@ -38,7 +33,7 @@ class BlockchainInfoProvider(object):
         Return a list of Spendable objects for the
         given bitcoin address.
         """
-        URL = "http://blockchain.info/unspent?active=%s" % bitcoin_address
+        URL = "https://blockchain.info/unspent?active=%s" % bitcoin_address
         r = json.loads(urlopen(URL).read().decode("utf8"))
         spendables = []
         for u in r["unspent_outputs"]:
@@ -54,11 +49,11 @@ class BlockchainInfoProvider(object):
         tx.stream(s)
         tx_as_hex = b2h(s.getvalue())
         data = urlencode(dict(tx=tx_as_hex)).encode("utf8")
-        URL = "http://blockchain.info/pushtx"
+        URL = "https://blockchain.info/pushtx"
         try:
             d = urlopen(URL, data=data).read()
             return d
-        except HTTPError as ex:
+        except request.HTTPError as ex:
             try:
                 d = ex.read()
                 ex.message = d
