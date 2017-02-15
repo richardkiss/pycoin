@@ -1,10 +1,7 @@
 import io
 import json
 
-try:
-    from urllib2 import urlopen
-except ImportError:
-    from urllib.request import urlopen
+from .agent import urlopen
 
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
