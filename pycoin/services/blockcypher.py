@@ -1,10 +1,7 @@
 import json
 import io
 
-try:
-    from urllib2 import urlopen
-except ImportError:
-    from urllib.request import urlopen
+from .agent import urlopen
 
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
@@ -64,4 +61,13 @@ class BlockcypherProvider(object):
         url_append = "/balance?token=%s" % self.api_key
         url = self.base_url("addrs/%s" % (address + url_append))
         result = json.loads(urlopen(url).read().decode("utf8"))
+        return result
+
+    def broadcast_tx(self, tx):
+        """
+        broadcast a transaction to the network
+        """
+        url = self.base_url("txs/push")
+        data = {"tx": tx.as_hex()}
+        result = json.loads(urlopen(url, data=json.dumps(data)).read().decode("utf8"))
         return result
