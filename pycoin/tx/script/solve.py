@@ -78,11 +78,61 @@ def make_traceback_f(constraints):
     return traceback_f
 
 
-def solve(tx, tx_in_idx, *args, **kwargs):
+
+def solve(tx, tx_in_idx, **kwargs):
     constraints = []
     tx.check_solution(tx_in_idx, traceback_f=make_traceback_f(constraints))
     for c in constraints:
         print(c, sorted(c.dependencies()))
+    solutions = []
+    for c in constraints:
+        s = solution_for_constraint(c)
+        # s = (solution_f, target atom, dependency atom list)
+        if s is not None:
+            solutions.append(s)
+    max_stack_size = 2  # BRAIN DAMAGE
+    solved_values = dict((Atom("x_%d" % i), None) for i in range(max_stack_size))
+    progress = True
+    while progress and any(v is None for v in solved_values.values()):
+        progress = False
+        for solution, target, dependencies in solutions:
+            if any(solved_values[d] is None for d in dependencies):
+                continue
+            solved_values[target] = solution(solved_values, **kwargs)
+            progress = True
+    print(solved_values)
+
+
+class CONSTANT(object):
+    def __init__(self, name):
+        self._name = name
+
+
+class VAR(object):
+    def __init__(self, name):
+        self._name = name
+
+
+def solution_for_constraint(c):
+    # given a constraint c
+    # return None or
+    # a solution (solution_f, target atom, dependency atom list)
+    # where solution_f take list of solved values
+    m = constraint_matches(c, ('EQUAL', CONSTANT("0"), ('HASH160', VAR("1"))))
+    if m:
+        pass
+    # (EQUAL K (HASH160 <x_0>))
+
+
+def constraint_matches(c, m):
+    if isinstance(m, tuple):
+        if not isinstance(c, Operator):
+            return False
+        if c._op_name != m[0]:
+            return False
+        if len(c.args) != len(m[1:]):
+            return False
+        pass
 
 
 def test():
