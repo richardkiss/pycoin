@@ -1,12 +1,10 @@
-language: python
 sudo: false
-python: 3.5
-install: "pip install pytest tox"
-env:
-    - TOX_ENV=py27
-    - TOX_ENV=py33
-    - TOX_ENV=py34
-    - TOX_ENV=py35
-    - TOX_ENV=pypy
-script:
-    - tox -e $TOX_ENV
+language: python
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "pypy"
+install: pip install tox-travis
+script: tox
