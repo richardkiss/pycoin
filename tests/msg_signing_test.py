@@ -1,6 +1,9 @@
 #!/usr/bin/env python
-from __future__ import print_function
+
 import unittest
+
+from pycoin.contrib.msg_signing import parse_signed_message, verify_message
+from pycoin.key import Key
 
 
 def test_against_myself():
@@ -9,7 +12,6 @@ def test_against_myself():
     """
     from pycoin.contrib.msg_signing import (
             parse_signed_message, sign_message, verify_message)
-    from pycoin.key import Key
     from pycoin.encoding import bitcoin_address_to_hash160_sec_with_prefix
     from pycoin.encoding import wif_to_tuple_of_secret_exponent_compressed
 
@@ -49,14 +51,14 @@ def test_against_myself():
             ok = verify_message(k, sig2, msg)
             assert ok
 
+            ok = verify_message(k, sig2.encode('ascii'), msg)
+            assert ok
 
 def test_msg_parse():
     """
         Test against real-world signatures found in the wild.
     """
 
-    from pycoin.contrib.msg_signing import parse_signed_message, verify_message
-    from pycoin.key import Key
 
     # Output from brainwallet in "multibit" mode.
     multibit = '''
@@ -180,7 +182,6 @@ class MsgSigningTests(unittest.TestCase):
     def test_k(self):
         test_special_k()
 
+
 if __name__ == "__main__":
     unittest.main()
-
-# EOF
