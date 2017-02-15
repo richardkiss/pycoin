@@ -12,6 +12,10 @@ from pycoin.services.chain_so import ChainSoProvider
 from pycoin.services.insight import InsightProvider
 
 
+BLOCK_0_HASH = h2b_rev("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")
+BLOCK_1_HASH = h2b_rev("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048")
+
+
 tx_id_for_net = {
     "BTC": ["b958e4a3ccd5bc8fe0ff6fafd635199313e347b88a8102040c05dd123f32a4f3",
             "d1ef46055a84fd02ee82580d691064780def18614d98646371c3448ca20019ac",
@@ -60,11 +64,11 @@ class ServicesTest(unittest.TestCase):
         pass
 
     def test_BlockchainInfo(self):
-        #self.check_provider_tx_for_tx_hash(BlockchainInfo, ["BTC"])
+        # self.check_provider_tx_for_tx_hash(BlockchainInfo, ["BTC"])
         pass
 
     def test_BlockCypherProvider(self):
-        #self.check_provider_tx_for_tx_hash(BlockCypherProvider, ["BTC", "XTN"])
+        # self.check_provider_tx_for_tx_hash(BlockCypherProvider, ["BTC", "XTN"])
         pass
 
     def test_BlockExplorerProvider(self):
@@ -79,12 +83,19 @@ class ServicesTest(unittest.TestCase):
         pass
 
     def test_InsightProvider(self):
+        provider = InsightProvider("http://insight.bitpay.com/")
         self.check_provider_tx_for_tx_hash(
-            lambda x: InsightProvider("http://insight.bitpay.com/"), ["BTC"])
+            lambda x: provider, ["BTC"])
+        provider.get_blockchain_tip()
+        h = provider.get_blockheader(BLOCK_1_HASH)
+        assert h.previous_block_hash == BLOCK_0_HASH
+        height = provider.get_block_height(BLOCK_1_HASH)
+        assert height == 1
 
 
 def main():
     unittest.main()
+
 
 if __name__ == "__main__":
     main()
