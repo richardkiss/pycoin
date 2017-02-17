@@ -44,7 +44,7 @@ def do_OP_DEPTH(vm):
     >>> print(s)
     [1, 2, 1, 2, 1, 2, b'\\x06']
     """
-    vm.stack.append(vm.int_to_script_bytes(len(vm.stack)))
+    vm.stack.append(vm.IntStreamer.int_to_script_bytes(len(vm.stack)))
 
 
 def do_OP_PICK(vm):
@@ -127,7 +127,7 @@ def do_OP_SIZE(vm):
     >>> print(binascii.hexlify(s[-1]) == b'7017')
     True
     """
-    vm.stack.append(vm.int_to_script_bytes(len(vm.stack[-1])))
+    vm.stack.append(vm.IntStreamer.int_to_script_bytes(len(vm.stack[-1])))
 
 
 def make_same_size(v1, v2):
@@ -164,13 +164,13 @@ def pop_check_bounds(vm):
     v = vm.stack.pop()
     if len(v) > 4:
         raise ScriptError("overflow in binop", errno.UNKNOWN_ERROR)
-    return vm.int_from_script_bytes(v, require_minimal=vm.flags & VERIFY_MINIMALDATA)
+    return vm.IntStreamer.int_from_script_bytes(v, require_minimal=vm.flags & VERIFY_MINIMALDATA)
 
 
 def make_bin_op(binop):
     def f(vm):
         v1, v2 = [pop_check_bounds(vm) for i in range(2)]
-        vm.stack.append(vm.int_to_script_bytes(binop(v2, v1)))
+        vm.stack.append(vm.IntStreamer.int_to_script_bytes(binop(v2, v1)))
     return f
 
 
@@ -218,7 +218,7 @@ def do_OP_WITHIN(vm):
     >>> print(s == [b''])
     True
     """
-    v3, v2, v1 = [vm.int_from_script_bytes(
+    v3, v2, v1 = [vm.IntStreamer.int_from_script_bytes(
         vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA) for i in range(3)]
     ok = (v2 <= v1 < v3)
     vm.stack.append(vm.bool_to_script_bytes(ok))
@@ -226,7 +226,7 @@ def do_OP_WITHIN(vm):
 
 def make_unary_num_op(unary_f):
     def f(vm):
-        vm.stack.append(vm.int_to_script_bytes(unary_f(pop_check_bounds(vm))))
+        vm.stack.append(vm.IntStreamer.int_to_script_bytes(unary_f(pop_check_bounds(vm))))
     return f
 
 
@@ -244,6 +244,6 @@ def do_OP_NOT(vm):
 
 def do_OP_0NOTEQUAL(vm):
     return vm.stack.append(
-        vm.int_to_script_bytes(
+        vm.IntStreamer.int_to_script_bytes(
             vm.bool_from_script_bytes(
                 vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)))
