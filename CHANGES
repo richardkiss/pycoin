@@ -1,6 +1,11 @@
-Version 0.76
+Version 0.77
 ------------
 * change how ScriptNullData works (arbitrary data now allowed after OP_RETURN)
+
+Version 0.76
+------------
+* respin build to fixing a problem with "vm.py" being named "VM.py" in
+  the 0.75 tar.gz file on pypi
 
 Version 0.75
 ------------
