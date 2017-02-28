@@ -99,7 +99,7 @@ class Tx(object):
         is_segwit = allow_segwit and (v == 0)
         if is_segwit:
             flag = f.read(1)
-            if flag != b'\1':
+            if flag == b'\0':
                 raise ValueError("bad flag in segwit")
             v = None
         count = parse_bc_int(f, v=v)
