@@ -95,18 +95,23 @@ class Tx(object):
         txs_in = []
         txs_out = []
         version, = parse_struct("L", f)
-        v = ord(f.read(1))
-        is_segwit = allow_segwit and (v == 0)
+        v1 = ord(f.read(1))
+        is_segwit = allow_segwit and (v1 == 0)
+        v2 = None
         if is_segwit:
             flag = f.read(1)
             if flag == b'\0':
                 raise ValueError("bad flag in segwit")
-            v = None
-        count = parse_bc_int(f, v=v)
+            if flag == b'\1':
+                v1 = None
+            else:
+                is_segwit = False
+                v2 = ord(flag)
+        count = parse_bc_int(f, v=v1)
         txs_in = []
         for i in range(count):
             txs_in.append(class_.TxIn.parse(f))
-        count = parse_bc_int(f)
+        count = parse_bc_int(f, v=v2)
         txs_out = []
         for i in range(count):
             txs_out.append(class_.TxOut.parse(f))
