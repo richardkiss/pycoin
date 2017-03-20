@@ -88,7 +88,7 @@ class ScriptType(object):
         from pycoin.networks.default import get_current_netcode
         if netcode is None:
             netcode = get_current_netcode()
-        return self.info(netcode=netcode)["address_f"](netcode)
+        return self.info()["address_f"](netcode)
 
     def solve(self, **kwargs):
         """
