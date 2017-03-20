@@ -1,4 +1,4 @@
-Version 0.77
+Version 0.xx
 ------------
 * change how ScriptNullData works (arbitrary data now allowed after OP_RETURN)
 
