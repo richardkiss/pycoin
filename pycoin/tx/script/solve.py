@@ -1,11 +1,17 @@
 # generic solver
 
-# from .SolutionChecker import SolutionChecker
-# from .VM import VM
+import pdb
 
 from .. import Tx, TxIn, TxOut
 from ...key import Key
 from ...ui import standard_tx_out_script
+
+from pycoin import ecdsa
+from pycoin.tx.script import der
+from pycoin.intbytes import bytes_from_int
+from pycoin.tx.script.VM import VM
+
+from pycoin.tx.pay_to import ScriptPayToPublicKey
 
 
 class Atom(object):
@@ -15,6 +21,14 @@ class Atom(object):
     def dependencies(self):
         return frozenset([self.name])
 
+    def __eq__(self, other):
+        if isinstance(other, Atom):
+            return self.name == other.name
+        return False
+
+    def __hash__(self):
+        return self.name.__hash__()
+
     def __repr__(self):
         return "<%s>" % self.name
 
@@ -22,14 +36,23 @@ class Atom(object):
 class Operator(Atom):
     def __init__(self, op_name, *args):
         self._op_name = op_name
-        self._args = args
-
-    def dependencies(self):
+        self._args = tuple(args)
         s = set()
         for a in self._args:
             if hasattr(a, "dependencies"):
                 s.update(a.dependencies())
-        return frozenset(s)
+        self._dependencies = frozenset(s)
+
+    def __hash__(self):
+        return self._args.__hash__()
+
+    def __eq__(self, other):
+        if isinstance(other, Operator):
+            return self._op_name, self._args == other._op_name, other._args
+        return False
+
+    def dependencies(self):
+        return self._dependencies
 
     def __repr__(self):
         return "(%s %s)" % (self._op_name, ' '.join(repr(a) for a in self._args))
@@ -46,8 +69,6 @@ def make_traceback_f(constraints):
         if len(altstack) == 0:
             altstack = ''
         # print("%s %s\n  %3x  %s" % (vm.stack, altstack, vm.pc, vm.disassemble_for_opcode_data(opcode, data)))
-        import pdb
-        # pdb.set_trace()
         if opcode == vm.OP_HASH160 and not isinstance(vm.stack[-1], bytes):
             def my_op_hash160(vm):
                 t = vm.stack.pop()
@@ -78,10 +99,14 @@ def make_traceback_f(constraints):
     return traceback_f
 
 
-
-def solve(tx, tx_in_idx, **kwargs):
+def determine_constraints(tx, tx_in_idx):
     constraints = []
     tx.check_solution(tx_in_idx, traceback_f=make_traceback_f(constraints))
+    return constraints
+
+
+def solve(tx, tx_in_idx, **kwargs):
+    constraints = determine_constraints(tx, tx_in_idx)
     for c in constraints:
         print(c, sorted(c.dependencies()))
     solutions = []
@@ -90,17 +115,21 @@ def solve(tx, tx_in_idx, **kwargs):
         # s = (solution_f, target atom, dependency atom list)
         if s is not None:
             solutions.append(s)
-    max_stack_size = 2  # BRAIN DAMAGE
+    max_stack_size = kwargs["max_stack_size"]  # BRAIN DAMAGE
     solved_values = dict((Atom("x_%d" % i), None) for i in range(max_stack_size))
     progress = True
     while progress and any(v is None for v in solved_values.values()):
         progress = False
         for solution, target, dependencies in solutions:
+            if solved_values.get(target) is not None:
+                continue
             if any(solved_values[d] is None for d in dependencies):
                 continue
             solved_values[target] = solution(solved_values, **kwargs)
             progress = True
-    print(solved_values)
+
+    solution_list = [solved_values.get(Atom("x_%d" % i)) for i in reversed(range(max_stack_size))]
+    return VM.bin_script(solution_list)
 
 
 class CONSTANT(object):
@@ -118,37 +147,143 @@ def solution_for_constraint(c):
     # return None or
     # a solution (solution_f, target atom, dependency atom list)
     # where solution_f take list of solved values
+
+    def lookup_solved_value(solved_values, item):
+        if isinstance(item, Atom):
+            return solved_values[item]
+        return item
+
+    def filtered_dependencies(*args):
+        return [a for a in args if isinstance(a, Atom)]
+
+
     m = constraint_matches(c, ('EQUAL', CONSTANT("0"), ('HASH160', VAR("1"))))
     if m:
-        pass
-    # (EQUAL K (HASH160 <x_0>))
+        the_hash = m["0"]
+
+        def f(solved_values, **kwargs):
+            return kwargs["pubkey_for_hash"](the_hash)
+
+        return (f, m["1"], ())
+
+    m = constraint_matches(c, (('IS_TRUE', ('CHECKSIG', VAR("0"), VAR("1")))))
+    if m:
+
+        def f(solved_values, **kwargs):
+            pubkey = lookup_solved_value(solved_values, m["0"])
+            pdb.set_trace()
+            privkey = kwargs["privkey_for_pubkey"](pubkey)
+            signature = kwargs["signature_for_secret_exponent"](privkey)
+            return signature
+        return (f, m["1"], filtered_dependencies(m["0"]))
+
+    return None
 
 
 def constraint_matches(c, m):
+    """
+    Return False or dict with indices the substitution values
+    """
+    d = {}
     if isinstance(m, tuple):
         if not isinstance(c, Operator):
             return False
         if c._op_name != m[0]:
             return False
-        if len(c.args) != len(m[1:]):
+        if len(c._args) != len(m[1:]):
             return False
-        pass
+        for c1, m1 in zip(c._args, m[1:]):
+            if isinstance(m1, tuple) and isinstance(c1, Operator):
+                d1 = constraint_matches(c1, m1)
+                if d1 is False:
+                    return False
+                d.update(d1)
+                continue
+            if isinstance(m1, CONSTANT):
+                if isinstance(c1, bytes):
+                    d[m1._name] = c1
+                    continue
+            if isinstance(m1, VAR):
+                if isinstance(c1, (bytes, Atom)):
+                    d[m1._name] = c1
+                    continue
+            if c1 == m1:
+                continue
+            return False
+        return d
 
 
-def test():
-    key = Key(1)
+def test_solve(tx, tx_in_idx, **kwargs):
+    solution_script = solve(tx, 0, **kwargs)
+    print(VM.disassemble(solution_script))
+
+    tx.txs_in[tx_in_idx].script = solution_script
+    tx.check_solution(0)
+
+
+def make_test_tx(input_script):
     previous_hash = b'\1' * 32
     txs_in = [TxIn(previous_hash, 0)]
-    txs_out = [TxOut(1000, standard_tx_out_script(key.address()))]
+    txs_out = [TxOut(1000, standard_tx_out_script(Key(1).address()))]
     version, lock_time = 1, 0
     tx = Tx(version, txs_in, txs_out, lock_time)
-    tx.set_unspents(txs_out)
-    print(tx)
-    solve(tx, 0)
+    unspents = [TxOut(1000, input_script)]
+    tx.set_unspents(unspents)
     return tx
 
 
-test()
+def test_tx(incoming_script, max_stack_size):
+    key = Key(1)
+    tx = make_test_tx(incoming_script)
+    tx_in_idx = 0
+
+    def pubkey_for_hash(the_hash):
+        if the_hash == key.hash160():
+            return key.sec()
+
+    def privkey_for_pubkey(pubkey):
+        if pubkey == key.sec():
+            return key.secret_exponent()
+
+    def signature_for_secret_exponent(secret_exponent):
+        signature_type = 1  # BRAIN DAMAGE
+
+        def signature_for_hash_type_f(hash_type, script):
+            return tx.signature_hash(script, tx_in_idx, hash_type)
+
+        script_to_hash = incoming_script
+        sign_value = signature_for_hash_type_f(signature_type, script_to_hash)
+        order = ecdsa.generator_secp256k1.order()
+        r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
+        if s + s > order:
+            s = order - s
+        return der.sigencode_der(r, s) + bytes_from_int(signature_type)
+
+    kwargs = dict(pubkey_for_hash=pubkey_for_hash,
+                  privkey_for_pubkey=privkey_for_pubkey,
+                  signature_for_secret_exponent=signature_for_secret_exponent,
+                  max_stack_size=max_stack_size)
+
+    test_solve(tx, tx_in_idx, **kwargs)
+
+
+def test_p2pkh():
+    key = Key(1)
+    test_tx(standard_tx_out_script(key.address()), 2)
+
+
+def test_p2pk():
+    key = Key(1)
+    test_tx(ScriptPayToPublicKey.from_key(key).script(), 1)
+
+
+def main():
+    test_p2pkh()
+    test_p2pk()
+
+
+if __name__ == '__main__':
+    main()
 
 
 """
