@@ -277,9 +277,15 @@ def test_p2pk():
     test_tx(ScriptPayToPublicKey.from_key(key).script(), 1)
 
 
+def test_nonstandard_p2pkh():
+    key = Key(1)
+    test_tx(VM.compile("OP_SWAP") + standard_tx_out_script(key.address()), 2)
+
+
 def main():
     test_p2pkh()
     test_p2pk()
+    test_nonstandard_p2pkh()
 
 
 if __name__ == '__main__':
