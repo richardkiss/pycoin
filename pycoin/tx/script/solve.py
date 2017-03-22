@@ -5,13 +5,54 @@ import pdb
 from .. import Tx, TxIn, TxOut
 from ...key import Key
 from ...ui import standard_tx_out_script
+from ..script.checksigops import parse_signature_blob
 
 from pycoin import ecdsa
+from pycoin import encoding
 from pycoin.tx.script import der
 from pycoin.intbytes import bytes_from_int
 from pycoin.tx.script.VM import VM
 
-from pycoin.tx.pay_to import ScriptPayToPublicKey
+from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey
+
+
+DEFAULT_PLACEHOLDER_SIGNATURE = b''
+
+
+def _create_script_signature(
+        secret_exponent, signature_for_hash_type_f, signature_type, script):
+    sign_value = signature_for_hash_type_f(signature_type, script)
+    order = ecdsa.generator_secp256k1.order()
+    r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
+    if s + s > order:
+        s = order - s
+    return der.sigencode_der(r, s) + bytes_from_int(signature_type)
+
+
+def _find_signatures(script, signature_for_hash_type_f, script_to_hash, max_sigs, sec_keys):
+    signatures = []
+    secs_solved = set()
+    pc = 0
+    seen = 0
+    opcode, data, pc = VM.get_opcode(script, pc)
+    # ignore the first opcode
+    while pc < len(script) and seen < max_sigs:
+        opcode, data, pc = VM.get_opcode(script, pc)
+        try:
+            sig_pair, signature_type = parse_signature_blob(data)
+            seen += 1
+            for idx, sec_key in enumerate(sec_keys):
+                public_pair = encoding.sec_to_public_pair(sec_key)
+                sign_value = signature_for_hash_type_f(signature_type, script_to_hash)
+                v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
+                if v:
+                    signatures.append((idx, data))
+                    secs_solved.add(sec_key)
+                    break
+        except (encoding.EncodingError, der.UnexpectedDER):
+            # if public_pair is invalid, we just ignore it
+            pass
+    return signatures, secs_solved
 
 
 class Atom(object):
@@ -96,6 +137,28 @@ def make_traceback_f(constraints):
                         constraints.append(Operator('STACK_EMPTY_AFTER', vm.stack[-2]))
                     vm.stack = vm.Stack([vm.VM_TRUE])
             return my_op_checksig
+        if opcode == vm.OP_CHECKMULTISIG:
+            def my_op_checkmultisig(vm):
+                key_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
+                public_pair_blobs = []
+                for i in range(key_count):
+                    constraints.append(Operator('IS_PUBKEY', vm.stack[-1]))
+                    public_pair_blobs.append(vm.stack.pop())
+                signature_count = vm.IntStreamer.int_from_script_bytes(stack.pop(), require_minimal=False)
+                sig_blobs = []
+                for i in range(signature_count):
+                    constraints.append(Operator('IS_SIGNATURE', vm.stack[-1]))
+                    sig_blobs.append(stack.pop())
+                t1 = vm.stack.pop()
+                constraints.append(Operator('EQUAL', t1, b''))
+                t = Operator('CHECKMULTISIG', public_pair_blobs, sig_blobs)
+                vm.stack.append(t)
+                if pc >= len(vm.script):
+                    constraints.append(Operator('IS_TRUE', vm.stack[-1]))
+                    if len(vm.stack) > 1:
+                        constraints.append(Operator('STACK_EMPTY_AFTER', vm.stack[-2]))
+                    vm.stack = vm.Stack([vm.VM_TRUE])
+            return my_op_checkmultisig
     return traceback_f
 
 
@@ -111,9 +174,9 @@ def solve(tx, tx_in_idx, **kwargs):
         print(c, sorted(c.dependencies()))
     solutions = []
     for c in constraints:
-        s = solution_for_constraint(c)
+        s = solutions_for_constraint(c)
         # s = (solution_f, target atom, dependency atom list)
-        if s is not None:
+        if s:
             solutions.append(s)
     max_stack_size = kwargs["max_stack_size"]  # BRAIN DAMAGE
     solved_values = dict((Atom("x_%d" % i), None) for i in range(max_stack_size))
@@ -121,12 +184,13 @@ def solve(tx, tx_in_idx, **kwargs):
     while progress and any(v is None for v in solved_values.values()):
         progress = False
         for solution, target, dependencies in solutions:
-            if solved_values.get(target) is not None:
+            if any(solved_values.get(t) is not None for t in target):
                 continue
             if any(solved_values[d] is None for d in dependencies):
                 continue
-            solved_values[target] = solution(solved_values, **kwargs)
-            progress = True
+            s = solution(solved_values, **kwargs)
+            solved_values.update(s)
+            progress = progress or (len(s) > 0)
 
     solution_list = [solved_values.get(Atom("x_%d" % i)) for i in reversed(range(max_stack_size))]
     return VM.bin_script(solution_list)
@@ -142,7 +206,12 @@ class VAR(object):
         self._name = name
 
 
-def solution_for_constraint(c):
+class LIST(object):
+    def __init__(self, name):
+        self._name = name
+
+
+def solutions_for_constraint(c):
     # given a constraint c
     # return None or
     # a solution (solution_f, target atom, dependency atom list)
@@ -156,26 +225,74 @@ def solution_for_constraint(c):
     def filtered_dependencies(*args):
         return [a for a in args if isinstance(a, Atom)]
 
-
     m = constraint_matches(c, ('EQUAL', CONSTANT("0"), ('HASH160', VAR("1"))))
     if m:
         the_hash = m["0"]
 
         def f(solved_values, **kwargs):
-            return kwargs["pubkey_for_hash"](the_hash)
+            return {m["1"]: kwargs["pubkey_for_hash"](the_hash)}
 
-        return (f, m["1"], ())
+        return (f, [m["1"]], ())
+
+    m = constraint_matches(c, ('EQUAL', VAR("0"), CONSTANT('1')))
+    if m:
+        def f(solved_values, **kwargs):
+            return {m["0"]: m["1"]}
+
+        return (f, [m["0"]], ())
 
     m = constraint_matches(c, (('IS_TRUE', ('CHECKSIG', VAR("0"), VAR("1")))))
     if m:
 
         def f(solved_values, **kwargs):
             pubkey = lookup_solved_value(solved_values, m["0"])
-            pdb.set_trace()
             privkey = kwargs["privkey_for_pubkey"](pubkey)
             signature = kwargs["signature_for_secret_exponent"](privkey)
-            return signature
-        return (f, m["1"], filtered_dependencies(m["0"]))
+            return {m["1"]: signature}
+        return (f, [m["1"]], filtered_dependencies(m["0"]))
+
+    m = constraint_matches(c, (('IS_TRUE', ('CHECKMULTISIG', LIST("0"), LIST("1")))))
+    if m:
+
+        def f(solved_values, **kwargs):
+            pdb.set_trace()
+            signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f")
+            script_to_hash = kwargs.get("script_to_hash")
+
+            secs_solved = set()
+            signature_type = kwargs.get("signature_type")
+
+            existing_signatures = []
+            existing_script = kwargs.get("existing_script")
+            if existing_script:
+                existing_signatures, secs_solved = _find_signatures(
+                    existing_script, signature_for_hash_type_f, script_to_hash)
+
+            sec_keys = m["0"]
+            signature_variables = m["1"]
+
+            signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
+
+            privkey_for_pubkey = kwargs["privkey_for_pubkey"]
+
+            for signature_order, sec_key in enumerate(sec_keys):
+                if sec_key in secs_solved:
+                    continue
+                if len(existing_signatures) >= len(signature_variables):
+                    break
+                secret_exponent = privkey_for_pubkey(sec_key)
+                if not secret_exponent:
+                    continue
+                binary_signature = kwargs["signature_for_secret_exponent"](secret_exponent)
+                existing_signatures.append((signature_order, binary_signature))
+
+            # pad with placeholder signatures
+            if signature_placeholder is not None:
+                while len(existing_signatures) < len(signature_variables):
+                    existing_signatures.append((-1, signature_placeholder))
+            existing_signatures.sort()
+            return dict(zip(signature_variables, (es[-1] for es in existing_signatures)))
+        return (f, m["1"], ())
 
     return None
 
@@ -207,6 +324,10 @@ def constraint_matches(c, m):
                 if isinstance(c1, (bytes, Atom)):
                     d[m1._name] = c1
                     continue
+            if isinstance(m1, LIST):
+                if isinstance(c1, (tuple, list)):
+                    d[m1._name] = c1
+                    continue
             if c1 == m1:
                 continue
             return False
@@ -233,17 +354,19 @@ def make_test_tx(input_script):
 
 
 def test_tx(incoming_script, max_stack_size):
-    key = Key(1)
+    keys = [Key(i) for i in range(1, 20)]
     tx = make_test_tx(incoming_script)
     tx_in_idx = 0
 
     def pubkey_for_hash(the_hash):
-        if the_hash == key.hash160():
-            return key.sec()
+        for key in keys:
+            if the_hash == key.hash160():
+                return key.sec()
 
     def privkey_for_pubkey(pubkey):
-        if pubkey == key.sec():
-            return key.secret_exponent()
+        for key in keys:
+            if pubkey == key.sec():
+                return key.secret_exponent()
 
     def signature_for_secret_exponent(secret_exponent):
         signature_type = 1  # BRAIN DAMAGE
@@ -251,13 +374,7 @@ def test_tx(incoming_script, max_stack_size):
         def signature_for_hash_type_f(hash_type, script):
             return tx.signature_hash(script, tx_in_idx, hash_type)
 
-        script_to_hash = incoming_script
-        sign_value = signature_for_hash_type_f(signature_type, script_to_hash)
-        order = ecdsa.generator_secp256k1.order()
-        r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
-        if s + s > order:
-            s = order - s
-        return der.sigencode_der(r, s) + bytes_from_int(signature_type)
+        return _create_script_signature(secret_exponent, signature_for_hash_type_f, signature_type, incoming_script)
 
     kwargs = dict(pubkey_for_hash=pubkey_for_hash,
                   privkey_for_pubkey=privkey_for_pubkey,
@@ -282,10 +399,18 @@ def test_nonstandard_p2pkh():
     test_tx(VM.compile("OP_SWAP") + standard_tx_out_script(key.address()), 2)
 
 
+def test_p2multisig():
+    keys = [Key(i) for i in (1, 2, 3)]
+    secs = [k.sec() for k in keys]
+    test_tx(ScriptMultisig(2, secs).script(), 3)
+
+
 def main():
-    test_p2pkh()
-    test_p2pk()
-    test_nonstandard_p2pkh()
+    if 1:
+        test_p2pkh()
+        test_p2pk()
+        test_nonstandard_p2pkh()
+    test_p2multisig()
 
 
 if __name__ == '__main__':
