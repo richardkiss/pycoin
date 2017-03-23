@@ -33,7 +33,7 @@ This script creates a fake coinbase transaction to an address of your choosing s
 
 This script shows you how to spend coins from an incoming transaction. It expects an incoming transaction in hex format a file ("incoming-tx.hex") and a bitcoin address, and it spends the coins from the selected output of in incoming transaction to the address you choose.
 
-It does NOT sign the transaction. That's done by 4-sign-tx.py.
+It does NOT sign the transaction. That's done by 4_sign_tx.py.
 
 .. automodule:: 3_create_unsigned_tx
     :members:
