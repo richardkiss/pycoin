@@ -1,5 +1,5 @@
 Welcome to PyCoin's documentation!
-=================================
+==================================
 
 Contents:
 
@@ -9,6 +9,7 @@ Contents:
    getting-started
    source/pycoin
    source/recipes
+   source/tests
 
 Indices and tables
 ==================
