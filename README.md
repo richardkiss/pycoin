@@ -6,6 +6,9 @@ alt-coins. It has been tested with Python 2.7, 3.3, 3.4 and 3.5.
 
 See also [pycoinnet](http://github.com/richardkiss/pycoinnet/) for a library that speaks the bitcoin protocol.
 
+Documentation at [readthedocs](http://pycoin.readthedocs.io/en/latest/)
+
+
 High Level
 ==========
 
@@ -124,7 +127,6 @@ Users
 
 Here's a partial list of users of pycoin:
 
- * [ChangeTip](https://changetip.com/)
  * [GreenAddress](https://greenaddress.it/)
  * [Coinkite](https://coinkite.com/)
  * [Wall of Coins](https://wallofcoins.com/)

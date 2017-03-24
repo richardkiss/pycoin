@@ -258,7 +258,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'pycoin', u'pycoin Documentation',
-   u'PyCoin', 'pycoin', 'Python-based Bitcoin and alt-coin utility library.',
+   'pycoin', 'pycoin', 'Python-based Bitcoin and alt-coin utility library.',
    'Miscellaneous'),
 ]
 

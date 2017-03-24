@@ -1,7 +1,6 @@
-Getting Started with PyCoin
+Getting Started with pycoin
 ===========================
 
-How do you get started with PyCoin?
 
 Examples
 ==============================
