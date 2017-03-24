@@ -12,14 +12,17 @@ Release v\ |version|. (:ref:`Installation <install>`)
 .. image:: https://travis-ci.org/richardkiss/pycoin.svg?branch=master
     :target: https://travis-ci.org/richardkiss/pycoin
 
+This documentation is a work-in-progress, and your contributions are welcome.
+Your contributions are welcome at <https://github.com/richardkiss/pycoin>.
+
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
    getting-started
-   source/pycoin
    source/recipes
+   source/pycoin
    source/tests
 
 Indices and tables
