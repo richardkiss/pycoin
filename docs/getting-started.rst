@@ -5,7 +5,7 @@ Installation
 ------------
 To install pycoin, run this command the terminal::
 
-    $ pip install requests
+    $ pip install pycoin
 
 If you don't have `pip <https://pip.pypa.io>`_ installed, check out
 `<http://docs.python-guide.org/en/latest/starting/installation/>`_.
