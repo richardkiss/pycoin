@@ -10,10 +10,6 @@ To install pycoin, run this command the terminal::
 If you don't have `pip <https://pip.pypa.io>`_ installed, check out
 `<http://docs.python-guide.org/en/latest/starting/installation/>`_.
 
-
-Sanity Check
-------------
-
 To see if pycoin is correctly installed, try a command-line tool::
 
     $ ku 1
