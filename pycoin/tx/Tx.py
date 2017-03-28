@@ -1,31 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
 
-
-The MIT License (MIT)
-
-Copyright (c) 2013 by Richard Kiss
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-"""
-
+import functools
 import io
 import warnings
 
@@ -60,7 +34,24 @@ SIGHASH_ANYONECANPAY = 0x80
 ZERO32 = b'\0' * 32
 
 
+def deprecated(func):
+    """This is a decorator which can be used to mark functions
+    as deprecated. It will result in a warning being emitted
+    when the function is used."""
+
+    @functools.wraps(func)
+    def new_func(*args, **kwargs):
+        warnings.simplefilter('always', DeprecationWarning)
+        warnings.warn("Call to deprecated function {}.".format(func.__name__), category=DeprecationWarning, stacklevel=2)
+        warnings.simplefilter('default', DeprecationWarning)
+        return func(*args, **kwargs)
+
+    return new_func
+
+
 class Tx(object):
+    """A Tx is the data structure that spends coins from a source to a destination."""
+
     TxIn = TxIn
     TxOut = TxOut
     Spendable = Spendable
@@ -89,7 +80,12 @@ class Tx(object):
 
     @classmethod
     def parse(class_, f, allow_segwit=None):
-        """Parse a Bitcoin transaction Tx from the file-like object f."""
+        """Parse a Bitcoin transaction Tx.
+
+        :param f: a file-like object that contains a binary streamed transaction
+        :param allow_segwit: (optional) set to True to allow parsing of segwit transactions.
+            The default value is defined by the class variable ALLOW_SEGWIT
+        """
         if allow_segwit is None:
             allow_segwit = class_.ALLOW_SEGWIT
         txs_in = []
@@ -128,7 +124,15 @@ class Tx(object):
 
     @classmethod
     def from_bin(cls, blob):
-        """Return the Tx for the given binary blob."""
+        """Return the Tx for the given binary blob.
+
+        :param blob: a binary blob containing a transaction streamed in standard
+            form. The blob may also include the unspents (a nonstandard extension,
+            optionally written by :func:`Tx.stream <stream>`), and they will also be parsed.
+        :return: :class:`Tx`
+
+        If parsing fails, an exception is raised.
+        """
         f = io.BytesIO(blob)
         tx = cls.parse(f)
         try:
@@ -140,7 +144,15 @@ class Tx(object):
 
     @classmethod
     def from_hex(cls, hex_string):
-        """Return the Tx for the given hex string."""
+        """Return the Tx for the given hex string.
+
+        :param hex_string: a hex string containing a transaction streamed in standard
+            form. The blob may also include the unspents (a nonstandard extension,
+            optionally written by :func:`Tx.stream <stream>`), and they will also be parsed.
+        :return: :class:`Tx`
+
+        If parsing fails, an exception is raised.
+        """
         return cls.from_bin(h2b(hex_string))
 
     @classmethod
@@ -152,6 +164,18 @@ class Tx(object):
         return cls.from_hex(hex_string)
 
     def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=None):
+        """Tx constructor.
+
+        :param version: version number of the Tx, usually 1
+        :param txs_in: a list of :class:`Tx.TxIn <TxIn>` instances, which
+            act as inputs to the transaction
+        :param txs_out: a list of :class:`Tx.TxOut <TxOut>` instances, which
+            act as outputs to the transaction
+        :param lock_time: (optional) the lock time for the transaction, usually 0
+        :param unspents: (optional) a list of :class:`Tx.Spendable <Spendable>` instances,
+            which correspond to the entries referred to by txs_in
+        :return: :class:`Tx`
+        """
         self.version = version
         self.txs_in = txs_in
         self.txs_out = txs_out
@@ -163,7 +187,16 @@ class Tx(object):
             assert type(tx_out) == self.TxOut
 
     def stream(self, f, blank_solutions=False, include_unspents=False, include_witness_data=True):
-        """Stream a Bitcoin transaction Tx to the file-like object f."""
+        """Stream a Bitcoin transaction Tx to the file-like object f.
+
+        :param f: writable file-like object to stream binary data of transaction
+        :param blank_solutions: (optional) clear out the solutions scripts, effectively "unsigning" the
+            transaction before writing it. Defaults to False
+        :param include_unspents: (optional) stread out the Spendable objects after streaming the transaction.
+            This is a pycoin-specific extension. Defaults to False.
+        :param include_witness_data: (optional) stream segwit transactions including the witness data if the
+            transaction has any witness data. Defaults to True.
+        """
         include_witnesses = include_witness_data and self.has_witness_data()
         stream_struct("L", f, self.version)
         if include_witnesses:
@@ -185,24 +218,46 @@ class Tx(object):
             self.stream_unspents(f)
 
     def as_bin(self, include_unspents=False, include_witness_data=True):
-        """Return the transaction as binary."""
+        """Returns a binary blob containing the streamed transaction.
+
+        For information about the parameters, see :func:`Tx.stream <stream>`
+
+        :return: binary blob that would parse to the given transaction
+        """
         f = io.BytesIO()
         self.stream(f, include_unspents=include_unspents, include_witness_data=include_witness_data)
         return f.getvalue()
 
     def as_hex(self, include_unspents=False, include_witness_data=True):
-        """Return the transaction as hex."""
+        """Returns a text string containing the streamed transaction encoded as hex.
+
+        For information about the parameters, see :func:`Tx.stream <stream>`
+
+        :return: hex string that would parse to the given transaction
+        """
         return b2h(self.as_bin(
             include_unspents=include_unspents, include_witness_data=include_witness_data))
 
     def set_witness(self, tx_idx_in, witness):
+        """Set the witness data for a given :class:`TxIn`.
+
+        :param tx_idx_in: an integer index corresponding to the txs_in puzzle script entry that this is a witness to
+        :param witness: a list of binary blobs that witness the solution to the given puzzle script
+        """
         self.txs_in[tx_idx_in].witness = tuple(witness)
 
     def has_witness_data(self):
+        """Return a boolean indicating if the transaction has any segwit data.
+        """
         return any(len(tx_in.witness) > 0 for tx_in in self.txs_in)
 
     def hash(self, hash_type=None):
-        """Return the hash for this Tx object."""
+        """Return the binary hash for this :class:`Tx` object.
+
+        :param hash_type: (optional) if set, generates a hash specific to a particular type of signature.
+
+        :return: 32 byte long binary blob corresponding to the hash
+        """
         s = io.BytesIO()
         self.stream(s)
         if hash_type is not None:
@@ -210,24 +265,35 @@ class Tx(object):
         return double_sha256(s.getvalue())
 
     def w_hash(self):
+        """Return the segwit-specific binary hash for this :class:`Tx` object.
+
+        :return: 32 byte long binary blob corresponding to the hash
+        """
         return double_sha256(self.as_bin())
 
     def w_id(self):
+        """Return the segwit-specific binary hash for this :class:`Tx` object as a hex string.
+        Note that this is a ``reversed`` version of :func:`Tx.w_hash <w_hash>`.
+
+        :return: 64 character long hex string corresponding to the hash
+        """
         return b2h_rev(self.w_hash())
 
     def blanked_hash(self):
         """
         Return the hash for this Tx object with solution scripts blanked.
-        Useful for determining if two Txs might be equivalent modulo
+        This hash is useful for determining if two Txs might be equivalent modulo
         malleability. (That is, even if tx1 is morphed into tx2 using the malleability
         weakness, they will still have the same blanked hash.)
+
+        :return: 32 byte long binary blob corresponding to the blanked hash
         """
         s = io.BytesIO()
         self.stream(s, blank_solutions=True)
         return double_sha256(s.getvalue())
 
     def id(self):
-        """Return the human-readable hash for this Tx object."""
+        """Return the human-readable 64 character hex hash for this Tx object."""
         return b2h_rev(self.hash())
 
     def _tx_in_for_idx(self, idx, tx_in, tx_out_script, unsigned_txs_out_idx):
@@ -241,10 +307,10 @@ class Tx(object):
         remove references to the signature, since it's a signature
         of the hash before the signature is applied.
 
-        tx_out_script: the script the coins for unsigned_txs_out_idx are coming from
-        unsigned_txs_out_idx: where to put the tx_out_script
-        hash_type: one of SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ALL,
-        optionally bitwise or'ed with SIGHASH_ANYONECANPAY
+        :param tx_out_script: the script the coins for unsigned_txs_out_idx are coming from
+        :param unsigned_txs_out_idx: where to put the tx_out_script
+        :param hash_type: one of SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ALL,
+            optionally bitwise or'ed with SIGHASH_ANYONECANPAY
         """
 
         # In case concatenating two scripts ends up with two codeseparators,
@@ -356,17 +422,19 @@ class Tx(object):
         return from_bytes_32(double_sha256(self.segwit_signature_preimage(script, tx_in_idx, hash_type)))
 
     def solve(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=None, **kwargs):
-        """
-        Sign a standard transaction.
-        hash160_lookup:
+        """Sign a transaction.
+
+        :param hash160_lookup:
             An object with a get method that accepts a hash160 and returns the
-            corresponding (secret exponent, public_pair, is_compressed) tuple or
+            corresponding `(secret exponent, public_pair, is_compressed)` tuple or
             None if it's unknown (in which case the script will obviously not be signed).
             A standard dictionary will do nicely here.
-        tx_in_idx:
+        :param tx_in_idx:
             the index of the tx_in we are currently signing
-        tx_out:
+        :param tx_out:
             the tx_out referenced by the given tx_in
+
+        This function doesn't return anything; rather, it signs the transaction in place.
         """
         if hash_type is None:
             hash_type = self.SIGHASH_ALL
