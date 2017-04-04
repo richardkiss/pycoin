@@ -212,5 +212,14 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertEqual(tx.bad_signature_count(), 0)
         self.assertEqual(tx.id(), "9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2")
 
+    def test_issue_225(self):
+        script = tools.compile("OP_RETURN 'foobar'")
+        tx_out = TxOut(1, script)
+        address = tx_out.bitcoin_address(netcode="XTN")
+        self.assertEqual(address, "(nulldata 666f6f626172)")
+        address = tx_out.bitcoin_address(netcode="BTC")
+        self.assertEqual(address, "(nulldata 666f6f626172)")
+
+
 if __name__ == "__main__":
     unittest.main()
