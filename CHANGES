@@ -1,6 +1,17 @@
 Version 0.xx
 ------------
+
 * change how ScriptNullData works (arbitrary data now allowed after OP_RETURN)
+
+Version 0.77
+------------
+
+* tx cmd will no longer use split pools unless an output is manually specified
+* more refactoring of vm classes
+* first crack at Sphinx documentation
+* fix https://github.com/richardkiss/pycoin/issues/224
+* fix https://github.com/richardkiss/pycoin/issues/225
+* fixed recipes
 
 Version 0.76
 ------------

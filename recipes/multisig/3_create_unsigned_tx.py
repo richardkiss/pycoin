@@ -5,7 +5,7 @@
 # and a bitcoin address, and it spends the coins from the selected output of
 # in incoming transaction to the address you choose.
 
-# It does NOT sign the transaction. That's done by 4-sign-tx.py.
+# It does NOT sign the transaction. That's done by 4_sign_tx.py.
 
 import sys
 

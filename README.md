@@ -4,7 +4,10 @@ pycoin -- Python Cryptocoin Utilities
 This is an implementation of a bunch of utility routines that may be useful when dealing with bitcoin and some
 alt-coins. It has been tested with Python 2.7, 3.3, 3.4 and 3.5.
 
-See also http://github.com/richardkiss/pycoinnet/ for a library that speaks the bitcoin protocol.
+See also [pycoinnet](http://github.com/richardkiss/pycoinnet/) for a library that speaks the bitcoin protocol.
+
+Documentation at [readthedocs](http://pycoin.readthedocs.io/en/latest/)
+
 
 High Level
 ==========
@@ -21,25 +24,33 @@ where P is a subkey of K, you can actually work your way up the tree to determin
 to the public wallet key K (unless private derivation was used at some point between the two keys)! Be sure you
 understand this warning before giving out public wallet keys!
 
-pycoin.key.Key:
+`pycoin.key.Key`
+---------------
 
-```Key(hierarchical_wallet=None, secret_exponent=None,
-                 public_pair=None, hash160=None, prefer_uncompressed=None, is_compressed=True, netcode)```
+```
+Key(hierarchical_wallet=None, 
+    secret_exponent=None,
+    public_pair=None, 
+    hash160=None, 
+    prefer_uncompressed=None, 
+    is_compressed=True, 
+    netcode)
+```
 
-Specify one of "hierarchical_wallet, secret_exponent, public_pair or hash160" to create a ```Key```.
+Specify one of "hierarchical_wallet, secret_exponent, public_pair or hash160" to create a `Key`.
 
 Or
 
-```Key.from_text(b58_text)``` accepts an address (bitcoin or other), a WIF, or a BIP32 wallet string and yield a Key.
+`Key.from_text(b58_text)` accepts an address (bitcoin or other), a WIF, or a BIP32 wallet string and yield a Key.
 
-```Key.from_sec(sec)``` creates a Key from the SEC bytestream encoding of a public pair.
+`Key.from_sec(sec)` creates a Key from the SEC bytestream encoding of a public pair.
 
 
 pycoin.key.BIP32Node (formerly pycoin.wallet.Wallet) provides a BIP32 hierarchical wallet.
 
-Much of this API is exposed in the ```ku``` command-line utility. See also COMMAND-LINE-TOOLS.md.
+Much of this API is exposed in the `ku` command-line utility. See also [COMMAND-LINE-TOOLS.md](./COMMAND-LINE-TOOLS.md).
 
-See ```BIP32.txt``` for more information.
+See [BIP32.txt](./BIP32.txt) for more information.
 
 
 Transactions
@@ -48,28 +59,28 @@ Transactions
 pycoin.tx.Tx is a class that wraps a bitcoin transaction. You can create, edit, sign, or validate a transaction using
 methods in this class.
 
-You can also use ```pycoin.tx.tx_utils``` which has ```create_tx``` and ```create_signed_tx```, which gives you a
+You can also use `pycoin.tx.tx_utils` which has `create_tx` and `create_signed_tx`, which gives you a
 very easy way to create signed transactions.
 
-The command-line utility ```tx``` is a Swiss Army knife of transaction utilities. See also COMMAND-LINE-TOOLS.md.
+The command-line utility `tx` is a Swiss Army knife of transaction utilities. See also [COMMAND-LINE-TOOLS.md](./COMMAND-LINE-TOOLS.md).
 
 
 Services
 --------
 
 When signing or verifying signatures on a transaction, the source transactions are generally needed. If you set two
-environment variables in your ```.profile``` like this:
+environment variables in your `.profile` like this:
 
     PYCOIN_CACHE_DIR=~/.pycoin_cache
     PYCOIN_BTC_PROVIDERS="blockr.io blockchain.info blockr.io blockexplorer.com"
     export PYCOIN_CACHE_DIR PYCOIN_BTC_PROVIDERS
 
-and then ```tx``` will automatically fetch transactions from the web sites listed and cache the results in
-```PYCOIN_CACHE_DIR``` when they are needed.
+and then `tx` will automatically fetch transactions from the web sites listed and cache the results in
+`PYCOIN_CACHE_DIR` when they are needed.
 
-(The old syntax with ```PYCOIN_SERVICE_PROVIDERS``` is deprecated.)
+(The old syntax with `PYCOIN_SERVICE_PROVIDERS` is deprecated.)
 
-The module pycoin.services includes two functions ```spendables_for_address```, ```get_tx_db``` that look at the
+The module pycoin.services includes two functions `spendables_for_address`, `get_tx_db` that look at the
 environment variables set to determine which web sites to use to fetch the underlying information. The sites are
 polled in the order they are listed in the environment variable.
 
@@ -77,8 +88,8 @@ polled in the order they are listed in the environment variable.
 Blocks
 ------
 
-The command-line utility ```block``` will dump a block in a human-readable format. For further information, look at
-```pycoin.block```, which includes the object ```Block``` which will parse and stream the binary format of a block.
+The command-line utility `block` will dump a block in a human-readable format. For further information, look at
+`pycoin.block`, which includes the object `Block` which will parse and stream the binary format of a block.
 
 
 Low Level
@@ -87,10 +98,10 @@ Low Level
 ECDSA Signing and Verification
 ------------------------------
 
-The module ```pycoin.ecdsa``` deals with ECDSA keys directly. Important structures include:
+The module `pycoin.ecdsa` deals with ECDSA keys directly. Important structures include:
 
-- the ```secret_exponent``` (a large integer that represents a private key)
-- the ```public_pair``` (a pair of large integers x and y that represent a public key)
+- the `secret_exponent` (a large integer that represents a private key)
+- the `public_pair` (a pair of large integers x and y that represent a public key)
 
 There are a handful of functions: you can do things like create a signature, verify a signature, generate the public
 pair from the secret exponent, and flush out the public pair from just the x value (there are two possible values
@@ -100,7 +111,7 @@ for y of opposite even/odd parity, so you include a flag indicating which value 
 Encoding
 --------
 
-The ```pycoin.encoding``` module declares some conversion utilities useful when dealing with Bitcoin. Important
+The `pycoin.encoding` module declares some conversion utilities useful when dealing with Bitcoin. Important
 structures include:
 
 * base58 (the encoding used for Bitcoin addresses)
@@ -116,15 +127,10 @@ Users
 
 Here's a partial list of users of pycoin:
 
-ChangeTip https://changetip.com/
-
-GreenAddress https://greenaddress.it/
-
-Coinkite https://coinkite.com/
-
-Wall of Coins https://wallofcoins.com/
-
-Blockonomics https://www.blockonomics.co/
+ * [GreenAddress](https://greenaddress.it/)
+ * [Coinkite](https://coinkite.com/)
+ * [Wall of Coins](https://wallofcoins.com/)
+ * [Blockonomics](https://www.blockonomics.co/)
 
 Email me at him@richardkiss.com to be added to this list.
 
@@ -147,4 +153,4 @@ Want to donate? Feel free. Send to 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T.
 I'm also available for bitcoin consulting... him@richardkiss.com.
 
 
-[BIP0032]: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
+[BIP0032](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
