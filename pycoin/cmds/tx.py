@@ -525,7 +525,8 @@ def main():
 
     fee = args.fee
     try:
-        distribute_from_split_pool(tx, fee)
+        if len(payables) > 0:
+            distribute_from_split_pool(tx, fee)
     except ValueError as ex:
         print("warning: %s" % ex.args[0], file=sys.stderr)
 

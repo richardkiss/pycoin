@@ -167,7 +167,7 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
     tmp_script: the script as of the last code separator
     signature_for_hash_type_f: signature_for_hash_type_f
     flags: verification flags to apply
-    exit_early: if True, we may exit early if one of the sig_blobs is incorrect or misplaced. Used 
+    exit_early: if True, we may exit early if one of the sig_blobs is incorrect or misplaced. Used
     for checking a supposedly validated transaction. A -1 indicates no match.
 
     Returns a list of indices into public_pairs. If exit_early is True, it may return early.
