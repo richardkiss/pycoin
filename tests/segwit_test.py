@@ -268,3 +268,11 @@ class SegwitTest(unittest.TestCase):
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()], p2sh_lookup=build_p2sh_lookup([s1]))
         self.check_signed(tx)
+
+    def test_issue_224(self):
+        RAWTX = (
+            "010000000002145fea0b000000001976a9144838d8b3588c4c7ba7c1d06f866e9b3739c"
+            "6303788ac0000000000000000346a32544553540000000a000000000000000100000000"
+            "05f5e1000000000000000000000000000bebc2000032000000000000271000000000"
+        )
+        Tx.from_hex(RAWTX)
