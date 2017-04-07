@@ -10,12 +10,6 @@ NetworkValues = namedtuple('NetworkValues',
                             'pay_to_script', 'prv32', 'pub32'))
 
 NETWORKS = (
-    # LTC litecoin mainnet : Ltpv/Ltub
-    NetworkValues("Litecoin", "mainnet", "LTC", b'\xb0', b'\x30', b'\5', h2b('019d9cfe'), h2b('019da462')),
-    # LTC litecoin testnet : ttpv/ttub
-    NetworkValues("Litecoin", "testnet", "XLT", b'\xef', b'\x6f', b'\xc4',
-                  h2b('0436ef7d'), h2b('0436f6e1')),
-
     # VIA viacoin mainnet : xprv/xpub
     NetworkValues("Viacoin", "mainnet", "VIA", b'\xc7', b'\x47', b'\x21', h2b('0488ADE4'), h2b('0488B21E')),
     # VIA viacoin testnet : tprv/tpub

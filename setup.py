@@ -11,6 +11,7 @@ setup(
         "pycoin",
         "pycoin.blockchain",
         "pycoin.cmds",
+        "pycoin.coins",
         "pycoin.contrib",
         "pycoin.convention",
         "pycoin.ecdsa",
