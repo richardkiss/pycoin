@@ -81,4 +81,11 @@ NETWORKS = (
 
     # BTCD BitcoinDark mainnet : xprv/xpub
     NetworkValues("BitcoinDark", "mainnet", "BTCD", b'\x44', b'\x3C', b'\55', h2b('0488ADE4'), h2b('0488B21E')),
+    
+    # DCR Decred mainnet : dprv/dpub
+    NetworkValues("Decred", "mainnet", "DCR", h2b("22DE"), h2b("073F"), h2b("071A"), h2b('02FDA4E8'), h2b('02FDA926')),
+    
+    # DCR Decred testnet : tprv/tpub
+    NetworkValues("Decred", "testnet", "tDCR", h2b("230E"), h2b("0F21"), h2b("0E6C"), h2b('04358397'), h2b('043587D1')),
+    
 )
