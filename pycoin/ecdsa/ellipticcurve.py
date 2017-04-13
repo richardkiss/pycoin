@@ -41,7 +41,6 @@ except ImportError:
     NATIVE_LIBRARY = None
 
 
-
 class NoSuchPointError(ValueError): pass
 
 
@@ -113,12 +112,12 @@ class Point( object ):
     p = self.__curve.p()
 
     l = ( ( other.__y - self.__y ) * \
-          numbertheory.inverse_mod( other.__x - self.__x, p ) ) % p
+          self.inverse_mod( other.__x - self.__x, p ) ) % p
 
     x3 = ( l * l - self.__x - other.__x ) % p
     y3 = ( l * ( self.__x - x3 ) - self.__y ) % p
     
-    return Point( self.__curve, x3, y3 )
+    return self.Point( x3, y3 )
 
   def __mul__( self, other ):
     """Multiply a point by an integer."""
@@ -141,7 +140,7 @@ class Point( object ):
         return NATIVE_LIBRARY.fast_mul(self, other)
 
     e3 = 3 * e
-    negative_self = Point( self.__curve, self.__x, -self.__y, self.__order )
+    negative_self = self.Point( self.__x, -self.__y )
     i = leftmost_bit( e3 ) // 2
     result = self
     # print "Multiplying %s by %d (e3 = %d):" % ( self, other, e3 )
@@ -178,12 +177,21 @@ class Point( object ):
     a = self.__curve.a()
 
     l = ( ( 3 * self.__x * self.__x + a ) * \
-          numbertheory.inverse_mod( 2 * self.__y, p ) ) % p
+          self.inverse_mod( 2 * self.__y, p ) ) % p
 
     x3 = ( l * l - 2 * self.__x ) % p
     y3 = ( l * ( self.__x - x3 ) - self.__y ) % p
     
-    return Point( self.__curve, x3, y3 )
+    return self.Point( x3, y3 )
+
+  def inverse_mod(self, n, p):
+    return numbertheory.inverse_mod(n, p)
+
+  def modular_sqrt(self, n, p):
+    return numbertheory.modular_sqrt(n, p)
+
+  def Point(self, x, y):
+    return self.__class__(self.curve(), x, y, self.order())
 
   def x( self ):
     return self.__x

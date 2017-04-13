@@ -32,7 +32,6 @@ import hashlib
 import hmac
 
 from .. import intbytes
-from . import ellipticcurve, numbertheory
 
 
 if hasattr(1, "bit_length"):
@@ -104,7 +103,7 @@ def sign(generator, secret_exponent, val):
     p1 = k * G
     r = p1.x()
     if r == 0: raise RuntimeError("amazingly unlucky random number r")
-    s = ( numbertheory.inverse_mod( k, n ) * \
+    s = ( G.inverse_mod( k, n ) * \
           ( val + ( secret_exponent * r ) % n ) ) % n
     if s == 0: raise RuntimeError("amazingly unlucky random number s")
     return (r, s)
@@ -116,7 +115,7 @@ def public_pair_for_x(generator, x, is_even):
     curve = generator.curve()
     p = curve.p()
     alpha = ( pow(x, 3, p)  + curve.a() * x + curve.b() ) % p
-    beta = numbertheory.modular_sqrt(alpha, p)
+    beta = generator.modular_sqrt(alpha, p)
     if is_even == bool(beta & 1):
         return (x, p - beta)
     return (x, beta)
@@ -137,10 +136,10 @@ def verify(generator, public_pair, val, signature):
     r, s = signature
     if r < 1 or r > n-1: return False
     if s < 1 or s > n-1: return False
-    c = numbertheory.inverse_mod( s, n )
+    c = G.inverse_mod( s, n )
     u1 = ( val * c ) % n
     u2 = ( r * c ) % n
-    point = u1 * G + u2 * ellipticcurve.Point( G.curve(), public_pair[0], public_pair[1], G.order() )
+    point = u1 * G + u2 * G.Point(public_pair[0], public_pair[1])
     v = point.x() % n
     return v == r
 
@@ -157,15 +156,15 @@ def possible_public_pairs_for_signature(generator, value, signature):
 
     #recid = nV - 27
     # 1.1
-    inv_r = numbertheory.inverse_mod(r,order)
+    inv_r = G.inverse_mod(r, order)
     minus_e = -value % order
     x = r
     # 1.3
     alpha = ( pow(x,3,p)  + curve.a() * x + curve.b() ) % p
-    beta = numbertheory.modular_sqrt(alpha, p)
+    beta = G.modular_sqrt(alpha, p)
     for y in [beta, p - beta]:
         # 1.4 the constructor checks that nR is at infinity
-        R = ellipticcurve.Point(curve, x, y, order)
+        R = G.Point(x, y)
         # 1.6 compute Q = r^-1 (sR - eG)
         Q = inv_r * ( s * R + minus_e * G )
         public_pair = (Q.x(), Q.y())
