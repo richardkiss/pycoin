@@ -4,7 +4,6 @@ from .legacy_networks import NETWORKS
 
 from pycoin.tx.Tx import Tx as BitcoinTx
 from pycoin.block import Block as BitcoinBlock
-from pycoin.coins.litecoin import Tx as LitecoinTx, Block as LitecoinBlock
 
 from ..serialize import h2b
 
@@ -38,13 +37,13 @@ BUILT_IN_NETWORKS = [
     Network("LTC", "Litecoin", "mainnet",
             b'\xb0', b'\x30', b'\5',
             h2b('019d9cfe'), h2b('019da462'),
-            tx=LitecoinTx, block=LitecoinBlock),
+            tx=BitcoinTx, block=BitcoinBlock)
 
     # LTC litecoin testnet : ttpv/ttub
     Network("XLT", "Litecoin", "testnet",
             b'\xef', b'\x6f', b'\xc4',
             h2b('0436ef7d'), h2b('0436f6e1'),
-            tx=LitecoinTx, block=LitecoinBlock)
+            tx=BitcoinTx, block=BitcoinBlock)
 
 ]
 
