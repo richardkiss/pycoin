@@ -5,6 +5,7 @@ import unittest
 
 from pycoin import intbytes
 from pycoin.ecdsa import generator_secp256k1, sign, verify, public_pair_for_secret_exponent, deterministic_generate_k
+from pycoin.ecdsa.numbertheory import inverse_mod
 
 class ECDSATestCase(unittest.TestCase):
 
@@ -24,6 +25,16 @@ class ECDSATestCase(unittest.TestCase):
         do_test(0x1111111111111111111111111111111111111111111111111111111111111111, val_list)
         do_test(0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd, val_list)
         do_test(0x47f7616ea6f9b923076625b4488115de1ef1187f760e65f89eb6f4f7ff04b012, val_list)
+
+    def test_inverse_mod(self):
+        prime = generator_secp256k1.curve().p()
+        order = generator_secp256k1.order()
+        for v in range(70):
+            n = int(float("1e%d" % v))
+            i = inverse_mod(n, prime)
+            assert n * i % prime == 1
+            i = inverse_mod(n, order)
+            assert n * i % order == 1
 
     def test_deterministic_generate_k_A_1(self):
         """
