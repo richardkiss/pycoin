@@ -1,3 +1,10 @@
+Version 0.xx
+------------
+
+* remove BlockHeader
+* first crack at litecoin and blackcoin block support
+
+
 Version 0.77
 ------------
 
