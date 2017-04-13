@@ -1,7 +1,7 @@
 
 import io
 
-from pycoin.block import Block as BaseBlock, BlockHeader as BaseBlockHeader
+from pycoin.block import Block as BaseBlock
 from pycoin.serialize import b2h_rev
 from pycoin.serialize.bitcoin_streamer import parse_struct, stream_struct
 

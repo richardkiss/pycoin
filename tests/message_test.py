@@ -1,7 +1,7 @@
 import io
 import unittest
 
-from pycoin.block import Block, BlockHeader
+from pycoin.block import Block
 from pycoin.message.make_parser_and_packer import (
     make_parser_and_packer, standard_messages, standard_message_post_unpacks, standard_parsing_functions, standard_streamer
 )
@@ -25,7 +25,7 @@ def from_bin(cls, blob):
 class MessageTest(unittest.TestCase):
 
     def test_make_parser_and_packer(self):
-        streamer = standard_streamer(standard_parsing_functions(Block, BlockHeader, Tx))
+        streamer = standard_streamer(standard_parsing_functions(Block, Tx))
         btc_parser, btc_packer = make_parser_and_packer(
             streamer, standard_messages(), standard_message_post_unpacks(streamer))
         parser, packer = make_parser_and_packer(streamer, standard_messages(), standard_message_post_unpacks(streamer))

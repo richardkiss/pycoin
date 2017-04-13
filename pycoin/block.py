@@ -152,11 +152,3 @@ class Block(object):
 
     def __repr__(self):
         return self.__str__()
-
-
-class BlockHeader(Block):
-    @classmethod
-    def parse(class_, f, include_transactions=False, include_offsets=False):
-        b = super(Block, class_).parse(
-            f, include_transactions=include_transactions, include_offsets=include_offsets)
-        return b
