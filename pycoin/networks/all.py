@@ -13,25 +13,38 @@ BUILT_IN_NETWORKS = [
     Network(
         'BTC', "Bitcoin", "mainnet",
         b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E"),
-        b'\6', b'\x0a',
         BitcoinTx, BitcoinBlock,
         h2b('F9BEB4D9'), 8333, [
             "seed.bitcoin.sipa.be", "dnsseed.bitcoin.dashjr.org",
             "bitseed.xf2.org", "dnsseed.bluematt.me",
-        ]
+        ],
+        address_wit=b'\6', pay_to_script_wit=b'\x0a',
     ),
 
     # BTC bitcoin testnet : tprv/tpub
     Network(
         "XTN", "Bitcoin", "testnet3",
         b'\xef', b'\x6f', b'\xc4', h2b("04358394"), h2b("043587CF"),
-        b'\3', b'\x28',
         BitcoinTx, BitcoinBlock,
         h2b('0B110907'), 18333, [
             "bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org",
             "bluematt.me", "testnet-seed.bluematt.me"
-        ]
-    )
+        ],
+        address_wit=b'\3', pay_to_script_wit=b'\x28',
+    ),
+
+    # LTC litecoin mainnet : Ltpv/Ltub
+    Network("LTC", "Litecoin", "mainnet",
+            b'\xb0', b'\x30', b'\5',
+            h2b('019d9cfe'), h2b('019da462'),
+            tx=BitcoinTx, block=BitcoinBlock),
+
+    # LTC litecoin testnet : ttpv/ttub
+    Network("XLT", "Litecoin", "testnet",
+            b'\xef', b'\x6f', b'\xc4',
+            h2b('0436ef7d'), h2b('0436f6e1'),
+            tx=BitcoinTx, block=BitcoinBlock)
+
 ]
 
 
