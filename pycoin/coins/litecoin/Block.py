@@ -1,7 +1,7 @@
 
 import io
 
-from pycoin.block import Block as BaseBlock, BlockHeader as BaseBlockHeader
+from pycoin.block import Block as BaseBlock
 from pycoin.serialize import b2h_rev
 
 from .Tx import Tx
@@ -14,7 +14,7 @@ except ImportError:
     sys.exit(-1)
 
 
-class BlockHeader(BaseBlockHeader):
+class Block(BaseBlock):
     Tx = Tx
 
     def pow_hash(self):
@@ -24,7 +24,3 @@ class BlockHeader(BaseBlockHeader):
 
     def pow_id(self):
         return b2h_rev(self.pow_hash())
-
-
-class Block(BlockHeader, BaseBlock):
-    pass

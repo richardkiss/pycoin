@@ -1,3 +1,3 @@
-class Tx: pass
 
-class Block: pass
+from .Tx import Tx  # noqa
+from .Block import Block  # noqa

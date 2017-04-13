@@ -4,19 +4,18 @@ import binascii
 import io
 import unittest
 
-from pycoin.coins.litecoin.Block import Block, BlockHeader
+from pycoin.coins.litecoin.Block import Block
 from pycoin.serialize import h2b, b2h
 
 class LitecoinTests(unittest.TestCase):
 
     def test_litecoin(self):
         # Litecoin block #562399  http://ltc.blockr.io/block/info/562399
-        # just 3 txn! 
         b_hash = 'e8cfa021a51d33dcfdfa7e9aeb9f5a00aa42e86d8ea0cb3479319f773e1f4eb5'
         b_raw = h2b('020000000c724ece8d59a630efddf53311ed508a1db828ec00973194c4ec4367e6298baec468a155a4c8a64b737216f603e2a49ee49ff991da40f5dd93cc538b7ec94f74fe17695337ee081ba684b5290301000000010000000000000000000000000000000000000000000000000000000000000000ffffffff2303df9408062f503253482f04e6176953080802ed8c24000000092f7374726174756d2f000000000100f2052a010000001976a914eda916237d9d8b46baa76f697b6c9343e45ed2de88ac0000000001000000019f1045512c0b48f7ea54c4895f34051d1ff47362033ada7603b7f7363cad7e87010000006b4830450221009b8f7f5d51d01c565bed36b0d821643cec3cdacf64525f0db92a5a3f898283cb02206471601caa83d156c823057ef66406b6e16c4566210b3dc95651780c00a3b39401210245c3a34148870dc9a7803c698d21dd6532d82626d78d16d40158763c3a566f16ffffffff01be952aa0010000001976a914cf13eb08302b6f55d6ba99654de132ad3b67ab2e88ac000000000100000002abc1249f7f4258c1593b7da45248469292ac99f185585b8391f68746e7abfaa6010000006b483045022100809af5f0a51c188b3b0a13f9da03393efd77249c2d633b4638f1d26c0c7d0a69022007d1fb113e8c7a95f4ebe2fc30fa91f413bdb3c13cff44b7adb6ba3c4dde6c83012102da69e08e7fc11f6bee0286ff0e8114ee8120a55c47719fa2a07951097a2db7b3ffffffff51a1cd456513e04c55dbffeed86ff7c1a312302897b0ec67aaab49ba25f26f45010000006b48304502207f15f1e0b71c0cc6c35194d8cd83502e42fec045cde074ea34d244112ec65187022100a551d30472eda95e58beafb60d35c77d3047e8a1942d7dda6aec4312888afc0d0121026ea3a12ea83231142ebc825243c141ecd7c267116d84dacc08907c6d067a525affffffff01dae8cf15000000001976a9142a546e72b7d844b098427ce750c21addf62a50bd88ac00000000')
 
         b = Block.parse(io.BytesIO(b_raw))
-        bh = BlockHeader.parse(io.BytesIO(b_raw))
+        bh = Block.parse(io.BytesIO(b_raw), include_transactions=False)
 
         self.assertEqual(len(b.txs), 3)
         b.check_merkle_hash()
@@ -32,7 +31,7 @@ class LitecoinTests(unittest.TestCase):
 
     def test_pow(self):
         block_29255_bin = h2b('01000000f615f7ce3b4fc6b8f61e8f89aedb1d0852507650533a9e3b10b9bbcc30639f279fcaa86746e1ef52d3edb3c4ad8259920d509bd073605c9bf1d59983752a6b06b817bb4ea78e011d012d59d4')
-        blk = BlockHeader.parse(io.BytesIO(block_29255_bin))
+        blk = Block.parse(io.BytesIO(block_29255_bin), include_transactions=False)
         self.assertEqual(blk.id(), 'adf6e2e56df692822f5e064a8b6404a05d67cccd64bc90f57f65b46805e9a54b')
         self.assertEqual(blk.pow_id(), '0000000110c8357966576df46f3b802ca897deb7ad18b12f1c24ecff6386ebd9')
 
