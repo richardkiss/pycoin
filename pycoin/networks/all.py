@@ -37,7 +37,7 @@ BUILT_IN_NETWORKS = [
     Network("LTC", "Litecoin", "mainnet",
             b'\xb0', b'\x30', b'\5',
             h2b('019d9cfe'), h2b('019da462'),
-            tx=BitcoinTx, block=BitcoinBlock)
+            tx=BitcoinTx, block=BitcoinBlock),
 
     # LTC litecoin testnet : ttpv/ttub
     Network("XLT", "Litecoin", "testnet",
