@@ -30,6 +30,8 @@ import struct
 
 import io
 
+from binascii import unhexlify
+
 from .encoding import double_sha256
 from .merkle import merkle
 from .serialize.bitcoin_streamer import parse_struct, stream_struct
@@ -157,6 +159,11 @@ class Block(BlockHeader):
             tx.block = block
         block.check_merkle_hash()
         return block
+
+    @classmethod
+    def from_hex(self, h):
+        """Load the provided hex into a file-like object and feed into self.parse"""
+        return self.parse(io.BytesIO(unhexlify(h)))
 
     def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce, txs):
         self.version = version
