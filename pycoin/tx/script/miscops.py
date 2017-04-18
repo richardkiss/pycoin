@@ -153,14 +153,6 @@ def do_OP_CHECKSEQUENCEVERIFY(vm):
         raise ScriptError("sequence number too small")
 
 
-def make_push_const(v):
-    def f(vm):
-        # BRAIN DAMAGE: this is lame
-        v1 = vm.IntStreamer.int_to_script_bytes(v)
-        vm.stack.append(v1)
-    return f
-
-
 def extra_opcodes():
     d = {}
     BAD_OPCODES = "OP_VERIF OP_VERNOTIF ".split()
@@ -190,7 +182,7 @@ def extra_opcodes():
         d["OP_PUSHDATA%d" % i] = lambda s: 0
 
     for v in range(0, 128):
-        d["OP_%d" % v] = make_push_const(v)
+        d["OP_%d" % v] = lambda s: 0
     return d
 
 

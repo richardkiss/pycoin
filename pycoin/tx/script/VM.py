@@ -11,6 +11,7 @@ from . import errno
 from . import opcodes
 from .instruction_lookup import make_instruction_lookup
 from .ConditionalStack import ConditionalStack
+from .DataCodec import DataCodec
 from .IntStreamer import IntStreamer
 from .Stack import Stack
 
@@ -75,35 +76,6 @@ class VM(object):
             setattr(class_, k, v)
 
     @classmethod
-    def check_script_push_only(class_, script):
-        pc = 0
-        while pc < len(script):
-            opcode, data, pc = class_.get_opcode(script, pc)
-            if opcode > opcodes.OP_16:
-                raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
-
-    @classmethod
-    def verify_minimal_data(class_, opcode, data):
-        script = class_.bin_script([data])
-        if byte_to_int(script[0]) != opcode:
-            raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
-
-    @classmethod
-    def get_opcode(class_, script, pc):
-        """
-        Step through the script, returning a tuple with the next opcode, the next
-        piece of data (if the opcode represents data), and the new PC.
-        """
-        opcode = byte_to_int(script[pc])
-        f = class_.INSTRUCTION_DECODE_LOOKUP.get(opcode)
-        if f:
-            pc, data = f(script, pc)
-        else:
-            pc += 1
-            data = None
-        return opcode, data, pc
-
-    @classmethod
     def write_push_data(class_, data_list, f):
         # return bytes that causes the given data to be pushed onto the stack
         for t in data_list:
@@ -133,12 +105,6 @@ class VM(object):
                 f.write(bytes_from_int(class_.OP_PUSHDATA4))
                 f.write(struct.pack("<L", len(t)))
                 f.write(t)
-
-    @classmethod
-    def bin_script(class_, data_list):
-        f = io.BytesIO()
-        class_.write_push_data(data_list, f)
-        return f.getvalue()
 
     @classmethod
     def compile(class_, s):
@@ -172,7 +138,7 @@ class VM(object):
         pc = 0
         while pc < len(script):
             try:
-                opcode, data, pc = class_.get_opcode(script, pc)
+                opcode, data, pc = class_.DataCodec.get_opcode(script, pc)
             except ScriptError:
                 opcodes.append(binascii.hexlify(script[pc:]).decode("utf8"))
                 break
@@ -194,7 +160,7 @@ class VM(object):
         new_script = bytearray()
         pc = 0
         while pc < len(script):
-            opcode, data, new_pc = class_.get_opcode(script, pc)
+            opcode, data, new_pc = class_.DataCodec.get_opcode(script, pc)
             section = script[pc:new_pc]
             if section != subscript:
                 new_script.extend(section)
@@ -224,9 +190,11 @@ class VM(object):
         return self.stack
 
     def eval_instruction(self):
-        opcode, data, pc = self.get_opcode(self.script, self.pc)
+        verify_minimal_data = self.flags & VERIFY_MINIMALDATA
+        opcode, data, pc = self.DataCodec.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)
         if data and len(data) > self.MAX_BLOB_LENGTH:
             raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
+        # BRAIN DAMAGE TODO: fix this
         if opcode > opcodes.OP_16:
             self.op_count += 1
 
@@ -238,8 +206,6 @@ class VM(object):
 
         all_if_true = self.conditional_stack.all_if_true()
         if data is not None and all_if_true:
-            if self.flags & VERIFY_MINIMALDATA:
-                self.verify_minimal_data(opcode, data)
             self.stack.append(data)
 
         if getattr(f, "outside_conditional", False) or all_if_true:
@@ -259,36 +225,28 @@ class VM(object):
         self.check_stack_size()
 
 
-def make_instruction_decode_lookup(OPCODE_TO_INT):
-    d = {}
-
-    def make_decode_OP_declarator(dec_length):
-        def decode_OP_PUSHDATA(script, pc):
-            pc += 1
-            size = from_bytes(script[pc:pc+dec_length], byteorder="little")
-            pc += dec_length
-            data = script[pc:pc+size]
-            if len(data) < size:
-                raise ScriptError("unexpected end of data when literal expected", errno.BAD_OPCODE)
-            return pc+size, data
-        return decode_OP_PUSHDATA
-
-    def make_decode_OP_fixed_length(k):
-        def decode(script, pc):
-            pc += 1
-            return pc+k, script[pc:pc+k]
-        return decode
-
-    for size in (1, 2, 4):
-        d[OPCODE_TO_INT["OP_PUSHDATA%d" % size]] = make_decode_OP_declarator(size)
-
-    # BRAIN DAMAGE: this is stupidly hardcoded
-    for k in range(1, 76):
-        d[k] = make_decode_OP_fixed_length(k)
-
-    return d
-
-
-# BRAIN DAMAGE
+# BRAIN DAMAGE BELOW HERE
 VM.build_microcode()
-VM.INSTRUCTION_DECODE_LOOKUP = make_instruction_decode_lookup(VM.OPCODE_TO_INT)
+
+
+def make_variable_decoder(dec_length):
+    def decode_OP_PUSHDATA(script, pc):
+        pc += 1
+        size = from_bytes(script[pc:pc+dec_length], byteorder="little")
+        pc += dec_length
+        return size, pc
+    return decode_OP_PUSHDATA
+
+
+OPCODE_CONST_LIST = [("OP_%d" % i, IntStreamer.int_to_script_bytes(i)) for i in range(17)] + [
+    ("OP_1NEGATE", IntStreamer.int_to_script_bytes(-1))]
+OPCODE_SIZED_LIST = [("OP_PUSH_%d" % i, i) for i in range(76)]
+OPCODE_VARIABLE_LIST = [
+    ("OP_PUSHDATA1", (1 << 8)-1, lambda d: struct.pack("<B", d), make_variable_decoder(1)),
+    ("OP_PUSHDATA2", (1 << 16)-1, lambda d: struct.pack("<H", d), make_variable_decoder(2)),
+    ("OP_PUSHDATA4", (1 << 32)-1, lambda d: struct.pack("<L", d), make_variable_decoder(4)),
+]
+OPCODE_LOOKUP = dict(VM.OPCODE_TO_INT)
+OPCODE_LOOKUP.update({"OP_PUSH_%d" % i: i for i in range(76)})
+VM.DataCodec = DataCodec(
+    OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
