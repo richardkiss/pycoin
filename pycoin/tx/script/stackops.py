@@ -45,7 +45,7 @@ for i in range(1, 11):
 
 # BRAIN DAMAGE
 def do_OP_1NEGATE(stack):
-    stack.append(b'\x81')
+    pass
 
 
 def do_OP_RESERVED(stack):

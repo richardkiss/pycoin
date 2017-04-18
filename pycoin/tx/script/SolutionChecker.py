@@ -135,7 +135,7 @@ class SolutionChecker(object):
         is_p2h = self.is_pay_to_script_hash(puzzle_script)
 
         if flags & VERIFY_SIGPUSHONLY:
-            self.VM.check_script_push_only(solution_script)
+            self.VM.DataCodec.check_script_push_only(solution_script)
 
         vm_context = VMContext()
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit

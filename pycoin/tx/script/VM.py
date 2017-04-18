@@ -190,7 +190,8 @@ class VM(object):
         return self.stack
 
     def eval_instruction(self):
-        verify_minimal_data = self.flags & VERIFY_MINIMALDATA
+        all_if_true = self.conditional_stack.all_if_true()
+        verify_minimal_data = self.flags & VERIFY_MINIMALDATA and all_if_true
         opcode, data, pc = self.DataCodec.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)
         if data and len(data) > self.MAX_BLOB_LENGTH:
             raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
@@ -204,7 +205,6 @@ class VM(object):
         if self.traceback_f:
             f = self.traceback_f(opcode, data, pc, self) or f
 
-        all_if_true = self.conditional_stack.all_if_true()
         if data is not None and all_if_true:
             self.stack.append(data)
 
