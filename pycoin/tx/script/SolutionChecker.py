@@ -41,7 +41,7 @@ class SolutionChecker(object):
 
     @staticmethod
     def get_opcode(script, pc):
-        return VM.get_opcode(script, pc)
+        return VM.DataCodec.get_opcode(script, pc)
 
     def check_witness_program_v0(self, witness_solution_stack, witness_program, tx_context, flags):
         l = len(witness_program)

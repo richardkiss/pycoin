@@ -191,6 +191,7 @@ class VM(object):
 
     def eval_instruction(self):
         all_if_true = self.conditional_stack.all_if_true()
+        # don't actually check for minimal data unless data will be pushed onto the stack
         verify_minimal_data = self.flags & VERIFY_MINIMALDATA and all_if_true
         opcode, data, pc = self.DataCodec.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)
         if data and len(data) > self.MAX_BLOB_LENGTH:
@@ -232,7 +233,10 @@ VM.build_microcode()
 def make_variable_decoder(dec_length):
     def decode_OP_PUSHDATA(script, pc):
         pc += 1
-        size = from_bytes(script[pc:pc+dec_length], byteorder="little")
+        size_blob = script[pc:pc+dec_length]
+        if len(size_blob) < dec_length:
+            raise ScriptError("unexpected end of data when size expected", errno.BAD_OPCODE)
+        size = from_bytes(size_blob, byteorder="little")
         pc += dec_length
         return size, pc
     return decode_OP_PUSHDATA
@@ -242,11 +246,12 @@ OPCODE_CONST_LIST = [("OP_%d" % i, IntStreamer.int_to_script_bytes(i)) for i in 
     ("OP_1NEGATE", IntStreamer.int_to_script_bytes(-1))]
 OPCODE_SIZED_LIST = [("OP_PUSH_%d" % i, i) for i in range(76)]
 OPCODE_VARIABLE_LIST = [
-    ("OP_PUSHDATA1", (1 << 8)-1, lambda d: struct.pack("<B", d), make_variable_decoder(1)),
-    ("OP_PUSHDATA2", (1 << 16)-1, lambda d: struct.pack("<H", d), make_variable_decoder(2)),
-    ("OP_PUSHDATA4", (1 << 32)-1, lambda d: struct.pack("<L", d), make_variable_decoder(4)),
+    ("OP_PUSHDATA1", 0, (1 << 8)-1, lambda d: struct.pack("<B", d), make_variable_decoder(1)),
+    ("OP_PUSHDATA2", (1 << 8)-1, (1 << 16)-1, lambda d: struct.pack("<H", d), make_variable_decoder(2)),
+    ("OP_PUSHDATA4", (1 << 16)-1, (1 << 32)-1, lambda d: struct.pack("<L", d), make_variable_decoder(4)),
 ]
 OPCODE_LOOKUP = dict(VM.OPCODE_TO_INT)
 OPCODE_LOOKUP.update({"OP_PUSH_%d" % i: i for i in range(76)})
 VM.DataCodec = DataCodec(
     OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
+VM.bin_script = VM.DataCodec.data_list_to_script

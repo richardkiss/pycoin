@@ -25,7 +25,7 @@ def make_sized_f(size, const_values):
     return constant_size_opcode_handler
 
 
-def make_variable_f(dec_f, sized_values):
+def make_variable_f(dec_f, sized_values, min_size):
     sized_values = list(sized_values)
 
     def f(script, pc, verify_minimal_data=False):
@@ -33,6 +33,10 @@ def make_variable_f(dec_f, sized_values):
         if verify_minimal_data and size in sized_values:
             raise ScriptError("not minimal push of data with size %d" % size, errno.MINIMALDATA)
         data = script[pc:pc+size]
+        if len(data) < size:
+            raise ScriptError("unexpected end of data when literal expected", errno.BAD_OPCODE)
+        if verify_minimal_data and size <= min_size:
+            raise ScriptError("not minimal push of data with size %d" % size, errno.MINIMALDATA)
         return pc+size, data
     return f
 
@@ -76,13 +80,14 @@ class DataCodec(object):
 
         self.sized_encoder = {v: make_sized_encoder(k) for k, v in self.sized_decoder.items()}
         self.variable_decoder = {
-            opcode_lookup.get(opcode): dec_f for opcode, mds, enc_f, dec_f in opcode_variable_list}
-        self.variable_encoder = sorted(
-            (mds, opcode_lookup.get(opcode), enc_f) for opcode, mds, enc_f, dec_f in opcode_variable_list)
+            opcode_lookup.get(opcode): dec_f for opcode, min_size, max_size, enc_f, dec_f in opcode_variable_list}
+        self.variable_encoder = sorted((min_size, max_size, opcode_lookup.get(opcode), enc_f)
+                                       for opcode, min_size, max_size, enc_f, dec_f in opcode_variable_list)
 
         self.decoder = {}
         self.decoder.update(
-            {o: make_variable_f(dec_f, self.sized_encoder.keys()) for o, dec_f in self.variable_decoder.items()})
+            {opcode_lookup.get(o): make_variable_f(dec_f, self.sized_encoder.keys(), min_size)
+             for o, min_size, max_size, enc_f, dec_f in opcode_variable_list})
         self.decoder.update({o: make_sized_f(v, self.const_encoder.keys()) for o, v in self.sized_decoder.items()})
         self.decoder.update({o: make_const_f(v) for o, v in self.const_decoder.items()})
 
@@ -120,10 +125,10 @@ class DataCodec(object):
         size = len(data)
         if size in self.sized_encoder:
             return self.sized_encoder.get(size)(data)
-        for mds, opcode, enc_f in self.variable_encoder:
-            if size <= mds:
+        for min_size, max_size, opcode, enc_f in self.variable_encoder:
+            if size <= max_size:
                 break
-        return opcode + enc_f(data)
+        return bytes_from_int(opcode) + enc_f(len(data)) + data
 
     def write_push_data(self, data_list, f):
         # return bytes that causes the given data to be pushed onto the stack

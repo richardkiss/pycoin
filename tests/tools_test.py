@@ -9,7 +9,7 @@ from pycoin.tx.script.SolutionChecker import TxContext
 from pycoin.tx.script.IntStreamer import IntStreamer
 from pycoin.tx.script.VM import VM
 
-bin_script = VM.bin_script
+bin_script = VM.DataCodec.data_list_to_script
 compile = VM.compile
 disassemble = VM.disassemble
 

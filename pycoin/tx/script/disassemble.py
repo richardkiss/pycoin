@@ -104,14 +104,14 @@ def disassemble_scripts(input_script, output_script, lock_time, signature_for_ha
         input_script, output_script, signature_for_hash_type_f)
     pc = 0
     while pc < len(input_script):
-        opcode, data, new_pc = VM.get_opcode(input_script, pc)
+        opcode, data, new_pc = VM.DataCodec.get_opcode(input_script, pc)
         pre_annotations, post_annotations = input_annotations_f(pc, opcode, data)
         yield pre_annotations, pc, opcode, instruction_for_opcode(opcode, data), post_annotations
         pc = new_pc
 
     pc = 0
     while pc < len(output_script):
-        opcode, data, new_pc = VM.get_opcode(output_script, pc)
+        opcode, data, new_pc = VM.DataCodec.get_opcode(output_script, pc)
         pre_annotations, post_annotations = output_annotations_f(pc, opcode, data)
         yield pre_annotations, pc, opcode, instruction_for_opcode(opcode, data), post_annotations
         pc = new_pc

@@ -58,8 +58,8 @@ class ScriptType(object):
                 return r
             if pc1 >= len(script) or pc2 >= len(template):
                 break
-            opcode1, data1, pc1 = VM.get_opcode(script, pc1)
-            opcode2, data2, pc2 = VM.get_opcode(template, pc2)
+            opcode1, data1, pc1 = VM.DataCodec.get_opcode(script, pc1)
+            opcode2, data2, pc2 = VM.DataCodec.get_opcode(template, pc2)
             l1 = 0 if data1 is None else len(data1)
             if opcode2 == opcodes.OP_PUBKEY:
                 if l1 < 33 or l1 > 120:
