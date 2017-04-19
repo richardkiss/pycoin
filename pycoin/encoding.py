@@ -30,6 +30,7 @@ THE SOFTWARE.
 import hashlib
 
 from .intbytes import byte_to_int, bytes_from_int
+from .serialize import bytes_as_revhex
 
 
 BASE58_ALPHABET = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -121,7 +122,7 @@ if hasattr(int, "from_bytes"):
 
 def double_sha256(data):
     """A standard compound hash."""
-    return hashlib.sha256(hashlib.sha256(data).digest()).digest()
+    return bytes_as_revhex(hashlib.sha256(hashlib.sha256(data).digest()).digest())
 
 
 def hash160(data):
