@@ -136,19 +136,26 @@ class VM(object):
         """Disassemble the given script. Returns a list of opcodes."""
         opcodes = []
         pc = 0
-        while pc < len(script):
-            try:
-                opcode, data, pc = class_.DataCodec.get_opcode(script, pc)
-            except ScriptError:
-                opcodes.append(binascii.hexlify(script[pc:]).decode("utf8"))
-                break
-            opcodes.append(class_.disassemble_for_opcode_data(opcode, data))
+        try:
+            for opcode, data, pc, new_pc in class_.get_opcodes(script):
+                opcodes.append(class_.disassemble_for_opcode_data(opcode, data))
+        except ScriptError:
+            opcodes.append(binascii.hexlify(script[new_pc:]).decode("utf8"))
+
         return opcodes
 
     @classmethod
     def disassemble(class_, script):
         """Disassemble the given script. Returns a string."""
         return ' '.join(class_.opcode_list(script))
+
+    @classmethod
+    def get_opcodes(class_, script, verify_minimal_data=False, pc=0):
+        pc = 0
+        while pc < len(script):
+            opcode, data, new_pc = class_.DataCodec.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
+            yield opcode, data, pc, new_pc
+            pc = new_pc
 
     @classmethod
     def delete_subscript(class_, script, subscript):
@@ -159,12 +166,10 @@ class VM(object):
         """
         new_script = bytearray()
         pc = 0
-        while pc < len(script):
-            opcode, data, new_pc = class_.DataCodec.get_opcode(script, pc)
+        for opcode, data, pc, new_pc in class_.get_opcodes(script):
             section = script[pc:new_pc]
             if section != subscript:
                 new_script.extend(section)
-            pc = new_pc
         return bytes(new_script)
 
     def eval_script(self, script, tx_context, vm_context, initial_stack=None):
