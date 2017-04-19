@@ -4,7 +4,7 @@ import struct
 
 from .flags import VERIFY_MINIMALDATA
 
-from ...intbytes import byte_to_int, bytes_from_int, int_to_bytes, from_bytes
+from ...intbytes import bytes_from_int, int_to_bytes, from_bytes
 
 from . import ScriptError
 from . import errno
@@ -191,6 +191,7 @@ class VM(object):
 
     def eval_instruction(self):
         all_if_true = self.conditional_stack.all_if_true()
+
         # don't actually check for minimal data unless data will be pushed onto the stack
         verify_minimal_data = self.flags & VERIFY_MINIMALDATA and all_if_true
         opcode, data, pc = self.DataCodec.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)

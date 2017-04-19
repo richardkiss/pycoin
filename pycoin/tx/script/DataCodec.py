@@ -5,13 +5,19 @@ from . import ScriptError
 from . import errno
 
 
-def make_const_f(data):
+def make_const_handler(data):
+    """
+    Create a handler for a data opcode that returns a constant.
+    """
     def constant_data_opcode_handler(script, pc, verify_minimal_data=False):
         return pc+1, data
     return constant_data_opcode_handler
 
 
-def make_sized_f(size, const_values):
+def make_sized_handler(size, const_values):
+    """
+    Create a handler for a data opcode that returns literal data of a fixed size.
+    """
     const_values = list(const_values)
 
     def constant_size_opcode_handler(script, pc, verify_minimal_data=False):
@@ -25,7 +31,11 @@ def make_sized_f(size, const_values):
     return constant_size_opcode_handler
 
 
-def make_variable_f(dec_f, sized_values, min_size):
+def make_variable_handler(dec_f, sized_values, min_size):
+    """
+    Create a handler for a data opcode that returns literal data of a variable size
+    that's fetched and decoded by the function dec_f.
+    """
     sized_values = list(sized_values)
 
     def f(script, pc, verify_minimal_data=False):
@@ -41,17 +51,33 @@ def make_variable_f(dec_f, sized_values, min_size):
     return f
 
 
+def make_sized_encoder(opcode_value):
+    """
+    Create an encoder that encodes the given opcode value as binary data
+    and appends the given data.
+    """
+    opcode_bin = bytes_from_int(opcode_value)
+
+    def f(data):
+        return opcode_bin + data
+    return f
+
+
 class DataCodec(object):
     """
-    This class manages encoding and decoding data from a script.
+    This class manages encoding and decoding instructions and data from a script.
 
+    Most instructions operate on existing stack data. Then there are some opcodes that
+    push constant data onto the stack. These are data opcodes.
     There are three classes of data opcodes:
         * CONSTANT_OPCODE: opcodes that push a constant
         * SIZED_OPCODE: opcodes that push a constant number of subsequent bytes
-        * VARIABLE_OPCODE: opcodes that push a encoding of the number of bytes, followed by those bytes
+        * VARIABLE_OPCODE: opcodes that push an encoding of the number of bytes, followed by those bytes
 
     This class is also aware of "minimal encoding", that is, encoding data using
-    the shortest data sequence possible.
+    the shortest data sequence possible, and can verify that scripts use it.
+    This gives a "canonical" version of solution scripts, which can be used to
+    help reduce the impact of malleability.
     """
     def __init__(self, opcode_const_list, opcode_sized_list, opcode_variable_list,
                  opcode_lookup):
@@ -61,10 +87,15 @@ class DataCodec(object):
             for that opcode
         :param opcode_sized_list: list of ("OPCODE_NAME", data_size) pairs, where
             OPCODE_NAME is the name of an opcode and data_size is the size
-        :param opcode_variable_list: list of ("OPCODE_NAME", max_data_size, enc_f, dec_f)
-            tuples where OPCODE_NAME is an opcode, max_data_size is the maximum amount of
+        :param opcode_variable_list: list of ("OPCODE_NAME", min_data_size, max_data_size, enc_f, dec_f)
+            tuples where OPCODE_NAME is an opcode, min_data_size is the minimum amount of
+            data that should be pushed by this opcode, max_data_size is the maximum amount of
             data that can be pushed by this opcode, enc_f is the encoder for the size of the data,
             dec_f is the decoder for the size of the data.
+            enc_f should have signature (bin_data) and return an integer (length)
+            dec_f should have signature (bin_data) and return offset, data where
+                offset is the integer count of bytes consumed and data the decoded result
+
         :param opcode_lookup: dictionary with entries "OPCODE_NAME" => byte
         """
         self.const_decoder = {opcode_lookup.get(opcode): val for opcode, val in opcode_const_list}
@@ -85,11 +116,15 @@ class DataCodec(object):
                                        for opcode, min_size, max_size, enc_f, dec_f in opcode_variable_list)
 
         self.decoder = {}
+
+        # deal with variable data opcodes
+
         self.decoder.update(
-            {opcode_lookup.get(o): make_variable_f(dec_f, self.sized_encoder.keys(), min_size)
+            {opcode_lookup.get(o): make_variable_handler(dec_f, self.sized_encoder.keys(), min_size)
              for o, min_size, max_size, enc_f, dec_f in opcode_variable_list})
-        self.decoder.update({o: make_sized_f(v, self.const_encoder.keys()) for o, v in self.sized_decoder.items()})
-        self.decoder.update({o: make_const_f(v) for o, v in self.const_decoder.items()})
+        self.decoder.update(
+            {o: make_sized_handler(v, self.const_encoder.keys()) for o, v in self.sized_decoder.items()})
+        self.decoder.update({o: make_const_handler(v) for o, v in self.const_decoder.items()})
 
         self.push_opcodes = frozenset(self.decoder.keys())
 
@@ -110,9 +145,6 @@ class DataCodec(object):
         Step through the script, returning a tuple with the next opcode, the next
         piece of data (if the opcode represents data), and the new PC.
         """
-        if script == 'zv\xa9\x14[dbGTTq\x0f<"\xf5\xfd\xf0\xb4\x07\x04\xc9/%\xc3\x88\xadQLG0D\x02 g(\x8e\xa5\n\xa7\x99T:So\xf90o\x8e\x1c\xba\x05\xb9\xc6\xb1\tQ\x17[\x92O\x96s%U\xed\x02 &\xd7\xb5&_8\xd2\x15AQ\x9eJ\x1eU\x04M[\x9e\x17\xe1\\\xdb\xaf)\xae7\x92\xe9\x9e\x88>z\x01' and pc == 26:
-            import pdb
-            # pdb.set_trace()
         opcode = byte_to_int(script[pc])
         f = self.decoder.get(opcode, lambda s, p, verify_minimal_data: (p+1, None))
         pc, data = f(script, pc, verify_minimal_data=verify_minimal_data)
@@ -136,10 +168,6 @@ class DataCodec(object):
             f.write(self.compile_push(t))
 
     def data_list_to_script(self, data_list):
-        import pdb
-        if data_list == ['', '', '0E\x02 z\xac\xee\x82\x0e\x08\xb0\xb1t\xe2H\xab\xd8\xd7\xa3N\xd6;]\xa3\xab\xed\xb9\x994\xdf\x9f\xdd\xd6\\\x05\xc4\x02!\x00\xdf\xe8x\x96\xab^\xe3\xdfGl&U\xf9\xfb\xe5\xbd\x08\x9d\xcc\xbe\xf3\xe4\xea\x05\xb5\xd1!\x16\x9f\xe7\xf5\xf4\x01', '0E\x02!\x00\xf6d\x9b\x0e\xdd\xfd\xfdJ\xd5T&f3\x85\t\rQ\xee\x86\xc3H\x1b\xdck\x0c\x18\xeal\x0e\xce,\x0b\x02 V\x1c1[\x07\xcf\xfao}\xd9\xdf\x96\xdb\xae\x92\x00\xc2\xde\xe0\x9b\xf9<\xc3\\\xa0^l\xdfa3@\xaa\x01']:
-            pass
-            # pdb.set_trace()
         return b''.join(self.compile_push(d) for d in data_list)
 
     bin_script = data_list_to_script
