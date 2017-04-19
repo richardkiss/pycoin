@@ -27,3 +27,11 @@ def stream_to_bytes(stream_f):
     f = io.BytesIO()
     stream_f(f)
     return f.getvalue()
+
+
+class bytes_as_revhex(bytes):
+    def __str__(self):
+        return b2h_rev(self)
+
+    def __repr__(self):
+        return b2h_rev(self)
