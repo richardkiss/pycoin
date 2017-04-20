@@ -76,37 +76,6 @@ class VM(object):
             setattr(class_, k, v)
 
     @classmethod
-    def write_push_data(class_, data_list, f):
-        # return bytes that causes the given data to be pushed onto the stack
-        for t in data_list:
-            if len(t) == 0:
-                f.write(bytes_from_int(class_.OP_0))
-                continue
-            if len(t) == 1:
-                v = class_.IntStreamer.int_from_script_bytes(t)
-                if v == -1:
-                    v = "1NEGATE"
-                opcode_str = "OP_%s" % v
-                opcode = class_.OPCODE_TO_INT.get(opcode_str)
-                if opcode:
-                    f.write(bytes_from_int(opcode))
-                    continue
-            if len(t) <= 255:
-                if len(t) > 75:
-                    f.write(bytes_from_int(class_.OP_PUSHDATA1))
-                f.write(int_to_bytes(len(t)))
-                f.write(t)
-            elif len(t) <= 65535:
-                f.write(bytes_from_int(class_.OP_PUSHDATA2))
-                f.write(struct.pack("<H", len(t)))
-                f.write(t)
-            else:
-                # This will never be used in practice as it makes the scripts too long.
-                f.write(bytes_from_int(class_.OP_PUSHDATA4))
-                f.write(struct.pack("<L", len(t)))
-                f.write(t)
-
-    @classmethod
     def compile(class_, s):
         """
         Compile the given script. Returns a bytes object with the compiled script.
@@ -231,6 +200,9 @@ class VM(object):
         self.conditional_stack.check_final_state()
         self.check_stack_size()
 
+    @classmethod
+    def write_push_data(self, data_list, f):
+        self.DataCodec.write_push_data(data_list, f)
 
 # BRAIN DAMAGE BELOW HERE
 VM.build_microcode()
