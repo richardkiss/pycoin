@@ -98,22 +98,18 @@ class DataCodec(object):
 
         :param opcode_lookup: dictionary with entries "OPCODE_NAME" => byte
         """
-        self.const_decoder = {opcode_lookup.get(opcode): val for opcode, val in opcode_const_list}
-        self.const_encoder = {v: bytes_from_int(k) for k, v in self.const_decoder.items()}
-        self.sized_decoder = {opcode_lookup.get(opcode): size for opcode, size in opcode_sized_list}
 
-        # BRAIN DAMAGE
-        def make_sized_encoder(k):
-            k_bin = bytes_from_int(k)
-            def f(d):
-                return k_bin + d
-            return f
+        # build encoders
+        const_pairs = [(opcode_lookup.get(opcode), val) for opcode, val in opcode_const_list]
+        self.const_encoder = {v: bytes_from_int(k) for k, v in const_pairs}
 
-        self.sized_encoder = {v: make_sized_encoder(k) for k, v in self.sized_decoder.items()}
-        self.variable_decoder = {
-            opcode_lookup.get(opcode): dec_f for opcode, min_size, max_size, enc_f, dec_f in opcode_variable_list}
-        self.variable_encoder = sorted((min_size, max_size, opcode_lookup.get(opcode), enc_f)
-                                       for opcode, min_size, max_size, enc_f, dec_f in opcode_variable_list)
+        sized_pairs = [(opcode_lookup.get(opcode), size) for opcode, size in opcode_sized_list]
+        self.sized_encoder = {v: make_sized_encoder(k) for k, v in sized_pairs}
+        self.variable_encoder = sorted(
+            (min_size, max_size, opcode_lookup.get(opcode), enc_f)
+            for opcode, min_size, max_size, enc_f, dec_f in opcode_variable_list)
+
+        # build decoder
 
         self.decoder = {}
 
@@ -122,9 +118,15 @@ class DataCodec(object):
         self.decoder.update(
             {opcode_lookup.get(o): make_variable_handler(dec_f, self.sized_encoder.keys(), min_size)
              for o, min_size, max_size, enc_f, dec_f in opcode_variable_list})
+
+        # deal with sized data opcodes
+
         self.decoder.update(
-            {o: make_sized_handler(v, self.const_encoder.keys()) for o, v in self.sized_decoder.items()})
-        self.decoder.update({o: make_const_handler(v) for o, v in self.const_decoder.items()})
+            {o: make_sized_handler(v, self.const_encoder.keys()) for o, v in sized_pairs})
+
+        # deal with constant data opcodes
+
+        self.decoder.update({o: make_const_handler(v) for o, v in const_pairs})
 
         self.push_opcodes = frozenset(self.decoder.keys())
 
