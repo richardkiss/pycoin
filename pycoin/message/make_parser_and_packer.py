@@ -165,18 +165,18 @@ def make_post_unpack_alert(streamer):
     return post_unpack_alert
 
 
-def standard_parsing_functions(Block, BlockHeader, Tx):
+def standard_parsing_functions(Block, Tx):
     """
-    Return the standard parsing functions for a given Block, BlockHeader, and
-    Tx class. The return value is expected to be used with the standard_streamer function.
+    Return the standard parsing functions for a given Block and Tx class.
+    The return value is expected to be used with the standard_streamer function.
     """
     def stream_block(f, block):
         assert isinstance(block, Block)
         block.stream(f)
 
     def stream_blockheader(f, blockheader):
-        assert isinstance(blockheader, BlockHeader)
-        blockheader.stream(f)
+        assert isinstance(blockheader, Block)
+        blockheader.stream_as_header(f)
 
     def stream_tx(f, tx):
         assert isinstance(tx, Tx)
@@ -187,7 +187,7 @@ def standard_parsing_functions(Block, BlockHeader, Tx):
         ("v", (InvItem.parse, lambda f, inv_item: inv_item.stream(f))),
         ("T", (Tx.parse, stream_tx)),
         ("B", (Block.parse, stream_block)),
-        ("z", (BlockHeader.parse, stream_blockheader)),
+        ("z", (Block.parse_as_header, stream_blockheader)),
         ("1", (lambda f: struct.unpack("B", f.read(1))[0], lambda f, b: f.write(struct.pack("B", b)))),
     ]
     all_items = list(bitcoin_streamer.STREAMER_FUNCTIONS.items())
