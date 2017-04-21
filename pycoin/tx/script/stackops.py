@@ -25,13 +25,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import inspect
 import hashlib
 
 from . import errno
 from . import ScriptError
 
-from .flags import VERIFY_MINIMALDATA
 from ...encoding import hash160, double_sha256, ripemd160
 
 
@@ -292,13 +290,8 @@ def do_OP_HASH256(stack):
 
 
 def transform_stack_op(f):
-    f.require_minimal = len(inspect.getargspec(f).args) > 1
-    if f.require_minimal:
-        def the_f(vm):
-            return f(vm.stack, require_minimal=vm.flags & VERIFY_MINIMALDATA)
-    else:
-        def the_f(vm):
-            return f(vm.stack)
+    def the_f(vm):
+        return f(vm.stack)
     return the_f
 
 
