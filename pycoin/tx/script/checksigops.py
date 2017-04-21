@@ -288,12 +288,3 @@ def do_OP_CHECKSIGVERIFY(vm):
     v = vm.bool_from_script_bytes(vm.stack.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.VERIFY)
-
-
-def collect_opcodes():
-    d = {}
-    the_globals = globals()
-    for k, v in the_globals.items():
-        if k.startswith("do_OP"):
-            d[k[3:]] = v
-    return d

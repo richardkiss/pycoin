@@ -128,13 +128,13 @@ class DataCodec(object):
 
         self.decoder.update({o: make_const_handler(v) for o, v in const_pairs})
 
-        self.push_opcodes = frozenset(self.decoder.keys())
+        self.data_opcodes = frozenset(self.decoder.keys())
 
     def check_script_push_only(self, script):
         pc = 0
         while pc < len(script):
             opcode, data, pc = self.get_opcode(script, pc)
-            if opcode not in self.push_opcodes:
+            if opcode not in self.data_opcodes:
                 raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 
     def verify_minimal_data(self, opcode, data):

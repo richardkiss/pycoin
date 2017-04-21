@@ -52,7 +52,7 @@ def make_instruction_lookup(opcode_pairs):
         instruction_lookup[i] = lambda s: 0
     opcode_lookups = {}
     opcode_lookups.update(stackops.all_opcodes())
-    opcode_lookups.update(checksigops.collect_opcodes())
+    opcode_lookups.update(collect_opcodes(checksigops))
     opcode_lookups.update(collect_opcodes(intops))
     opcode_lookups.update(miscops.collect_opcodes())
     for opcode_name, opcode_value in opcode_pairs:

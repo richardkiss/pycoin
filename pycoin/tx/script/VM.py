@@ -4,7 +4,7 @@ import struct
 
 from .flags import VERIFY_MINIMALDATA
 
-from ...intbytes import bytes_from_int, int_to_bytes, from_bytes
+from ...intbytes import bytes_from_int, from_bytes
 
 from . import ScriptError
 from . import errno
