@@ -3,7 +3,7 @@ import platform
 import struct
 import os
 
-from pycoin.block import Block, BlockHeader
+from pycoin.block import Block
 from pycoin.blockchain.BlockChain import BlockChain
 from pycoin.serialize import h2b
 
@@ -93,7 +93,7 @@ def block_info_iterator(start_info=(0, 0), base_dir=None, MAGIC=h2b("f9beb4d9"))
 
 def blockheader_for_offset_info(offset_info, base_dir=None):
     f = Blockfiles(base_dir, offset_info)
-    block = BlockHeader.parse(f)
+    block = Block.parse_as_header(f)
     f.close()
     return block
 
@@ -103,11 +103,11 @@ def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, 
     """
     This method loads blocks from disk, skipping any orphan blocks.
     """
-    block_class = BlockHeader if headers_only else Block
+    parse_method = Block.parse_as_header if headers_only else Block.parse
     f = Blockfiles(base_dir, start_info)
     for initial_location in block_info_iterator(start_info, base_dir):
         f.jump_to(initial_location)
-        BlockHeader.parse(f)
+        parse_method(f)
         break
     current_state = []
 
@@ -132,7 +132,7 @@ def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, 
             if len(current_state) > cached_headers:
                 for bh in current_state[:cached_headers]:
                     f.jump_to(bh.info)
-                    block = block_class.parse(f)
+                    block = parse_method(f)
                     yield block
                     index += 1
                     bc.lock_to_index(index)
