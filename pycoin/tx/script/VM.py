@@ -51,72 +51,23 @@ class VM(object):
 
     @classmethod
     def compile_expression(class_, t):
-        if (t[0], t[-1]) == ('[', ']'):
-            return binascii.unhexlify(t[1:-1])
-        if t.startswith("'") and t.endswith("'"):
-            return t[1:-1].encode("utf8")
-        try:
-            t0 = int(t)
-            if abs(t0) <= 0xffffffffffffffff and t[0] != '0':
-                return class_.IntStreamer.int_to_script_bytes(t0)
-        except (SyntaxError, ValueError):
-            pass
-        try:
-            return binascii.unhexlify(t)
-        except Exception:
-            pass
-        raise SyntaxError("unknown expression %s" % t)
-
-    @classmethod
-    def build_microcode(class_):
-        class_.INSTRUCTION_LOOKUP = make_instruction_lookup(class_.OPCODE_LIST)
-        class_.OPCODE_TO_INT = dict(o for o in class_.OPCODE_LIST)
-        class_.INT_TO_OPCODE = dict(reversed(i) for i in class_.OPCODE_LIST)
-        for k, v in class_.OPCODE_LIST:
-            setattr(class_, k, v)
+        return class_.ScriptTools.compile_expression(t)
 
     @classmethod
     def compile(class_, s):
-        """
-        Compile the given script. Returns a bytes object with the compiled script.
-        """
-        f = io.BytesIO()
-        for t in s.split():
-            if t in class_.OPCODE_TO_INT:
-                f.write(bytes_from_int(class_.OPCODE_TO_INT[t]))
-            elif ("OP_%s" % t) in class_.OPCODE_TO_INT:
-                f.write(bytes_from_int(class_.OPCODE_TO_INT["OP_%s" % t]))
-            elif t.startswith("0x"):
-                d = binascii.unhexlify(t[2:])
-                f.write(d)
-            else:
-                v = class_.compile_expression(t)
-                class_.write_push_data([v], f)
-        return f.getvalue()
+        return class_.ScriptTools.compile(s)
 
     @classmethod
     def disassemble_for_opcode_data(class_, opcode, data):
-        if data is not None and len(data) > 0:
-            return "[%s]" % binascii.hexlify(data).decode("utf8")
-        return class_.INT_TO_OPCODE.get(opcode, "???")
+        return class_.ScriptTools.disassemble_for_opcode_data(opcode, data)
 
     @classmethod
     def opcode_list(class_, script):
-        """Disassemble the given script. Returns a list of opcodes."""
-        opcodes = []
-        pc = 0
-        try:
-            for opcode, data, pc, new_pc in class_.get_opcodes(script):
-                opcodes.append(class_.disassemble_for_opcode_data(opcode, data))
-        except ScriptError:
-            opcodes.append(binascii.hexlify(script[new_pc:]).decode("utf8"))
-
-        return opcodes
+        return class_.ScriptTools.opcode_list(script)
 
     @classmethod
     def disassemble(class_, script):
-        """Disassemble the given script. Returns a string."""
-        return ' '.join(class_.opcode_list(script))
+        return class_.ScriptTools.disassemble(script)
 
     @classmethod
     def get_opcodes(class_, script, verify_minimal_data=False, pc=0):
@@ -204,8 +155,13 @@ class VM(object):
     def write_push_data(self, data_list, f):
         self.DataCodec.write_push_data(data_list, f)
 
+
 # BRAIN DAMAGE BELOW HERE
-VM.build_microcode()
+
+def build_microcode(class_):
+    class_.INSTRUCTION_LOOKUP = make_instruction_lookup(class_.OPCODE_LIST)
+    for k, v in class_.OPCODE_LIST:
+        setattr(class_, k, v)
 
 
 def make_variable_decoder(dec_length):
@@ -220,6 +176,7 @@ def make_variable_decoder(dec_length):
     return decode_OP_PUSHDATA
 
 
+build_microcode(VM)
 OPCODE_CONST_LIST = [("OP_%d" % i, IntStreamer.int_to_script_bytes(i)) for i in range(17)] + [
     ("OP_1NEGATE", IntStreamer.int_to_script_bytes(-1))]
 OPCODE_SIZED_LIST = [("OP_PUSH_%d" % i, i) for i in range(76)]
@@ -228,8 +185,13 @@ OPCODE_VARIABLE_LIST = [
     ("OP_PUSHDATA2", (1 << 8)-1, (1 << 16)-1, lambda d: struct.pack("<H", d), make_variable_decoder(2)),
     ("OP_PUSHDATA4", (1 << 16)-1, (1 << 32)-1, lambda d: struct.pack("<L", d), make_variable_decoder(4)),
 ]
-OPCODE_LOOKUP = dict(VM.OPCODE_TO_INT)
+
+OPCODE_LOOKUP = dict(o for o in opcodes.OPCODE_LIST)
 OPCODE_LOOKUP.update({"OP_PUSH_%d" % i: i for i in range(76)})
 VM.DataCodec = DataCodec(
     OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
 VM.bin_script = VM.DataCodec.data_list_to_script
+
+from .ScriptTools import ScriptTools
+
+VM.ScriptTools = ScriptTools(opcodes.OPCODE_LIST, IntStreamer, VM.DataCodec)

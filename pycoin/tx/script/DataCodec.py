@@ -152,7 +152,7 @@ class DataCodec(object):
         pc, data = f(script, pc, verify_minimal_data=verify_minimal_data)
         return opcode, data, pc
 
-    def compile_push(self, data):
+    def compile_push_data(self, data):
         # return bytes that causes the given data to be pushed onto the stack
         if data in self.const_encoder:
             return self.const_encoder.get(data)
@@ -169,7 +169,10 @@ class DataCodec(object):
         for t in data_list:
             f.write(self.compile_push(t))
 
-    def data_list_to_script(self, data_list):
+    def compile_push_data_list(self, data_list):
         return b''.join(self.compile_push(d) for d in data_list)
 
+    # BRAIN DAMAGE delete these
+    compile_push = compile_push_data
+    data_list_to_script = compile_push_data_list
     bin_script = data_list_to_script
