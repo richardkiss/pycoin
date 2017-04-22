@@ -48,8 +48,11 @@ def collect_opcodes(module):
 def make_instruction_lookup(opcode_pairs):
     # start with all opcodes invalid
     instruction_lookup = [make_bad_instruction(i) for i in range(256)]
+    # BRAIN DAMAGE
     for i in range(0, 76):
         instruction_lookup[i] = lambda s: 0
+    # BRAIN DAMAGE
+    instruction_lookup[79] = lambda s: 0
     opcode_lookups = {}
     # BRAIN DAMAGE
     opcode_lookups.update(collect_opcodes(checksigops))
