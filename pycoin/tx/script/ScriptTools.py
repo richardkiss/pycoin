@@ -63,8 +63,10 @@ class ScriptTools(object):
         opcodes = []
         pc = 0
         try:
-            for opcode, data, pc, new_pc in self.dataCodec.get_opcodes(script):
+            while pc < len(script):
+                opcode, data, new_pc = self.dataCodec.get_opcode(script, pc)
                 opcodes.append(self.disassemble_for_opcode_data(opcode, data))
+                pc = new_pc
         except ScriptError:
             opcodes.append(binascii.hexlify(script[new_pc:]).decode("utf8"))
 
