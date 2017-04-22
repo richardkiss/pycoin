@@ -190,7 +190,7 @@ OPCODE_LOOKUP = dict(o for o in opcodes.OPCODE_LIST)
 OPCODE_LOOKUP.update({"OP_PUSH_%d" % i: i for i in range(76)})
 VM.DataCodec = DataCodec(
     OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
-VM.bin_script = VM.DataCodec.data_list_to_script
+VM.bin_script = VM.DataCodec.compile_push_data_list
 
 from .ScriptTools import ScriptTools
 

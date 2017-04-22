@@ -167,12 +167,10 @@ class DataCodec(object):
     def write_push_data(self, data_list, f):
         # return bytes that causes the given data to be pushed onto the stack
         for t in data_list:
-            f.write(self.compile_push(t))
+            f.write(self.compile_push_data(t))
 
     def compile_push_data_list(self, data_list):
-        return b''.join(self.compile_push(d) for d in data_list)
+        return b''.join(self.compile_push_data(d) for d in data_list)
 
     # BRAIN DAMAGE delete these
-    compile_push = compile_push_data
-    data_list_to_script = compile_push_data_list
-    bin_script = data_list_to_script
+    bin_script = compile_push_data_list
