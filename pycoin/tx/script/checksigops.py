@@ -144,7 +144,7 @@ def do_OP_CHECKSIG(vm):
     # Drop the signature, since there's no way for a signature to sign itself
     # see: Bitcoin Core/script/interpreter.cpp::EvalScript()
     if not getattr(signature_for_hash_type_f, "skip_delete", False):
-        tmp_script = vm.delete_subscript(tmp_script, vm.DataCodec.bin_script([sig_blob]))
+        tmp_script = vm.delete_subscript(tmp_script, vm.bin_script([sig_blob]))
 
     signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
 
@@ -177,7 +177,7 @@ def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script,
     # Drop the signatures, since there's no way for a signature to sign itself
     if not getattr(vm.signature_for_hash_type_f, "skip_delete", False):
         for sig_blob in sig_blobs:
-            tmp_script = vm.delete_subscript(tmp_script, vm.DataCodec.bin_script([sig_blob]))
+            tmp_script = vm.delete_subscript(tmp_script, vm.bin_script([sig_blob]))
 
     sig_cache = {}
     sig_blob_indices = []

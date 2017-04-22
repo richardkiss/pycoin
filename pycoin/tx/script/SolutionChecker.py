@@ -56,7 +56,7 @@ class SolutionChecker(object):
             # special case for pay-to-pubkeyhash; signature + pubkey in witness
             if len(witness_solution_stack) != 2:
                 raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-            puzzle_script = self.v0_len20_prefix + VM.DataCodec.bin_script([witness_program]) + self.v0_len20_postfix
+            puzzle_script = self.v0_len20_prefix + VM.bin_script([witness_program]) + self.v0_len20_postfix
             stack = Stack(witness_solution_stack)
         else:
             raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
@@ -149,7 +149,7 @@ class SolutionChecker(object):
 
         if is_p2h and (flags & VERIFY_P2SH):
             p2sh_solution_blob, p2sh_puzzle_script = stack[:-1], stack[-1]
-            p2sh_solution_script = VM.DataCodec.bin_script(p2sh_solution_blob)
+            p2sh_solution_script = VM.bin_script(p2sh_solution_blob)
 
         stack = vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=stack)
 

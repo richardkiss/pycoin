@@ -171,6 +171,3 @@ class DataCodec(object):
 
     def compile_push_data_list(self, data_list):
         return b''.join(self.compile_push_data(d) for d in data_list)
-
-    # BRAIN DAMAGE delete these
-    bin_script = compile_push_data_list
