@@ -12,7 +12,7 @@ from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata
 from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup, script_obj_from_script
 from pycoin.ui import address_for_pay_to_script, standard_tx_out_script, script_obj_from_address
-from pycoin.tx.script.VM import VM
+from pycoin.tx.script.VM import ScriptTools
 
 
 def const_f(v):
@@ -183,10 +183,10 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertNotEqual(st, None)
 
     def test_nulldata(self):
-        OP_RETURN = VM.compile("OP_RETURN")
+        OP_RETURN = ScriptTools.compile("OP_RETURN")
         # note that because chr() is used samples with length > 255 will not work
         for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
-            sample_script = OP_RETURN + VM.bin_script([sample])
+            sample_script = OP_RETURN + ScriptTools.compile_push_data_list([sample])
             nd = ScriptNulldata(sample)
             self.assertEqual(nd.nulldata, sample)
             self.assertEqual(nd.script(), sample_script)
@@ -194,7 +194,7 @@ class ScriptTypesTest(unittest.TestCase):
             self.assertEqual(nd.nulldata, nd2.nulldata)
             out = TxOut(1, nd.script())
             tx = Tx(0, [], [out])  # ensure we can create a tx
-            self.assertEqual(nd.script(), VM.compile(VM.disassemble(nd.script())))  # convert between asm and back to ensure no bugs with compilation
+            self.assertEqual(nd.script(), ScriptTools.compile(ScriptTools.disassemble(nd.script())))  # convert between asm and back to ensure no bugs with compilation
 
     def test_sign_bitcoind_partially_signed_2_of_2(self):
         # Finish signing a 2 of 2 transaction, that already has one signature signed by bitcoind
@@ -213,7 +213,7 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertEqual(tx.id(), "9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2")
 
     def test_issue_225(self):
-        script = VM.compile("OP_RETURN 'foobar'")
+        script = ScriptTools.compile("OP_RETURN 'foobar'")
         tx_out = TxOut(1, script)
         address = tx_out.bitcoin_address(netcode="XTN")
         self.assertEqual(address, "(nulldata 666f6f626172)")

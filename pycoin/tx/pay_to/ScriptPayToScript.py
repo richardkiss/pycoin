@@ -1,4 +1,4 @@
-from ..script.VM import VM
+from ..script.VM import ScriptTools
 
 from ... import encoding
 
@@ -8,7 +8,7 @@ from .ScriptType import ScriptType
 
 
 class ScriptPayToScript(ScriptType):
-    TEMPLATE = VM.compile("OP_HASH160 OP_PUBKEYHASH OP_EQUAL")
+    TEMPLATE = ScriptTools.compile("OP_HASH160 OP_PUBKEYHASH OP_EQUAL")
 
     def __init__(self, hash160):
         self.hash160 = hash160
@@ -39,15 +39,15 @@ class ScriptPayToScript(ScriptType):
         script_obj = script_obj_from_script(underlying_script)
         underlying_solution = script_obj.solve(**kwargs)
         if isinstance(underlying_solution, bytes):
-            return underlying_solution + VM.bin_script([underlying_script])
-        return underlying_solution[0] + VM.bin_script([underlying_script]), underlying_solution[1]
+            return underlying_solution + ScriptTools.compile_push_data_list([underlying_script])
+        return underlying_solution[0] + ScriptTools.compile_push_data_list([underlying_script]), underlying_solution[1]
 
     def script(self):
         if self._script is None:
             # create the script
             STANDARD_SCRIPT_OUT = "OP_HASH160 %s OP_EQUAL"
             script_text = STANDARD_SCRIPT_OUT % b2h(self.hash160)
-            self._script = VM.compile(script_text)
+            self._script = ScriptTools.compile(script_text)
         return self._script
 
     def address(self, netcode=None):

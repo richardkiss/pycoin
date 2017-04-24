@@ -46,7 +46,7 @@ from .exceptions import SolvingError
 from .pay_to import script_obj_from_script, ScriptPayToScript
 from .script import opcodes
 from .script.SolutionChecker import SolutionChecker, TxContext
-from .script.VM import VM
+from .script.VM import ScriptTools
 
 
 MAX_MONEY = 21000000 * SATOSHI_PER_COIN
@@ -84,7 +84,7 @@ class Tx(object):
         tx_in = cls.TxIn.coinbase_tx_in(script=coinbase_bytes)
         COINBASE_SCRIPT_OUT = "%s OP_CHECKSIG"
         script_text = COINBASE_SCRIPT_OUT % b2h(public_key_sec)
-        script_bin = VM.compile(script_text)
+        script_bin = ScriptTools.compile(script_text)
         tx_out = cls.TxOut(coin_value, script_bin)
         return cls(version, [tx_in], [tx_out], lock_time)
 
@@ -250,7 +250,7 @@ class Tx(object):
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.
-        tx_out_script = VM.delete_subscript(tx_out_script, int_to_bytes(opcodes.OP_CODESEPARATOR))
+        tx_out_script = SolutionChecker.VM.delete_subscript(tx_out_script, int_to_bytes(opcodes.OP_CODESEPARATOR))
 
         # blank out other inputs' signatures
         txs_in = [self._tx_in_for_idx(i, tx_in, tx_out_script, unsigned_txs_out_idx)
@@ -332,7 +332,7 @@ class Tx(object):
         f = io.BytesIO()
         for tx_out in txs_out:
             stream_struct("Q", f, tx_out.coin_value)
-            self.SolutionChecker.VM.write_push_data([tx_out.script], f)
+            ScriptTools.write_push_data([tx_out.script], f)
         return double_sha256(f.getvalue())
 
     def segwit_signature_preimage(self, script, tx_in_idx, hash_type):

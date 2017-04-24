@@ -30,7 +30,7 @@ from ..convention import satoshi_to_mbtc
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .pay_to import script_obj_from_script
-from .script.VM import VM
+from .script.VM import ScriptTools
 
 
 class TxOut(object):
@@ -57,7 +57,7 @@ class TxOut(object):
         return '%s<%s mbtc "%s">' % (
             self.__class__.__name__,
             satoshi_to_mbtc(self.coin_value),
-            VM.disassemble(self.script)
+            ScriptTools.disassemble(self.script)
         )
 
     def address(self, netcode=None):

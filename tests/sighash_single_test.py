@@ -30,7 +30,7 @@ from pycoin.tx.script.der import (
     sigdecode_der,
     sigencode_der,
 )
-from pycoin.tx.script.VM import VM
+from pycoin.tx.script.VM import ScriptTools as VM
 
 PRIV_KEYS = (
       2330949616242593315303241053456316633827293588958882755297900732239663851861,

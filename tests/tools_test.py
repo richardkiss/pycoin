@@ -7,11 +7,11 @@ from pycoin.intbytes import int_to_bytes, bytes_from_ints
 from pycoin.tx.script.opcodes import OPCODE_LIST
 from pycoin.tx.script.SolutionChecker import TxContext
 from pycoin.tx.script.IntStreamer import IntStreamer
-from pycoin.tx.script.VM import VM
+from pycoin.tx.script.VM import ScriptTools, VM
 
-bin_script = VM.bin_script
-compile = VM.compile
-disassemble = VM.disassemble
+bin_script = ScriptTools.compile_push_data_list
+compile = ScriptTools.compile
+disassemble = ScriptTools.disassemble
 
 class myVM(VM):
     MAX_SCRIPT_LENGTH = int(1e9)

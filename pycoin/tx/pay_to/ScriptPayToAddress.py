@@ -1,4 +1,4 @@
-from ..script.VM import VM
+from ..script.VM import ScriptTools
 from ... import encoding
 
 from ...serialize import b2h
@@ -9,7 +9,7 @@ from .ScriptType import ScriptType
 
 
 class ScriptPayToAddress(ScriptType):
-    TEMPLATE = VM.compile("OP_DUP OP_HASH160 OP_PUBKEYHASH OP_EQUALVERIFY OP_CHECKSIG")
+    TEMPLATE = ScriptTools.compile("OP_DUP OP_HASH160 OP_PUBKEYHASH OP_EQUALVERIFY OP_CHECKSIG")
 
     def __init__(self, hash160):
         self.hash160 = hash160
@@ -30,7 +30,7 @@ class ScriptPayToAddress(ScriptType):
             # create the script
             STANDARD_SCRIPT_OUT = "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG"
             script_text = STANDARD_SCRIPT_OUT % b2h(self.hash160)
-            self._script = VM.compile(script_text)
+            self._script = ScriptTools.compile(script_text)
         return self._script
 
     def solve(self, **kwargs):
@@ -61,7 +61,7 @@ class ScriptPayToAddress(ScriptType):
             secret_exponent, signature_for_hash_type_f, signature_type, script_to_hash)
         binary_public_pair_sec = encoding.public_pair_to_sec(public_pair, compressed=compressed)
 
-        solution = VM.bin_script([binary_signature, binary_public_pair_sec])
+        solution = ScriptTools.compile_push_data_list([binary_signature, binary_public_pair_sec])
         return solution
 
     def info(self, netcode=None):

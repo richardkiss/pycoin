@@ -40,7 +40,7 @@ from pycoin.intbytes import bytes_from_int, byte_to_int
 from pycoin.serialize import h2b_rev, h2b
 from pycoin.tx import Tx, TxIn, ValidationFailureError
 from pycoin.tx.Spendable import Spendable
-from pycoin.tx.script.VM import VM
+from pycoin.tx.script.VM import ScriptTools
 
 
 DEBUG_TX_ID_LIST = []
@@ -97,7 +97,7 @@ def txs_from_json(path):
                 if len(prevout) == 4:
                     coin_value = prevout[3]
                 spendable = Spendable(coin_value=coin_value,
-                                      script=VM.compile(prevout[2]),
+                                      script=ScriptTools.compile(prevout[2]),
                                       tx_hash=h2b_rev(prevout[0]), tx_out_index=prevout[1])
                 spendable_db[(spendable.tx_hash, spendable.tx_out_index)] = spendable
             unspents = [spendable_db.get((tx_in.previous_hash, tx_in.previous_index), blank_spendable) for tx_in in tx.txs_in]

@@ -14,8 +14,6 @@ class ScriptTools(object):
 
         self.opcode_to_int = dict(o for o in opcode_list)
         self.int_to_opcode = dict(reversed(o) for o in opcode_list)
-        # for k, v in self.OPCODE_LIST:
-        #    setattr(self, k, v)
 
     def compile_expression(self, t):
         if (t[0], t[-1]) == ('[', ']'):
@@ -49,7 +47,7 @@ class ScriptTools(object):
                 f.write(d)
             else:
                 v = self.compile_expression(t)
-                self.dataCodec.write_push_data([v], f)
+                self.write_push_data([v], f)
         return f.getvalue()
 
     def disassemble_for_opcode_data(self, opcode, data):
@@ -76,16 +74,10 @@ class ScriptTools(object):
         """Disassemble the given script. Returns a string."""
         return ' '.join(self.opcode_list(script))
 
-    def delete_subscript(self, script, subscript):
-        """
-        Returns a script with the given subscript removed. The subscript
-        must appear in the main script aligned to opcode boundaries for it
-        to be removed.
-        """
-        new_script = bytearray()
-        pc = 0
-        for opcode, data, pc, new_pc in self.get_opcodes(script):
-            section = script[pc:new_pc]
-            if section != subscript:
-                new_script.extend(section)
-        return bytes(new_script)
+    def write_push_data(self, data_list, f):
+        # return bytes that causes the given data to be pushed onto the stack
+        for t in data_list:
+            f.write(self.dataCodec.compile_push_data(t))
+
+    def compile_push_data_list(self, data_list):
+        return b''.join(self.dataCodec.compile_push_data(d) for d in data_list)

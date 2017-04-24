@@ -1,7 +1,7 @@
 from ..script import opcodes
 from ..script.checksigops import parse_signature_blob
 from ..script.der import UnexpectedDER
-from ..script.VM import VM
+from ..script.VM import ScriptTools, VM
 
 from ... import ecdsa
 from ... import encoding
@@ -61,7 +61,7 @@ class ScriptMultisig(ScriptType):
 
             public_keys = [b2h(sk) for sk in self.sec_keys]
             script_source = "%d %s %d OP_CHECKMULTISIG" % (self.m, " ".join(public_keys), len(public_keys))
-            self._script = VM.compile(script_source)
+            self._script = ScriptTools.compile(script_source)
         return self._script
 
     def _find_signatures(self, script, signature_for_hash_type_f, script_to_hash):
@@ -145,7 +145,7 @@ class ScriptMultisig(ScriptType):
                 existing_signatures.append((-1, signature_placeholder))
 
         script = "OP_0 %s" % " ".join(b2h(s[1]) for s in existing_signatures)
-        solution = VM.compile(script)
+        solution = ScriptTools.compile(script)
         return solution
 
     def hash160s(self):

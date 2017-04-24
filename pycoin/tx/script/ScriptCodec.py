@@ -163,11 +163,3 @@ class ScriptCodec(object):
             if size <= max_size:
                 break
         return bytes_from_int(opcode) + enc_f(len(data)) + data
-
-    def write_push_data(self, data_list, f):
-        # return bytes that causes the given data to be pushed onto the stack
-        for t in data_list:
-            f.write(self.compile_push_data(t))
-
-    def compile_push_data_list(self, data_list):
-        return b''.join(self.compile_push_data(d) for d in data_list)

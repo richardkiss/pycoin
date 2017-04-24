@@ -6,7 +6,7 @@ from .flags import (
     VERIFY_WITNESS, VERIFY_MINIMALIF, VERIFY_WITNESS_PUBKEYTYPE
 )
 
-from .VM import VM
+from .VM import VM, ScriptTools
 
 from ...intbytes import byte_to_int
 
@@ -28,8 +28,8 @@ class VMContext(object):
 class SolutionChecker(object):
     VM = VM
 
-    v0_len20_prefix = VM.compile("OP_DUP OP_HASH160")
-    v0_len20_postfix = VM.compile("OP_EQUALVERIFY OP_CHECKSIG")
+    v0_len20_prefix = ScriptTools.compile("OP_DUP OP_HASH160")
+    v0_len20_postfix = ScriptTools.compile("OP_EQUALVERIFY OP_CHECKSIG")
 
     def __init__(self):
         pass

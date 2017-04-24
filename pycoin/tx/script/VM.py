@@ -48,47 +48,12 @@ class VM(object):
         return class_.VM_TRUE if v else class_.VM_FALSE
 
     @classmethod
-    def compile_expression(class_, t):
-        return class_.ScriptTools.compile_expression(t)
-
-    @classmethod
-    def compile(class_, s):
-        return class_.ScriptTools.compile(s)
-
-    @classmethod
-    def disassemble_for_opcode_data(class_, opcode, data):
-        return class_.ScriptTools.disassemble_for_opcode_data(opcode, data)
-
-    @classmethod
-    def opcode_list(class_, script):
-        return class_.ScriptTools.opcode_list(script)
-
-    @classmethod
-    def disassemble(class_, script):
-        return class_.ScriptTools.disassemble(script)
-
-    @classmethod
     def get_opcodes(class_, script, verify_minimal_data=False, pc=0):
         pc = 0
         while pc < len(script):
             opcode, data, new_pc = class_.ScriptCodec.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
             yield opcode, data, pc, new_pc
             pc = new_pc
-
-    @classmethod
-    def delete_subscript(class_, script, subscript):
-        """
-        Returns a script with the given subscript removed. The subscript
-        must appear in the main script aligned to opcode boundaries for it
-        to be removed.
-        """
-        new_script = bytearray()
-        pc = 0
-        for opcode, data, pc, new_pc in class_.get_opcodes(script):
-            section = script[pc:new_pc]
-            if section != subscript:
-                new_script.extend(section)
-        return bytes(new_script)
 
     def eval_script(self, script, tx_context, vm_context, initial_stack=None):
         if len(script) > self.MAX_SCRIPT_LENGTH:
@@ -150,8 +115,19 @@ class VM(object):
         self.check_stack_size()
 
     @classmethod
-    def write_push_data(self, data_list, f):
-        self.ScriptCodec.write_push_data(data_list, f)
+    def delete_subscript(class_, script, subscript):
+        """
+        Returns a script with the given subscript removed. The subscript
+        must appear in the main script aligned to opcode boundaries for it
+        to be removed.
+        """
+        new_script = bytearray()
+        pc = 0
+        for opcode, data, pc, new_pc in class_.get_opcodes(script):
+            section = script[pc:new_pc]
+            if section != subscript:
+                new_script.extend(section)
+        return bytes(new_script)
 
 
 # BRAIN DAMAGE BELOW HERE
@@ -188,8 +164,9 @@ build_microcode(VM)
 
 VM.ScriptCodec = ScriptCodec(
     OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
-VM.bin_script = VM.ScriptCodec.compile_push_data_list
 
 from .ScriptTools import ScriptTools
 
-VM.ScriptTools = ScriptTools(opcodes.OPCODE_LIST, IntStreamer, VM.ScriptCodec)
+ScriptTools = ScriptTools(opcodes.OPCODE_LIST, IntStreamer, VM.ScriptCodec)
+
+VM.bin_script = ScriptTools.compile_push_data_list

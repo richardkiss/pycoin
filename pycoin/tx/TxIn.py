@@ -29,7 +29,7 @@ from .. import encoding
 
 from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
-from .script.VM import VM
+from .script.VM import ScriptTools, VM
 
 
 ZERO = b'\0' * 32
@@ -118,4 +118,4 @@ class TxIn(object):
         if self.is_coinbase():
             return 'TxIn<COINBASE: %s>' % b2h(self.script)
         return 'TxIn<%s[%d] "%s">' % (
-            b2h_rev(self.previous_hash), self.previous_index, self.VM.disassemble(self.script))
+            b2h_rev(self.previous_hash), self.previous_index, ScriptTools.disassemble(self.script))
