@@ -158,8 +158,6 @@ class VM(object):
 
 def build_microcode(class_):
     class_.INSTRUCTION_LOOKUP = make_instruction_lookup(class_.OPCODE_LIST)
-    for k, v in class_.OPCODE_LIST:
-        setattr(class_, k, v)
 
 
 def make_variable_decoder(dec_length):
@@ -174,7 +172,6 @@ def make_variable_decoder(dec_length):
     return decode_OP_PUSHDATA
 
 
-build_microcode(VM)
 OPCODE_CONST_LIST = [("OP_%d" % i, IntStreamer.int_to_script_bytes(i)) for i in range(17)] + [
     ("OP_1NEGATE", IntStreamer.int_to_script_bytes(-1))]
 OPCODE_SIZED_LIST = [("OP_PUSH_%d" % i, i) for i in range(76)]
@@ -186,6 +183,9 @@ OPCODE_VARIABLE_LIST = [
 
 OPCODE_LOOKUP = dict(o for o in opcodes.OPCODE_LIST)
 OPCODE_LOOKUP.update({"OP_PUSH_%d" % i: i for i in range(76)})
+
+build_microcode(VM)
+
 VM.ScriptCodec = ScriptCodec(
     OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
 VM.bin_script = VM.ScriptCodec.compile_push_data_list

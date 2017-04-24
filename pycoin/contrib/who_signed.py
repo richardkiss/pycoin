@@ -43,7 +43,7 @@ def who_signed_tx(tx, tx_in_idx, netcode='BTC'):
     script = tx_in.script
     pc = 0
     while pc < len(script):
-        opcode, data, pc = VM.DataCodec.get_opcode(script, pc)
+        opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
         if data is None:
             continue
         try:
