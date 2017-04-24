@@ -10,7 +10,7 @@ from . import ScriptError
 
 from .IntStreamer import IntStreamer
 from .ScriptCodec import ScriptCodec
-from .BaseScriptTools import ScriptTools
+from .ScriptTools import ScriptTools
 from .BaseSolutionChecker import SolutionChecker
 from .BaseVM import VM
 
