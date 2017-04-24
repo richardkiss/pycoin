@@ -9,7 +9,7 @@ from . import errno
 from . import opcodes
 from .instruction_lookup import make_instruction_lookup
 from .ConditionalStack import ConditionalStack
-from .DataCodec import DataCodec
+from .ScriptCodec import ScriptCodec
 from .IntStreamer import IntStreamer
 from .Stack import Stack
 
@@ -71,7 +71,7 @@ class VM(object):
     def get_opcodes(class_, script, verify_minimal_data=False, pc=0):
         pc = 0
         while pc < len(script):
-            opcode, data, new_pc = class_.DataCodec.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
+            opcode, data, new_pc = class_.ScriptCodec.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
             yield opcode, data, pc, new_pc
             pc = new_pc
 
@@ -117,7 +117,7 @@ class VM(object):
 
         # don't actually check for minimal data unless data will be pushed onto the stack
         verify_minimal_data = self.flags & VERIFY_MINIMALDATA and all_if_true
-        opcode, data, pc = self.DataCodec.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)
+        opcode, data, pc = self.ScriptCodec.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)
         if data and len(data) > self.MAX_BLOB_LENGTH:
             raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
         # BRAIN DAMAGE TODO: fix this
@@ -151,7 +151,7 @@ class VM(object):
 
     @classmethod
     def write_push_data(self, data_list, f):
-        self.DataCodec.write_push_data(data_list, f)
+        self.ScriptCodec.write_push_data(data_list, f)
 
 
 # BRAIN DAMAGE BELOW HERE
@@ -186,10 +186,10 @@ OPCODE_VARIABLE_LIST = [
 
 OPCODE_LOOKUP = dict(o for o in opcodes.OPCODE_LIST)
 OPCODE_LOOKUP.update({"OP_PUSH_%d" % i: i for i in range(76)})
-VM.DataCodec = DataCodec(
+VM.ScriptCodec = ScriptCodec(
     OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
-VM.bin_script = VM.DataCodec.compile_push_data_list
+VM.bin_script = VM.ScriptCodec.compile_push_data_list
 
 from .ScriptTools import ScriptTools
 
-VM.ScriptTools = ScriptTools(opcodes.OPCODE_LIST, IntStreamer, VM.DataCodec)
+VM.ScriptTools = ScriptTools(opcodes.OPCODE_LIST, IntStreamer, VM.ScriptCodec)

@@ -63,7 +63,7 @@ def make_sized_encoder(opcode_value):
     return f
 
 
-class DataCodec(object):
+class ScriptCodec(object):
     """
     This class manages encoding and decoding instructions and data from a script.
 

@@ -41,7 +41,7 @@ class SolutionChecker(object):
 
     @staticmethod
     def get_opcode(script, pc):
-        return VM.DataCodec.get_opcode(script, pc)
+        return VM.ScriptCodec.get_opcode(script, pc)
 
     def check_witness_program_v0(self, witness_solution_stack, witness_program, tx_context, flags):
         l = len(witness_program)
@@ -135,7 +135,7 @@ class SolutionChecker(object):
         is_p2h = self.is_pay_to_script_hash(puzzle_script)
 
         if flags & VERIFY_SIGPUSHONLY:
-            self.VM.DataCodec.check_script_push_only(solution_script)
+            self.VM.ScriptCodec.check_script_push_only(solution_script)
 
         vm_context = VMContext()
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
@@ -160,7 +160,7 @@ class SolutionChecker(object):
             had_witness = self.check_witness(tx_context, flags, traceback_f)
 
         if is_p2h and VM.bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
-            self.VM.DataCodec.check_script_push_only(solution_script)
+            self.VM.ScriptCodec.check_script_push_only(solution_script)
             vm_context.is_psh_script = True
             p2sh_flags = flags & ~VERIFY_P2SH
             p2sh_tx_context = TxContext()
