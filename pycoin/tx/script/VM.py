@@ -85,8 +85,8 @@ class VM(object):
         opcode, data, pc = self.ScriptCodec.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)
         if data and len(data) > self.MAX_BLOB_LENGTH:
             raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
-        # BRAIN DAMAGE TODO: fix this
-        if opcode > opcodes.OP_16:
+
+        if data is None:
             self.op_count += 1
 
         self.check_stack_size()
@@ -98,7 +98,7 @@ class VM(object):
         if data is not None and all_if_true:
             self.stack.append(data)
 
-        if getattr(f, "outside_conditional", False) or all_if_true:
+        if all_if_true or getattr(f, "outside_conditional", False):
             f(self)
 
         self.pc = pc
