@@ -186,7 +186,7 @@ def extra_opcodes():
     return d
 
 
-def collect_opcodes():
+def all_opcodes():
     d = extra_opcodes()
     the_globals = globals()
     for k, v in the_globals.items():
