@@ -51,6 +51,15 @@ def do_OP_TOALTSTACK(vm):
     vm.altstack.append(vm.stack.pop())
 
 
+def do_OP_RESERVED(vm):
+    if vm.conditional_stack.all_if_true():
+        raise ScriptError("OP_RESERVED encountered", errno.BAD_OPCODE)
+    vm.op_count -= 1
+
+
+do_OP_RESERVED.outside_conditional = True
+
+
 def do_OP_FROMALTSTACK(vm):
     if len(vm.altstack) < 1:
         raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)

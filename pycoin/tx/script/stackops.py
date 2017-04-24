@@ -41,10 +41,6 @@ for i in range(1, 11):
     exec("def do_OP_NOP%d(s): pass" % i)
 
 
-def do_OP_RESERVED(stack):
-    raise ScriptError("OP_RESERVED encountered", errno.BAD_OPCODE)
-
-
 def do_OP_VER(stack):
     raise ScriptError("OP_VER encountered", errno.BAD_OPCODE)
 

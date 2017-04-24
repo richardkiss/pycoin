@@ -56,7 +56,7 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
         opcode, data, pc, vm = args
         stack = vm.stack
         altstack = vm.altstack
-        opd = vm.disassemble_for_opcode_data(opcode, data)
+        opd = ScriptTools.disassemble_for_opcode_data(opcode, data)
         if len(altstack) == 0:
             altstack = ''
         print("%s %s\n  %3x  %s" % (stack, altstack, pc, opd))
