@@ -31,9 +31,6 @@ class SolutionChecker(object):
     v0_len20_prefix = ScriptTools.compile("OP_DUP OP_HASH160")
     v0_len20_postfix = ScriptTools.compile("OP_EQUALVERIFY OP_CHECKSIG")
 
-    def __init__(self):
-        pass
-
     @staticmethod
     def is_pay_to_script_hash(script_public_key):
         return (len(script_public_key) == 23 and byte_to_int(script_public_key[0]) == opcodes.OP_HASH160 and
@@ -43,7 +40,8 @@ class SolutionChecker(object):
     def get_opcode(script, pc):
         return VM.ScriptCodec.get_opcode(script, pc)
 
-    def check_witness_program_v0(self, witness_solution_stack, witness_program, tx_context, flags):
+    @classmethod
+    def check_witness_program_v0(class_, witness_solution_stack, witness_program, tx_context, flags):
         l = len(witness_program)
         if l == 32:
             if len(witness_solution_stack) == 0:
@@ -56,16 +54,22 @@ class SolutionChecker(object):
             # special case for pay-to-pubkeyhash; signature + pubkey in witness
             if len(witness_solution_stack) != 2:
                 raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-            puzzle_script = self.v0_len20_prefix + VM.bin_script([witness_program]) + self.v0_len20_postfix
+            puzzle_script = class_._puzzle_script_for_len20_segwit(witness_program)
             stack = Stack(witness_solution_stack)
         else:
             raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
         return stack, puzzle_script
 
+    @classmethod
+    def _puzzle_script_for_len20_segwit(class_, witness_program):
+        return class_.v0_len20_prefix + ScriptTools.dataCodec.compile_push_data(
+            witness_program) + class_.v0_len20_postfix
+
+    @classmethod
     def check_witness_program(
-            self, version, witness_program, tx_context, flags, traceback_f):
+            class_, version, witness_program, tx_context, flags, traceback_f):
         if version == 0:
-            stack, puzzle_script = self.check_witness_program_v0(
+            stack, puzzle_script = class_.check_witness_program_v0(
                 tx_context.witness_solution_stack, witness_program, flags, tx_context)
         elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
             raise ScriptError(
@@ -105,8 +109,9 @@ class SolutionChecker(object):
             return first_opcode - opcodes.OP_1 + 1
         return None
 
-    def check_witness(self, tx_context, flags, traceback_f):
-        witness_version = self.witness_program_version(tx_context.puzzle_script)
+    @classmethod
+    def check_witness(class_, tx_context, flags, traceback_f):
+        witness_version = class_.witness_program_version(tx_context.puzzle_script)
         had_witness = False
         if witness_version is not None:
             had_witness = True
@@ -114,11 +119,12 @@ class SolutionChecker(object):
             if len(tx_context.solution_script) > 0:
                 err = errno.WITNESS_MALLEATED if flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
                 raise ScriptError("script sig is not blank on segwit input", err)
-            self.check_witness_program(
+            class_.check_witness_program(
                 witness_version, witness_program, tx_context, flags, traceback_f)
         return had_witness
 
-    def _check_solution(self, tx_context, flags, traceback_f=None):
+    @classmethod
+    def check_solution(class_, tx_context, flags, traceback_f=None):
         """
         solution_script: alleged solution to the puzzle_script
         puzzle_script: the script protecting the coins
@@ -132,10 +138,10 @@ class SolutionChecker(object):
 
         had_witness = False
 
-        is_p2h = self.is_pay_to_script_hash(puzzle_script)
+        is_p2h = class_.is_pay_to_script_hash(puzzle_script)
 
         if flags & VERIFY_SIGPUSHONLY:
-            self.VM.ScriptCodec.check_script_push_only(solution_script)
+            class_.VM.ScriptCodec.check_script_push_only(solution_script)
 
         vm_context = VMContext()
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
@@ -144,7 +150,7 @@ class SolutionChecker(object):
         vm_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f
         vm_context.traceback_f = traceback_f
 
-        vm = self.VM()
+        vm = class_.VM()
         stack = vm.eval_script(solution_script, tx_context, vm_context)
 
         if is_p2h and (flags & VERIFY_P2SH):
@@ -157,10 +163,10 @@ class SolutionChecker(object):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         if flags & VERIFY_WITNESS:
-            had_witness = self.check_witness(tx_context, flags, traceback_f)
+            had_witness = class_.check_witness(tx_context, flags, traceback_f)
 
         if is_p2h and VM.bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
-            self.VM.ScriptCodec.check_script_push_only(solution_script)
+            class_.VM.ScriptCodec.check_script_push_only(solution_script)
             vm_context.is_psh_script = True
             p2sh_flags = flags & ~VERIFY_P2SH
             p2sh_tx_context = TxContext()
@@ -171,7 +177,7 @@ class SolutionChecker(object):
             p2sh_tx_context.sequence = tx_context.sequence
             p2sh_tx_context.version = tx_context.version
             p2sh_tx_context.lock_time = tx_context.lock_time
-            self._check_solution(p2sh_tx_context, p2sh_flags)
+            class_.check_solution(p2sh_tx_context, p2sh_flags)
             return
 
         if (flags & VERIFY_WITNESS) and not had_witness and len(tx_context.witness_solution_stack) > 0:

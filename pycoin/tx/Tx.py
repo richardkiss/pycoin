@@ -436,8 +436,7 @@ class Tx(object):
 
     def check_solution(self, tx_in_idx, traceback_f=None, flags=None):
         tx_context = self.tx_context_for_idx(tx_in_idx)
-        checker = self.SolutionChecker()
-        checker._check_solution(tx_context, flags, traceback_f=traceback_f)
+        self.SolutionChecker.check_solution(tx_context, flags, traceback_f=traceback_f)
 
     def tx_context_for_idx(self, tx_in_idx):
         tx_in = self.txs_in[tx_in_idx]

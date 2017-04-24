@@ -109,7 +109,7 @@ class TxIn(object):
         tx_context.sequence = self.sequence
         checker = SolutionChecker()
         try:
-            checker._check_solution(tx_context, flags=flags, traceback_f=traceback_f)
+            checker.check_solution(tx_context, flags=flags, traceback_f=traceback_f)
             return True
         except ScriptError:
             return False
