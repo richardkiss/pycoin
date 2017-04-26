@@ -26,7 +26,7 @@ from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
 from pycoin.tx.script.disassemble import disassemble_scripts, sighash_type_to_string
-from pycoin.tx.script.VM import VM
+from pycoin.tx.script.ScriptTools import ScriptTools
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.ui import standard_tx_out_script
 
@@ -63,7 +63,7 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
     missing_unspents = tx.missing_unspents()
 
     def trace_script(old_pc, opcode, data, stack, altstack, conditional_stack, is_signature):
-        print("%3d : %02x  %s" % (old_pc, opcode, VM.disassemble_for_opcode_data(opcode, data)))
+        print("%3d : %02x  %s" % (old_pc, opcode, ScriptTools.disassemble_for_opcode_data(opcode, data)))
         if use_pdb:
             import pdb
             from pycoin.serialize import b2h
@@ -108,7 +108,7 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
 
             if verbose_signature:
                 signatures = []
-                for opcode in VM.opcode_list(tx_in.script):
+                for opcode in ScriptTools.opcode_list(tx_in.script):
                     if not opcode.startswith("OP_"):
                         try:
                             signatures.append(parse_signature_blob(h2b(opcode[1:-1])))
