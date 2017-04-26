@@ -42,6 +42,9 @@ BitcoinScriptCodec = ScriptCodec(
     OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
 
 
+BitcoinScriptTools = ScriptTools(opcodes.OPCODE_LIST, IntStreamer, BitcoinScriptCodec)
+
+
 OPCODE_DATA_LIST = list(BitcoinScriptCodec.data_opcodes)
 
 
@@ -80,9 +83,6 @@ def make_instruction_lookup(opcode_pairs):
     return instruction_lookup
 
 
-BitcoinScriptTools = ScriptTools(opcodes.OPCODE_LIST, IntStreamer, BitcoinScriptCodec)
-
-
 INSTRUCTION_LOOKUP = make_instruction_lookup(opcodes.OPCODE_LIST)
 
 
@@ -92,7 +92,6 @@ class BitcoinVM(VM):
     dataCodec = BitcoinScriptCodec
 
     bin_script = BitcoinScriptTools.compile_push_data_list
-
 
 
 V0_len20_prefix = BitcoinScriptTools.compile("OP_DUP OP_HASH160")
