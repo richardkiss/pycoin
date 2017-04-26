@@ -26,7 +26,7 @@ from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
 from pycoin.tx.script.disassemble import disassemble_scripts, sighash_type_to_string
-from pycoin.tx.script.ScriptTools import ScriptTools
+from pycoin.tx.script.VM import ScriptTools
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.ui import standard_tx_out_script
 
