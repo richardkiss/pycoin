@@ -29,7 +29,7 @@ from .. import encoding
 
 from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
-from .script.VM import ScriptTools
+from ..coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools
 
 
 ZERO = b'\0' * 32
