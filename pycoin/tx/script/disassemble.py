@@ -9,7 +9,7 @@ from pycoin.tx.script.VM import VM
 from pycoin.tx.script.SolutionChecker import SolutionChecker
 
 from pycoin.tx.script.checksigops import parse_signature_blob
-from pycoin.tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
+from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
 
 
 def sighash_type_to_string(sighash_type):

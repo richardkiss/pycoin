@@ -38,7 +38,9 @@ import binascii
 
 from pycoin.intbytes import bytes_from_int, byte_to_int
 from pycoin.serialize import h2b_rev, h2b
-from pycoin.tx import Tx, TxIn, ValidationFailureError
+from pycoin.tx.TxIn import TxIn
+from pycoin.tx.Tx import Tx
+from pycoin.tx.exceptions import ValidationFailureError
 from pycoin.tx.Spendable import Spendable
 from pycoin.tx.script.VM import ScriptTools
 

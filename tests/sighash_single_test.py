@@ -16,12 +16,10 @@ from pycoin.serialize import (
     b2h_rev,
 )
 from pycoin.ui import standard_tx_out_script
-from pycoin.tx import (
+from pycoin.tx.Tx import (
     Tx,
     TxIn,
     TxOut,
-)
-from pycoin.tx.Tx import (
     SIGHASH_ALL,
     SIGHASH_ANYONECANPAY,
     SIGHASH_SINGLE,
