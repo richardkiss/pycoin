@@ -6,8 +6,9 @@ import unittest
 
 from pycoin.block import Block
 from pycoin.serialize import h2b
-from pycoin.tx import Tx, ValidationFailureError
+from pycoin.tx.exceptions import ValidationFailureError
 from pycoin.tx.script import tools
+from pycoin.tx.Tx import Tx
 
 
 class ValidatingTest(unittest.TestCase):

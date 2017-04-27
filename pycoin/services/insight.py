@@ -14,7 +14,7 @@ from pycoin.merkle import merkle
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
 from pycoin.tx.script import tools
-from pycoin.tx import Spendable, Tx, TxIn, TxOut
+from pycoin.tx.Tx import Spendable, Tx, TxIn, TxOut
 
 
 class InsightProvider(object):

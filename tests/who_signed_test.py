@@ -7,7 +7,10 @@ from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.contrib import who_signed
 from pycoin.key import Key
 from pycoin.serialize import h2b
-from pycoin.tx import Tx, TxIn, TxOut, SIGHASH_ALL, tx_utils
+from pycoin.tx import tx_utils
+from pycoin.tx.Tx import Tx, SIGHASH_ALL
+from pycoin.tx.TxIn import TxIn
+from pycoin.tx.TxOut import TxOut
 from pycoin.tx.Spendable import Spendable
 from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata

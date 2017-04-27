@@ -10,7 +10,7 @@ from pycoin.tx.script.opcodes import INT_TO_OPCODE
 from pycoin.tx.script.vm import eval_script, is_pay_to_script_hash
 
 from pycoin.tx.script.check_signature import parse_signature_blob
-from pycoin.tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
+from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
 
 
 def sighash_type_to_string(sighash_type):
