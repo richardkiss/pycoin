@@ -6,6 +6,7 @@ import sys
 import tempfile
 
 from pycoin.serialize import h2b
+from pycoin.tx.Tx import Tx
 
 from .ToolTest import ToolTest
 
@@ -35,7 +36,11 @@ class TxTest(ToolTest):
         gpg_wif = tempfile.NamedTemporaryFile(suffix=".gpg")
         gpg_wif.write(WIF_1_GPG)
         gpg_wif.flush()
-        self.launch_tool(args=["tx.py", "5564224b6c01dbc2bfad89bfd8038bc2f4ca6c55eb660511d7151d71e4b94b6d/0/210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac/5000000000", "1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T", "-f", gpg_wif.name, "-g", "--batch --passphrase=foo"])
+        output_file = tempfile.NamedTemporaryFile(suffix=".hex")
+        self.launch_tool(args=["tx.py", "5564224b6c01dbc2bfad89bfd8038bc2f4ca6c55eb660511d7151d71e4b94b6d/0/210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac/5000000000", "1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T", "-f", gpg_wif.name, "-g", "--batch --passphrase=foo", "-o", output_file.name])
+        d = open(output_file.name).read()
+        tx = Tx.from_hex(d)
+        self.assertEqual(tx.id(), "c52b0c66cff6147b99acb29389343f6eae68c29faf2186fa8c1613d615b217e8")
 
 
 def main():
