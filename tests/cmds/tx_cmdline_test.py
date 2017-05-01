@@ -4,7 +4,9 @@ import unittest
 import os
 import subprocess
 import sys
-import tempfile
+
+from .ToolTest import ToolTest
+
 
 TEST_CASES = [
     (
@@ -174,21 +176,10 @@ all incoming transaction values validated
 ]
 
 
-class CmdTxTest(unittest.TestCase):
-    def get_tempdir(self):
-        return tempfile.mkdtemp()
-
-    def launch_tool(self, tool_args, env={}):
-        # set
-        python_path = sys.executable
-        script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "pycoin", "cmds"))
-        args = tool_args.split()
-        script_path = os.path.join(script_dir, args[0])
-        output = subprocess.check_output([python_path, script_path] + args[1:], env=env)
-        return output.decode("utf8")
+class TxCmdlineTest(ToolTest):
 
     def test_cases(self):
-        cache_dir = tempfile.mkdtemp()
+        cache_dir = self.get_tempdir()
         os.chdir(cache_dir)
         env = dict(PYCOIN_CACHE_DIR=cache_dir)
         for cmd, expected_output in TEST_CASES:
