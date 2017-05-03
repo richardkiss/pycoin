@@ -49,7 +49,7 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
 def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
     address_prefix = address_prefix_for_netcode(netcode)
     tx_bin = stream_to_bytes(tx.stream)
-    print("Version: %2d  tx hash %s  %d bytes   " % (tx.version, tx.id(), len(tx_bin)))
+    print("Version: %2d  tx hash %s  %d bytes" % (tx.version, tx.id(), len(tx_bin)))
     print("TxIn count: %d; TxOut count: %d" % (len(tx.txs_in), len(tx.txs_out)))
     if tx.lock_time == 0:
         meaning = "valid anytime"

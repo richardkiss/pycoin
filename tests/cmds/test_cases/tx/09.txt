@@ -1,0 +1,3 @@
+tx.py tx.bin KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn -o signed_tx.hex
+all incoming transaction values validated
+

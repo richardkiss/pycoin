@@ -1,0 +1,3 @@
+tx.py d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a/1/76a91491b24bf9f5288532960ac687abb035127b1d28a588ac/12345678 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T -o tx.bin
+all incoming transaction values validated
+

@@ -1,0 +1,15 @@
+tx.py tx.bin
+Version:  1  tx hash ab963a39df0e095bbd76840de90fe208e903d5d43e891ef245b217dbcd29a8a7  85 bytes
+TxIn count: 1; TxOut count: 1
+Lock time: 0 (valid anytime)
+Input:
+   0: 1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm from d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a:1       123.45678 mBTC  BAD SIG
+Output:
+   0: 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T receives    123.35678 mBTC
+Total input     123.45678 mBTC
+Total output    123.35678 mBTC
+Total fees        0.10000 mBTC
+including unspents in hex dump since transaction not fully signed
+01000000012a6ca22af83bc447f74b1f475c9bd2e99ccef7347144572a9de5bcf5a5a21ad60100000000ffffffff013e3abc00000000001976a914cd5dc792f0abb0aa8ba4ca36c9fe5eda8e495ff988ac000000004e61bc00000000001976a91491b24bf9f5288532960ac687abb035127b1d28a588ac
+all incoming transaction values validated
+

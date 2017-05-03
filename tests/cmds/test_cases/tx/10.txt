@@ -1,0 +1,14 @@
+tx.py -a signed_tx.hex
+Version:  1  tx hash 0995cf6f55e1cf22f7c31f5ad52d111e897b0b9b7e37a1bb755a470324b4a2c4  224 bytes
+TxIn count: 1; TxOut count: 1
+Lock time: 0 (valid anytime)
+Input:
+   0: 1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm from d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a:1       123.45678 mBTC  sig ok
+Output:
+   0: 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T receives    123.35678 mBTC
+Total input     123.45678 mBTC
+Total output    123.35678 mBTC
+Total fees        0.10000 mBTC
+01000000012a6ca22af83bc447f74b1f475c9bd2e99ccef7347144572a9de5bcf5a5a21ad6010000008b48304502210084fd73b302520381dea1885efda58bc446653998864db7a2cd04906fc6d5536302206325303c8e50f84d25c95eff2849441382d4aafb2f678f636a6d164b721bf0f101410479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8ffffffff013e3abc00000000001976a914cd5dc792f0abb0aa8ba4ca36c9fe5eda8e495ff988ac00000000
+all incoming transaction values validated
+
