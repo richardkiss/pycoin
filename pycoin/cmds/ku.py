@@ -180,7 +180,7 @@ def dump_output(output_dict, output_order):
             print("%s%s: %s" % (hr_key, space_padding, val))
 
 
-def main():
+def create_parser():
     codes = network_codes()
     parser = argparse.ArgumentParser(
         description='Crypto coin utility ku ("key utility") to show'
@@ -218,14 +218,18 @@ def main():
         ' secret_exponent (in decimal or hex);'
         ' x,y where x,y form a public pair (y is a number or one of the strings "even" or "odd");'
         ' hash160 (as 40 hex characters)')
+    return parser
 
+
+def main():
+    parser = create_parser()
     args = parser.parse_args()
 
     if args.override_network:
         # force network arg to match override, but also will override decoded data below.
         args.network = args.override_network
 
-    def _create(_):
+    def _create_bip32(_):
         max_retries = 64
         for _ in range(max_retries):
             try:
@@ -239,7 +243,7 @@ def main():
         ("P:", lambda s: BIP32Node.from_master_secret(s.encode("utf8"), netcode=args.network)),
         ("H:", lambda s: BIP32Node.from_master_secret(h2b(s), netcode=args.network)),
         ("E:", lambda s: key_from_text(s)),
-        ("create", _create),
+        ("create", _create_bip32),
     )
 
     for item in args.item:

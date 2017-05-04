@@ -287,67 +287,90 @@ def create_parser():
     return parser
 
 
-def parse_context(args, parser):
-    # defaults
+def parse_private_key_file(args, key_list):
+    wif_re = re.compile(r"[1-9a-km-zA-LMNP-Z]{51,111}")
+    # address_re = re.compile(r"[1-9a-kmnp-zA-KMNP-Z]{27-31}")
+    for f in args.private_key_file:
+        if f.name.endswith(".gpg"):
+            gpg_args = ["gpg", "-d"]
+            if args.gpg_argument:
+                gpg_args.extend(args.gpg_argument.split())
+            gpg_args.append(f.name)
+            popen = subprocess.Popen(gpg_args, stdout=subprocess.PIPE)
+            f = popen.stdout
+        for line in f.readlines():
+            # decode
+            if isinstance(line, bytes):
+                line = line.decode("utf8")
+            # look for WIFs
+            possible_keys = wif_re.findall(line)
 
-    txs = []
-    spendables = []
-    payables = []
+            def make_key(x):
+                try:
+                    return Key.from_text(x)
+                except Exception:
+                    return None
 
-    key_iters = []
+            keys = [make_key(x) for x in possible_keys]
+            for key in keys:
+                if key:
+                    key_list.append((k.wif() for k in key.subkeys("")))
 
-    TX_ID_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+            # if len(keys) == 1 and key.hierarchical_wallet() is None:
+            #    # we have exactly 1 WIF. Let's look for an address
+            #   potential_addresses = address_re.findall(line)
 
-    # there are a few warnings we might optionally print out, but only if
-    # they are relevant. We don't want to print them out multiple times, so we
-    # collect them here and print them at the end if they ever kick in.
 
-    warning_tx_cache = None
-    warning_tx_for_tx_hash = None
-    warning_spendables = None
+TX_ID_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
-    if args.private_key_file:
-        wif_re = re.compile(r"[1-9a-km-zA-LMNP-Z]{51,111}")
-        # address_re = re.compile(r"[1-9a-kmnp-zA-KMNP-Z]{27-31}")
-        for f in args.private_key_file:
-            if f.name.endswith(".gpg"):
-                gpg_args = ["gpg", "-d"]
-                if args.gpg_argument:
-                    gpg_args.extend(args.gpg_argument.split())
-                gpg_args.append(f.name)
-                popen = subprocess.Popen(gpg_args, stdout=subprocess.PIPE)
-                f = popen.stdout
-            for line in f.readlines():
-                # decode
-                if isinstance(line, bytes):
-                    line = line.decode("utf8")
-                # look for WIFs
-                possible_keys = wif_re.findall(line)
 
-                def make_key(x):
-                    try:
-                        return Key.from_text(x)
-                    except Exception:
-                        return None
+def parse_tx(arg, parser, tx_db, network):
+    # hex transaction id
+    if TX_ID_RE.match(arg):
+        if tx_db is None:
+            tx_db = get_tx_db(network)
+            tx_db.warning_tx_cache = message_about_tx_cache_env()
+            tx_db.warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(network)
+            tx_db.warning_spendables = None
+        tx = tx_db.get(h2b_rev(arg))
+        if not tx:
+            for m in [tx_db.warning_tx_cache, tx_db.warning_tx_for_tx_hash, tx_db.warning_spendables]:
+                if m:
+                    print("warning: %s" % m, file=sys.stderr)
+            parser.error("can't find Tx with id %s" % arg)
+        return tx
 
-                keys = [make_key(x) for x in possible_keys]
-                for key in keys:
-                    if key:
-                        key_iters.append((k.wif() for k in key.subkeys("")))
+    # hex transaction data
+    try:
+        return Tx.from_hex(arg)
+    except Exception:
+        pass
 
-                # if len(keys) == 1 and key.hierarchical_wallet() is None:
-                #    # we have exactly 1 WIF. Let's look for an address
-                #   potential_addresses = address_re.findall(line)
+    if os.path.exists(arg):
+        try:
+            with open(arg, "rb") as f:
+                if f.name.endswith("hex"):
+                    f = io.BytesIO(codecs.getreader("hex_codec")(f).read())
+                tx = Tx.parse(f)
+                try:
+                    tx.parse_unspents(f)
+                except Exception:
+                    pass
+                return tx
+        except Exception:
+            pass
 
-    # update p2sh_lookup
+def parse_p2sh(args):
     p2sh_lookup = {}
+    warnings = []
+
     if args.pay_to_script:
         for p2s in args.pay_to_script:
             try:
                 script = h2b(p2s)
                 p2sh_lookup[hash160(script)] = script
             except Exception:
-                print("warning: error parsing pay-to-script value %s" % p2s)
+                warnings.append("warning: error parsing pay-to-script value %s" % p2s)
 
     if args.pay_to_script_file:
         hex_re = re.compile(r"[0-9a-fA-F]+")
@@ -362,9 +385,36 @@ def parse_context(args, parser):
                         p2sh_lookup[hash160(script)] = script
                         count += 1
                 except Exception:
-                    print("warning: error parsing pay-to-script file %s" % f.name)
+                    warnings.append("warning: error parsing pay-to-script file %s" % f.name)
             if count == 0:
-                print("warning: no scripts found in %s" % f.name)
+                warnings.append("warning: no scripts found in %s" % f.name)
+    return parse_p2sh, warnings
+
+
+def parse_context(args, parser):
+    # defaults
+
+    txs = []
+    spendables = []
+    payables = []
+
+    key_list = []
+
+    # there are a few warnings we might optionally print out, but only if
+    # they are relevant. We don't want to print them out multiple times, so we
+    # collect them here and print them at the end if they ever kick in.
+
+    warning_tx_cache = None
+    warning_tx_for_tx_hash = None
+    warning_spendables = None
+
+    if args.private_key_file:
+        parse_private_key_file(args, key_list)
+
+    # update p2sh_lookup
+    p2sh_lookup, warnings = parse_p2sh(args)
+    for w in warnings:
+        print(w)
 
     # we create the tx_db lazily
     tx_db = None
@@ -376,29 +426,6 @@ def parse_context(args, parser):
         tx_db.lookup_methods.append(the_ram_tx_db.get)
 
     for arg in args.argument:
-
-        # hex transaction id
-        if TX_ID_RE.match(arg):
-            if tx_db is None:
-                warning_tx_cache = message_about_tx_cache_env()
-                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
-                tx_db = get_tx_db(args.network)
-            tx = tx_db.get(h2b_rev(arg))
-            if not tx:
-                for m in [warning_tx_cache, warning_tx_for_tx_hash, warning_spendables]:
-                    if m:
-                        print("warning: %s" % m, file=sys.stderr)
-                parser.error("can't find Tx with id %s" % arg)
-            txs.append(tx)
-            continue
-
-        # hex transaction data
-        try:
-            tx = Tx.from_hex(arg)
-            txs.append(tx)
-            continue
-        except Exception:
-            pass
 
         is_valid = is_address_valid(arg, allowable_netcodes=[args.network])
         if is_valid:
@@ -412,25 +439,15 @@ def parse_context(args, parser):
                 payables.append((key.address(), 0))
                 continue
             # TODO: support paths to subkeys
-            key_iters.append((k.wif() for k in key.subkeys("")))
+            key_list.append((k.wif() for k in key.subkeys("")))
             continue
         except Exception:
             pass
 
-        if os.path.exists(arg):
-            try:
-                with open(arg, "rb") as f:
-                    if f.name.endswith("hex"):
-                        f = io.BytesIO(codecs.getreader("hex_codec")(f).read())
-                    tx = Tx.parse(f)
-                    txs.append(tx)
-                    try:
-                        tx.parse_unspents(f)
-                    except Exception as ex:
-                        pass
-                    continue
-            except Exception:
-                pass
+        tx = parse_tx(arg, parser, tx_db, args.network)
+        if tx:
+            txs.append(tx)
+            continue
 
         parts = arg.split("/")
         if len(parts) == 4:
@@ -463,7 +480,7 @@ def parse_context(args, parser):
                 tx_db = get_tx_db(args.network)
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
-    return (txs, spendables, payables, key_iters, p2sh_lookup, tx_db, warning_tx_cache,
+    return (txs, spendables, payables, key_list, p2sh_lookup, tx_db, warning_tx_cache,
             warning_tx_for_tx_hash, warning_spendables)
 
 
