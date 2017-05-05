@@ -38,5 +38,6 @@ def main():
         tx_db[tx.hash()] = tx
         print("cached %s" % tx.id())
 
+
 if __name__ == '__main__':
     main()

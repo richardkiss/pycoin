@@ -24,5 +24,6 @@ def main():
         for spendable in spendables:
             print(spendable)
 
+
 if __name__ == '__main__':
     main()
