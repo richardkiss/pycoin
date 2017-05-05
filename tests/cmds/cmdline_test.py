@@ -25,7 +25,7 @@ def get_test_cases():
                 cmd = f.readline()[:-1]
                 if cmd[0] != '#':
                     break
-            expected_output = f.read()[:-1]
+            expected_output = f.read()
             test_name = os.path.relpath(
                 p, TESTS_PATH).replace(".", "_").replace("/", "_")
             l.append((test_name, cmd, expected_output))

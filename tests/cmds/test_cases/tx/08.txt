@@ -12,4 +12,3 @@ Total fees        0.10000 mBTC
 including unspents in hex dump since transaction not fully signed
 01000000012a6ca22af83bc447f74b1f475c9bd2e99ccef7347144572a9de5bcf5a5a21ad60100000000ffffffff013e3abc00000000001976a914cd5dc792f0abb0aa8ba4ca36c9fe5eda8e495ff988ac000000004e61bc00000000001976a91491b24bf9f5288532960ac687abb035127b1d28a588ac
 all incoming transaction values validated
-
