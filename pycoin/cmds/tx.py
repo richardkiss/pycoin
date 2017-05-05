@@ -215,7 +215,7 @@ def create_parser():
                         'index, or a date/time (example: "2014-01-01T15:00:00"')
 
     parser.add_argument('-n', "--network", default="BTC",
-                        help='Define network code (M=Bitcoin mainnet, T=Bitcoin testnet).')
+                        help='Define network code (BTC=Bitcoin mainnet, XTN=Bitcoin testnet).')
 
     parser.add_argument('-a', "--augment", action='store_true',
                         help='augment tx by adding any missing spendable metadata by fetching'
@@ -334,20 +334,19 @@ TX_ID_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 def parse_tx(arg, parser, tx_db, network):
     # hex transaction id
+    tx = None
+
     if TX_ID_RE.match(arg):
         if tx_db is None:
             tx_db = create_tx_db(network)
         tx = tx_db.get(h2b_rev(arg))
         if not tx:
-            for m in [tx_db.warning_tx_cache, tx_db.warning_tx_for_tx_hash]:
-                if m:
-                    print("warning: %s" % m, file=sys.stderr)
             parser.error("can't find Tx with id %s" % arg)
-        return tx
+        return tx, tx_db
 
     # hex transaction data
     try:
-        return Tx.from_hex(arg)
+        return Tx.from_hex(arg), tx_db
     except Exception:
         pass
 
@@ -357,13 +356,11 @@ def parse_tx(arg, parser, tx_db, network):
                 if f.name.endswith("hex"):
                     f = io.BytesIO(codecs.getreader("hex_codec")(f).read())
                 tx = Tx.parse(f)
-                try:
-                    tx.parse_unspents(f)
-                except Exception:
-                    pass
-                return tx
+                tx.parse_unspents(f)
         except Exception:
             pass
+
+    return tx, tx_db
 
 
 def parse_scripts(args):
@@ -400,7 +397,24 @@ def create_tx_db(network):
     return tx_db
 
 
-def parse_context(args, parser):
+def parse_parts(arg, parts, spendables, payables, network):
+    if len(parts) == 4:
+        # spendable
+        try:
+            spendables.append(Spendable.from_text(arg))
+            return True
+        except Exception:
+            pass
+
+    if len(parts) == 2 and is_address_valid(parts[0], allowable_netcodes=[network]):
+        try:
+            payables.append(parts)
+            return True
+        except ValueError:
+            pass
+
+
+def parse_context(args, parser, tx_db):
     # defaults
 
     txs = []
@@ -415,27 +429,6 @@ def parse_context(args, parser):
 
     warning_spendables = None
 
-    if args.private_key_file:
-        parse_private_key_file(args, key_list)
-
-    # build p2sh_lookup
-    scripts, warnings = parse_scripts(args)
-    p2sh_lookup = []
-    for script in scripts:
-        p2sh_lookup[hash160(script)] = script
-
-    for w in warnings:
-        print(w)
-
-    # we create the tx_db lazily
-    tx_db = None
-
-    if args.db:
-        the_ram_tx_db = dict((tx.hash(), tx) for tx in args.db)
-        if tx_db is None:
-            tx_db = create_tx_db(args.network)
-        tx_db.lookup_methods.append(the_ram_tx_db.get)
-
     for arg in args.argument:
 
         is_valid = is_address_valid(arg, allowable_netcodes=[args.network])
@@ -449,34 +442,42 @@ def parse_context(args, parser):
             if key.wif() is None:
                 payables.append((key.address(), 0))
                 continue
-            # TODO: support paths to subkeys
-            key_list.append((k.wif() for k in key.subkeys("")))
+            key_list.append(iter([key.wif()]))
             continue
         except Exception:
             pass
 
-        tx = parse_tx(arg, parser, tx_db, args.network)
+        tx, tx_db = parse_tx(arg, parser, tx_db, args.network)
         if tx:
             txs.append(tx)
             continue
 
         parts = arg.split("/")
-        if len(parts) == 4:
-            # spendable
-            try:
-                spendables.append(Spendable.from_text(arg))
-                continue
-            except Exception:
-                pass
-
-        if len(parts) == 2 and is_address_valid(parts[0], allowable_netcodes=[args.network]):
-            try:
-                payables.append(parts)
-                continue
-            except ValueError:
-                pass
+        if parse_parts(arg, parts, spendables, payables, args.network):
+            continue
 
         parser.error("can't parse %s" % arg)
+
+    return (txs, spendables, payables, key_list, tx_db, warning_spendables)
+
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+
+    # we create the tx_db lazily
+    tx_db = None
+
+    if args.db:
+        the_ram_tx_db = dict((tx.hash(), tx) for tx in args.db)
+        if tx_db is None:
+            tx_db = create_tx_db(args.network)
+        tx_db.lookup_methods.append(the_ram_tx_db.get)
+
+    (txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser, tx_db)
+
+    if args.private_key_file:
+        parse_private_key_file(args, key_iters)
 
     if args.fetch_spendables:
         warning_spendables = message_about_spendables_for_address_env(args.network)
@@ -489,14 +490,14 @@ def parse_context(args, parser):
                 tx_db = create_tx_db(args.network)
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
-    return (txs, spendables, payables, key_list, p2sh_lookup, tx_db, warning_spendables)
+    # build p2sh_lookup
+    scripts, warnings = parse_scripts(args)
+    for w in warnings:
+        print(w)
 
-
-def main():
-    parser = create_parser()
-    args = parser.parse_args()
-
-    (txs, spendables, payables, key_iters, p2sh_lookup, tx_db, warning_spendables) = parse_context(args, parser)
+    p2sh_lookup = {}
+    for script in scripts:
+        p2sh_lookup[hash160(script)] = script
 
     txs_in = []
     txs_out = []
