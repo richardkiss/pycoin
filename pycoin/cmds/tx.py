@@ -104,7 +104,8 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
                             tx_in.script, out_script, tx.lock_time, signature_for_hash_type_f):
                     for l in pre_annotations:
                         print("           %s" % l)
-                    print(    "    %4x: %02x  %s" % (pc, opcode, instruction))
+                    if 1:
+                        print("    %4x: %02x  %s" % (pc, opcode, instruction))
                     for l in post_annotations:
                         print("           %s" % l)
 
@@ -128,8 +129,8 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
                         if i:
                             i += 1
                     if sig_types_identical and tx_out:
-                        print("      z:{} {:#x} {}".format(' ' if i else '', tx.signature_hash(tx_out.script, idx, sig_type),
-                                                           sighash_type_to_string(sig_type)))
+                        print("      z:{} {:#x} {}".format(' ' if i else '', tx.signature_hash(
+                            tx_out.script, idx, sig_type), sighash_type_to_string(sig_type)))
 
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.txs_out):
@@ -141,13 +142,15 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
                     disassemble_scripts(b'', tx_out.script, tx.lock_time, signature_for_hash_type_f):
                 for l in pre_annotations:
                     print("           %s" % l)
-                print(    "    %4x: %02x  %s" % (pc, opcode, instruction))
+                if 1:
+                    print("    %4x: %02x  %s" % (pc, opcode, instruction))
                 for l in post_annotations:
                     print("           %s" % l)
 
     if not missing_unspents:
         print("Total input  %12.5f mBTC" % satoshi_to_mbtc(tx.total_in()))
-    print(    "Total output %12.5f mBTC" % satoshi_to_mbtc(tx.total_out()))
+    if 1:
+        print("Total output %12.5f mBTC" % satoshi_to_mbtc(tx.total_out()))
     if not missing_unspents:
         print("Total fees   %12.5f mBTC" % satoshi_to_mbtc(tx.fee()))
 
@@ -287,17 +290,22 @@ def create_parser():
     return parser
 
 
+def replace_with_gpg_pipe(args, f):
+    gpg_args = ["gpg", "-d"]
+    if args.gpg_argument:
+        gpg_args.extend(args.gpg_argument.split())
+        gpg_args.append(f.name)
+        popen = subprocess.Popen(gpg_args, stdout=subprocess.PIPE)
+        f = popen.stdout
+    return f
+
+
 def parse_private_key_file(args, key_list):
     wif_re = re.compile(r"[1-9a-km-zA-LMNP-Z]{51,111}")
     # address_re = re.compile(r"[1-9a-kmnp-zA-KMNP-Z]{27-31}")
     for f in args.private_key_file:
         if f.name.endswith(".gpg"):
-            gpg_args = ["gpg", "-d"]
-            if args.gpg_argument:
-                gpg_args.extend(args.gpg_argument.split())
-            gpg_args.append(f.name)
-            popen = subprocess.Popen(gpg_args, stdout=subprocess.PIPE)
-            f = popen.stdout
+            f = replace_with_gpg_pipe(args, f)
         for line in f.readlines():
             # decode
             if isinstance(line, bytes):
@@ -328,13 +336,10 @@ def parse_tx(arg, parser, tx_db, network):
     # hex transaction id
     if TX_ID_RE.match(arg):
         if tx_db is None:
-            tx_db = get_tx_db(network)
-            tx_db.warning_tx_cache = message_about_tx_cache_env()
-            tx_db.warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(network)
-            tx_db.warning_spendables = None
+            tx_db = create_tx_db(network)
         tx = tx_db.get(h2b_rev(arg))
         if not tx:
-            for m in [tx_db.warning_tx_cache, tx_db.warning_tx_for_tx_hash, tx_db.warning_spendables]:
+            for m in [tx_db.warning_tx_cache, tx_db.warning_tx_for_tx_hash]:
                 if m:
                     print("warning: %s" % m, file=sys.stderr)
             parser.error("can't find Tx with id %s" % arg)
@@ -360,35 +365,39 @@ def parse_tx(arg, parser, tx_db, network):
         except Exception:
             pass
 
-def parse_p2sh(args):
-    p2sh_lookup = {}
+
+def parse_scripts(args):
+    scripts = []
     warnings = []
 
-    if args.pay_to_script:
-        for p2s in args.pay_to_script:
-            try:
-                script = h2b(p2s)
-                p2sh_lookup[hash160(script)] = script
-            except Exception:
-                warnings.append("warning: error parsing pay-to-script value %s" % p2s)
+    for p2s in args.pay_to_script or []:
+        try:
+            scripts.append(h2b(p2s))
+        except Exception:
+            warnings.append("warning: error parsing pay-to-script value %s" % p2s)
 
-    if args.pay_to_script_file:
-        hex_re = re.compile(r"[0-9a-fA-F]+")
-        for f in args.pay_to_script_file:
-            count = 0
-            for l in f:
-                try:
-                    m = hex_re.search(l)
-                    if m:
-                        p2s = m.group(0)
-                        script = h2b(p2s)
-                        p2sh_lookup[hash160(script)] = script
-                        count += 1
-                except Exception:
-                    warnings.append("warning: error parsing pay-to-script file %s" % f.name)
-            if count == 0:
-                warnings.append("warning: no scripts found in %s" % f.name)
-    return parse_p2sh, warnings
+    hex_re = re.compile(r"[0-9a-fA-F]+")
+    for f in args.pay_to_script_file or []:
+        count = 0
+        for l in f:
+            try:
+                m = hex_re.search(l)
+                if m:
+                    p2s = m.group(0)
+                    scripts.append(h2b(p2s))
+                    count += 1
+            except Exception:
+                warnings.append("warning: error parsing pay-to-script file %s" % f.name)
+        if count == 0:
+            warnings.append("warning: no scripts found in %s" % f.name)
+    return scripts, warnings
+
+
+def create_tx_db(network):
+    tx_db = get_tx_db(network)
+    tx_db.warning_tx_cache = message_about_tx_cache_env()
+    tx_db.warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(network)
+    return tx_db
 
 
 def parse_context(args, parser):
@@ -404,15 +413,17 @@ def parse_context(args, parser):
     # they are relevant. We don't want to print them out multiple times, so we
     # collect them here and print them at the end if they ever kick in.
 
-    warning_tx_cache = None
-    warning_tx_for_tx_hash = None
     warning_spendables = None
 
     if args.private_key_file:
         parse_private_key_file(args, key_list)
 
-    # update p2sh_lookup
-    p2sh_lookup, warnings = parse_p2sh(args)
+    # build p2sh_lookup
+    scripts, warnings = parse_scripts(args)
+    p2sh_lookup = []
+    for script in scripts:
+        p2sh_lookup[hash160(script)] = script
+
     for w in warnings:
         print(w)
 
@@ -422,7 +433,7 @@ def parse_context(args, parser):
     if args.db:
         the_ram_tx_db = dict((tx.hash(), tx) for tx in args.db)
         if tx_db is None:
-            tx_db = get_tx_db(args.network)
+            tx_db = create_tx_db(args.network)
         tx_db.lookup_methods.append(the_ram_tx_db.get)
 
     for arg in args.argument:
@@ -475,21 +486,17 @@ def parse_context(args, parser):
     for tx in txs:
         if tx.missing_unspents() and (args.augment or tx_db):
             if tx_db is None:
-                warning_tx_cache = message_about_tx_cache_env()
-                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
-                tx_db = get_tx_db(args.network)
+                tx_db = create_tx_db(args.network)
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
-    return (txs, spendables, payables, key_list, p2sh_lookup, tx_db, warning_tx_cache,
-            warning_tx_for_tx_hash, warning_spendables)
+    return (txs, spendables, payables, key_list, p2sh_lookup, tx_db, warning_spendables)
 
 
 def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    (txs, spendables, payables, key_iters, p2sh_lookup, tx_db,
-     warning_tx_cache, warning_tx_for_tx_hash, warning_spendables) = parse_context(args, parser)
+    (txs, spendables, payables, key_iters, p2sh_lookup, tx_db, warning_spendables) = parse_context(args, parser)
 
     txs_in = []
     txs_out = []
@@ -598,16 +605,12 @@ def main():
 
     if args.cache:
         if tx_db is None:
-            warning_tx_cache = message_about_tx_cache_env()
-            warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
-            tx_db = get_tx_db(args.network)
+            tx_db = create_tx_db(args.network)
         tx_db.put(tx)
 
     if args.bitcoind_url:
         if tx_db is None:
-            warning_tx_cache = message_about_tx_cache_env()
-            warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
-            tx_db = get_tx_db(args.network)
+            tx_db = create_tx_db(args.network)
         validate_bitcoind(tx, tx_db, args.bitcoind_url)
 
     if tx.missing_unspents():
@@ -615,9 +618,7 @@ def main():
     else:
         try:
             if tx_db is None:
-                warning_tx_cache = message_about_tx_cache_env()
-                warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(args.network)
-                tx_db = get_tx_db(args.network)
+                tx_db = create_tx_db(args.network)
             tx.validate_unspents(tx_db)
             print('all incoming transaction values validated')
         except BadSpendableError as ex:
@@ -627,9 +628,12 @@ def main():
                   ex.args[0], file=sys.stderr)
 
     # print warnings
-    for m in [warning_tx_cache, warning_tx_for_tx_hash, warning_spendables]:
-        if m:
-            print("warning: %s" % m, file=sys.stderr)
+    if tx_db:
+        for m in [tx_db.warning_tx_cache, tx_db.warning_tx_for_tx_hash]:
+            if m:
+                print("warning: %s" % m, file=sys.stderr)
+    if warning_spendables:
+        print("warning: %s" % warning_spendables, file=sys.stderr)
 
 
 if __name__ == '__main__':
