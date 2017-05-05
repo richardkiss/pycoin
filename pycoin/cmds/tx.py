@@ -421,7 +421,7 @@ def parse_context(args, parser, tx_db):
     spendables = []
     payables = []
 
-    key_list = []
+    key_iters = []
 
     # there are a few warnings we might optionally print out, but only if
     # they are relevant. We don't want to print them out multiple times, so we
@@ -442,7 +442,7 @@ def parse_context(args, parser, tx_db):
             if key.wif() is None:
                 payables.append((key.address(), 0))
                 continue
-            key_list.append(iter([key.wif()]))
+            key_iters.append(iter([key.wif()]))
             continue
         except Exception:
             pass
@@ -458,7 +458,72 @@ def parse_context(args, parser, tx_db):
 
         parser.error("can't parse %s" % arg)
 
-    return (txs, spendables, payables, key_list, tx_db, warning_spendables)
+    return (txs, spendables, payables, key_iters, tx_db, warning_spendables)
+
+
+def merge_txs(txs, spendables, payables):
+
+    txs_in = []
+    txs_out = []
+    unspents = []
+
+    # we use a clever trick here to keep each tx_in corresponding with its tx_out
+    for tx in txs:
+        smaller = min(len(tx.txs_in), len(tx.txs_out))
+        txs_in.extend(tx.txs_in[:smaller])
+        txs_out.extend(tx.txs_out[:smaller])
+        unspents.extend(tx.unspents[:smaller])
+    for tx in txs:
+        smaller = min(len(tx.txs_in), len(tx.txs_out))
+        txs_in.extend(tx.txs_in[smaller:])
+        txs_out.extend(tx.txs_out[smaller:])
+        unspents.extend(tx.unspents[smaller:])
+    for spendable in spendables:
+        txs_in.append(spendable.tx_in())
+        unspents.append(spendable)
+    for address, coin_value in payables:
+        script = standard_tx_out_script(address)
+        txs_out.append(TxOut(coin_value, script))
+
+    return txs_in, txs_out, unspents
+
+
+def calculate_lock_time_and_version(args, txs):
+    lock_time = args.lock_time
+    version = args.transaction_version
+
+    # if no lock_time is explicitly set, inherit from the first tx or use default
+    if lock_time is None:
+        if txs:
+            lock_time = txs[0].lock_time
+        else:
+            lock_time = DEFAULT_LOCK_TIME
+
+    # if no version is explicitly set, inherit from the first tx or use default
+    if version is None:
+        if txs:
+            version = txs[0].version
+        else:
+            version = DEFAULT_VERSION
+    return lock_time, version
+
+
+def remove_indices(items, indices):
+    if indices:
+        s = set(indices)
+        items = [i for idx, i in enumerate(items) if idx not in s]
+    return items
+
+
+def wif_iter(iters):
+    while len(iters) > 0:
+        for idx, iter in enumerate(iters):
+            try:
+                wif = next(iter)
+                yield wif
+            except StopIteration:
+                iters = iters[:idx] + iters[idx+1:]
+                break
 
 
 def main():
@@ -499,53 +564,10 @@ def main():
     for script in scripts:
         p2sh_lookup[hash160(script)] = script
 
-    txs_in = []
-    txs_out = []
-    unspents = []
-
-    # we use a clever trick here to keep each tx_in corresponding with its tx_out
-    for tx in txs:
-        smaller = min(len(tx.txs_in), len(tx.txs_out))
-        txs_in.extend(tx.txs_in[:smaller])
-        txs_out.extend(tx.txs_out[:smaller])
-        unspents.extend(tx.unspents[:smaller])
-    for tx in txs:
-        smaller = min(len(tx.txs_in), len(tx.txs_out))
-        txs_in.extend(tx.txs_in[smaller:])
-        txs_out.extend(tx.txs_out[smaller:])
-        unspents.extend(tx.unspents[smaller:])
-    for spendable in spendables:
-        txs_in.append(spendable.tx_in())
-        unspents.append(spendable)
-    for address, coin_value in payables:
-        script = standard_tx_out_script(address)
-        txs_out.append(TxOut(coin_value, script))
-
-    lock_time = args.lock_time
-    version = args.transaction_version
-
-    # if no lock_time is explicitly set, inherit from the first tx or use default
-    if lock_time is None:
-        if txs:
-            lock_time = txs[0].lock_time
-        else:
-            lock_time = DEFAULT_LOCK_TIME
-
-    # if no version is explicitly set, inherit from the first tx or use default
-    if version is None:
-        if txs:
-            version = txs[0].version
-        else:
-            version = DEFAULT_VERSION
-
-    if args.remove_tx_in:
-        s = set(args.remove_tx_in)
-        txs_in = [tx_in for idx, tx_in in enumerate(txs_in) if idx not in s]
-
-    if args.remove_tx_out:
-        s = set(args.remove_tx_out)
-        txs_out = [tx_out for idx, tx_out in enumerate(txs_out) if idx not in s]
-
+    txs_in, txs_out, unspents = merge_txs(txs, spendables, payables)
+    lock_time, version = calculate_lock_time_and_version(args, txs)
+    txs_in = remove_indices(txs_in, args.remove_tx_in)
+    txs_out = remove_indices(txs_out, args.remove_tx_out)
     tx = Tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
 
     fee = args.fee
@@ -558,16 +580,6 @@ def main():
     unsigned_before = tx.bad_signature_count()
     unsigned_after = unsigned_before
     if unsigned_before > 0 and key_iters:
-        def wif_iter(iters):
-            while len(iters) > 0:
-                for idx, iter in enumerate(iters):
-                    try:
-                        wif = next(iter)
-                        yield wif
-                    except StopIteration:
-                        iters = iters[:idx] + iters[idx+1:]
-                        break
-
         print("signing...", file=sys.stderr)
         sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup)
 
@@ -589,9 +601,7 @@ def main():
         if f.name.endswith(".hex"):
             f.write(tx_as_hex.encode("utf8"))
         else:
-            tx.stream(f)
-            if include_unspents:
-                tx.stream_unspents(f)
+            tx.stream(f, include_unspents=include_unspents)
         f.close()
     elif args.show_unspents:
         for spendable in tx.tx_outs_as_spendable():
