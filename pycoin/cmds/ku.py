@@ -229,36 +229,6 @@ def create_parser():
     return parser
 
 
-def parse_key(item, PREFIX_TRANSFORMS, network):
-
-    for k, f in PREFIX_TRANSFORMS:
-        if item.startswith(k):
-            try:
-                return f(item[len(k):])
-            except Exception:
-                pass
-
-    try:
-        return Key.from_text(item)
-    except encoding.EncodingError:
-        pass
-
-    secret_exponent = parse_as_secret_exponent(item)
-    if secret_exponent:
-        return Key(secret_exponent=secret_exponent, netcode=network)
-
-    if SEC_RE.match(item):
-        return Key.from_sec(h2b(item))
-
-    public_pair = parse_as_public_pair(item)
-    if public_pair:
-        return Key(public_pair=public_pair, netcode=network)
-
-    if HASH160_RE.match(item):
-        return Key(hash160=h2b(item), netcode=network)
-    return None
-
-
 def prefix_transforms_for_network(network):
     def _create_bip32(_):
         max_retries = 64
@@ -276,6 +246,58 @@ def prefix_transforms_for_network(network):
         ("E:", lambda s: key_from_text(s)),
         ("create", _create_bip32),
     )
+
+
+def parse_prefixes(item, PREFIX_TRANSFORMS):
+    for k, f in PREFIX_TRANSFORMS:
+        if item.startswith(k):
+            try:
+                return f(item[len(k):])
+            except Exception:
+                pass
+
+    try:
+        return Key.from_text(item)
+    except encoding.EncodingError:
+        pass
+    return None
+
+
+def parse_key(item, PREFIX_TRANSFORMS, network):
+
+    key = parse_prefixes(item, PREFIX_TRANSFORMS)
+    if key:
+        return key
+
+    secret_exponent = parse_as_secret_exponent(item)
+    if secret_exponent:
+        return Key(secret_exponent=secret_exponent, netcode=network)
+
+    if SEC_RE.match(item):
+        return Key.from_sec(h2b(item))
+
+    public_pair = parse_as_public_pair(item)
+    if public_pair:
+        return Key(public_pair=public_pair, netcode=network)
+
+    if HASH160_RE.match(item):
+        return Key(hash160=h2b(item), netcode=network)
+    return None
+
+
+def generate_output(args, output_dict, output_order):
+    if args.json:
+        # the python2 version of json.dumps puts an extra blank prior to the end of each line
+        # the "replace" is a hack to make python2 produce the same output as python3
+        print(json.dumps(output_dict, indent=3, sort_keys=True).replace(" \n", "\n"))
+    elif args.wallet:
+        print(output_dict["wallet_key"])
+    elif args.wif:
+        print(output_dict["wif_uncompressed" if args.uncompressed else "wif"])
+    elif args.address:
+        print(output_dict["address" + ("_uncompressed" if args.uncompressed else "")])
+    else:
+        dump_output(output_dict, output_order)
 
 
 def main():
@@ -307,18 +329,7 @@ def main():
 
             output_dict, output_order = create_output(item, key)
 
-            if args.json:
-                # the python2 version of json.dumps puts an extra blank prior to the end of each line
-                # the "replace" is a hack to make python2 produce the same output as python3
-                print(json.dumps(output_dict, indent=3, sort_keys=True).replace(" \n", "\n"))
-            elif args.wallet:
-                print(output_dict["wallet_key"])
-            elif args.wif:
-                print(output_dict["wif_uncompressed" if args.uncompressed else "wif"])
-            elif args.address:
-                print(output_dict["address" + ("_uncompressed" if args.uncompressed else "")])
-            else:
-                dump_output(output_dict, output_order)
+            generate_output(args, output_dict, output_order)
 
 
 if __name__ == '__main__':
