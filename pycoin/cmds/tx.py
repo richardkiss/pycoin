@@ -46,8 +46,7 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
         print("warning: can't talk to bitcoind due to missing library")
 
 
-def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
-    address_prefix = address_prefix_for_netcode(netcode)
+def dump_header(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes" % (tx.version, tx.id(), len(tx_bin)))
     print("TxIn count: %d; TxOut count: %d" % (len(tx.txs_in), len(tx.txs_out)))
@@ -60,7 +59,11 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
         meaning = "valid on or after %s utc" % when.isoformat()
     print("Lock time: %d (%s)" % (tx.lock_time, meaning))
     print("Input%s:" % ('s' if len(tx.txs_in) != 1 else ''))
-    missing_unspents = tx.missing_unspents()
+
+
+def make_trace_script(do_trace, use_pdb):
+    if not (do_trace or use_pdb):
+        return None
 
     def trace_script(old_pc, opcode, data, stack, altstack, if_condition_stack, is_signature):
         from pycoin.tx.script.tools import disassemble_for_opcode_data
@@ -74,63 +77,82 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
             if len(if_condition_stack) > 0:
                 print("condition stack: %s" % ', '.join(int(s) for s in if_condition_stack))
             pdb.set_trace()
+    return trace_script
 
-    traceback_f = trace_script if do_trace or use_pdb else None
+
+def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level):
+
+    def signature_for_hash_type_f(hash_type, script):
+        return tx.signature_hash(script, idx, hash_type)
+
     for idx, tx_in in enumerate(tx.txs_in):
-        if disassembly_level > 0:
-            def signature_for_hash_type_f(hash_type, script):
-                return tx.signature_hash(script, idx, hash_type)
         if tx.is_coinbase():
             print("%4d: COINBASE  %12.5f mBTC" % (idx, satoshi_to_mbtc(tx.total_in())))
+            continue
+        suffix = ""
+        if tx.missing_unspent(idx):
+            tx_out = None
+            address = tx_in.bitcoin_address(address_prefix=address_prefix)
         else:
-            suffix = ""
-            if tx.missing_unspent(idx):
-                tx_out = None
-                address = tx_in.bitcoin_address(address_prefix=address_prefix)
-            else:
-                tx_out = tx.unspents[idx]
-                sig_result = " sig ok" if tx.is_signature_ok(idx, traceback_f=traceback_f) else " BAD SIG"
-                suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
-                address = tx_out.bitcoin_address(netcode=netcode)
-            t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
-                                              tx_in.previous_index, suffix)
-            print(t.rstrip())
-            if disassembly_level > 0:
-                out_script = b''
-                if tx_out:
-                    out_script = tx_out.script
-                for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-                        disassemble_scripts(
-                            tx_in.script, out_script, tx.lock_time, signature_for_hash_type_f):
-                    for l in pre_annotations:
-                        print("           %s" % l)
-                    if 1:
-                        print("    %4x: %02x  %s" % (pc, opcode, instruction))
-                    for l in post_annotations:
-                        print("           %s" % l)
+            tx_out = tx.unspents[idx]
+            sig_result = " sig ok" if tx.is_signature_ok(idx, traceback_f=traceback_f) else " BAD SIG"
+            suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
+            address = tx_out.bitcoin_address(netcode=netcode)
+        t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
+                                          tx_in.previous_index, suffix)
+        print(t.rstrip())
+        if disassembly_level > 0:
+            out_script = b''
+            if tx_out:
+                out_script = tx_out.script
+            for (pre_annotations, pc, opcode, instruction, post_annotations) in \
+                    disassemble_scripts(
+                        tx_in.script, out_script, tx.lock_time, signature_for_hash_type_f):
+                for l in pre_annotations:
+                    print("           %s" % l)
+                if 1:
+                    print("    %4x: %02x  %s" % (pc, opcode, instruction))
+                for l in post_annotations:
+                    print("           %s" % l)
+        if verbose_signature:
+            dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level)
 
-            if verbose_signature:
-                signatures = []
-                for opcode in opcode_list(tx_in.script):
-                    if not opcode.startswith("OP_"):
-                        try:
-                            signatures.append(parse_signature_blob(h2b(opcode[1:-1])))
-                        except UnexpectedDER:
-                            pass
-                if signatures:
-                    sig_types_identical = (
-                        tuple(zip(*signatures))[1].count(signatures[0][1]) == len(signatures))
-                    i = 1 if len(signatures) > 1 else ''
-                    for sig_pair, sig_type in signatures:
-                        print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
-                        if not sig_types_identical and tx_out:
-                            print("      z{}: {:#x} {}".format(i, tx.signature_hash(tx_out.script, idx, sig_type),
-                                                               sighash_type_to_string(sig_type)))
-                        if i:
-                            i += 1
-                    if sig_types_identical and tx_out:
-                        print("      z:{} {:#x} {}".format(' ' if i else '', tx.signature_hash(
-                            tx_out.script, idx, sig_type), sighash_type_to_string(sig_type)))
+
+def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level):
+    signatures = []
+    for opcode in opcode_list(tx_in.script):
+        if not opcode.startswith("OP_"):
+            try:
+                signatures.append(parse_signature_blob(h2b(opcode[1:-1])))
+            except UnexpectedDER:
+                pass
+    if signatures:
+        sig_types_identical = (
+            tuple(zip(*signatures))[1].count(signatures[0][1]) == len(signatures))
+        i = 1 if len(signatures) > 1 else ''
+        for sig_pair, sig_type in signatures:
+            print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
+            if not sig_types_identical and tx_out:
+                print("      z{}: {:#x} {}".format(i, tx.signature_hash(tx_out.script, idx, sig_type),
+                                                   sighash_type_to_string(sig_type)))
+            if i:
+                i += 1
+        if sig_types_identical and tx_out:
+            print("      z:{} {:#x} {}".format(' ' if i else '', tx.signature_hash(
+                tx_out.script, idx, sig_type), sighash_type_to_string(sig_type)))
+
+
+def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
+    address_prefix = address_prefix_for_netcode(netcode)
+    missing_unspents = tx.missing_unspents()
+    traceback_f = make_trace_script(do_trace, use_pdb)
+
+    dump_header(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb)
+
+    dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level)
+
+    def signature_for_hash_type_f(hash_type, script):
+        return tx.signature_hash(script, idx, hash_type)
 
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.txs_out):
@@ -147,6 +169,10 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
                 for l in post_annotations:
                     print("           %s" % l)
 
+    dump_footer(tx, missing_unspents)
+
+
+def dump_footer(tx, missing_unspents):
     if not missing_unspents:
         print("Total input  %12.5f mBTC" % satoshi_to_mbtc(tx.total_in()))
     if 1:
