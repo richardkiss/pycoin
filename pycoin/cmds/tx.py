@@ -102,20 +102,25 @@ def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, dis
                                           tx_in.previous_index, suffix)
         print(t.rstrip())
         if disassembly_level > 0:
-            out_script = b''
-            if tx_out:
-                out_script = tx_out.script
-            for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-                    disassemble_scripts(
-                        tx_in.script, out_script, tx.lock_time, signature_for_hash_type_f):
-                for l in pre_annotations:
-                    print("           %s" % l)
-                if 1:
-                    print("    %4x: %02x  %s" % (pc, opcode, instruction))
-                for l in post_annotations:
-                    print("           %s" % l)
+            dump_disassembly(tx_in, tx_out, tx.lock_time, signature_for_hash_type_f)
+
         if verbose_signature:
             dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level)
+
+
+def dump_disassembly(tx_in, tx_out, lock_time, signature_for_hash_type_f):
+    out_script = b''
+    if tx_out:
+        out_script = tx_out.script
+    for (pre_annotations, pc, opcode, instruction, post_annotations) in \
+            disassemble_scripts(
+                tx_in.script, out_script, lock_time, signature_for_hash_type_f):
+        for l in pre_annotations:
+            print("           %s" % l)
+        if 1:
+            print("    %4x: %02x  %s" % (pc, opcode, instruction))
+        for l in post_annotations:
+            print("           %s" % l)
 
 
 def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level):
@@ -440,7 +445,16 @@ def parse_parts(arg, parts, spendables, payables, network):
             pass
 
 
-def parse_context(args, parser, tx_db):
+def parse_context(args, parser):
+    # we create the tx_db lazily
+    tx_db = None
+
+    if args.db:
+        the_ram_tx_db = dict((tx.hash(), tx) for tx in args.db)
+        if tx_db is None:
+            tx_db = create_tx_db(args.network)
+        tx_db.lookup_methods.append(the_ram_tx_db.get)
+
     # defaults
 
     txs = []
@@ -556,16 +570,7 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    # we create the tx_db lazily
-    tx_db = None
-
-    if args.db:
-        the_ram_tx_db = dict((tx.hash(), tx) for tx in args.db)
-        if tx_db is None:
-            tx_db = create_tx_db(args.network)
-        tx_db.lookup_methods.append(the_ram_tx_db.get)
-
-    (txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser, tx_db)
+    (txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
 
     if args.private_key_file:
         parse_private_key_file(args, key_iters)
