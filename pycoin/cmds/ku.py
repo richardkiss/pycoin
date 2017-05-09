@@ -308,7 +308,9 @@ def main():
             output_dict, output_order = create_output(item, key)
 
             if args.json:
-                print(json.dumps(output_dict, indent=3, sort_keys=True))
+                # the python2 version of json.dumps puts an extra blank prior to the end of each line
+                # the "replace" is a hack to make python2 produce the same output as python3
+                print(json.dumps(output_dict, indent=3, sort_keys=True).replace(" \n", "\n"))
             elif args.wallet:
                 print(output_dict["wallet_key"])
             elif args.wif:
