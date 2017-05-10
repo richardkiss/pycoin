@@ -1,4 +1,4 @@
-from pycoin.intbytes import byte_to_int
+from pycoin.intbytes import byte2int
 
 from ..script import tools
 
@@ -13,7 +13,7 @@ class ScriptPayToScriptWit(ScriptType):
         assert isinstance(version, bytes)
         assert len(hash256) == 32
         assert isinstance(hash256, bytes)
-        version_int = byte_to_int(version[0])
+        version_int = byte2int(version)
         assert 0 <= version_int <= 16
         self.version = version_int
         self.hash256 = hash256

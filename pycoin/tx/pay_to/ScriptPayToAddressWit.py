@@ -1,4 +1,4 @@
-from pycoin.intbytes import byte_to_int
+from pycoin.intbytes import byte2int
 
 from ..script import tools
 
@@ -19,7 +19,7 @@ class ScriptPayToAddressWit(ScriptType):
         assert isinstance(version, bytes)
         assert len(hash160) == 20
         assert isinstance(hash160, bytes)
-        version_int = byte_to_int(version[0])
+        version_int = byte2int(version)
         assert 0 <= version_int <= 16
         self.version = version_int
         self.hash160 = hash160

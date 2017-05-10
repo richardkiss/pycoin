@@ -27,7 +27,7 @@ THE SOFTWARE.
 """
 
 
-from ...intbytes import byte_to_int
+from ...intbytes import byte2int, indexbytes
 from .flags import (
     VERIFY_P2SH, VERIFY_SIGPUSHONLY, VERIFY_CLEANSTACK,
     VERIFY_WITNESS, VERIFY_MINIMALIF, VERIFY_WITNESS_PUBKEYTYPE
@@ -52,8 +52,8 @@ def check_script_push_only(script):
 
 
 def is_pay_to_script_hash(script_public_key):
-    return (len(script_public_key) == 23 and byte_to_int(script_public_key[0]) == opcodes.OP_HASH160 and
-            byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
+    return (len(script_public_key) == 23 and byte2int(script_public_key) == opcodes.OP_HASH160 and
+            indexbytes(script_public_key, -1) == opcodes.OP_EQUAL)
 
 
 def check_script(script_signature, script_public_key, signature_for_hash_type_f, lock_time,

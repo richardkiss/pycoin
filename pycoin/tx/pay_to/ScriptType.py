@@ -5,13 +5,14 @@ from pycoin import ecdsa
 from ..script import der, opcodes, tools
 
 
-bytes_from_int = chr if bytes == str else lambda x: bytes([x])
+from pycoin.intbytes import int2byte
+
 
 
 def generate_default_placeholder_signature():
     order = ecdsa.generator_secp256k1.order()
     r, s = order - 1, order // 2
-    return der.sigencode_der(r, s) + bytes_from_int(1)
+    return der.sigencode_der(r, s) + int2byte(1)
 
 
 DEFAULT_PLACEHOLDER_SIGNATURE = generate_default_placeholder_signature()
@@ -81,7 +82,7 @@ class ScriptType(object):
         r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
         if s + s > order:
             s = order - s
-        return der.sigencode_der(r, s) + bytes_from_int(signature_type)
+        return der.sigencode_der(r, s) + int2byte(signature_type)
 
     def address(self, netcode=None):
         from pycoin.networks.default import get_current_netcode

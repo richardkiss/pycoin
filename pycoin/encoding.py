@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 import hashlib
 
-from .intbytes import byte_to_int, bytes_from_int
+from .intbytes import byte2int, int2byte, iterbytes
 from .serialize import bytes_as_revhex
 
 
@@ -114,7 +114,7 @@ if hasattr(int, "to_bytes"):
 def from_bytes_32(v):
     if len(v) > 32:
         raise OverflowError("int too big to convert")
-    return to_long(256, byte_to_int, v)[0]
+    return to_long(256, byte2int, v)[0]
 
 if hasattr(int, "from_bytes"):
     from_bytes_32 = lambda v: int.from_bytes(v, byteorder="big")
@@ -132,7 +132,7 @@ def hash160(data):
 
 def b2a_base58(s):
     """Convert binary to base58 using BASE58_ALPHABET. Like Bitcoin addresses."""
-    v, prefix = to_long(256, byte_to_int, s)
+    v, prefix = to_long(256, lambda x: x, iterbytes(s))
     s = from_long(v, prefix, BASE58_BASE, lambda v: BASE58_ALPHABET[v])
     return s.decode("utf8")
 
@@ -225,7 +225,7 @@ def public_pair_to_sec(public_pair, compressed=True):
     gross internal sec binary format used by OpenSSL."""
     x_str = to_bytes_32(public_pair[0])
     if compressed:
-        return bytes_from_int((2 + (public_pair[1] & 1))) + x_str
+        return int2byte((2 + (public_pair[1] & 1))) + x_str
     y_str = to_bytes_32(public_pair[1])
     return b'\4' + x_str + y_str
 
