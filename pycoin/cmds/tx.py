@@ -259,7 +259,7 @@ def create_parser():
                         help='Add all unspent spendables for the given bitcoin address. This information'
                         ' is fetched from web services.')
 
-    parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append",
+    parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append", default=[],
                         help='file containing WIF or BIP0032 private keys. If file name ends with .gpg, '
                         '"gpg -d" will be invoked automatically. File is read one line at a time, and if '
                         'the file contains only one WIF per line, it will also be scanned for a bitcoin '
@@ -509,6 +509,19 @@ def parse_context(args, parser):
 
         parser.error("can't parse %s" % arg)
 
+    parse_private_key_file(args, key_iters)
+
+    if args.fetch_spendables:
+        warning_spendables = message_about_spendables_for_address_env(args.network)
+        for address in args.fetch_spendables:
+            spendables.extend(spendables_for_address(address))
+
+    for tx in txs:
+        if tx.missing_unspents() and (args.augment or tx_db):
+            if tx_db is None:
+                tx_db = create_tx_db(args.network)
+            tx.unspents_from_db(tx_db, ignore_missing=True)
+
     return (txs, spendables, payables, key_iters, tx_db, warning_spendables)
 
 
@@ -592,8 +605,7 @@ def generate_tx(txs, spendables, payables, args):
     return tx
 
 
-def produce_output(tx, include_unspents, output_file, show_unspents,
-                   network, verbose_signature, disassemble, trace, pdb):
+def print_output(tx, include_unspents, output_file, show_unspents, network, verbose_signature, disassemble, trace, pdb):
     if len(tx.txs_in) == 0:
         print("warning: transaction has no inputs", file=sys.stderr)
 
@@ -634,25 +646,43 @@ def do_signing(tx, key_iters, p2sh_lookup):
     return unsigned_after == 0
 
 
+def cache_result(tx, tx_db, cache, network):
+    if cache:
+        if tx_db is None:
+            tx_db = create_tx_db(network)
+        tx_db.put(tx)
+    return tx_db
+
+
+def validate_tx(tx, tx_db, network):
+    if tx.missing_unspents():
+        print("\n** can't validate transaction as source transactions missing", file=sys.stderr)
+    else:
+        try:
+            if tx_db is None:
+                tx_db = create_tx_db(network)
+            tx.validate_unspents(tx_db)
+            print('all incoming transaction values validated')
+        except BadSpendableError as ex:
+            print("\n**** ERROR: FEES INCORRECTLY STATED: %s" % ex.args[0], file=sys.stderr)
+        except Exception as ex:
+            print("\n*** can't validate source transactions as untampered: %s" %
+                  ex.args[0], file=sys.stderr)
+
+
+def validate_against_bitcoind(tx, tx_db, network, bitcoind_url):
+    if bitcoind_url:
+        if tx_db is None:
+            tx_db = create_tx_db(network)
+        validate_bitcoind(tx, tx_db, bitcoind_url)
+    return tx_db
+
+
 def main():
     parser = create_parser()
     args = parser.parse_args()
 
     (txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
-
-    if args.private_key_file:
-        parse_private_key_file(args, key_iters)
-
-    if args.fetch_spendables:
-        warning_spendables = message_about_spendables_for_address_env(args.network)
-        for address in args.fetch_spendables:
-            spendables.extend(spendables_for_address(address))
-
-    for tx in txs:
-        if tx.missing_unspents() and (args.augment or tx_db):
-            if tx_db is None:
-                tx_db = create_tx_db(args.network)
-            tx.unspents_from_db(tx_db, ignore_missing=True)
 
     # build p2sh_lookup
     p2sh_lookup = build_p2sh_lookup(args)
@@ -662,32 +692,15 @@ def main():
     is_fully_signed = do_signing(tx, key_iters, p2sh_lookup)
 
     include_unspents = not is_fully_signed
-    produce_output(tx, include_unspents, args.output_file, args.show_unspents, args.network,
-                   args.verbose_signature, args.disassemble, args.trace, args.pdb)
 
-    if args.cache:
-        if tx_db is None:
-            tx_db = create_tx_db(args.network)
-        tx_db.put(tx)
+    print_output(tx, include_unspents, args.output_file, args.show_unspents, args.network,
+                 args.verbose_signature, args.disassemble, args.trace, args.pdb)
 
-    if args.bitcoind_url:
-        if tx_db is None:
-            tx_db = create_tx_db(args.network)
-        validate_bitcoind(tx, tx_db, args.bitcoind_url)
+    tx_db = cache_result(tx, tx_db, args.cache, args.network)
 
-    if tx.missing_unspents():
-        print("\n** can't validate transaction as source transactions missing", file=sys.stderr)
-    else:
-        try:
-            if tx_db is None:
-                tx_db = create_tx_db(args.network)
-            tx.validate_unspents(tx_db)
-            print('all incoming transaction values validated')
-        except BadSpendableError as ex:
-            print("\n**** ERROR: FEES INCORRECTLY STATED: %s" % ex.args[0], file=sys.stderr)
-        except Exception as ex:
-            print("\n*** can't validate source transactions as untampered: %s" %
-                  ex.args[0], file=sys.stderr)
+    tx_db = validate_against_bitcoind(tx, tx_db, args.network, args.bitcoind_url)
+
+    tx_db = validate_tx(tx, tx_db, args.network)
 
     # print warnings
     if tx_db:
