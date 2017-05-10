@@ -147,6 +147,15 @@ def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f
                 tx_out.script, idx, sig_type), sighash_type_to_string(sig_type)))
 
 
+def dump_footer(tx, missing_unspents):
+    if not missing_unspents:
+        print("Total input  %12.5f mBTC" % satoshi_to_mbtc(tx.total_in()))
+    if 1:
+        print("Total output %12.5f mBTC" % satoshi_to_mbtc(tx.total_out()))
+    if not missing_unspents:
+        print("Total fees   %12.5f mBTC" % satoshi_to_mbtc(tx.fee()))
+
+
 def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
     address_prefix = address_prefix_for_netcode(netcode)
     missing_unspents = tx.missing_unspents()
@@ -175,15 +184,6 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
                     print("           %s" % l)
 
     dump_footer(tx, missing_unspents)
-
-
-def dump_footer(tx, missing_unspents):
-    if not missing_unspents:
-        print("Total input  %12.5f mBTC" % satoshi_to_mbtc(tx.total_in()))
-    if 1:
-        print("Total output %12.5f mBTC" % satoshi_to_mbtc(tx.total_out()))
-    if not missing_unspents:
-        print("Total fees   %12.5f mBTC" % satoshi_to_mbtc(tx.fee()))
 
 
 def check_fees(tx):
@@ -439,7 +439,8 @@ def create_tx_db(network):
     return tx_db
 
 
-def parse_parts(arg, parts, spendables, payables, network):
+def parse_parts(arg, spendables, payables, network):
+    parts = arg.split("/")
     if len(parts) == 4:
         # spendable
         try:
@@ -454,6 +455,21 @@ def parse_parts(arg, parts, spendables, payables, network):
             return True
         except ValueError:
             pass
+
+
+def key_found(arg, payables, key_iters):
+    try:
+        key = Key.from_text(arg)
+        # TODO: check network
+        if key.wif() is None:
+            payables.append((key.address(), 0))
+            return True
+        key_iters.append(iter([key.wif()]))
+        return True
+    except Exception:
+        pass
+
+    return False
 
 
 def parse_context(args, parser):
@@ -482,29 +498,19 @@ def parse_context(args, parser):
 
     for arg in args.argument:
 
-        is_valid = is_address_valid(arg, allowable_netcodes=[args.network])
-        if is_valid:
+        if is_address_valid(arg, allowable_netcodes=[args.network]):
             payables.append((arg, 0))
             continue
 
-        try:
-            key = Key.from_text(arg)
-            # TODO: check network
-            if key.wif() is None:
-                payables.append((key.address(), 0))
-                continue
-            key_iters.append(iter([key.wif()]))
+        if key_found(arg, payables, key_iters):
             continue
-        except Exception:
-            pass
 
         tx, tx_db = parse_tx(arg, parser, tx_db, args.network)
         if tx:
             txs.append(tx)
             continue
 
-        parts = arg.split("/")
-        if parse_parts(arg, parts, spendables, payables, args.network):
+        if parse_parts(arg, spendables, payables, args.network):
             continue
 
         parser.error("can't parse %s" % arg)
@@ -515,12 +521,6 @@ def parse_context(args, parser):
         warning_spendables = message_about_spendables_for_address_env(args.network)
         for address in args.fetch_spendables:
             spendables.extend(spendables_for_address(address))
-
-    for tx in txs:
-        if tx.missing_unspents() and (args.augment or tx_db):
-            if tx_db is None:
-                tx_db = create_tx_db(args.network)
-            tx.unspents_from_db(tx_db, ignore_missing=True)
 
     return (txs, spendables, payables, key_iters, tx_db, warning_spendables)
 
@@ -683,6 +683,12 @@ def main():
     args = parser.parse_args()
 
     (txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
+
+    for tx in txs:
+        if tx.missing_unspents() and (args.augment or tx_db):
+            if tx_db is None:
+                tx_db = create_tx_db(args.network)
+            tx.unspents_from_db(tx_db, ignore_missing=True)
 
     # build p2sh_lookup
     p2sh_lookup = build_p2sh_lookup(args)
