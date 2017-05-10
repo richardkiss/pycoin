@@ -14,13 +14,18 @@ def get_test_cases():
     paths = []
     for dirpath, dirnames, filenames in os.walk(TESTS_PATH):
         for fn in filenames:
-            paths.append(os.path.join(dirpath, fn))
+            if fn.endswith(".txt") and fn[0] != '.':
+                paths.append(os.path.join(dirpath, fn))
     paths.sort()
     l = []
     for p in paths:
         with open(p) as f:
-            cmd = f.readline()[:-1]
-            expected_output = f.read()[:-1]
+            # allow "#" comments at the beginning of the file
+            while 1:
+                cmd = f.readline()[:-1]
+                if cmd[0] != '#':
+                    break
+            expected_output = f.read()
             test_name = os.path.relpath(
                 p, TESTS_PATH).replace(".", "_").replace("/", "_")
             l.append((test_name, cmd, expected_output))
@@ -31,15 +36,15 @@ class CmdlineTest(ToolTest):
     pass
 
 
-CACHE_DIR = tempfile.mkdtemp()
-
 
 def make_f(cmd, expected_output):
 
     def f(self):
+        CACHE_DIR = tempfile.mkdtemp()
         env = dict(PYCOIN_CACHE_DIR=CACHE_DIR)
         os.chdir(CACHE_DIR)
-        actual_output = self.launch_tool(cmd, env=env)
+        for c in cmd.split(";"):
+            actual_output = self.launch_tool(c, env=env)
         if actual_output != expected_output:
             print(repr(cmd))
             print(repr(actual_output))
