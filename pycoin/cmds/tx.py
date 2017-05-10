@@ -421,6 +421,17 @@ def parse_scripts(args):
     return scripts, warnings
 
 
+def build_p2sh_lookup(args):
+    scripts, warnings = parse_scripts(args)
+    for w in warnings:
+        print(w)
+
+    p2sh_lookup = {}
+    for script in scripts:
+        p2sh_lookup[hash160(script)] = script
+    return p2sh_lookup
+
+
 def create_tx_db(network):
     tx_db = get_tx_db(network)
     tx_db.warning_tx_cache = message_about_tx_cache_env()
@@ -566,6 +577,63 @@ def wif_iter(iters):
                 break
 
 
+def generate_tx(txs, spendables, payables, args):
+    txs_in, txs_out, unspents = merge_txs(txs, spendables, payables)
+    lock_time, version = calculate_lock_time_and_version(args, txs)
+    txs_in = remove_indices(txs_in, args.remove_tx_in)
+    txs_out = remove_indices(txs_out, args.remove_tx_out)
+    tx = Tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
+    fee = args.fee
+    try:
+        if len(payables) > 0:
+            distribute_from_split_pool(tx, fee)
+    except ValueError as ex:
+        print("warning: %s" % ex.args[0], file=sys.stderr)
+    return tx
+
+
+def produce_output(tx, include_unspents, output_file, show_unspents,
+                   network, verbose_signature, disassemble, trace, pdb):
+    if len(tx.txs_in) == 0:
+        print("warning: transaction has no inputs", file=sys.stderr)
+
+    if len(tx.txs_out) == 0:
+        print("warning: transaction has no outputs", file=sys.stderr)
+
+    tx_as_hex = tx.as_hex(include_unspents=include_unspents)
+
+    if output_file:
+        f = output_file
+        if f.name.endswith(".hex"):
+            f.write(tx_as_hex.encode("utf8"))
+        else:
+            tx.stream(f, include_unspents=include_unspents)
+        f.close()
+    elif show_unspents:
+        for spendable in tx.tx_outs_as_spendable():
+            print(spendable.as_text())
+    else:
+        if not tx.missing_unspents():
+            check_fees(tx)
+        dump_tx(tx, network, verbose_signature, disassemble, trace, pdb)
+        if include_unspents:
+            print("including unspents in hex dump since transaction not fully signed")
+        print(tx_as_hex)
+
+
+def do_signing(tx, key_iters, p2sh_lookup):
+    unsigned_before = tx.bad_signature_count()
+    unsigned_after = unsigned_before
+    if unsigned_before > 0 and key_iters:
+        print("signing...", file=sys.stderr)
+        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup)
+
+        unsigned_after = tx.bad_signature_count()
+        if unsigned_after > 0:
+            print("warning: %d TxIn items still unsigned" % unsigned_after, file=sys.stderr)
+    return unsigned_after == 0
+
+
 def main():
     parser = create_parser()
     args = parser.parse_args()
@@ -587,63 +655,15 @@ def main():
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
     # build p2sh_lookup
-    scripts, warnings = parse_scripts(args)
-    for w in warnings:
-        print(w)
+    p2sh_lookup = build_p2sh_lookup(args)
 
-    p2sh_lookup = {}
-    for script in scripts:
-        p2sh_lookup[hash160(script)] = script
+    tx = generate_tx(txs, spendables, payables, args)
 
-    txs_in, txs_out, unspents = merge_txs(txs, spendables, payables)
-    lock_time, version = calculate_lock_time_and_version(args, txs)
-    txs_in = remove_indices(txs_in, args.remove_tx_in)
-    txs_out = remove_indices(txs_out, args.remove_tx_out)
-    tx = Tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
+    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup)
 
-    fee = args.fee
-    try:
-        if len(payables) > 0:
-            distribute_from_split_pool(tx, fee)
-    except ValueError as ex:
-        print("warning: %s" % ex.args[0], file=sys.stderr)
-
-    unsigned_before = tx.bad_signature_count()
-    unsigned_after = unsigned_before
-    if unsigned_before > 0 and key_iters:
-        print("signing...", file=sys.stderr)
-        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup)
-
-        unsigned_after = tx.bad_signature_count()
-        if unsigned_after > 0:
-            print("warning: %d TxIn items still unsigned" % unsigned_after, file=sys.stderr)
-
-    if len(tx.txs_in) == 0:
-        print("warning: transaction has no inputs", file=sys.stderr)
-
-    if len(tx.txs_out) == 0:
-        print("warning: transaction has no outputs", file=sys.stderr)
-
-    include_unspents = (unsigned_after > 0)
-    tx_as_hex = tx.as_hex(include_unspents=include_unspents)
-
-    if args.output_file:
-        f = args.output_file
-        if f.name.endswith(".hex"):
-            f.write(tx_as_hex.encode("utf8"))
-        else:
-            tx.stream(f, include_unspents=include_unspents)
-        f.close()
-    elif args.show_unspents:
-        for spendable in tx.tx_outs_as_spendable():
-            print(spendable.as_text())
-    else:
-        if not tx.missing_unspents():
-            check_fees(tx)
-        dump_tx(tx, args.network, args.verbose_signature, args.disassemble, args.trace, args.pdb)
-        if include_unspents:
-            print("including unspents in hex dump since transaction not fully signed")
-        print(tx_as_hex)
+    include_unspents = not is_fully_signed
+    produce_output(tx, include_unspents, args.output_file, args.show_unspents, args.network,
+                   args.verbose_signature, args.disassemble, args.trace, args.pdb)
 
     if args.cache:
         if tx_db is None:
