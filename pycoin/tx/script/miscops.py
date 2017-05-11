@@ -125,6 +125,22 @@ def do_OP_CHECKLOCKTIMEVERIFY(vm):
         raise ScriptError("nLockTime too soon")
 
 
+def _check_sequence_verify(sequence, tx_context_sequence):
+    # this mask is applied to extract lock-time from the sequence field
+    SEQUENCE_LOCKTIME_MASK = 0xffff
+
+    mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
+    sequence_masked = sequence & mask
+    tx_sequence_masked = tx_context_sequence & mask
+    if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
+             (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
+            ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
+             (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
+        raise ScriptError("sequence numbers not comparable")
+    if sequence_masked > tx_sequence_masked:
+        raise ScriptError("sequence number too small")
+
+
 def do_OP_CHECKSEQUENCEVERIFY(vm):
     if not (vm.flags & VERIFY_CHECKSEQUENCEVERIFY):
         if (vm.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS):
@@ -147,19 +163,7 @@ def do_OP_CHECKSEQUENCEVERIFY(vm):
     if vm.tx_context.sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
         raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
 
-    # this mask is applied to extract lock-time from the sequence field
-    SEQUENCE_LOCKTIME_MASK = 0xffff
-
-    mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
-    sequence_masked = sequence & mask
-    tx_sequence_masked = vm.tx_context.sequence & mask
-    if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
-             (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
-            ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
-             (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
-        raise ScriptError("sequence numbers not comparable")
-    if sequence_masked > tx_sequence_masked:
-        raise ScriptError("sequence number too small")
+    _check_sequence_verify(sequence, vm.tx_context.sequence)
 
 
 def extra_opcodes():
