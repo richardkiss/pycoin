@@ -61,7 +61,7 @@ def add_sec_annotations(a1, data, address_prefix):
 def instruction_for_opcode(opcode, data):
     if data is None or len(data) == 0:
         return INT_TO_OPCODE.get(opcode, "(UNKNOWN OPCODE)")
-    return "[PUSH_%d] %s" % (opcode, binascii.hexlify(data))
+    return "[PUSH_%d] %s" % (opcode, b2h(data))
 
 
 def annotation_f_for_scripts(input_script, output_script, signature_for_hash_type_f):
