@@ -1,3 +1,6 @@
-class Tx: pass
+class Tx:
+    pass
 
-class Block: pass
+
+class Block:
+    pass

@@ -43,14 +43,14 @@ from .microcode import VCH_TRUE, VCH_FALSE
 from .tools import bin_script, delete_subscript, int_from_script_bytes
 
 
-def check_valid_signature(sig):
+def check_valid_signature(sig):  # noqa
     # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
     sig = [s for s in iterbytes(sig)]
     ls = len(sig)
     if ls < 9 or ls > 73:
         raise ScriptError("bad signature size", errno.SIG_DER)
     if sig[0] != 0x30:
-        raise ScriptError("bad signature byte 0", errno.errno.SIG_DER)
+        raise ScriptError("bad signature byte 0", errno.SIG_DER)
     if sig[1] != ls - 3:
         raise ScriptError("signature size wrong", errno.SIG_DER)
     r_len = sig[3]
