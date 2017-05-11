@@ -1,11 +1,9 @@
-import binascii
-
 from pycoin.ecdsa import generator_secp256k1, possible_public_pairs_for_signature
 from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitcoin_address,
                              sec_to_public_pair, is_sec_compressed)
 
 from pycoin.serialize import b2h
-from pycoin.tx.script.VM import VM
+from pycoin.tx.script.VM import VM, ScriptTools
 from pycoin.tx.script.SolutionChecker import SolutionChecker
 
 from pycoin.tx.script.checksigops import parse_signature_blob
@@ -59,16 +57,11 @@ def add_sec_annotations(a1, data, address_prefix):
 
 def instruction_for_opcode(opcode, data):
     if data is None or len(data) == 0:
-        return VM.INT_TO_OPCODE.get(opcode, "(UNKNOWN OPCODE)")
-    return "[PUSH_%d] %s" % (opcode, binascii.hexlify(data))
+        return ScriptTools.disassemble_for_opcode_data(opcode, data)
+    return "[PUSH_%d] %s" % (opcode, b2h(data))
 
 
-def annotation_f_for_scripts(input_script, output_script, signature_for_hash_type_f):
-    is_p2sh = SolutionChecker.is_pay_to_script_hash(output_script)
-    in_ap = b'\0'
-    out_ap = b'\0'
-    if is_p2sh:
-        out_ap = b'\5'
+def _make_input_annotations_f(input_script, output_script, signature_for_hash_type_f, in_ap, is_p2sh):
 
     def input_annotations_f(pc, opcode, data):
         a0, a1 = [], []
@@ -82,6 +75,10 @@ def annotation_f_for_scripts(input_script, output_script, signature_for_hash_typ
         if ld in (33, 65):
             add_sec_annotations(a1, data, address_prefix=in_ap)
         return a0, a1
+    return input_annotations_f
+
+
+def _make_output_annotations_f(input_script, output_script, signature_for_hash_type_f, out_ap):
 
     def output_annotations_f(pc, opcode, data):
         a0, a1 = [], []
@@ -93,8 +90,20 @@ def annotation_f_for_scripts(input_script, output_script, signature_for_hash_typ
         if ld in (33, 65):
             add_sec_annotations(a1, data, address_prefix=out_ap)
         return a0, a1
+    return output_annotations_f
 
-    return input_annotations_f, output_annotations_f
+
+def annotation_f_for_scripts(input_script, output_script, signature_for_hash_type_f):
+    is_p2sh = SolutionChecker.is_pay_to_script_hash(output_script)
+    in_ap = b'\0'
+    out_ap = b'\0'
+    if is_p2sh:
+        out_ap = b'\5'
+
+    iaf = _make_input_annotations_f(input_script, output_script, signature_for_hash_type_f, in_ap, is_p2sh)
+    oaf = _make_output_annotations_f(input_script, output_script, signature_for_hash_type_f, out_ap)
+
+    return iaf, oaf
 
 
 def disassemble_scripts(input_script, output_script, lock_time, signature_for_hash_type_f):

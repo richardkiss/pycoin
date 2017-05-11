@@ -9,7 +9,6 @@ from ..script.VM import VM
 from pycoin.intbytes import int2byte
 
 
-
 def generate_default_placeholder_signature():
     order = ecdsa.generator_secp256k1.order()
     r, s = order - 1, order // 2

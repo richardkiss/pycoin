@@ -37,6 +37,7 @@ def stream_bc_string(f, v):
     stream_bc_int(f, len(v))
     f.write(v)
 
+
 STREAMER_FUNCTIONS = {
     "I": (parse_bc_int, stream_bc_int),
     "S": (parse_bc_string, stream_bc_string),

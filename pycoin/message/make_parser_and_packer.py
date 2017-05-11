@@ -55,6 +55,36 @@ def standard_messages():
     return dict(STANDARD_P2P_MESSAGES)
 
 
+def _recurse(level_widths, level_index, node_index, hashes, flags, flag_index, tx_acc):
+    idx, r = divmod(flag_index, 8)
+    mask = (1 << r)
+    flag_index += 1
+    if flags[idx] & mask == 0:
+        h = hashes.pop()
+        return h, flag_index
+
+    if level_index == len(level_widths) - 1:
+        h = hashes.pop()
+        tx_acc.append(h)
+        return h, flag_index
+
+    # traverse the left
+    left_hash, flag_index = _recurse(
+        level_widths, level_index+1, node_index*2, hashes, flags, flag_index, tx_acc)
+
+    # is there a right?
+    if node_index*2+1 < level_widths[level_index+1]:
+        right_hash, flag_index = _recurse(
+            level_widths, level_index+1, node_index*2+1, hashes, flags, flag_index, tx_acc)
+
+        if left_hash == right_hash:
+            raise ValueError("merkle hash has same left and right value at node %d" % node_index)
+    else:
+        right_hash = left_hash
+
+    return double_sha256(left_hash + right_hash), flag_index
+
+
 def post_unpack_merkleblock(d, f):
     """
     A post-processing "post_unpack" to merkleblock messages.
@@ -64,35 +94,6 @@ def post_unpack_merkleblock(d, f):
 
     The transactions are supposed to be sent immediately after the merkleblock message.
     """
-    def recurse(level_widths, level_index, node_index, hashes, flags, flag_index, tx_acc):
-        idx, r = divmod(flag_index, 8)
-        mask = (1 << r)
-        flag_index += 1
-        if flags[idx] & mask == 0:
-            h = hashes.pop()
-            return h, flag_index
-
-        if level_index == len(level_widths) - 1:
-            h = hashes.pop()
-            tx_acc.append(h)
-            return h, flag_index
-
-        # traverse the left
-        left_hash, flag_index = recurse(
-            level_widths, level_index+1, node_index*2, hashes, flags, flag_index, tx_acc)
-
-        # is there a right?
-        if node_index*2+1 < level_widths[level_index+1]:
-            right_hash, flag_index = recurse(
-                level_widths, level_index+1, node_index*2+1, hashes, flags, flag_index, tx_acc)
-
-            if left_hash == right_hash:
-                raise ValueError("merkle hash has same left and right value at node %d" % node_index)
-        else:
-            right_hash = left_hash
-
-        return double_sha256(left_hash + right_hash), flag_index
-
     level_widths = []
     count = d["total_transactions"]
     while count > 1:
@@ -105,7 +106,7 @@ def post_unpack_merkleblock(d, f):
     tx_acc = []
     flags = d["flags"]
     hashes = list(reversed(d["hashes"]))
-    left_hash, flag_index = recurse(level_widths, 0, 0, hashes, flags, 0, tx_acc)
+    left_hash, flag_index = _recurse(level_widths, 0, 0, hashes, flags, 0, tx_acc)
 
     if len(hashes) > 0:
         raise ValueError("extra hashes: %s" % hashes)
