@@ -1,5 +1,3 @@
-import binascii
-
 from pycoin.ecdsa import generator_secp256k1, possible_public_pairs_for_signature
 from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitcoin_address,
                              sec_to_public_pair, is_sec_compressed)

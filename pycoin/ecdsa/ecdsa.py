@@ -153,7 +153,7 @@ def possible_public_pairs_for_signature(generator, value, signature):
 
     r,s = signature
 
-    possible_points = set()
+    possible_points = []
 
     #recid = nV - 27
     # 1.1
@@ -172,5 +172,5 @@ def possible_public_pairs_for_signature(generator, value, signature):
         # check that Q is the public key
         if verify(generator, public_pair, value, signature):
         # check that we get the original signing address
-            possible_points.add(public_pair)
+            possible_points.append(public_pair)
     return possible_points
