@@ -12,6 +12,7 @@ from pycoin.tx.script.VM import ScriptTools, VM
 bin_script = ScriptTools.compile_push_data_list
 compile = ScriptTools.compile
 disassemble = ScriptTools.disassemble
+int_to_script_bytes = ScriptTools.intStreamer.int_to_script_bytes
 
 class myVM(VM):
     MAX_SCRIPT_LENGTH = int(1e9)
