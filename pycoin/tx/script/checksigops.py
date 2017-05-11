@@ -40,9 +40,7 @@ from .flags import (
 )
 
 
-def check_valid_signature(sig):  # noqa
-    # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
-    sig = [s for s in iterbytes(sig)]
+def _check_valid_signature_1(sig):
     ls = len(sig)
     if ls < 9 or ls > 73:
         raise ScriptError("bad signature size", errno.SIG_DER)
@@ -53,6 +51,11 @@ def check_valid_signature(sig):  # noqa
     r_len = sig[3]
     if 5 + r_len >= ls:
         raise ScriptError("r length exceed signature size", errno.SIG_DER)
+
+
+def _check_valid_signature_2(sig):
+    ls = len(sig)
+    r_len = sig[3]
     s_len = sig[5 + r_len]
     if r_len + s_len + 7 != ls:
         raise ScriptError("r and s size exceed signature size", errno.SIG_DER)
@@ -74,6 +77,20 @@ def check_valid_signature(sig):  # noqa
     if s_len > 1 and sig[r_len + 6] == 0 and not (sig[r_len + 7] & 0x80):
         raise ScriptError(
             "S value can't have leading 0 byte unless doing so would make it negative", errno.SIG_DER)
+
+
+def check_valid_signature(sig):
+    # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
+    sig = [s for s in iterbytes(sig)]
+    _check_valid_signature_1(sig)
+    _check_valid_signature_2(sig)
+
+
+def check_valid_signature(sig):
+    # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
+    sig = [s for s in iterbytes(sig)]
+    _check_valid_signature_1(sig)
+    _check_valid_signature_2(sig)
 
 
 def check_low_der_signature(sig_pair):
