@@ -86,13 +86,6 @@ def check_valid_signature(sig):
     _check_valid_signature_2(sig)
 
 
-def check_valid_signature(sig):
-    # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
-    sig = [s for s in iterbytes(sig)]
-    _check_valid_signature_1(sig)
-    _check_valid_signature_2(sig)
-
-
 def check_low_der_signature(sig_pair):
     # IsLowDERSignature
     r, s = sig_pair
@@ -253,18 +246,14 @@ def do_OP_CHECKMULTISIG(vm):
     if key_count < 0 or key_count > 20:
         raise ScriptError("key_count not in range 0 to 20", errno.PUBKEY_COUNT)
 
-    public_pair_blobs = []
-    for i in range(key_count):
-        public_pair_blobs.append(stack.pop())
+    public_pair_blobs = [stack.pop() for _ in range(key_count)]
 
     signature_count = vm.IntStreamer.int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     if signature_count < 0 or signature_count > key_count:
         raise ScriptError(
             "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
 
-    sig_blobs = []
-    for i in range(signature_count):
-        sig_blobs.append(stack.pop())
+    sig_blobs = [stack.pop() for _ in range(signature_count)]
 
     # check that we have the required hack 00 byte
     if flags & VERIFY_NULLDUMMY:
