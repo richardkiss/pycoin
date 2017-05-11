@@ -1,5 +1,5 @@
 
-from ...intbytes import byte_to_int, bytes_from_int
+from ...intbytes import byte2int, indexbytes, int2byte
 
 from . import ScriptError
 from . import errno
@@ -56,7 +56,7 @@ def make_sized_encoder(opcode_value):
     Create an encoder that encodes the given opcode value as binary data
     and appends the given data.
     """
-    opcode_bin = bytes_from_int(opcode_value)
+    opcode_bin = int2byte(opcode_value)
 
     def f(data):
         return opcode_bin + data
@@ -101,7 +101,7 @@ class ScriptCodec(object):
 
         # build encoders
         const_pairs = [(opcode_lookup.get(opcode), val) for opcode, val in opcode_const_list]
-        self.const_encoder = {v: bytes_from_int(k) for k, v in const_pairs}
+        self.const_encoder = {v: int2byte(k) for k, v in const_pairs}
 
         sized_pairs = [(opcode_lookup.get(opcode), size) for opcode, size in opcode_sized_list]
         self.sized_encoder = {v: make_sized_encoder(k) for k, v in sized_pairs}
@@ -139,7 +139,7 @@ class ScriptCodec(object):
 
     def verify_minimal_data(self, opcode, data):
         script = self.bin_script([data])
-        if byte_to_int(script[0]) != opcode:
+        if byte2int(script) != opcode:
             raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
 
     def get_opcode(self, script, pc, verify_minimal_data=False):
@@ -147,7 +147,7 @@ class ScriptCodec(object):
         Step through the script, returning a tuple with the next opcode, the next
         piece of data (if the opcode represents data), and the new PC.
         """
-        opcode = byte_to_int(script[pc])
+        opcode = indexbytes(script, pc)
         f = self.decoder.get(opcode, lambda s, p, verify_minimal_data: (p+1, None))
         pc, data = f(script, pc, verify_minimal_data=verify_minimal_data)
         return opcode, data, pc
@@ -162,4 +162,4 @@ class ScriptCodec(object):
         for min_size, max_size, opcode, enc_f in self.variable_encoder:
             if size <= max_size:
                 break
-        return bytes_from_int(opcode) + enc_f(len(data)) + data
+        return int2byte(opcode) + enc_f(len(data)) + data

@@ -31,7 +31,7 @@ Portions written in 2005 by Peter Pearson and placed in the public domain.
 import hashlib
 import hmac
 
-from .. import intbytes
+from . import intstream
 from . import ellipticcurve, numbertheory
 
 
@@ -55,13 +55,13 @@ def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashl
     hash_size = hash_f().digest_size
     v = b'\x01' * hash_size
     k = b'\x00' * hash_size
-    priv = intbytes.to_bytes(secret_exponent, length=order_size)
+    priv = intstream.to_bytes(secret_exponent, length=order_size)
     shift = 8 * hash_size - bit_length(n)
     if shift > 0:
         val >>= shift
     if val > n:
         val -= n
-    h1 = intbytes.to_bytes(val, length=order_size)
+    h1 = intstream.to_bytes(val, length=order_size)
     k = hmac.new(k, v + b'\x00' + priv + h1, hash_f).digest()
     v = hmac.new(k, v, hash_f).digest()
     k = hmac.new(k, v + b'\x01' + priv + h1, hash_f).digest()
@@ -74,7 +74,7 @@ def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashl
             v = hmac.new(k, v, hash_f).digest()
             t.extend(v)
 
-        k1 = intbytes.from_bytes(bytes(t))
+        k1 = intstream.from_bytes(bytes(t))
 
         k1 >>= (len(t)*8 - bit_length(n))
         if k1 >= 1 and k1 < n:

@@ -35,7 +35,7 @@ from ..serialize.bitcoin_streamer import (
     parse_struct, parse_bc_int, parse_bc_string,
     stream_struct, stream_bc_string
 )
-from ..intbytes import byte_to_int, int_to_bytes
+from ..intbytes import byte2int, indexbytes, int2byte
 
 from .exceptions import BadSpendableError, ValidationFailureError
 from .TxIn import TxIn
@@ -250,7 +250,7 @@ class Tx(object):
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.
-        tx_out_script = SolutionChecker.VM.delete_subscript(tx_out_script, int_to_bytes(opcodes.OP_CODESEPARATOR))
+        tx_out_script = SolutionChecker.VM.delete_subscript(tx_out_script, int2byte(opcodes.OP_CODESEPARATOR))
 
         # blank out other inputs' signatures
         txs_in = [self._tx_in_for_idx(i, tx_in, tx_out_script, unsigned_txs_out_idx)
@@ -373,8 +373,8 @@ class Tx(object):
             hash_type = self.SIGHASH_ALL
         tx_in = self.txs_in[tx_in_idx]
 
-        is_p2h = (len(tx_out_script) == 23 and byte_to_int(tx_out_script[0]) == opcodes.OP_HASH160 and
-                  byte_to_int(tx_out_script[-1]) == opcodes.OP_EQUAL)
+        is_p2h = (len(tx_out_script) == 23 and byte2int(tx_out_script) == opcodes.OP_HASH160 and
+                  indexbytes(tx_out_script, -1) == opcodes.OP_EQUAL)
         if is_p2h:
             hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
             p2sh_lookup = kwargs.get("p2sh_lookup")

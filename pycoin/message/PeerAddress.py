@@ -1,7 +1,7 @@
 import functools
 import struct
 
-from pycoin.intbytes import bytes_to_ints
+from pycoin.intbytes import iterbytes
 from pycoin.serialize import h2b
 from pycoin.serialize.bitcoin_streamer import parse_struct
 
@@ -14,7 +14,7 @@ def ip_bin_to_ip6_addr(ip_bin):
 
 
 def ip_bin_to_ip4_addr(ip_bin):
-    return "%d.%d.%d.%d" % tuple(bytes_to_ints(ip_bin[-4:]))
+    return "%d.%d.%d.%d" % tuple(iterbytes(ip_bin[-4:]))
 
 
 @functools.total_ordering

@@ -36,7 +36,6 @@ import os
 import io
 import binascii
 
-from pycoin.intbytes import bytes_from_int, byte_to_int
 from pycoin.serialize import h2b_rev, h2b
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.Tx import Tx

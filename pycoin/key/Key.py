@@ -8,7 +8,6 @@ from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
 from pycoin.tx.script.der import sigencode_der, sigdecode_der
-from pycoin import intbytes
 
 
 class InvalidPublicPairError(ValueError):
@@ -237,7 +236,7 @@ class Key(object):
         """
         if not self.is_private():
             raise RuntimeError("Key must be private to be able to sign")
-        val = intbytes.from_bytes(h)
+        val = from_bytes_32(h)
         r, s = ecdsa.sign(ecdsa.generator_secp256k1, self.secret_exponent(),
                           val)
         return sigencode_der(r, s)
@@ -246,7 +245,7 @@ class Key(object):
         """
         Return whether a signature is valid for hash h using this key.
         """
-        val = intbytes.from_bytes(h)
+        val = from_bytes_32(h)
         pubkey = self.public_pair()
         rs = sigdecode_der(sig)
         if self.public_pair() is None:

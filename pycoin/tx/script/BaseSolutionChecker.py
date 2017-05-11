@@ -8,7 +8,7 @@ from .flags import (
 
 from .BaseVM import VM
 
-from ...intbytes import byte_to_int
+from ...intbytes import byte2int, indexbytes
 
 from . import ScriptError
 from . import errno
@@ -30,8 +30,8 @@ class SolutionChecker(object):
 
     @staticmethod
     def is_pay_to_script_hash(script_public_key):
-        return (len(script_public_key) == 23 and byte_to_int(script_public_key[0]) == opcodes.OP_HASH160 and
-                byte_to_int(script_public_key[-1]) == opcodes.OP_EQUAL)
+        return (len(script_public_key) == 23 and byte2int(script_public_key) == opcodes.OP_HASH160 and
+                indexbytes(script_public_key, -1) == opcodes.OP_EQUAL)
 
     @classmethod
     def get_opcode(class_, script, pc):
@@ -96,8 +96,8 @@ class SolutionChecker(object):
         l = len(script)
         if l < 4 or l > 42:
             return None
-        first_opcode = byte_to_int(script[0])
-        if byte_to_int(script[1]) + 2 != l:
+        first_opcode = byte2int(script)
+        if indexbytes(script, 1) + 2 != l:
             return None
         if first_opcode == opcodes.OP_0:
             return 0

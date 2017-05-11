@@ -83,23 +83,7 @@ def parse_as_public_pair(s):
                     return (v0, v1)
 
 
-def create_output(item, key, subkey_path=None):
-    output_dict = {}
-    output_order = []
-
-    def add_output(json_key, value=None, human_readable_key=None):
-        if human_readable_key is None:
-            human_readable_key = json_key.replace("_", " ")
-        if value:
-            output_dict[json_key.strip().lower()] = value
-        output_order.append((json_key.lower(), human_readable_key))
-
-    network_name = network_name_for_netcode(key._netcode)
-    full_network_name = full_network_name_for_netcode(key._netcode)
-    add_output("input", item)
-    add_output("network", full_network_name)
-    add_output("netcode", key._netcode)
-
+def create_wallet_key_output(key, subkey_path, add_output):
     if hasattr(key, "wallet_key"):
         if subkey_path:
             add_output("subkey_path", subkey_path)
@@ -122,13 +106,8 @@ def create_output(item, key, subkey_path=None):
 
         add_output("private_key", "yes" if key.is_private() else "no")
 
-    secret_exponent = key.secret_exponent()
-    if secret_exponent:
-        add_output("secret_exponent", '%d' % secret_exponent)
-        add_output("secret_exponent_hex", '%x' % secret_exponent, " hex")
-        add_output("wif", key.wif(use_uncompressed=False))
-        add_output("wif_uncompressed", key.wif(use_uncompressed=True), " uncompressed")
 
+def create_public_pair_output(key, add_output):
     public_pair = key.public_pair()
 
     if public_pair:
@@ -140,6 +119,35 @@ def create_output(item, key, subkey_path=None):
 
         add_output("key_pair_as_sec", b2h(key.sec(use_uncompressed=False)))
         add_output("key_pair_as_sec_uncompressed", b2h(key.sec(use_uncompressed=True)), " uncompressed")
+
+
+def create_output(item, key, subkey_path=None):
+    output_dict = {}
+    output_order = []
+
+    def add_output(json_key, value=None, human_readable_key=None):
+        if human_readable_key is None:
+            human_readable_key = json_key.replace("_", " ")
+        if value:
+            output_dict[json_key.strip().lower()] = value
+        output_order.append((json_key.lower(), human_readable_key))
+
+    network_name = network_name_for_netcode(key._netcode)
+    full_network_name = full_network_name_for_netcode(key._netcode)
+    add_output("input", item)
+    add_output("network", full_network_name)
+    add_output("netcode", key._netcode)
+
+    create_wallet_key_output(key, subkey_path, add_output)
+
+    secret_exponent = key.secret_exponent()
+    if secret_exponent:
+        add_output("secret_exponent", '%d' % secret_exponent)
+        add_output("secret_exponent_hex", '%x' % secret_exponent, " hex")
+        add_output("wif", key.wif(use_uncompressed=False))
+        add_output("wif_uncompressed", key.wif(use_uncompressed=True), " uncompressed")
+
+    create_public_pair_output(key, add_output)
 
     hash160_c = key.hash160(use_uncompressed=False)
     if hash160_c:
@@ -180,7 +188,7 @@ def dump_output(output_dict, output_order):
             print("%s%s: %s" % (hr_key, space_padding, val))
 
 
-def main():
+def create_parser():
     codes = network_codes()
     parser = argparse.ArgumentParser(
         description='Crypto coin utility ku ("key utility") to show'
@@ -218,59 +226,92 @@ def main():
         ' secret_exponent (in decimal or hex);'
         ' x,y where x,y form a public pair (y is a number or one of the strings "even" or "odd");'
         ' hash160 (as 40 hex characters)')
+    return parser
 
+
+def prefix_transforms_for_network(network):
+    def _create_bip32(_):
+        max_retries = 64
+        for _ in range(max_retries):
+            try:
+                return BIP32Node.from_master_secret(get_entropy(), netcode=network)
+            except ValueError as e:
+                continue
+        # Probably a bug if we get here
+        raise e
+
+    return (
+        ("P:", lambda s: BIP32Node.from_master_secret(s.encode("utf8"), netcode=network)),
+        ("H:", lambda s: BIP32Node.from_master_secret(h2b(s), netcode=network)),
+        ("E:", lambda s: key_from_text(s)),
+        ("create", _create_bip32),
+    )
+
+
+def parse_prefixes(item, PREFIX_TRANSFORMS):
+    for k, f in PREFIX_TRANSFORMS:
+        if item.startswith(k):
+            try:
+                return f(item[len(k):])
+            except Exception:
+                pass
+
+    try:
+        return Key.from_text(item)
+    except encoding.EncodingError:
+        pass
+    return None
+
+
+def parse_key(item, PREFIX_TRANSFORMS, network):
+
+    key = parse_prefixes(item, PREFIX_TRANSFORMS)
+    if key:
+        return key
+
+    secret_exponent = parse_as_secret_exponent(item)
+    if secret_exponent:
+        return Key(secret_exponent=secret_exponent, netcode=network)
+
+    if SEC_RE.match(item):
+        return Key.from_sec(h2b(item))
+
+    public_pair = parse_as_public_pair(item)
+    if public_pair:
+        return Key(public_pair=public_pair, netcode=network)
+
+    if HASH160_RE.match(item):
+        return Key(hash160=h2b(item), netcode=network)
+    return None
+
+
+def generate_output(args, output_dict, output_order):
+    if args.json:
+        # the python2 version of json.dumps puts an extra blank prior to the end of each line
+        # the "replace" is a hack to make python2 produce the same output as python3
+        print(json.dumps(output_dict, indent=3, sort_keys=True).replace(" \n", "\n"))
+    elif args.wallet:
+        print(output_dict["wallet_key"])
+    elif args.wif:
+        print(output_dict["wif_uncompressed" if args.uncompressed else "wif"])
+    elif args.address:
+        print(output_dict["address" + ("_uncompressed" if args.uncompressed else "")])
+    else:
+        dump_output(output_dict, output_order)
+
+
+def main():
+    parser = create_parser()
     args = parser.parse_args()
 
     if args.override_network:
         # force network arg to match override, but also will override decoded data below.
         args.network = args.override_network
 
-    def _create(_):
-        max_retries = 64
-        for _ in range(max_retries):
-            try:
-                return BIP32Node.from_master_secret(get_entropy(), netcode=args.network)
-            except ValueError as e:
-                continue
-        # Probably a bug if we get here
-        raise e
-
-    PREFIX_TRANSFORMS = (
-        ("P:", lambda s: BIP32Node.from_master_secret(s.encode("utf8"), netcode=args.network)),
-        ("H:", lambda s: BIP32Node.from_master_secret(h2b(s), netcode=args.network)),
-        ("E:", lambda s: key_from_text(s)),
-        ("create", _create),
-    )
+    PREFIX_TRANSFORMS = prefix_transforms_for_network(args.network)
 
     for item in args.item:
-        key = None
-        for k, f in PREFIX_TRANSFORMS:
-            if item.startswith(k):
-                try:
-                    key = f(item[len(k):])
-                    break
-                except Exception:
-                    pass
-        else:
-            try:
-                key = Key.from_text(item)
-            except encoding.EncodingError:
-                pass
-        if key is None:
-            secret_exponent = parse_as_secret_exponent(item)
-            if secret_exponent:
-                key = Key(secret_exponent=secret_exponent, netcode=args.network)
-
-        if SEC_RE.match(item):
-            key = Key.from_sec(h2b(item))
-
-        if key is None:
-            public_pair = parse_as_public_pair(item)
-            if public_pair:
-                key = Key(public_pair=public_pair, netcode=args.network)
-
-        if HASH160_RE.match(item):
-            key = Key(hash160=h2b(item), netcode=args.network)
+        key = parse_key(item, PREFIX_TRANSFORMS, args.network)
 
         if key is None:
             print("can't parse %s" % item, file=sys.stderr)
@@ -288,16 +329,8 @@ def main():
 
             output_dict, output_order = create_output(item, key)
 
-            if args.json:
-                print(json.dumps(output_dict, indent=3, sort_keys=True))
-            elif args.wallet:
-                print(output_dict["wallet_key"])
-            elif args.wif:
-                print(output_dict["wif_uncompressed" if args.uncompressed else "wif"])
-            elif args.address:
-                print(output_dict["address" + ("_uncompressed" if args.uncompressed else "")])
-            else:
-                dump_output(output_dict, output_order)
+            generate_output(args, output_dict, output_order)
+
 
 if __name__ == '__main__':
     main()

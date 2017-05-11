@@ -1,7 +1,7 @@
 import binascii
 import io
 
-from ...intbytes import bytes_from_int
+from ...intbytes import int2byte
 
 from . import ScriptError
 
@@ -42,9 +42,9 @@ class ScriptTools(object):
         f = io.BytesIO()
         for t in s.split():
             if t in self.opcode_to_int:
-                f.write(bytes_from_int(self.opcode_to_int[t]))
+                f.write(int2byte(self.opcode_to_int[t]))
             elif ("OP_%s" % t) in self.opcode_to_int:
-                f.write(bytes_from_int(self.opcode_to_int["OP_%s" % t]))
+                f.write(int2byte(self.opcode_to_int["OP_%s" % t]))
             elif t.startswith("0x"):
                 d = binascii.unhexlify(t[2:])
                 f.write(d)

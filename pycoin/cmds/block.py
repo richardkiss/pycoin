@@ -38,5 +38,6 @@ def main():
         dump_block(block)
         print('')
 
+
 if __name__ == '__main__':
     main()
