@@ -276,9 +276,8 @@ def do_OP_CHECKMULTISIG(vm):
             sig_ok = vm.VM_TRUE
 
     if not sig_ok and flags & VERIFY_NULLFAIL:
-        for sig_blob in sig_blobs:
-            if len(sig_blob) > 0:
-                raise ScriptError("bad signature not NULL", errno.NULLFAIL)
+        if any(len(sig_blob) > 0 for sig_blob in sig_blobs):
+            raise ScriptError("bad signature not NULL", errno.NULLFAIL)
 
     stack.append(sig_ok)
 
