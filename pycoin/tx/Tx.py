@@ -35,7 +35,7 @@ from ..serialize.bitcoin_streamer import (
     parse_struct, parse_bc_int, parse_bc_string,
     stream_struct, stream_bc_string
 )
-from ..intbytes import byte2int, indexbytes, int2byte
+from ..intbytes import int2byte
 
 from .exceptions import BadSpendableError, ValidationFailureError
 from .TxIn import TxIn
@@ -373,8 +373,7 @@ class Tx(object):
             hash_type = self.SIGHASH_ALL
         tx_in = self.txs_in[tx_in_idx]
 
-        is_p2h = (len(tx_out_script) == 23 and byte2int(tx_out_script) == opcodes.OP_HASH160 and
-                  indexbytes(tx_out_script, -1) == opcodes.OP_EQUAL)
+        is_p2h = self.SolutionChecker.is_pay_to_script_hash(tx_out_script)
         if is_p2h:
             hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
             p2sh_lookup = kwargs.get("p2sh_lookup")

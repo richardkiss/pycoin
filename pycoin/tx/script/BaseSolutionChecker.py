@@ -28,10 +28,9 @@ class VMContext(object):
 class SolutionChecker(object):
     VM = VM
 
-    @staticmethod
-    def is_pay_to_script_hash(script_public_key):
-        return (len(script_public_key) == 23 and byte2int(script_public_key) == opcodes.OP_HASH160 and
-                indexbytes(script_public_key, -1) == opcodes.OP_EQUAL)
+    @classmethod
+    def is_pay_to_script_hash(class_, script_public_key):
+        raise NotImplemented()
 
     @classmethod
     def get_opcode(class_, script, pc):
