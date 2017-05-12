@@ -168,18 +168,16 @@ def do_OP_CHECKSIG(vm):
         stack.append(vm.VM_FALSE)
 
 
-def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script,
-                     flags, exit_early=False):
+def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script, flags):
     """
     sig_blobs: signature blobs
     public_pair_blobs: a list of public pair blobs
     tmp_script: the script as of the last code separator
     signature_for_hash_type_f: signature_for_hash_type_f
     flags: verification flags to apply
-    exit_early: if True, we may exit early if one of the sig_blobs is incorrect or misplaced. Used
     for checking a supposedly validated transaction. A -1 indicates no match.
 
-    Returns a list of indices into public_pairs. If exit_early is True, it may return early.
+    Returns a list of indices into public_pairs. It may return early.
     If sig_blob_indices isn't long enough or contains a -1, the signature is not valid.
     """
 
@@ -195,7 +193,7 @@ def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script,
     ppb_idx = -1
 
     while sig_blobs and len(sig_blobs) <= len(public_pair_blobs):
-        if exit_early and -1 in sig_blob_indices:
+        if -1 in sig_blob_indices:
             break
         sig_blob, sig_blobs = sig_blobs[0], sig_blobs[1:]
         try:
@@ -265,8 +263,8 @@ def do_OP_CHECKMULTISIG(vm):
             raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
 
     stack.pop()
-    sig_blob_indices = sig_blob_matches(
-        vm, sig_blobs, public_pair_blobs, tmp_script, flags, exit_early=True)
+
+    sig_blob_indices = sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script, flags)
 
     sig_ok = vm.VM_FALSE
     if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):
