@@ -6,7 +6,7 @@ from .ScriptType import ScriptType
 
 
 class ScriptNulldata(ScriptType):
-    TEMPLATE = ScriptTools.compile("OP_RETURN OP_NULLDATA")
+    TEMPLATE = ScriptTools.compile("OP_RETURN 'DATA'")
 
     def __init__(self, nulldata):
         self.nulldata = nulldata
@@ -16,7 +16,7 @@ class ScriptNulldata(ScriptType):
     def from_script(cls, script):
         r = cls.match(script)
         if r:
-            nulldata = r["NULLDATA_LIST"][0]
+            nulldata = r["DATA_LIST"][0]
             s = cls(nulldata)
             return s
         raise ValueError("bad script")
