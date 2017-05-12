@@ -257,12 +257,9 @@ def do_OP_CHECKMULTISIG(vm):
     sig_blobs = [stack.pop() for _ in range(signature_count)]
 
     # check that we have the required hack 00 byte
-    if flags & VERIFY_NULLDUMMY:
-        hack_byte = stack[-1]
-        if hack_byte != b'':
-            raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
-
-    stack.pop()
+    hack_byte = stack.pop()
+    if flags & VERIFY_NULLDUMMY and hack_byte != b'':
+        raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
 
     sig_blob_indices = sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script, flags)
 
