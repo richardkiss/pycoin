@@ -212,25 +212,28 @@ def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script,
                 ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
         except ecdsa.NoSuchPointError:
             ppp = []
-
-        while len(sig_blobs) < len(public_pair_blobs):
-            public_pair_blob, public_pair_blobs = public_pair_blobs[0], public_pair_blobs[1:]
-            ppb_idx += 1
-            if strict_encoding:
-                check_public_key_encoding(public_pair_blob)
-            if flags & VERIFY_WITNESS_PUBKEYTYPE:
-                if byte2int(public_pair_blob) not in (2, 3) or len(public_pair_blob) != 33:
-                    raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
-            try:
-                public_pair = sec_to_public_pair(public_pair_blob, strict=strict_encoding)
-            except EncodingError:
-                public_pair = None
-            if public_pair in ppp:
-                sig_blob_indices.append(ppb_idx)
-                break
-        else:
-            sig_blob_indices.append(-1)
+        ppb_idx = find_public_pair(
+            public_pair_blobs, ppp, len(sig_blobs), strict_encoding, flags & VERIFY_WITNESS_PUBKEYTYPE, ppb_idx)
+        sig_blob_indices.append(ppb_idx)
     return sig_blob_indices
+
+
+def find_public_pair(public_pair_blobs, ppp, signature_count, strict_encoding, verify_witness_pubkeytype, ppb_idx):
+    while len(public_pair_blobs) > signature_count:
+        public_pair_blob, public_pair_blobs = public_pair_blobs[0], public_pair_blobs[1:]
+        ppb_idx += 1
+        if strict_encoding:
+            check_public_key_encoding(public_pair_blob)
+        if verify_witness_pubkeytype:
+            if byte2int(public_pair_blob) not in (2, 3) or len(public_pair_blob) != 33:
+                raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
+        try:
+            public_pair = sec_to_public_pair(public_pair_blob, strict=strict_encoding)
+        except EncodingError:
+            public_pair = None
+        if public_pair in ppp:
+            return ppb_idx
+    return -1
 
 
 def do_OP_CHECKMULTISIG(vm):
