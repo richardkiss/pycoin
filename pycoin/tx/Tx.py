@@ -250,7 +250,7 @@ class Tx(object):
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.
-        tx_out_script = SolutionChecker.VM.delete_subscript(tx_out_script, int2byte(opcodes.OP_CODESEPARATOR))
+        tx_out_script = SolutionChecker.VM.delete_subscript(tx_out_script, ScriptTools.compile("OP_CODESEPARATOR"))
 
         # blank out other inputs' signatures
         txs_in = [self._tx_in_for_idx(i, tx_in, tx_out_script, unsigned_txs_out_idx)

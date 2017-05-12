@@ -151,4 +151,3 @@ for i in range(1, 76):
 OP_0 = 0
 OP_1 = 81
 OP_16 = 96
-OP_CODESEPARATOR = 171
