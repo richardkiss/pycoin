@@ -1,6 +1,6 @@
-from pycoin.intbytes import byte_to_int
+from pycoin.intbytes import byte2int
 
-from ..script.VM import VM
+from ..script.VM import ScriptTools
 
 from ... import encoding
 
@@ -12,14 +12,14 @@ from .ScriptType import ScriptType
 
 
 class ScriptPayToAddressWit(ScriptType):
-    TEMPLATE = VM.compile("OP_0 OP_PUBKEYHASH")
+    TEMPLATE = ScriptTools.compile("OP_0 OP_PUBKEYHASH")
 
     def __init__(self, version, hash160):
         assert len(version) == 1
         assert isinstance(version, bytes)
         assert len(hash160) == 20
         assert isinstance(hash160, bytes)
-        version_int = byte_to_int(version[0])
+        version_int = byte2int(version)
         assert 0 <= version_int <= 16
         self.version = version_int
         self.hash160 = hash160
@@ -41,7 +41,7 @@ class ScriptPayToAddressWit(ScriptType):
             # create the script
             STANDARD_SCRIPT_OUT = "OP_%d %s"
             script_text = STANDARD_SCRIPT_OUT % (self.version, b2h(self.hash160))
-            self._script = VM.compile(script_text)
+            self._script = ScriptTools.compile(script_text)
         return self._script
 
     def solve(self, **kwargs):
@@ -62,7 +62,7 @@ class ScriptPayToAddressWit(ScriptType):
         if result is None:
             raise SolvingError("can't find secret exponent for %s" % self.address())
         # we got it
-        script_to_hash = VM.compile(
+        script_to_hash = ScriptTools.compile(
             "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(self.hash160))
 
         signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f").witness

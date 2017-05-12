@@ -1,6 +1,6 @@
-from pycoin.intbytes import byte_to_int
+from pycoin.intbytes import byte2int
 
-from ..script.VM import VM
+from ..script.VM import ScriptTools, VM
 from ..script.SolutionChecker import VMContext
 
 from ...serialize import b2h
@@ -14,7 +14,7 @@ class ScriptPayToScriptWit(ScriptType):
         assert isinstance(version, bytes)
         assert len(hash256) == 32
         assert isinstance(hash256, bytes)
-        version_int = byte_to_int(version[0])
+        version_int = byte2int(version)
         assert 0 <= version_int <= 16
         self.version = version_int
         self.hash256 = hash256
@@ -43,7 +43,7 @@ class ScriptPayToScriptWit(ScriptType):
 
         kwargs["signature_for_hash_type_f"] = kwargs["signature_for_hash_type_f"].witness
         kwargs["script_to_hash"] = underlying_script
-        kwargs["existing_script"] = VM.bin_script(kwargs["existing_witness"])
+        kwargs["existing_script"] = ScriptTools.compile_push_data_list(kwargs["existing_witness"])
         underlying_solution = script_obj.solve(**kwargs)
         # we need to unwrap the solution
         vm = VM()
@@ -60,7 +60,7 @@ class ScriptPayToScriptWit(ScriptType):
             # create the script
             STANDARD_SCRIPT_OUT = "OP_0 %s"
             script_text = STANDARD_SCRIPT_OUT % b2h(self.hash256)
-            self._script = VM.compile(script_text)
+            self._script = ScriptTools.compile(script_text)
         return self._script
 
     def address(self, netcode=None):

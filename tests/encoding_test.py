@@ -3,13 +3,14 @@
 import unittest
 
 from pycoin import encoding
+from pycoin.intbytes import iterbytes
 from pycoin.serialize import h2b
 
 class EncodingTestCase(unittest.TestCase):
 
     def test_to_from_long(self):
         def do_test(as_int, prefix, as_rep, base):
-            self.assertEqual((as_int, prefix), encoding.to_long(base, encoding.byte_to_int, as_rep))
+            self.assertEqual((as_int, prefix), encoding.to_long(base, lambda v:v, iterbytes(as_rep)))
             self.assertEqual(as_rep, encoding.from_long(as_int, prefix, base, lambda v:v))
 
         do_test(10000101, 2, h2b("00009896e5"), 256)

@@ -6,7 +6,7 @@ from .merkle import merkle
 from .serialize.bitcoin_streamer import parse_struct, stream_struct
 from .serialize import b2h, b2h_rev
 
-from .tx import Tx
+from .tx.Tx import Tx
 
 
 class BadMerkleRootError(Exception):

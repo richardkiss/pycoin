@@ -4,7 +4,7 @@ import json
 from .agent import urlopen
 
 from pycoin.convention import btc_to_satoshi
-from pycoin.tx import Tx, Spendable
+from pycoin.tx.Tx import Tx, Spendable
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
 
 

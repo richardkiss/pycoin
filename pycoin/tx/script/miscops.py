@@ -51,6 +51,15 @@ def do_OP_TOALTSTACK(vm):
     vm.altstack.append(vm.stack.pop())
 
 
+def do_OP_RESERVED(vm):
+    if vm.conditional_stack.all_if_true():
+        raise ScriptError("OP_RESERVED encountered", errno.BAD_OPCODE)
+    vm.op_count -= 1
+
+
+do_OP_RESERVED.outside_conditional = True
+
+
 def do_OP_FROMALTSTACK(vm):
     if len(vm.altstack) < 1:
         raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
@@ -105,7 +114,7 @@ def do_OP_CHECKLOCKTIMEVERIFY(vm):
         raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
     if len(vm.stack[-1]) > 5:
         raise ScriptError("script number overflow")
-    max_lock_time = vm.int_from_script_bytes(vm.stack[-1])
+    max_lock_time = vm.IntStreamer.int_from_script_bytes(vm.stack[-1])
     if max_lock_time < 0:
         raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
     era_max = (max_lock_time >= 500000000)
@@ -114,6 +123,22 @@ def do_OP_CHECKLOCKTIMEVERIFY(vm):
         raise ScriptError("eras differ in CHECKLOCKTIMEVERIFY")
     if max_lock_time > vm.tx_context.lock_time:
         raise ScriptError("nLockTime too soon")
+
+
+def _check_sequence_verify(sequence, tx_context_sequence):
+    # this mask is applied to extract lock-time from the sequence field
+    SEQUENCE_LOCKTIME_MASK = 0xffff
+
+    mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
+    sequence_masked = sequence & mask
+    tx_sequence_masked = tx_context_sequence & mask
+    if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
+             (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
+            ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
+             (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
+        raise ScriptError("sequence numbers not comparable")
+    if sequence_masked > tx_sequence_masked:
+        raise ScriptError("sequence number too small")
 
 
 def do_OP_CHECKSEQUENCEVERIFY(vm):
@@ -126,7 +151,7 @@ def do_OP_CHECKSEQUENCEVERIFY(vm):
     if len(vm.stack[-1]) > 5:
         raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
     require_minimal = vm.flags & VERIFY_MINIMALDATA
-    sequence = vm.int_from_script_bytes(vm.stack[-1], require_minimal=require_minimal)
+    sequence = vm.IntStreamer.int_from_script_bytes(vm.stack[-1], require_minimal=require_minimal)
     if sequence < 0:
         raise ScriptError(
             "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
@@ -138,27 +163,7 @@ def do_OP_CHECKSEQUENCEVERIFY(vm):
     if vm.tx_context.sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG:
         raise ScriptError("CHECKSEQUENCEVERIFY: locktime disabled")
 
-    # this mask is applied to extract lock-time from the sequence field
-    SEQUENCE_LOCKTIME_MASK = 0xffff
-
-    mask = SEQUENCE_LOCKTIME_TYPE_FLAG | SEQUENCE_LOCKTIME_MASK
-    sequence_masked = sequence & mask
-    tx_sequence_masked = vm.tx_context.sequence & mask
-    if not (((tx_sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG) and
-             (sequence_masked < SEQUENCE_LOCKTIME_TYPE_FLAG)) or
-            ((tx_sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG) and
-             (sequence_masked >= SEQUENCE_LOCKTIME_TYPE_FLAG))):
-        raise ScriptError("sequence numbers not comparable")
-    if sequence_masked > tx_sequence_masked:
-        raise ScriptError("sequence number too small")
-
-
-def make_push_const(v):
-    def f(vm):
-        # BRAIN DAMAGE: this is lame
-        v1 = vm.int_to_script_bytes(v)
-        vm.stack.append(v1)
-    return f
+    _check_sequence_verify(sequence, vm.tx_context.sequence)
 
 
 def extra_opcodes():
@@ -190,11 +195,11 @@ def extra_opcodes():
         d["OP_PUSHDATA%d" % i] = lambda s: 0
 
     for v in range(0, 128):
-        d["OP_%d" % v] = make_push_const(v)
+        d["OP_%d" % v] = lambda s: 0
     return d
 
 
-def collect_opcodes():
+def all_opcodes():
     d = extra_opcodes()
     the_globals = globals()
     for k, v in the_globals.items():

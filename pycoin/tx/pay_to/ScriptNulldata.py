@@ -1,25 +1,32 @@
-from ..script.VM import VM
+from ..script.VM import ScriptTools
 
-from ...intbytes import byte_to_int
 from ...serialize import b2h
 
 from .ScriptType import ScriptType
 
 
 class ScriptNulldata(ScriptType):
-    SCRIPT = VM.compile("OP_RETURN")
+    TEMPLATE = ScriptTools.compile("OP_RETURN OP_NULLDATA")
 
     def __init__(self, nulldata):
         self.nulldata = nulldata
-        self._script = self.SCRIPT + self.nulldata
+        self._script = None
 
     @classmethod
     def from_script(cls, script):
-        if byte_to_int(script[0]) == VM.OP_RETURN:
-            return cls(script[1:])
+        r = cls.match(script)
+        if r:
+            nulldata = r["NULLDATA_LIST"][0]
+            s = cls(nulldata)
+            return s
         raise ValueError("bad script")
 
     def script(self):
+        if self._script is None:
+            # create the script
+            STANDARD_SCRIPT_OUT = "OP_RETURN [%s]"
+            script_text = STANDARD_SCRIPT_OUT % b2h(self.nulldata)
+            self._script = ScriptTools.compile(script_text)
         return self._script
 
     def info(self):

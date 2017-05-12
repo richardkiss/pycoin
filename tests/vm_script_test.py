@@ -8,12 +8,12 @@ import os
 
 from pycoin.serialize import h2b
 
-from pycoin.tx import TxIn, TxOut, Tx
+from pycoin.tx.Tx import TxIn, TxOut, Tx
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script import errno
 from pycoin.tx.script import flags
 from pycoin.tx.script.SolutionChecker import SolutionChecker, TxContext
-from pycoin.tx.script.VM import VM
+from pycoin.tx.script.VM import ScriptTools
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
@@ -42,21 +42,21 @@ def build_spending_tx(script_in_bin, credit_tx):
 
 
 def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expected, actual, message, comment):
-    return
+    #return
     print()
     print(flags_string)
     print("EXPECTED: %s" % expected)
     print("ACTUAL: %s" % actual)
     print("MESSAGE: %s" % message)
     print(comment)
-    print(VM.disassemble(VM.compile(script_in)))
-    print(VM.disassemble(VM.compile(script_out)))
+    print(ScriptTools.disassemble(ScriptTools.compile(script_in)))
+    print(ScriptTools.disassemble(ScriptTools.compile(script_out)))
     from pycoin.serialize import b2h
     def tbf(*args):
         opcode, data, pc, vm = args
         stack = vm.stack
         altstack = vm.altstack
-        opd = vm.disassemble_for_opcode_data(opcode, data)
+        opd = ScriptTools.disassemble_for_opcode_data(opcode, data)
         if len(altstack) == 0:
             altstack = ''
         print("%s %s\n  %3x  %s" % (stack, altstack, pc, opd))
@@ -78,8 +78,8 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
 
 
 def make_script_test(script_in, script_out, flags_string, comment, expected, coin_value, script_witness):
-    script_in_bin = VM.compile(script_in)
-    script_out_bin = VM.compile(script_out)
+    script_in_bin = ScriptTools.compile(script_in)
+    script_out_bin = ScriptTools.compile(script_out)
     script_witness_bin = [h2b(w) for w in script_witness]
     flags = parse_flags(flags_string)
     def f(self):

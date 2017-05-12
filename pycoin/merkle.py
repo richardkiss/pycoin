@@ -64,5 +64,6 @@ def test_merkle():
     s3 = h2b_rev("f8b02b8bf25cb6008e38eb5453a22c502f37e76375a86a0f0cfaa3c301aa1209")
     assert merkle([s1, s2, s3], double_sha256) == mr
 
+
 if __name__ == "__main__":
     test_merkle()

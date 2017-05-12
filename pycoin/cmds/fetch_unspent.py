@@ -2,6 +2,7 @@
 
 import argparse
 
+from pycoin.networks.default import get_current_netcode
 from pycoin.services import spendables_for_address
 from pycoin.services.providers import message_about_spendables_for_address_env
 
@@ -12,7 +13,7 @@ def main():
     parser.add_argument("bitcoin_address", help='a bitcoin address', nargs="+")
 
     args = parser.parse_args()
-    netcode = None
+    netcode = get_current_netcode()
 
     m = message_about_spendables_for_address_env(netcode)
     if m:
@@ -22,6 +23,7 @@ def main():
         spendables = spendables_for_address(address, netcode, format="text")
         for spendable in spendables:
             print(spendable)
+
 
 if __name__ == '__main__':
     main()
