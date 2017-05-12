@@ -28,12 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 Portions written in 2005 by Peter Pearson and placed in the public domain.
 """
 
-import hashlib
-import hmac
-
-from . import intstream
 from . import ellipticcurve, numbertheory
-
 from .rfc6979 import deterministic_generate_k
 
 
@@ -129,7 +124,7 @@ def possible_public_pairs_for_signature(generator, value, signature):
         # 1.4 the constructor checks that nR is at infinity
         R = ellipticcurve.Point(curve, x, y, order)
         # 1.6 compute Q = r^-1 (sR - eG)
-        Q = inv_r * ( s * R + minus_e * G )
+        Q = inv_r * (s * R + minus_e * G)
         public_pair = (Q.x(), Q.y())
         # check that Q is the public key
         if verify(generator, public_pair, value, signature):
