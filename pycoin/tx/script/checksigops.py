@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 from ... import ecdsa
 from ...encoding import sec_to_public_pair, EncodingError
-from ...intbytes import byte_to_int
+from ...intbytes import byte2int, indexbytes, iterbytes
 
 from . import der
 from . import ScriptError
@@ -40,39 +40,50 @@ from .flags import (
 )
 
 
-def check_valid_signature(sig):
-    # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
+def _check_valid_signature_1(sig):
     ls = len(sig)
     if ls < 9 or ls > 73:
         raise ScriptError("bad signature size", errno.SIG_DER)
-    if byte_to_int(sig[0]) != 0x30:
-        raise ScriptError("bad signature byte 0", errno.errno.SIG_DER)
-    if byte_to_int(sig[1]) != ls - 3:
+    if sig[0] != 0x30:
+        raise ScriptError("bad signature byte 0", errno.SIG_DER)
+    if sig[1] != ls - 3:
         raise ScriptError("signature size wrong", errno.SIG_DER)
-    r_len = byte_to_int(sig[3])
+    r_len = sig[3]
     if 5 + r_len >= ls:
         raise ScriptError("r length exceed signature size", errno.SIG_DER)
-    s_len = byte_to_int(sig[5 + r_len])
+
+
+def _check_valid_signature_2(sig):
+    ls = len(sig)
+    r_len = sig[3]
+    s_len = sig[5 + r_len]
     if r_len + s_len + 7 != ls:
         raise ScriptError("r and s size exceed signature size", errno.SIG_DER)
-    if byte_to_int(sig[2]) != 2:
+    if sig[2] != 2:
         raise ScriptError("R value region does not start with 0x02", errno.SIG_DER)
     if r_len == 0:
         raise ScriptError("zero-length R value", errno.SIG_DER)
-    if byte_to_int(sig[4]) & 0x80:
+    if sig[4] & 0x80:
         raise ScriptError("sig R value not allowed to be negative", errno.SIG_DER)
-    if r_len > 1 and byte_to_int(sig[4]) == 0 and not (byte_to_int(sig[5]) & 0x80):
+    if r_len > 1 and sig[4] == 0 and not (sig[5] & 0x80):
         raise ScriptError(
             "R value can't have leading 0 byte unless doing so would make it negative", errno.SIG_DER)
-    if byte_to_int(sig[r_len + 4]) != 2:
+    if sig[r_len + 4] != 2:
         raise ScriptError("S value region does not start with 0x02", errno.SIG_DER)
     if s_len == 0:
         raise ScriptError("zero-length S value", errno.SIG_DER)
-    if byte_to_int(sig[r_len + 6]) & 0x80:
+    if sig[r_len + 6] & 0x80:
         raise ScriptError("negative S values not allowed", errno.SIG_DER)
-    if s_len > 1 and byte_to_int(sig[r_len + 6]) == 0 and not (byte_to_int(sig[r_len + 7]) & 0x80):
+    if s_len > 1 and sig[r_len + 6] == 0 and not (sig[r_len + 7] & 0x80):
         raise ScriptError(
             "S value can't have leading 0 byte unless doing so would make it negative", errno.SIG_DER)
+
+
+def check_valid_signature(sig):
+    # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
+    sig = [s for s in iterbytes(sig)]
+    _check_valid_signature_1(sig)
+    _check_valid_signature_2(sig)
 
 
 def check_low_der_signature(sig_pair):
@@ -88,7 +99,7 @@ def check_defined_hashtype_signature(sig):
     from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
     if len(sig) == 0:
         raise ScriptError("signature is length 0")
-    hash_type = byte_to_int(sig[-1]) & (~SIGHASH_ANYONECANPAY)
+    hash_type = indexbytes(sig, -1) & (~SIGHASH_ANYONECANPAY)
     if hash_type < SIGHASH_ALL or hash_type > SIGHASH_SINGLE:
         raise ScriptError("bad hash type after signature", errno.SIG_HASHTYPE)
 
@@ -110,7 +121,7 @@ def parse_signature_blob(sig_blob, flags=0):
 def check_public_key_encoding(blob):
     lb = len(blob)
     if lb >= 33:
-        fb = byte_to_int(blob[0])
+        fb = byte2int(blob)
         if fb == 4:
             if lb == 65:
                 return
@@ -133,7 +144,7 @@ def do_OP_CHECKSIG(vm):
         if verify_strict:
             check_public_key_encoding(pair_blob)
         if flags & VERIFY_WITNESS_PUBKEYTYPE:
-            if byte_to_int(pair_blob[0]) not in (2, 3) or len(pair_blob) != 33:
+            if byte2int(pair_blob) not in (2, 3) or len(pair_blob) != 33:
                 raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
         sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
         public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
@@ -157,18 +168,16 @@ def do_OP_CHECKSIG(vm):
         stack.append(vm.VM_FALSE)
 
 
-def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script,
-                     flags, exit_early=False):
+def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script, flags):
     """
     sig_blobs: signature blobs
     public_pair_blobs: a list of public pair blobs
     tmp_script: the script as of the last code separator
     signature_for_hash_type_f: signature_for_hash_type_f
     flags: verification flags to apply
-    exit_early: if True, we may exit early if one of the sig_blobs is incorrect or misplaced. Used
-                   for checking a supposedly validated transaction. A -1 indicates no match.
+    for checking a supposedly validated transaction. A -1 indicates no match.
 
-    Returns a list of indices into public_pairs. If exit_early is True, it may return early.
+    Returns a list of indices into public_pairs. It may return early.
     If sig_blob_indices isn't long enough or contains a -1, the signature is not valid.
     """
 
@@ -184,7 +193,7 @@ def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script,
     ppb_idx = -1
 
     while sig_blobs and len(sig_blobs) <= len(public_pair_blobs):
-        if exit_early and -1 in sig_blob_indices:
+        if -1 in sig_blob_indices:
             break
         sig_blob, sig_blobs = sig_blobs[0], sig_blobs[1:]
         try:
@@ -201,25 +210,28 @@ def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script,
                 ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
         except ecdsa.NoSuchPointError:
             ppp = []
-
-        while len(sig_blobs) < len(public_pair_blobs):
-            public_pair_blob, public_pair_blobs = public_pair_blobs[0], public_pair_blobs[1:]
-            ppb_idx += 1
-            if strict_encoding:
-                check_public_key_encoding(public_pair_blob)
-            if flags & VERIFY_WITNESS_PUBKEYTYPE:
-                if byte_to_int(public_pair_blob[0]) not in (2, 3) or len(public_pair_blob) != 33:
-                    raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
-            try:
-                public_pair = sec_to_public_pair(public_pair_blob, strict=strict_encoding)
-            except EncodingError:
-                public_pair = None
-            if public_pair in ppp:
-                sig_blob_indices.append(ppb_idx)
-                break
-        else:
-            sig_blob_indices.append(-1)
+        ppb_idx = find_public_pair(
+            public_pair_blobs, ppp, len(sig_blobs), strict_encoding, flags & VERIFY_WITNESS_PUBKEYTYPE, ppb_idx)
+        sig_blob_indices.append(ppb_idx)
     return sig_blob_indices
+
+
+def find_public_pair(public_pair_blobs, ppp, signature_count, strict_encoding, verify_witness_pubkeytype, ppb_idx):
+    while len(public_pair_blobs) > signature_count:
+        public_pair_blob, public_pair_blobs = public_pair_blobs[0], public_pair_blobs[1:]
+        ppb_idx += 1
+        if strict_encoding:
+            check_public_key_encoding(public_pair_blob)
+        if verify_witness_pubkeytype:
+            if byte2int(public_pair_blob) not in (2, 3) or len(public_pair_blob) != 33:
+                raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
+        try:
+            public_pair = sec_to_public_pair(public_pair_blob, strict=strict_encoding)
+        except EncodingError:
+            public_pair = None
+        if public_pair in ppp:
+            return ppb_idx
+    return -1
 
 
 def do_OP_CHECKMULTISIG(vm):
@@ -235,28 +247,21 @@ def do_OP_CHECKMULTISIG(vm):
     if key_count < 0 or key_count > 20:
         raise ScriptError("key_count not in range 0 to 20", errno.PUBKEY_COUNT)
 
-    public_pair_blobs = []
-    for i in range(key_count):
-        public_pair_blobs.append(stack.pop())
+    public_pair_blobs = [stack.pop() for _ in range(key_count)]
 
     signature_count = vm.IntStreamer.int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     if signature_count < 0 or signature_count > key_count:
         raise ScriptError(
             "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
 
-    sig_blobs = []
-    for i in range(signature_count):
-        sig_blobs.append(stack.pop())
+    sig_blobs = [stack.pop() for _ in range(signature_count)]
 
     # check that we have the required hack 00 byte
-    if flags & VERIFY_NULLDUMMY:
-        hack_byte = stack[-1]
-        if hack_byte != b'':
-            raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
+    hack_byte = stack.pop()
+    if flags & VERIFY_NULLDUMMY and hack_byte != b'':
+        raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
 
-    stack.pop()
-    sig_blob_indices = sig_blob_matches(
-        vm, sig_blobs, public_pair_blobs, tmp_script, flags, exit_early=True)
+    sig_blob_indices = sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script, flags)
 
     sig_ok = vm.VM_FALSE
     if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):
@@ -269,9 +274,8 @@ def do_OP_CHECKMULTISIG(vm):
             sig_ok = vm.VM_TRUE
 
     if not sig_ok and flags & VERIFY_NULLFAIL:
-        for sig_blob in sig_blobs:
-            if len(sig_blob) > 0:
-                raise ScriptError("bad signature not NULL", errno.NULLFAIL)
+        if any(len(sig_blob) > 0 for sig_blob in sig_blobs):
+            raise ScriptError("bad signature not NULL", errno.NULLFAIL)
 
     stack.append(sig_ok)
 
@@ -288,12 +292,3 @@ def do_OP_CHECKSIGVERIFY(vm):
     v = vm.bool_from_script_bytes(vm.stack.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.VERIFY)
-
-
-def collect_opcodes():
-    d = {}
-    the_globals = globals()
-    for k, v in the_globals.items():
-        if k.startswith("do_OP"):
-            d[k[3:]] = v
-    return d

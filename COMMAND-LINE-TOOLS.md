@@ -4,7 +4,7 @@ KU and TX
 KU
 --
 
-The command-line utility ```ku``` ("key utility") is Swiss Army knife for manipulating keys. It supports BIP32 keys, WIF, and address (bitcoin and alt coins). Here are some examples.
+The command-line utility ```ku``` ("key utility") is a Swiss Army knife for manipulating keys. It supports BIP32 keys, WIF, and addresses (bitcoin and alt-coins). Here are some examples.
 
 Create a BIP32 Key using the default entropy sources of GPG and /dev/random:
 
@@ -148,7 +148,7 @@ Generate the corresponding addresses:
     1Cz2rTLjRM6pMnxPNrRKp9ZSvRtj5dDUML
     1WstdwPnU6HEUPme1DQayN9nm6j7nDVEM
 
-Generate the corresponding WIFS:
+Generate the corresponding WIFs:
 
     $ ku P:foo -s 0/0-5 -W
     L5a4iE5k9gcJKGqX3FWmxzBYQc29PvZ6pgBaePLVqT5YByEnBomx
@@ -265,9 +265,9 @@ As a Dogecoin address:
 tx
 --
 
-The command-line utility ```tx``` will display transactions in human-readable form, fetch base transactions from pycoin's transaction cache or from web services (blockchain.info, blockr.io, are currently supported), merge transactions, add or delete inputs or outputs, and sign transactions.
+The command-line utility ```tx``` will display transactions in human-readable form, fetch base transactions from pycoin's transaction cache or from web services (blockchain.info, blockcypher.com, blockr.io and chain.so are currently supported), merge transactions, add or delete inputs or outputs, and sign transactions.
 
-Examples:
+Some examples follow.
 
 
 View the famous "pizza" transaction [PIZZA]:
@@ -283,13 +283,13 @@ View the famous "pizza" transaction [PIZZA]:
               argument [argument ...]
     tx: error: can't find Tx with id 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a
 
-Oops! We don't have web services set up. Let's do that now.
+Oops! We don't have web services set up. Let's do that now:
 
     $ PYCOIN_CACHE_DIR=~/.pycoin_cache
     $ PYCOIN_BTC_PROVIDERS="block.io blockchain.info blockexplorer.com"
     $ export PYCOIN_CACHE_DIR PYCOIN_BTC_PROVIDERS
 
-It's not done automatically so a command-line tool won't leak potentially private information about what transactions you're interested in to a third party web site. If you don't care, you could put these lines into your .profile.
+It's not done automatically so a command-line tool won't leak potentially private information about what transactions you're interested in to a third-party website. If you don't care, you could put these lines into your `.profile`.
 
 Let's try again:
 
@@ -307,7 +307,7 @@ Let's try again:
 
     ** can't validate transaction as source transactions missing
 
-The final line appears because to validate the transactions' signatures, you technically need to the source transactions. So let's add ```-a``` to augment the transactions with source information.
+The final line appears because to validate the transactions' signatures, you technically need the source transactions. So let's add ```-a``` to augment the transactions with source information.
 
     $ tx -a 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a
     warning: transaction fees recommendations casually calculated and estimates may be incorrect

@@ -4,10 +4,10 @@ import unittest
 from pycoin.encoding import double_sha256, to_bytes_32
 from pycoin.key import Key
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
-from pycoin.tx import TxOut
 from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup
-from pycoin.tx.script.VM import VM
+from pycoin.tx.script.VM import ScriptTools
 from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY, Tx
+from pycoin.tx.TxOut import TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 
 
@@ -91,7 +91,7 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(b2h(tx_s1.hash_outputs(SIGHASH_ALL, 0)),
                          "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
 
-        script = VM.compile("OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(tx_s1.unspents[1].script[2:]))
+        script = ScriptTools.compile("OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(tx_s1.unspents[1].script[2:]))
         self.assertEqual(b2h(tx_s1.segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
                          "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd3752b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3bef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a010000001976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac0046c32300000000ffffffff863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e51100000001000000")
 
@@ -268,3 +268,11 @@ class SegwitTest(unittest.TestCase):
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()], p2sh_lookup=build_p2sh_lookup([s1]))
         self.check_signed(tx)
+
+    def test_issue_224(self):
+        RAWTX = (
+            "010000000002145fea0b000000001976a9144838d8b3588c4c7ba7c1d06f866e9b3739c"
+            "6303788ac0000000000000000346a32544553540000000a000000000000000100000000"
+            "05f5e1000000000000000000000000000bebc2000032000000000000271000000000"
+        )
+        Tx.from_hex(RAWTX)

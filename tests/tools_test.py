@@ -3,15 +3,16 @@
 import unittest
 
 from pycoin.serialize import h2b
-from pycoin.intbytes import int_to_bytes, bytes_from_ints
+from pycoin.intbytes import int2byte
 from pycoin.tx.script.opcodes import OPCODE_LIST
 from pycoin.tx.script.SolutionChecker import TxContext
 from pycoin.tx.script.IntStreamer import IntStreamer
-from pycoin.tx.script.VM import VM
+from pycoin.tx.script.VM import ScriptTools, VM
 
-bin_script = VM.bin_script
-compile = VM.compile
-disassemble = VM.disassemble
+bin_script = ScriptTools.compile_push_data_list
+compile = ScriptTools.compile
+disassemble = ScriptTools.disassemble
+int_to_script_bytes = ScriptTools.intStreamer.int_to_script_bytes
 
 class myVM(VM):
     MAX_SCRIPT_LENGTH = int(1e9)
@@ -35,7 +36,7 @@ class ToolsTest(unittest.TestCase):
             assert stack[0] == as_bytes
 
         def test_val(n):
-            as_bytes = int_to_bytes(n)
+            as_bytes = int_to_script_bytes(n)
             test_bytes(as_bytes)
 
         for i in range(100):
@@ -47,10 +48,10 @@ class ToolsTest(unittest.TestCase):
 
         for l in (1, 2, 3, 254, 255, 256, 257, 258, 0xfff9, 0xfffe, 0xffff, 0x10000, 0x10001, 0x10005):
             for v in (1, 2, 3, 4, 15, 16, 17, 18):
-                b = bytes_from_ints([v] * l)
+                b = int2byte(v) * l
                 test_bytes(b)
 
-        b = bytes_from_ints([30] * (0x1000000+1))
+        b = int2byte(30) * (0x1000000+1)
         for l in (0x1000000-1, 0x1000000, 0x1000000+1):
             test_bytes(b[:l])
 

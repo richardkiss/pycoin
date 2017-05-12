@@ -29,7 +29,7 @@ from .. import encoding
 
 from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
-from .script.VM import VM
+from ..coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools
 
 
 ZERO = b'\0' * 32
@@ -39,8 +39,6 @@ class TxIn(object):
     """
     The part of a Tx that specifies where the Bitcoin comes from.
     """
-
-    VM = VM
 
     def __init__(self, previous_hash, previous_index, script=b'', sequence=4294967295):
         self.previous_hash = previous_hash
@@ -69,7 +67,7 @@ class TxIn(object):
         """Return the public key as sec, or None in case of failure."""
         if self.is_coinbase():
             return None
-        opcodes = VM.opcode_list(self.script)
+        opcodes = ScriptTools.opcode_list(self.script)
         if len(opcodes) == 2 and opcodes[0].startswith("[30"):
             # the second opcode is probably the public key as sec
             sec = h2b(opcodes[1][1:-1])
@@ -109,7 +107,7 @@ class TxIn(object):
         tx_context.sequence = self.sequence
         checker = SolutionChecker()
         try:
-            checker._check_solution(tx_context, flags=flags, traceback_f=traceback_f)
+            checker.check_solution(tx_context, flags=flags, traceback_f=traceback_f)
             return True
         except ScriptError:
             return False
@@ -118,4 +116,4 @@ class TxIn(object):
         if self.is_coinbase():
             return 'TxIn<COINBASE: %s>' % b2h(self.script)
         return 'TxIn<%s[%d] "%s">' % (
-            b2h_rev(self.previous_hash), self.previous_index, self.VM.disassemble(self.script))
+            b2h_rev(self.previous_hash), self.previous_index, ScriptTools.disassemble(self.script))

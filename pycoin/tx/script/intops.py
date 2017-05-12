@@ -202,9 +202,7 @@ do_OP_MAX = make_bin_op(max)
 
 def do_OP_NUMEQUALVERIFY(vm):
     do_OP_NUMEQUAL(vm)
-    v = vm.bool_from_script_bytes(vm.stack.pop())
-    if not v:
-        raise ScriptError("VERIFY failed", errno.VERIFY)
+    do_OP_VERIFY(vm)
 
 
 def do_OP_WITHIN(vm):

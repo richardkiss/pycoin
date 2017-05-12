@@ -11,6 +11,8 @@ setup(
         "pycoin",
         "pycoin.blockchain",
         "pycoin.cmds",
+        "pycoin.coins",
+        "pycoin.coins.bitcoin",
         "pycoin.contrib",
         "pycoin.convention",
         "pycoin.ecdsa",
@@ -51,5 +53,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Topic :: Internet',
+        'Topic :: Internet :: Bitcoin',
+        'Topic :: Internet :: Cryptocurrency',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],)

@@ -5,7 +5,7 @@ Arrange to access a shared-object version of the bignum library using Python cty
 import ctypes.util
 import struct
 
-from pycoin.intbytes import to_bytes
+from ..intstream import to_bytes
 
 ULONG_FACTOR = 1 << (8 * ctypes.sizeof(ctypes.c_ulong))
 

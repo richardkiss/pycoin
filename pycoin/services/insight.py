@@ -7,14 +7,14 @@ import io
 
 from .agent import request, urlencode, urlopen
 
-from pycoin.block import BlockHeader
+from pycoin.block import Block
 from pycoin.convention import btc_to_satoshi
 from pycoin.encoding import double_sha256
 from pycoin.merkle import merkle
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
-from pycoin.tx.script.VM import VM
-from pycoin.tx import Spendable, Tx, TxIn, TxOut
+from pycoin.tx.script.VM import ScriptTools
+from pycoin.tx.Tx import Spendable, Tx, TxIn, TxOut
 
 
 class InsightProvider(object):
@@ -45,7 +45,7 @@ class InsightProvider(object):
         difficulty = int(r.get("bits"), 16)
         nonce = int(r.get("nonce"))
         tx_hashes = [h2b_rev(tx_hash) for tx_hash in r.get("tx")]
-        blockheader = BlockHeader(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
+        blockheader = Block(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
         if blockheader.hash() != block_hash:
             return None, None
         calculated_hash = merkle(tx_hashes, double_sha256)
@@ -120,14 +120,14 @@ def tx_from_json_dict(r):
             if "hex" in scriptSig:
                 script = h2b(scriptSig.get("hex"))
             else:
-                script = VM.compile(scriptSig.get("asm"))
+                script = ScriptTools.compile(scriptSig.get("asm"))
             previous_index = vin.get("vout")
         sequence = vin.get("sequence")
         txs_in.append(TxIn(previous_hash, previous_index, script, sequence))
     txs_out = []
     for vout in r.get("vout"):
         coin_value = btc_to_satoshi(decimal.Decimal(vout.get("value")))
-        script = VM.compile(vout.get("scriptPubKey").get("asm"))
+        script = ScriptTools.compile(vout.get("scriptPubKey").get("asm"))
         txs_out.append(TxOut(coin_value, script))
     tx = Tx(version, txs_in, txs_out, lock_time)
     bh = r.get("blockhash")

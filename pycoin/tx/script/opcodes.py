@@ -146,13 +146,18 @@ OPCODE_LIST = [
   ("OP_INVALIDOPCODE", 255),
 ]
 
-
-def populate_module():
-    """Make all the opcodes globals in this module to make it possible to
-    use constructs like opcodes.OP_PUBKEY"""
-    g = globals()
-    for opcode, val in OPCODE_LIST:
-        g[opcode] = val
+for i in range(1, 76):
+    OPCODE_LIST.append(("OP_PUSH_%d" % i, i))
 
 
-populate_module()
+# BRAIN DAMAGE
+OP_0 = 0
+OP_1 = 81
+OP_16 = 96
+OP_EQUAL = 135
+OP_HASH160 = 169
+OP_CODESEPARATOR = 171
+OP_CHECKMULTISIG = 174
+OP_NULLDATA = 252
+OP_PUBKEYHASH = 253
+OP_PUBKEY = 254

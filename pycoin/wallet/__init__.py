@@ -9,4 +9,3 @@
 
 # It should also keep a DB of all the transactions it's ever created, so it can watch for
 # morphed versions (modulo malleability)
-

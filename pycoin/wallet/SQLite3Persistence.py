@@ -2,6 +2,7 @@ from pycoin.serialize import b2h, h2b, b2h_rev, h2b_rev
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.tx import Spendable
 
+
 class SQLite3Persistence(object):
     def __init__(self, sqlite3_db):
         self.db = sqlite3_db
@@ -34,7 +35,7 @@ id integer primary key,
 slug text not null unique,
 as_text text not null
 );"""
-        c = self._exec_sql(SQL)
+        self._exec_sql(SQL)
         self.db.commit()
 
     def bip32node_for_slug(self, slug):
@@ -49,7 +50,7 @@ as_text text not null
     def create_bip32node(self, slug, random_bytes):
         bip32_node = BIP32Node.from_master_secret(random_bytes)
         bip32_text = bip32_node.as_text(as_private=True)
-        c = self._exec_sql("insert into BIP32Key (slug, as_text) values (?, ?)", slug, bip32_text)
+        self._exec_sql("insert into BIP32Key (slug, as_text) values (?, ?)", slug, bip32_text)
         return self.bip32node_for_slug(slug)
 
     def _init_table_bip32node(self):
@@ -59,13 +60,13 @@ key_id integer,
 address text unique,
 unique(path, key_id)
 );"""
-        c = self._exec_sql(SQL)
+        self._exec_sql(SQL)
         self.db.commit()
 
     def add_bip32_path(self, bip32_node, path):
         address = bip32_node.subkey_for_path(path).address()
         key_id = bip32_node.id
-        c = self._exec_sql("insert or ignore into BIP32Node values (?, ?, ?)", path, key_id, address)
+        self._exec_sql("insert or ignore into BIP32Node values (?, ?, ?)", path, key_id, address)
         self.db.commit()
         return address
 
@@ -86,7 +87,7 @@ unique(path, key_id)
 slug text primary key,
 data text
 );"""
-        c = self._exec_sql(SQL)
+        self._exec_sql(SQL)
         self.db.commit()
 
     def set_global(self, slug, value):
@@ -114,26 +115,25 @@ does_seem_spent boolean,
 block_index_spent integer,
 unique(tx_hash, tx_out_index)
 );""",
-            "create index if not exists Spendable_cv on Spendable (coin_value);",
-            "create index if not exists Spendable_bia on Spendable (block_index_available);",
-            "create index if not exists Spendable_bis on Spendable (block_index_spent);"
-        ]
+               "create index if not exists Spendable_cv on Spendable (coin_value);",
+               "create index if not exists Spendable_bia on Spendable (block_index_available);",
+               "create index if not exists Spendable_bis on Spendable (block_index_spent);"]
 
         for sql in SQL:
-            c = self._exec_sql(sql)
+            self._exec_sql(sql)
         self.db.commit()
 
     def save_spendable(self, spendable):
         tx_hash = b2h_rev(spendable.tx_hash)
         script = b2h(spendable.script)
-        c = self._exec_sql("insert or replace into Spendable values (?, ?, ?, ?, ?, ?, ?)", tx_hash,
-                            spendable.tx_out_index, spendable.coin_value, script,
-                            spendable.block_index_available, spendable.does_seem_spent,
-                            spendable.block_index_spent)
+        self._exec_sql("insert or replace into Spendable values (?, ?, ?, ?, ?, ?, ?)", tx_hash,
+                       spendable.tx_out_index, spendable.coin_value, script,
+                       spendable.block_index_available, spendable.does_seem_spent,
+                       spendable.block_index_spent)
 
     def delete_spendable(self, tx_hash, tx_out_index):
-        c = self._exec_sql("delete from Spendable where tx_hash = ? and tx_out_index = ?",
-                            b2h_rev(tx_hash), tx_out_index)
+        self._exec_sql("delete from Spendable where tx_hash = ? and tx_out_index = ?",
+                       b2h_rev(tx_hash), tx_out_index)
 
     def spendable_for_hash_index(self, tx_hash, tx_out_index):
         tx_hash_hex = b2h_rev(tx_hash)
@@ -194,7 +194,7 @@ unique(tx_hash, tx_out_index)
 
     def invalidate_block_index_for_spendables(self, block_index):
         SQL1 = ("update Spendable set block_index_available = null where block_index_available = ?")
-        c = self._exec_sql(SQL1, block_index)
+        self._exec_sql(SQL1, block_index)
 
         SQL2 = ("update Spendable set block_index_spent = null where block_index_spent = ?")
-        c = self._exec_sql(SQL2, block_index)
+        self._exec_sql(SQL2, block_index)

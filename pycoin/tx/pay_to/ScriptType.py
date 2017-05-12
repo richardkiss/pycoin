@@ -6,13 +6,13 @@ from ..script import der, opcodes
 from ..script.VM import VM
 
 
-bytes_from_int = chr if bytes == str else lambda x: bytes([x])
+from pycoin.intbytes import int2byte
 
 
 def generate_default_placeholder_signature():
     order = ecdsa.generator_secp256k1.order()
     r, s = order - 1, order // 2
-    return der.sigencode_der(r, s) + bytes_from_int(1)
+    return der.sigencode_der(r, s) + int2byte(1)
 
 
 DEFAULT_PLACEHOLDER_SIGNATURE = generate_default_placeholder_signature()
@@ -58,8 +58,8 @@ class ScriptType(object):
                 return r
             if pc1 >= len(script) or pc2 >= len(template):
                 break
-            opcode1, data1, pc1 = VM.get_opcode(script, pc1)
-            opcode2, data2, pc2 = VM.get_opcode(template, pc2)
+            opcode1, data1, pc1 = VM.ScriptCodec.get_opcode(script, pc1)
+            opcode2, data2, pc2 = VM.ScriptCodec.get_opcode(template, pc2)
             l1 = 0 if data1 is None else len(data1)
             if opcode2 == opcodes.OP_PUBKEY:
                 if l1 < 33 or l1 > 120:
@@ -82,13 +82,13 @@ class ScriptType(object):
         r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
         if s + s > order:
             s = order - s
-        return der.sigencode_der(r, s) + bytes_from_int(signature_type)
+        return der.sigencode_der(r, s) + int2byte(signature_type)
 
     def address(self, netcode=None):
         from pycoin.networks.default import get_current_netcode
         if netcode is None:
             netcode = get_current_netcode()
-        return self.info()["address_f"](netcode)
+        return self.info().get("address_f", lambda n: "(unknown)")(netcode)
 
     def solve(self, **kwargs):
         """

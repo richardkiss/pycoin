@@ -1,5 +1,6 @@
 import ctypes.util
 import os
+import platform
 
 from .bignum import bignum_type_for_library
 
@@ -18,7 +19,17 @@ def set_api(library, api_info):
 def load_library():
     if os.getenv("PYCOIN_NATIVE") != "openssl":
         return None
-    library_path = ctypes.util.find_library("crypto")
+
+    system = platform.system()
+    if system == 'Windows':
+        if platform.architecture()[0] == '64bit':
+            library_path = ctypes.util.find_library('libeay64')
+        else:
+            library_path = ctypes.util.find_library('libeay32')
+
+    else:
+        library_path = ctypes.util.find_library('crypto')
+
     if library_path is None:
         return None
 
