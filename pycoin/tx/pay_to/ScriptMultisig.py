@@ -45,7 +45,7 @@ class ScriptMultisig(ScriptType):
             raise ValueError("n value wrong")
 
         opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
-        if opcode != opcodes.OP_CHECKMULTISIG:
+        if opcode != ScriptTools.int_for_opcode("OP_CHECKMULTISIG"):
             raise ValueError("no OP_CHECKMULTISIG")
         if pc != len(script):
             raise ValueError("extra stuff at end")
