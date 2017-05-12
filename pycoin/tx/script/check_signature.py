@@ -43,9 +43,7 @@ from .microcode import VCH_TRUE, VCH_FALSE
 from .tools import bin_script, delete_subscript, int_from_script_bytes
 
 
-def check_valid_signature(sig):  # noqa
-    # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
-    sig = [s for s in iterbytes(sig)]
+def _check_valid_signature_1(sig):
     ls = len(sig)
     if ls < 9 or ls > 73:
         raise ScriptError("bad signature size", errno.SIG_DER)
@@ -56,6 +54,11 @@ def check_valid_signature(sig):  # noqa
     r_len = sig[3]
     if 5 + r_len >= ls:
         raise ScriptError("r length exceed signature size", errno.SIG_DER)
+
+
+def _check_valid_signature_2(sig):
+    ls = len(sig)
+    r_len = sig[3]
     s_len = sig[5 + r_len]
     if r_len + s_len + 7 != ls:
         raise ScriptError("r and s size exceed signature size", errno.SIG_DER)
@@ -77,6 +80,13 @@ def check_valid_signature(sig):  # noqa
     if s_len > 1 and sig[r_len + 6] == 0 and not (sig[r_len + 7] & 0x80):
         raise ScriptError(
             "S value can't have leading 0 byte unless doing so would make it negative", errno.SIG_DER)
+
+
+def check_valid_signature(sig):
+    # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
+    sig = [s for s in iterbytes(sig)]
+    _check_valid_signature_1(sig)
+    _check_valid_signature_2(sig)
 
 
 def check_low_der_signature(sig_pair):
@@ -230,25 +240,21 @@ def op_checkmultisig(stack, signature_for_hash_type_f, expected_hash_type, tmp_s
     key_count = int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     if key_count < 0 or key_count > 20:
         raise ScriptError("key_count not in range 0 to 20", errno.PUBKEY_COUNT)
-    public_pair_blobs = []
-    for i in range(key_count):
-        public_pair_blobs.append(stack.pop())
+
+    public_pair_blobs = [stack.pop() for _ in range(key_count)]
 
     signature_count = int_from_script_bytes(stack.pop(), require_minimal=require_minimal)
     if signature_count < 0 or signature_count > key_count:
         raise ScriptError(
             "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
-    sig_blobs = []
-    for i in range(signature_count):
-        sig_blobs.append(stack.pop())
+
+    sig_blobs = [stack.pop() for _ in range(signature_count)]
 
     # check that we have the required hack 00 byte
-    if flags & VERIFY_NULLDUMMY:
-        hack_byte = stack[-1]
-        if hack_byte != b'':
-            raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
+    hack_byte = stack.pop()
+    if flags & VERIFY_NULLDUMMY and hack_byte != b'':
+        raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
 
-    stack.pop()
     sig_blob_indices = sig_blob_matches(
         sig_blobs, public_pair_blobs, tmp_script, signature_for_hash_type_f, flags, exit_early=True)
 

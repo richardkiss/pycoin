@@ -440,8 +440,11 @@ def do_OP_RIPEMD160(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_RIPEMD160(s)
-    >>> print(s == [bytearray([66, 207, 162, 17, 1, 142, 164, 146, 253, 238, 69, 172, 99, 123, 121, 114, 160, 173, 104, 115])])
-    True
+    >>> len(s)
+    1
+    >>> import binascii
+    >>> print(binascii.hexlify(s[0]))
+    42cfa211018ea492fdee45ac637b7972a0ad6873
     """
     stack.append(ripemd160(stack.pop()).digest())
 
@@ -450,8 +453,11 @@ def do_OP_SHA1(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_SHA1(s)
-    >>> print(s == [bytearray([11, 238, 199, 181, 234, 63, 15, 219, 201, 93, 13, 212, 127, 60, 91, 194, 117, 218, 138, 51])])
-    True
+    >>> len(s)
+    1
+    >>> import binascii
+    >>> print(binascii.hexlify(s[0]))
+    0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33
     """
     stack.append(hashlib.sha1(stack.pop()).digest())
 
@@ -460,8 +466,11 @@ def do_OP_SHA256(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_SHA256(s)
-    >>> print(s == [bytearray([44, 38, 180, 107, 104, 255, 198, 143, 249, 155, 69, 60, 29, 48, 65, 52, 19, 66, 45, 112, 100, 131, 191, 160, 249, 138, 94, 136, 98, 102, 231, 174])])
-    True
+    >>> len(s)
+    1
+    >>> import binascii
+    >>> print(binascii.hexlify(s[0]))
+    2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
     """
     stack.append(hashlib.sha256(stack.pop()).digest())
 
@@ -470,8 +479,11 @@ def do_OP_HASH160(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_HASH160(s)
-    >>> print(s == [bytearray([225, 207, 124, 129, 3, 71, 107, 109, 127, 233, 228, 151, 154, 161, 14, 124, 83, 31, 207, 66])])
-    True
+    >>> len(s)
+    1
+    >>> import binascii
+    >>> print(binascii.hexlify(s[0]))
+    e1cf7c8103476b6d7fe9e4979aa10e7c531fcf42
     """
     stack.append(hash160(stack.pop()))
 
@@ -480,8 +492,11 @@ def do_OP_HASH256(stack):
     """
     >>> s = [b'foo']
     >>> do_OP_HASH256(s)
-    >>> print(s == [bytearray([199, 173, 232, 143, 199, 162, 20, 152, 166, 165, 229, 195, 133, 225, 246, 139, 237, 130, 43, 114, 170, 99, 196, 169, 164, 138, 2, 194, 70, 110, 226, 158])])
-    True
+    >>> len(s)
+    1
+    >>> import binascii
+    >>> print(binascii.hexlify(s[0]))
+    c7ade88fc7a21498a6a5e5c385e1f68bed822b72aa63c4a9a48a02c2466ee29e
     """
     stack.append(double_sha256(stack.pop()))
 
