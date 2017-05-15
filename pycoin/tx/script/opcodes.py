@@ -145,9 +145,3 @@ OPCODE_LIST = [
 
 for i in range(1, 76):
     OPCODE_LIST.append(("OP_PUSH_%d" % i, i))
-
-
-# BRAIN DAMAGE
-OP_0 = 0
-OP_1 = 81
-OP_16 = 96

@@ -1,4 +1,3 @@
-from ..script import opcodes
 from ..script.checksigops import parse_signature_blob
 from ..script.der import UnexpectedDER
 from ..script.VM import ScriptTools, VM
@@ -15,6 +14,9 @@ from .ScriptType import ScriptType, DEFAULT_PLACEHOLDER_SIGNATURE
 
 # see BIP11 https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki
 
+OP_1 = ScriptTools.int_for_opcode("OP_1")
+OP_16 = ScriptTools.int_for_opcode("OP_16")
+
 class ScriptMultisig(ScriptType):
     def __init__(self, m, sec_keys):
         self.m = m
@@ -28,9 +30,9 @@ class ScriptMultisig(ScriptType):
             raise ValueError("blank script")
         opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
 
-        if not opcodes.OP_1 <= opcode < opcodes.OP_16:
+        if not OP_1 <= opcode < OP_16:
             raise ValueError("m value invalid")
-        m = opcode + (1 - opcodes.OP_1)
+        m = opcode + (1 - OP_1)
         sec_keys = []
         while 1:
             if pc >= len(script):
@@ -40,7 +42,7 @@ class ScriptMultisig(ScriptType):
             if l < 33 or l > 120:
                 break
             sec_keys.append(data)
-        n = opcode + (1 - opcodes.OP_1)
+        n = opcode + (1 - OP_1)
         if m > n or len(sec_keys) != n:
             raise ValueError("n value wrong")
 

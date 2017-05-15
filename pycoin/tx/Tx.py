@@ -35,7 +35,6 @@ from ..serialize.bitcoin_streamer import (
     parse_struct, parse_bc_int, parse_bc_string,
     stream_struct, stream_bc_string
 )
-from ..intbytes import int2byte
 
 from .exceptions import BadSpendableError, ValidationFailureError
 from .TxIn import TxIn
@@ -44,7 +43,6 @@ from .Spendable import Spendable
 
 from .exceptions import SolvingError
 from .pay_to import script_obj_from_script, ScriptPayToScript
-from .script import opcodes
 from .script.SolutionChecker import SolutionChecker, TxContext
 from .script.VM import ScriptTools
 
