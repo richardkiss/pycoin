@@ -38,6 +38,9 @@ class Stack(list):
 
     def __getitem__(self, *args, **kwargs):
         try:
-            return super(Stack, self).__getitem__(*args, **kwargs)
+            r = super(Stack, self).__getitem__(*args, **kwargs)
+            if isinstance(r, list):
+                r = Stack(r)
+            return r
         except IndexError:
             raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)

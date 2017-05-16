@@ -43,10 +43,6 @@ class SolutionChecker(object):
         solution_script = tx_context.solution_script
         puzzle_script = tx_context.puzzle_script
 
-        had_witness = False
-
-        is_p2h = class_.is_pay_to_script_hash(puzzle_script)
-
         if flags & VERIFY_SIGPUSHONLY:
             class_.VM.ScriptCodec.check_script_push_only(solution_script)
 
@@ -58,21 +54,21 @@ class SolutionChecker(object):
         vm_context.traceback_f = traceback_f
 
         vm = class_.VM()
-        stack = vm.eval_script(solution_script, tx_context, vm_context)
+        solution_stack = vm.eval_script(solution_script, tx_context, vm_context)
 
-        if is_p2h and (flags & VERIFY_P2SH):
-            p2sh_solution_blob, p2sh_puzzle_script = stack[:-1], stack[-1]
-            p2sh_solution_script = class_.VM.bin_script(p2sh_solution_blob)
-
-        stack = vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=stack)
+        # work on a copy of the solution stack
+        stack = vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=solution_stack[:])
 
         if len(stack) == 0 or not class_.VM.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
+        had_witness = False
         if flags & VERIFY_WITNESS:
             had_witness = class_.check_witness(tx_context, flags, traceback_f)
 
-        if is_p2h and class_.VM.bool_from_script_bytes(stack[-1]) and (flags & VERIFY_P2SH):
+        if class_.is_pay_to_script_hash(puzzle_script) and (flags & VERIFY_P2SH):
+            p2sh_solution_blob, p2sh_puzzle_script = solution_stack[:-1], solution_stack[-1]
+            p2sh_solution_script = class_.VM.bin_script(p2sh_solution_blob)
             class_.VM.ScriptCodec.check_script_push_only(solution_script)
             vm_context.is_psh_script = True
             p2sh_flags = flags & ~VERIFY_P2SH
@@ -87,11 +83,8 @@ class SolutionChecker(object):
             class_.check_solution(p2sh_tx_context, p2sh_flags)
             return
 
-        if (flags & VERIFY_WITNESS) and not had_witness and len(tx_context.witness_solution_stack) > 0:
-            raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
-
         if flags & VERIFY_CLEANSTACK and len(stack) != 1:
             raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
 
-        if len(stack) == 0 or not class_.VM.bool_from_script_bytes(stack[-1]):
-            raise ScriptError("eval false", errno.EVAL_FALSE)
+        if (flags & VERIFY_WITNESS) and not had_witness and len(tx_context.witness_solution_stack) > 0:
+            raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
