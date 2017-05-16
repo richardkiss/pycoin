@@ -39,8 +39,9 @@ def _make_instruction_lookup(opcode_pairs):
     # BRAIN DAMAGE
     opcode_lookups.update(_collect_opcodes(checksigops))
     opcode_lookups.update(_collect_opcodes(intops))
-    opcode_lookups.update(stackops.all_opcodes())
-    opcode_lookups.update(miscops.all_opcodes())
+    opcode_lookups.update(_collect_opcodes(stackops))
+    opcode_lookups.update(_collect_opcodes(miscops))
+    opcode_lookups.update(miscops.extra_opcodes())
     for opcode_name, opcode_value in opcode_pairs:
         if opcode_name in opcode_lookups:
             instruction_lookup[opcode_value] = opcode_lookups[opcode_name]

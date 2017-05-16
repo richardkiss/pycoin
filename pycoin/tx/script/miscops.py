@@ -48,7 +48,7 @@ def do_OP_CODESEPARATOR(vm):
 
 
 def do_OP_TOALTSTACK(vm):
-    vm.altstack.append(vm.stack.pop())
+    vm.altstack.append(vm.pop())
 
 
 def do_OP_RESERVED(vm):
@@ -63,7 +63,7 @@ do_OP_RESERVED.outside_conditional = True
 def do_OP_FROMALTSTACK(vm):
     if len(vm.altstack) < 1:
         raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
-    vm.stack.append(vm.altstack.pop())
+    vm.append(vm.altstack.pop())
 
 
 def discourage_nops(vm):
@@ -79,7 +79,7 @@ def make_if(reverse_bool=False):
         if conditional_stack.all_if_true():
             if len(stack) < 1:
                 raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
-            item = stack.pop()
+            item = vm.pop()
             if vm.flags & VERIFY_MINIMALIF:
                 if item not in (b'', b'\1'):
                     raise ScriptError("non-minimal IF", errno.MINIMALIF)
@@ -196,13 +196,4 @@ def extra_opcodes():
 
     for v in range(0, 128):
         d["OP_%d" % v] = lambda s: 0
-    return d
-
-
-def all_opcodes():
-    d = extra_opcodes()
-    the_globals = globals()
-    for k, v in the_globals.items():
-        if k.startswith("do_OP"):
-            d[k[3:]] = v
     return d

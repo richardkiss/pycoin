@@ -5,7 +5,6 @@ from ...intbytes import byte2int, indexbytes
 from ...tx.script.BaseSolutionChecker import SolutionChecker, VMContext
 from ...tx.script import errno
 from ...tx.script import ScriptError
-from ...tx.script.Stack import Stack
 
 from .ScriptTools import BitcoinScriptTools
 from .VM import BitcoinVM
@@ -47,13 +46,13 @@ def make_solution_checker():
                 puzzle_script = witness_solution_stack[-1]
                 if sha256(puzzle_script).digest() != witness_program:
                     raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-                stack = Stack(witness_solution_stack[:-1])
+                stack = list(witness_solution_stack[:-1])
             elif l == 20:
                 # special case for pay-to-pubkeyhash; signature + pubkey in witness
                 if len(witness_solution_stack) != 2:
                     raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
                 puzzle_script = class_._puzzle_script_for_len20_segwit(witness_program)
-                stack = Stack(witness_solution_stack)
+                stack = list(witness_solution_stack)
             else:
                 raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
             return stack, puzzle_script

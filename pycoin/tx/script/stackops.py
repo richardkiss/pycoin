@@ -295,21 +295,6 @@ def do_OP_HASH256(stack):
     stack.append(double_sha256(stack.pop()))
 
 
-def transform_stack_op(f):
-    def the_f(vm):
-        return f(vm.stack)
-    return the_f
-
-
-def all_opcodes():
-    d = {}
-    the_globals = globals()
-    for k, v in list(the_globals.items()):
-        if k.startswith("do_OP"):
-            d[k[3:]] = transform_stack_op(v)
-    return d
-
-
 if __name__ == "__main__":
     import doctest
     doctest.testmod()

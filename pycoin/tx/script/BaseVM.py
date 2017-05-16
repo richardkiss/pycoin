@@ -5,7 +5,6 @@ from . import errno
 from . import opcodes
 from .ConditionalStack import ConditionalStack
 from .IntStreamer import IntStreamer
-from .Stack import Stack
 
 
 class VM(object):
@@ -19,7 +18,6 @@ class VM(object):
     VM_TRUE = IntStreamer.int_to_script_bytes(1)
 
     ConditionalStack = ConditionalStack
-    Stack = Stack
     IntStreamer = IntStreamer
 
     @classmethod
@@ -55,9 +53,9 @@ class VM(object):
 
         self.pc = 0
         self.tx_context = tx_context
-        self.stack = initial_stack or self.Stack()
+        self.stack = initial_stack or list()
         self.script = script
-        self.altstack = self.Stack()
+        self.altstack = list()
         self.conditional_stack = self.ConditionalStack()
         self.op_count = 0
         self.begin_code_hash = 0
@@ -107,6 +105,21 @@ class VM(object):
     def post_script_check(self):
         self.conditional_stack.check_final_state()
         self.check_stack_size()
+
+    def append(self, a):
+        self.stack.append(a)
+
+    def pop(self, *args, **kwargs):
+        try:
+            return self.stack.pop(*args, **kwargs)
+        except IndexError:
+            raise ScriptError("pop from empty stack", errno.INVALID_STACK_OPERATION)
+
+    def __getitem__(self, *args, **kwargs):
+        try:
+            return self.stack.__getitem__(*args, **kwargs)
+        except IndexError:
+            raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)
 
     @classmethod
     def delete_subscript(class_, script, subscript):
