@@ -137,7 +137,7 @@ Email me at him@richardkiss.com to be added to this list.
 
 Too Slow?
 ---------
-As of v0.60, there is experimental code that will call into OpenSSL for two slow functions.
+As of v0.60, there is experimental code that will call into OpenSSL for too slow functions.
 To enable this, set (and export) environment variable PYCOIN_NATIVE=openssl. Example:
 
 ```
