@@ -24,6 +24,7 @@ setup(
         "pycoin.tx",
         "pycoin.tx.pay_to",
         "pycoin.tx.script",
+        "pycoin.ui",
         "pycoin.wallet"
     ],
     author="Richard Kiss",
