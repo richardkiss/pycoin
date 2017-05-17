@@ -61,7 +61,7 @@ class VM(object):
     def get_opcodes(class_, script, verify_minimal_data=False, pc=0):
         pc = 0
         while pc < len(script):
-            opcode, data, new_pc = class_.ScriptCodec.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
+            opcode, data, new_pc = class_.ScriptStreamer.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
             yield opcode, data, pc, new_pc
             pc = new_pc
 
@@ -92,7 +92,7 @@ class VM(object):
 
         # don't actually check for minimal data unless data will be pushed onto the stack
         verify_minimal_data = self.flags & VERIFY_MINIMALDATA and all_if_true
-        opcode, data, pc = self.ScriptCodec.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)
+        opcode, data, pc = self.ScriptStreamer.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)
         if data and len(data) > self.MAX_BLOB_LENGTH:
             raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 

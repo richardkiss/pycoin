@@ -8,9 +8,9 @@ from . import ScriptError
 
 class ScriptTools(object):
 
-    def __init__(self, opcode_list, IntStreamer, dataCodec):
+    def __init__(self, opcode_list, IntStreamer, scriptStreamer):
         self.intStreamer = IntStreamer
-        self.dataCodec = dataCodec
+        self.scriptStreamer = scriptStreamer
 
         self.opcode_to_int = dict(o for o in opcode_list)
         self.int_to_opcode = dict(reversed(o) for o in opcode_list)
@@ -65,7 +65,7 @@ class ScriptTools(object):
         pc = 0
         try:
             while pc < len(script):
-                opcode, data, new_pc = self.dataCodec.get_opcode(script, pc)
+                opcode, data, new_pc = self.scriptStreamer.get_opcode(script, pc)
                 opcodes.append(self.disassemble_for_opcode_data(opcode, data))
                 pc = new_pc
         except ScriptError:
@@ -80,7 +80,7 @@ class ScriptTools(object):
     def write_push_data(self, data_list, f):
         # return bytes that causes the given data to be pushed onto the stack
         for t in data_list:
-            f.write(self.dataCodec.compile_push_data(t))
+            f.write(self.scriptStreamer.compile_push_data(t))
 
     def compile_push_data_list(self, data_list):
-        return b''.join(self.dataCodec.compile_push_data(d) for d in data_list)
+        return b''.join(self.scriptStreamer.compile_push_data(d) for d in data_list)

@@ -17,6 +17,7 @@ from .ScriptType import ScriptType, DEFAULT_PLACEHOLDER_SIGNATURE
 OP_1 = ScriptTools.int_for_opcode("OP_1")
 OP_16 = ScriptTools.int_for_opcode("OP_16")
 
+
 class ScriptMultisig(ScriptType):
     def __init__(self, m, sec_keys):
         self.m = m
@@ -28,7 +29,7 @@ class ScriptMultisig(ScriptType):
         pc = 0
         if len(script) == 0:
             raise ValueError("blank script")
-        opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
+        opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
 
         if not OP_1 <= opcode < OP_16:
             raise ValueError("m value invalid")
@@ -37,7 +38,7 @@ class ScriptMultisig(ScriptType):
         while 1:
             if pc >= len(script):
                 raise ValueError("unexpected end of script")
-            opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
+            opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
             l = len(data) if data else 0
             if l < 33 or l > 120:
                 break
@@ -46,7 +47,7 @@ class ScriptMultisig(ScriptType):
         if m > n or len(sec_keys) != n:
             raise ValueError("n value wrong")
 
-        opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
+        opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
         if opcode != ScriptTools.int_for_opcode("OP_CHECKMULTISIG"):
             raise ValueError("no OP_CHECKMULTISIG")
         if pc != len(script):
@@ -71,10 +72,10 @@ class ScriptMultisig(ScriptType):
         secs_solved = set()
         pc = 0
         seen = 0
-        opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
+        opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
         # ignore the first opcode
         while pc < len(script) and seen < self.m:
-            opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
+            opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
             try:
                 sig_pair, signature_type = parse_signature_blob(data)
                 seen += 1

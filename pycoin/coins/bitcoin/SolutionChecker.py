@@ -6,6 +6,7 @@ from ...tx.script.BaseSolutionChecker import SolutionChecker, VMContext
 from ...tx.script import errno
 from ...tx.script import ScriptError
 
+from .ScriptStreamer import BitcoinScriptStreamer
 from .ScriptTools import BitcoinScriptTools
 from .VM import BitcoinVM
 
@@ -34,7 +35,7 @@ def make_solution_checker():
 
         @classmethod
         def _puzzle_script_for_len20_segwit(class_, witness_program):
-            return V0_len20_prefix + class_.VM.dataCodec.compile_push_data(
+            return V0_len20_prefix + BitcoinScriptStreamer.compile_push_data(
                 witness_program) + V0_len20_postfix
 
         @classmethod
