@@ -31,7 +31,7 @@ class VM(object):
     def bool_from_script_bytes(class_, v, require_minimal=False):
         v = class_.IntStreamer.int_from_script_bytes(v, require_minimal=require_minimal)
         if require_minimal:
-            if v not in (0, 1):
+            if v not in (class_.VM_FALSE, class_.VM_TRUE):
                 raise ScriptError("non-minimally encoded", errno.UNKNOWN_ERROR)
         return bool(v)
 

@@ -36,7 +36,6 @@ def _make_instruction_lookup(opcode_pairs):
     for i in OPCODE_DATA_LIST:
         instruction_lookup[i] = _no_op
     opcode_lookups = {}
-    # BRAIN DAMAGE
     opcode_lookups.update(_collect_opcodes(checksigops))
     opcode_lookups.update(_collect_opcodes(intops))
     opcode_lookups.update(_collect_opcodes(stackops))

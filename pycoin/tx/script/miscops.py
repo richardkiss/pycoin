@@ -81,7 +81,7 @@ def make_if(reverse_bool=False):
                 raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
             item = vm.pop()
             if vm.flags & VERIFY_MINIMALIF:
-                if item not in (b'', b'\1'):
+                if item not in (vm.VM_FALSE, vm.VM_TRUE):
                     raise ScriptError("non-minimal IF", errno.MINIMALIF)
             the_bool = vm.bool_from_script_bytes(item)
         vm.conditional_stack.OP_IF(the_bool, reverse_bool=reverse_bool)

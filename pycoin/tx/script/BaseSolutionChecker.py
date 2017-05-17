@@ -27,10 +27,6 @@ class SolutionChecker(object):
         raise NotImplemented()
 
     @classmethod
-    def get_opcode(class_, script, pc):
-        return class_.VM.ScriptCodec.get_opcode(script, pc)
-
-    @classmethod
     def check_solution(class_, tx_context, flags, traceback_f=None):
         """
         solution_script: alleged solution to the puzzle_script
