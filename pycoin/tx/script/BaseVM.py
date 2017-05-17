@@ -18,6 +18,21 @@ class VM(object):
     ConditionalStack = ConditionalStack
     IntStreamer = IntStreamer
 
+    def append(self, a):
+        self.stack.append(a)
+
+    def pop(self, *args, **kwargs):
+        try:
+            return self.stack.pop(*args, **kwargs)
+        except IndexError:
+            raise ScriptError("pop from empty stack", errno.INVALID_STACK_OPERATION)
+
+    def __getitem__(self, *args, **kwargs):
+        try:
+            return self.stack.__getitem__(*args, **kwargs)
+        except IndexError:
+            raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)
+
     def pop_int(self):
         return self.IntStreamer.int_from_script_bytes(self.pop(), require_minimal=self.flags & VERIFY_MINIMALDATA)
 
@@ -108,21 +123,6 @@ class VM(object):
     def post_script_check(self):
         self.conditional_stack.check_final_state()
         self.check_stack_size()
-
-    def append(self, a):
-        self.stack.append(a)
-
-    def pop(self, *args, **kwargs):
-        try:
-            return self.stack.pop(*args, **kwargs)
-        except IndexError:
-            raise ScriptError("pop from empty stack", errno.INVALID_STACK_OPERATION)
-
-    def __getitem__(self, *args, **kwargs):
-        try:
-            return self.stack.__getitem__(*args, **kwargs)
-        except IndexError:
-            raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)
 
     @classmethod
     def delete_subscript(class_, script, subscript):

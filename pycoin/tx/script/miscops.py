@@ -114,7 +114,8 @@ def do_OP_CHECKLOCKTIMEVERIFY(vm):
         raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
     if len(vm.stack[-1]) > 5:
         raise ScriptError("script number overflow")
-    max_lock_time = vm.IntStreamer.int_from_script_bytes(vm.stack[-1])
+    max_lock_time = vm.pop_int()
+    vm.push_int(max_lock_time)
     if max_lock_time < 0:
         raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
     era_max = (max_lock_time >= 500000000)
@@ -150,8 +151,8 @@ def do_OP_CHECKSEQUENCEVERIFY(vm):
         raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
     if len(vm.stack[-1]) > 5:
         raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
-    require_minimal = vm.flags & VERIFY_MINIMALDATA
-    sequence = vm.IntStreamer.int_from_script_bytes(vm.stack[-1], require_minimal=require_minimal)
+    sequence = vm.pop_int()
+    vm.push_int(sequence)
     if sequence < 0:
         raise ScriptError(
             "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)

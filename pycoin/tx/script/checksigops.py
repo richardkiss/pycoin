@@ -237,8 +237,7 @@ def do_OP_CHECKMULTISIG(vm):
     flags = vm.flags
     tmp_script = vm.script[vm.begin_code_hash:]
 
-    require_minimal = flags & VERIFY_MINIMALDATA
-    key_count = vm.IntStreamer.int_from_script_bytes(vm.pop(), require_minimal=require_minimal)
+    key_count = vm.pop_int()
 
     vm.op_count += key_count
 
@@ -247,7 +246,7 @@ def do_OP_CHECKMULTISIG(vm):
 
     public_pair_blobs = [vm.pop() for _ in range(key_count)]
 
-    signature_count = vm.IntStreamer.int_from_script_bytes(vm.pop(), require_minimal=require_minimal)
+    signature_count = vm.pop_int()
     if signature_count < 0 or signature_count > key_count:
         raise ScriptError(
             "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
