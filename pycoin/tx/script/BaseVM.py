@@ -2,7 +2,6 @@ from .flags import VERIFY_MINIMALDATA
 
 from . import ScriptError
 from . import errno
-from . import opcodes
 from .ConditionalStack import ConditionalStack
 from .IntStreamer import IntStreamer
 
@@ -12,7 +11,6 @@ class VM(object):
     MAX_BLOB_LENGTH = 520
     MAX_OP_COUNT = 201
     MAX_STACK_SIZE = 1000
-    OPCODE_LIST = opcodes.OPCODE_LIST
 
     VM_FALSE = IntStreamer.int_to_script_bytes(0)
     VM_TRUE = IntStreamer.int_to_script_bytes(1)
@@ -20,9 +18,11 @@ class VM(object):
     ConditionalStack = ConditionalStack
     IntStreamer = IntStreamer
 
-    @classmethod
-    def nonnegative_int_from_script_bytes(class_, b, require_minimal):
-        v = class_.IntStreamer.int_from_script_bytes(b, require_minimal=require_minimal)
+    def pop_int(self):
+        return self.IntStreamer.int_from_script_bytes(self.pop(), require_minimal=self.flags & VERIFY_MINIMALDATA)
+
+    def pop_nonnegative(self):
+        v = self.pop_int()
         if v < 0:
             raise ScriptError("unexpectedly got negative value", errno.INVALID_STACK_OPERATION)
         return v

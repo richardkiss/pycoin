@@ -54,7 +54,7 @@ def do_OP_PICK(vm):
     >>> print(s)
     [b'a', b'b', b'c', b'd', b'b']
     """
-    v = vm.nonnegative_int_from_script_bytes(vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
+    v = vm.pop_nonnegative()
     vm.append(vm[-v-1])
 
 
@@ -65,7 +65,7 @@ def do_OP_ROLL(vm):
     >>> print(s)
     [b'a', b'c', b'd', b'b']
     """
-    v = vm.nonnegative_int_from_script_bytes(vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
+    v = vm.pop_nonnegative()
     vm.append(vm.pop(-v-1))
 
 
@@ -76,8 +76,8 @@ def do_OP_SUBSTR(vm):
     >>> print(s)
     [b'de']
     """
-    pos = vm.nonnegative_int_from_script_bytes(vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
-    length = vm.nonnegative_int_from_script_bytes(vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
+    pos = vm.pop_nonnegative()
+    length = vm.pop_nonnegative()
     vm.append(vm.pop()[length:length+pos])
 
 
@@ -92,7 +92,7 @@ def do_OP_LEFT(vm):
     >>> print(len(s) ==1 and s[0]==b'')
     True
     """
-    pos = vm.nonnegative_int_from_script_bytes(vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
+    pos = vm.pop_nonnegative()
     vm.append(vm.pop()[:pos])
 
 
@@ -107,7 +107,7 @@ def do_OP_RIGHT(vm):
     >>> print(s==[b''])
     True
     """
-    pos = vm.nonnegative_int_from_script_bytes(vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
+    pos = vm.pop_nonnegative()
     if pos > 0:
         vm.append(vm.pop()[-pos:])
     else:
@@ -128,14 +128,6 @@ def do_OP_SIZE(vm):
     True
     """
     vm.push_int(len(vm[-1]))
-
-
-def make_same_size(v1, v2):
-    larger = max(len(v1), len(v2))
-    nulls = b'\0' * larger
-    v1 = (v1 + nulls)[:larger]
-    v2 = (v2 + nulls)[:larger]
-    return v1, v2
 
 
 def do_OP_EQUAL(vm):
@@ -161,10 +153,9 @@ def do_OP_EQUALVERIFY(vm):
 
 
 def pop_check_bounds(vm):
-    v = vm.pop()
-    if len(v) > 4:
+    if len(vm[-1]) > 4:
         raise ScriptError("overflow in binop", errno.UNKNOWN_ERROR)
-    return vm.IntStreamer.int_from_script_bytes(v, require_minimal=vm.flags & VERIFY_MINIMALDATA)
+    return vm.pop_int()
 
 
 def make_bin_op(binop):
@@ -216,8 +207,7 @@ def do_OP_WITHIN(vm):
     >>> print(s == [b''])
     True
     """
-    v3, v2, v1 = [vm.IntStreamer.int_from_script_bytes(
-        vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA) for i in range(3)]
+    v3, v2, v1 = [vm.pop_int() for i in range(3)]
     ok = (v2 <= v1 < v3)
     vm.append(vm.bool_to_script_bytes(ok))
 
@@ -241,7 +231,6 @@ def do_OP_NOT(vm):
 
 
 def do_OP_0NOTEQUAL(vm):
-    return vm.append(
-        vm.IntStreamer.int_to_script_bytes(
-            vm.bool_from_script_bytes(
-                vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)))
+    return vm.push_int(
+        vm.bool_from_script_bytes(
+            vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA))
