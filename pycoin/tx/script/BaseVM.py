@@ -27,6 +27,9 @@ class VM(object):
             raise ScriptError("unexpectedly got negative value", errno.INVALID_STACK_OPERATION)
         return v
 
+    def push_int(self, v):
+        self.append(self.IntStreamer.int_to_script_bytes(v))
+
     @classmethod
     def bool_from_script_bytes(class_, v, require_minimal=False):
         v = class_.IntStreamer.int_from_script_bytes(v, require_minimal=require_minimal)

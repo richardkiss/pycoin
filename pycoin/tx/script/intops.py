@@ -44,7 +44,7 @@ def do_OP_DEPTH(vm):
     >>> print(s)
     [1, 2, 1, 2, 1, 2, b'\\x06']
     """
-    vm.append(vm.IntStreamer.int_to_script_bytes(len(vm.stack)))
+    vm.push_int(len(vm.stack))
 
 
 def do_OP_PICK(vm):
@@ -127,7 +127,7 @@ def do_OP_SIZE(vm):
     >>> print(binascii.hexlify(s[-1]) == b'7017')
     True
     """
-    vm.append(vm.IntStreamer.int_to_script_bytes(len(vm[-1])))
+    vm.push_int(len(vm[-1]))
 
 
 def make_same_size(v1, v2):
@@ -170,7 +170,7 @@ def pop_check_bounds(vm):
 def make_bin_op(binop):
     def f(vm):
         v1, v2 = [pop_check_bounds(vm) for i in range(2)]
-        vm.append(vm.IntStreamer.int_to_script_bytes(binop(v2, v1)))
+        vm.push_int(binop(v2, v1))
     return f
 
 
@@ -224,7 +224,7 @@ def do_OP_WITHIN(vm):
 
 def make_unary_num_op(unary_f):
     def f(vm):
-        vm.append(vm.IntStreamer.int_to_script_bytes(unary_f(pop_check_bounds(vm))))
+        vm.push_int(unary_f(pop_check_bounds(vm)))
     return f
 
 
