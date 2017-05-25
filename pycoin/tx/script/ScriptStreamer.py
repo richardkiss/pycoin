@@ -137,11 +137,6 @@ class ScriptStreamer(object):
             if opcode not in self.data_opcodes:
                 raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 
-    def verify_minimal_data(self, opcode, data):
-        script = self.bin_script([data])
-        if byte2int(script) != opcode:
-            raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
-
     def get_opcode(self, script, pc, verify_minimal_data=False):
         """
         Step through the script, returning a tuple with the next opcode, the next
