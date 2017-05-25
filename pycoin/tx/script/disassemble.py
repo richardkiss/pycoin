@@ -4,7 +4,7 @@ from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitc
 
 from pycoin.serialize import b2h
 from pycoin.tx.script.VM import VM, ScriptTools
-from pycoin.tx.script.SolutionChecker import SolutionChecker
+from pycoin.tx.script.BaseSolutionChecker import SolutionChecker
 
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY

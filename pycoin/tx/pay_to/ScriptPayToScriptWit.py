@@ -1,7 +1,7 @@
 from pycoin.intbytes import byte2int
 
 from ..script.VM import ScriptTools, VM
-from ..script.SolutionChecker import VMContext
+from ..script.BaseSolutionChecker import VMContext
 
 from ...serialize import b2h
 

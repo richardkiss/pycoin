@@ -28,6 +28,7 @@ THE SOFTWARE.
 import io
 import warnings
 
+from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker  ## BRAIN DAMAGE
 from ..convention import SATOSHI_PER_COIN
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
@@ -43,7 +44,7 @@ from .Spendable import Spendable
 
 from .exceptions import SolvingError
 from .pay_to import script_obj_from_script, ScriptPayToScript
-from .script.SolutionChecker import SolutionChecker, TxContext
+from .script.BaseSolutionChecker import TxContext
 from .script.VM import ScriptTools
 
 
@@ -62,7 +63,7 @@ class Tx(object):
     TxIn = TxIn
     TxOut = TxOut
     Spendable = Spendable
-    SolutionChecker = SolutionChecker
+    SolutionChecker = BitcoinSolutionChecker
 
     MAX_MONEY = MAX_MONEY
     MAX_TX_SIZE = MAX_BLOCK_SIZE
@@ -248,7 +249,7 @@ class Tx(object):
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.
-        tx_out_script = SolutionChecker.VM.delete_subscript(tx_out_script, ScriptTools.compile("OP_CODESEPARATOR"))
+        tx_out_script = self.SolutionChecker.VM.delete_subscript(tx_out_script, ScriptTools.compile("OP_CODESEPARATOR"))
 
         # blank out other inputs' signatures
         txs_in = [self._tx_in_for_idx(i, tx_in, tx_out_script, unsigned_txs_out_idx)

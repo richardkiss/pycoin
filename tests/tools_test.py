@@ -5,7 +5,7 @@ import unittest
 from pycoin.serialize import h2b
 from pycoin.intbytes import int2byte
 from pycoin.tx.script.opcodes import OPCODE_LIST
-from pycoin.tx.script.SolutionChecker import TxContext
+from pycoin.tx.script.BaseSolutionChecker import TxContext
 from pycoin.tx.script.IntStreamer import IntStreamer
 from pycoin.tx.script.VM import ScriptTools, VM
 

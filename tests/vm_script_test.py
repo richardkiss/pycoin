@@ -12,7 +12,8 @@ from pycoin.tx.Tx import TxIn, TxOut, Tx
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script import errno
 from pycoin.tx.script import flags
-from pycoin.tx.script.SolutionChecker import SolutionChecker, TxContext
+from pycoin.tx.script.BaseSolutionChecker import TxContext
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker as SolutionChecker
 from pycoin.tx.script.VM import ScriptTools
 
 

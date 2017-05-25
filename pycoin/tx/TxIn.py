@@ -95,7 +95,10 @@ class TxIn(object):
         tx_out_script: the script of the TxOut that corresponds to this input
         signature_hash: the hash of the partial transaction
         """
-        from .script.SolutionChecker import SolutionChecker, TxContext
+        # # BRAIN DAMAGE -- we shouldn't import from coins
+        # this function is osbolete and should be removed
+        from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+        from .script.BaseSolutionChecker import TxContext
         from .script import ScriptError
         tx_context = TxContext()
         tx_context.lock_time = lock_time
@@ -105,7 +108,7 @@ class TxIn(object):
         tx_context.solution_script = self.script
         tx_context.witness_solution_stack = self.witness
         tx_context.sequence = self.sequence
-        checker = SolutionChecker()
+        checker = BitcoinSolutionChecker()
         try:
             checker.check_solution(tx_context, flags=flags, traceback_f=traceback_f)
             return True
