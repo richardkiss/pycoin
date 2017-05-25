@@ -3,7 +3,8 @@ from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitc
                              sec_to_public_pair, is_sec_compressed)
 
 from pycoin.serialize import b2h
-from pycoin.tx.script.VM import VM, ScriptTools
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.VM import BitcoinVM
 from pycoin.tx.script.BaseSolutionChecker import SolutionChecker
 
 from pycoin.tx.script.checksigops import parse_signature_blob
@@ -57,7 +58,7 @@ def add_sec_annotations(a1, data, address_prefix):
 
 def instruction_for_opcode(opcode, data):
     if data is None or len(data) == 0:
-        return ScriptTools.disassemble_for_opcode_data(opcode, data)
+        return BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)
     return "[PUSH_%d] %s" % (opcode, b2h(data))
 
 
@@ -134,7 +135,7 @@ def disassemble_scripts(input_script, output_script, lock_time, signature_for_ha
     sc.eval_script(input_script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=stack)
     if stack:
         signatures, new_output_script = stack[:-1], stack[-1]
-        new_input_script = VM.bin_script(signatures)
+        new_input_script = BitcoinScriptTools.compile_push_data_list(signatures)
     else:
         signatures, new_output_script, new_input_script = [], b'', b''
 

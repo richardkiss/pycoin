@@ -1,11 +1,10 @@
-from ..script.VM import ScriptTools
 
 from ... import encoding
 from ...serialize import b2h
 
 from ..exceptions import SolvingError
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptTools, ScriptType
 
 
 class ScriptPayToPublicKey(ScriptType):

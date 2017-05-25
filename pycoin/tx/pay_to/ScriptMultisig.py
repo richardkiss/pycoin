@@ -1,6 +1,5 @@
 from ..script.checksigops import parse_signature_blob
 from ..script.der import UnexpectedDER
-from ..script.VM import ScriptTools, VM
 
 from ... import ecdsa
 from ... import encoding
@@ -9,7 +8,7 @@ from ...serialize import b2h
 
 from ..exceptions import SolvingError
 
-from .ScriptType import ScriptType, DEFAULT_PLACEHOLDER_SIGNATURE
+from .ScriptType import ScriptTools, ScriptType, VM, DEFAULT_PLACEHOLDER_SIGNATURE
 
 
 # see BIP11 https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki

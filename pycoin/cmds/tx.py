@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding import hash160
 from pycoin.key import Key
@@ -25,7 +26,6 @@ from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
 from pycoin.tx.script.disassemble import disassemble_scripts, sighash_type_to_string
-from pycoin.tx.script.VM import ScriptTools
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.tx.Tx import Spendable, Tx, TxOut
 from pycoin.ui import standard_tx_out_script
@@ -66,7 +66,7 @@ def make_trace_script(do_trace, use_pdb):
         return None
 
     def trace_script(old_pc, opcode, data, stack, altstack, conditional_stack, is_signature):
-        print("%3d : %02x  %s" % (old_pc, opcode, ScriptTools.disassemble_for_opcode_data(opcode, data)))
+        print("%3d : %02x  %s" % (old_pc, opcode, BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)))
         if use_pdb:
             import pdb
             from pycoin.serialize import b2h
@@ -123,7 +123,7 @@ def dump_disassembly(tx_in, tx_out, lock_time, signature_for_hash_type_f):
 
 def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level):
     signatures = []
-    for opcode in ScriptTools.opcode_list(tx_in.script):
+    for opcode in BitcoinScriptTools.opcode_list(tx_in.script):
         if not opcode.startswith("OP_"):
             try:
                 signatures.append(parse_signature_blob(h2b(opcode[1:-1])))

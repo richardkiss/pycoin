@@ -2,19 +2,20 @@
 
 import unittest
 
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.VM import BitcoinVM
 from pycoin.serialize import h2b
 from pycoin.intbytes import int2byte
 from pycoin.tx.script.opcodes import OPCODE_LIST
 from pycoin.tx.script.BaseSolutionChecker import TxContext
 from pycoin.tx.script.IntStreamer import IntStreamer
-from pycoin.tx.script.VM import ScriptTools, VM
 
-bin_script = ScriptTools.compile_push_data_list
-compile = ScriptTools.compile
-disassemble = ScriptTools.disassemble
-int_to_script_bytes = ScriptTools.intStreamer.int_to_script_bytes
+bin_script = BitcoinScriptTools.compile_push_data_list
+compile = BitcoinScriptTools.compile
+disassemble = BitcoinScriptTools.disassemble
+int_to_script_bytes = BitcoinScriptTools.intStreamer.int_to_script_bytes
 
-class myVM(VM):
+class myVM(BitcoinVM):
     MAX_SCRIPT_LENGTH = int(1e9)
     MAX_BLOB_LENGTH = int(1e9)
 

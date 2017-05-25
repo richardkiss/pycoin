@@ -29,6 +29,7 @@ import io
 import warnings
 
 from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker  ## BRAIN DAMAGE
+from ..coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools  ## BRAIN DAMAGE
 from ..convention import SATOSHI_PER_COIN
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
@@ -45,7 +46,6 @@ from .Spendable import Spendable
 from .exceptions import SolvingError
 from .pay_to import script_obj_from_script, ScriptPayToScript
 from .script.BaseSolutionChecker import TxContext
-from .script.VM import ScriptTools
 
 
 MAX_MONEY = 21000000 * SATOSHI_PER_COIN

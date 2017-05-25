@@ -10,7 +10,6 @@ from pycoin.tx.pay_to import (
 )
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
-from pycoin.tx.script.VM import VM
 
 
 class NoAddressesForScriptTypeError(Exception):
@@ -43,7 +42,7 @@ def who_signed_tx(tx, tx_in_idx, netcode='BTC'):
     script = tx_in.script
     pc = 0
     while pc < len(script):
-        opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
+        opcode, data, pc = tx.SolutionChecker.VM.ScriptStreamer.get_opcode(script, pc)
         if data is None:
             continue
         try:

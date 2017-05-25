@@ -1,14 +1,12 @@
 from pycoin.intbytes import byte2int
 
-from ..script.VM import ScriptTools
-
 from ... import encoding
 
 from ...serialize import b2h
 
 from ..exceptions import SolvingError
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptType, ScriptTools
 
 
 class ScriptPayToAddressWit(ScriptType):

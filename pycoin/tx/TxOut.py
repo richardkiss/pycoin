@@ -25,12 +25,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from ..coins.bitcoin.ScriptTools import BitcoinScriptTools
 from ..convention import satoshi_to_mbtc
 
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
 
 from .pay_to import script_obj_from_script
-from .script.VM import ScriptTools
 
 
 class TxOut(object):
@@ -57,7 +57,7 @@ class TxOut(object):
         return '%s<%s mbtc "%s">' % (
             self.__class__.__name__,
             satoshi_to_mbtc(self.coin_value),
-            ScriptTools.disassemble(self.script)
+            BitcoinScriptTools.disassemble(self.script)
         )
 
     def address(self, netcode=None):

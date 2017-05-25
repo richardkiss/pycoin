@@ -1,10 +1,8 @@
-from ..script.VM import ScriptTools
-
 from ... import encoding
 
 from ...serialize import b2h
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptTools, ScriptType
 
 
 class ScriptPayToScript(ScriptType):

@@ -1,8 +1,6 @@
-from ..script.VM import ScriptTools
-
 from ...serialize import b2h
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptTools, ScriptType
 
 
 class ScriptNulldata(ScriptType):

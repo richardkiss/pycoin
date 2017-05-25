@@ -3,18 +3,13 @@
 import json
 import unittest
 import os
-#import sys
-#import tempfile
 
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.serialize import h2b
-
 from pycoin.tx.Tx import TxIn, TxOut, Tx
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script import errno
 from pycoin.tx.script import flags
-from pycoin.tx.script.BaseSolutionChecker import TxContext
-from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker as SolutionChecker
-from pycoin.tx.script.VM import ScriptTools
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
@@ -50,14 +45,14 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
     print("ACTUAL: %s" % actual)
     print("MESSAGE: %s" % message)
     print(comment)
-    print(ScriptTools.disassemble(ScriptTools.compile(script_in)))
-    print(ScriptTools.disassemble(ScriptTools.compile(script_out)))
+    print(BitcoinScriptTools.disassemble(BitcoinScriptTools.compile(script_in)))
+    print(BitcoinScriptTools.disassemble(BitcoinScriptTools.compile(script_out)))
     from pycoin.serialize import b2h
     def tbf(*args):
         opcode, data, pc, vm = args
         stack = vm.stack
         altstack = vm.altstack
-        opd = ScriptTools.disassemble_for_opcode_data(opcode, data)
+        opd = BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)
         if len(altstack) == 0:
             altstack = ''
         print("%s %s\n  %3x  %s" % (stack, altstack, pc, opd))
@@ -79,8 +74,8 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
 
 
 def make_script_test(script_in, script_out, flags_string, comment, expected, coin_value, script_witness):
-    script_in_bin = ScriptTools.compile(script_in)
-    script_out_bin = ScriptTools.compile(script_out)
+    script_in_bin = BitcoinScriptTools.compile(script_in)
+    script_out_bin = BitcoinScriptTools.compile(script_out)
     script_witness_bin = [h2b(w) for w in script_witness]
     flags = parse_flags(flags_string)
     def f(self):

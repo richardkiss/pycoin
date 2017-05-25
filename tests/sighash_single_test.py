@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.ecdsa import (
     generator_secp256k1,
     sign as ecdsa_sign,
@@ -28,7 +29,6 @@ from pycoin.tx.script.der import (
     sigdecode_der,
     sigencode_der,
 )
-from pycoin.tx.script.VM import ScriptTools as VM
 
 PRIV_KEYS = (
       2330949616242593315303241053456316633827293588958882755297900732239663851861,
@@ -85,8 +85,8 @@ class SighashSingleTest(unittest.TestCase):
 
         # Fake a coinbase transaction
         coinbase_tx = Tx.coinbase_tx(k0.sec(), 500000000)
-        coinbase_tx.txs_out.append(TxOut(1000000000, VM.compile('%s OP_CHECKSIG' % b2h(k1.sec()))))
-        coinbase_tx.txs_out.append(TxOut(1000000000, VM.compile('%s OP_CHECKSIG' % b2h(k2.sec()))))
+        coinbase_tx.txs_out.append(TxOut(1000000000, BitcoinScriptTools.compile('%s OP_CHECKSIG' % b2h(k1.sec()))))
+        coinbase_tx.txs_out.append(TxOut(1000000000, BitcoinScriptTools.compile('%s OP_CHECKSIG' % b2h(k2.sec()))))
 
         self.assertEqual('2acbe1006f7168bad538b477f7844e53de3a31ffddfcfc4c6625276dd714155a',
                 b2h_rev(coinbase_tx.hash()))
@@ -115,7 +115,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k0, sig_hash, sig_type)
         self.assertTrue(sigcheck(k0, sig_hash, sig[:-1]))
 
-        tx.txs_in[0].script = VM.compile(b2h(sig))
+        tx.txs_in[0].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(0))
 
         sig_hash = tx.signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
@@ -124,7 +124,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k1, sig_hash, sig_type)
         self.assertTrue(sigcheck(k1, sig_hash, sig[:-1]))
 
-        tx.txs_in[1].script = VM.compile(b2h(sig))
+        tx.txs_in[1].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(1))
 
         sig_hash = tx.signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
@@ -133,7 +133,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k2, sig_hash, sig_type)
         self.assertTrue(sigcheck(k2, sig_hash, sig[:-1]))
 
-        tx.txs_in[2].script = VM.compile(b2h(sig))
+        tx.txs_in[2].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(2))
 
         sig_type = SIGHASH_SINGLE | SIGHASH_ANYONECANPAY
@@ -144,7 +144,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k0, sig_hash, sig_type)
         self.assertTrue(sigcheck(k0, sig_hash, sig[:-1]))
 
-        tx.txs_in[0].script = VM.compile(b2h(sig))
+        tx.txs_in[0].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(0))
 
         sig_hash = tx.signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
@@ -153,7 +153,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k1, sig_hash, sig_type)
         self.assertTrue(sigcheck(k1, sig_hash, sig[:-1]))
 
-        tx.txs_in[1].script = VM.compile(b2h(sig))
+        tx.txs_in[1].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(1))
 
         sig_hash = tx.signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
@@ -162,7 +162,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k2, sig_hash, sig_type)
         self.assertTrue(sigcheck(k2, sig_hash, sig[:-1]))
 
-        tx.txs_in[2].script = VM.compile(b2h(sig))
+        tx.txs_in[2].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(2))
 
 if __name__ == "__main__":

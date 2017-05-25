@@ -41,7 +41,7 @@ from pycoin.tx.TxIn import TxIn
 from pycoin.tx.Tx import Tx
 from pycoin.tx.exceptions import ValidationFailureError
 from pycoin.tx.Spendable import Spendable
-from pycoin.tx.script.VM import ScriptTools
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools
 
 
 DEBUG_TX_ID_LIST = []

@@ -1,11 +1,10 @@
 from pycoin.intbytes import byte2int
 
-from ..script.VM import ScriptTools, VM
 from ..script.BaseSolutionChecker import VMContext
 
 from ...serialize import b2h
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptTools, ScriptType, VM
 
 
 class ScriptPayToScriptWit(ScriptType):

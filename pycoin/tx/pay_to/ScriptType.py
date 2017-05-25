@@ -2,8 +2,9 @@ import collections
 
 from pycoin import ecdsa
 
+from ...coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE
+from ...coins.bitcoin.VM import BitcoinVM as VM  # BRAIN DAMAGE
 from ..script import der
-from ..script.VM import VM
 
 
 from pycoin.intbytes import int2byte
