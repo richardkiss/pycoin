@@ -6,7 +6,7 @@ from .ConditionalStack import ConditionalStack
 from .IntStreamer import IntStreamer
 
 
-class VM(object):
+class VMContext(object):
     MAX_SCRIPT_LENGTH = 10000
     MAX_BLOB_LENGTH = 520
     MAX_OP_COUNT = 201
@@ -17,6 +17,19 @@ class VM(object):
 
     ConditionalStack = ConditionalStack
     IntStreamer = IntStreamer
+
+    def __init__(self, script, tx_context, signature_for_hash_type_f, flags, initial_stack=None, traceback_f=None):
+        self.pc = 0
+        self.script = script
+        self.tx_context = tx_context
+        self.stack = initial_stack or list()
+        self.altstack = list()
+        self.conditional_stack = self.ConditionalStack()
+        self.op_count = 0
+        self.begin_code_hash = 0
+        self.flags = flags
+        self.traceback_f = traceback_f
+        self.signature_for_hash_type_f = signature_for_hash_type_f
 
     def append(self, a):
         self.stack.append(a)
@@ -60,69 +73,87 @@ class VM(object):
     @classmethod
     def get_opcodes(class_, script, verify_minimal_data=False, pc=0):
         pc = 0
+        # BRAIN DAMAGE
+        from ...coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer
         while pc < len(script):
-            opcode, data, new_pc = class_.ScriptStreamer.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
+            opcode, data, new_pc = BitcoinScriptStreamer.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
             yield opcode, data, pc, new_pc
             pc = new_pc
 
-    def eval_script(self, script, tx_context, vm_context, initial_stack=None):
-        if len(script) > self.MAX_SCRIPT_LENGTH:
+    def bin_script(self, x):
+        # BRAIN DAMAGE
+        from ...coins.bitcoin.ScriptTools import BitcoinScriptTools
+        return BitcoinScriptTools.compile_push_data_list(x)
+
+    @classmethod
+    def delete_subscript(class_, script, subscript):
+        """
+        Returns a script with the given subscript removed. The subscript
+        must appear in the main script aligned to opcode boundaries for it
+        to be removed.
+        """
+        # BRAIN DAMAGE
+        new_script = bytearray()
+        pc = 0
+        for opcode, data, pc, new_pc in class_.get_opcodes(script):
+            section = script[pc:new_pc]
+            if section != subscript:
+                new_script.extend(section)
+        return bytes(new_script)
+
+
+class VM(object):
+    @classmethod
+    def eval_script(class_, vmc):
+        if len(vmc.script) > vmc.MAX_SCRIPT_LENGTH:
             raise ScriptError("script too long", errno.SCRIPT_SIZE)
 
-        self.pc = 0
-        self.tx_context = tx_context
-        self.stack = initial_stack or list()
-        self.script = script
-        self.altstack = list()
-        self.conditional_stack = self.ConditionalStack()
-        self.op_count = 0
-        self.begin_code_hash = 0
-        self.flags = vm_context.flags
-        self.traceback_f = vm_context.traceback_f
-        self.signature_for_hash_type_f = vm_context.signature_for_hash_type_f
+        while vmc.pc < len(vmc.script):
+            class_.eval_instruction(vmc)
 
-        while self.pc < len(self.script):
-            self.eval_instruction()
+        class_.post_script_check(vmc)
+        return vmc.stack
 
-        self.post_script_check()
-        return self.stack
-
-    def eval_instruction(self):
-        all_if_true = self.conditional_stack.all_if_true()
+    @classmethod
+    def eval_instruction(class_, vmc):
+        all_if_true = vmc.conditional_stack.all_if_true()
 
         # don't actually check for minimal data unless data will be pushed onto the stack
-        verify_minimal_data = self.flags & VERIFY_MINIMALDATA and all_if_true
-        opcode, data, pc = self.ScriptStreamer.get_opcode(self.script, self.pc, verify_minimal_data=verify_minimal_data)
-        if data and len(data) > self.MAX_BLOB_LENGTH:
+        verify_minimal_data = vmc.flags & VERIFY_MINIMALDATA and all_if_true
+        opcode, data, pc = class_.ScriptStreamer.get_opcode(
+            vmc.script, vmc.pc, verify_minimal_data=verify_minimal_data)
+        if data and len(data) > vmc.MAX_BLOB_LENGTH:
             raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
         if data is None:
-            self.op_count += 1
+            vmc.op_count += 1
 
-        self.check_stack_size()
+        class_.check_stack_size(vmc)
 
-        f = self.INSTRUCTION_LOOKUP[opcode]
-        if self.traceback_f:
-            f = self.traceback_f(opcode, data, pc, self) or f
+        f = class_.INSTRUCTION_LOOKUP[opcode]
+        if vmc.traceback_f:
+            f = vmc.traceback_f(opcode, data, pc, vmc) or f
 
         if data is not None and all_if_true:
-            self.stack.append(data)
+            vmc.stack.append(data)
 
         if all_if_true or getattr(f, "outside_conditional", False):
-            f(self)
+            f(vmc)
 
-        self.pc = pc
+        vmc.pc = pc
 
-        if self.op_count > self.MAX_OP_COUNT:
+        if vmc.op_count > vmc.MAX_OP_COUNT:
             raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
-    def check_stack_size(self):
-        if len(self.stack) + len(self.altstack) > self.MAX_STACK_SIZE:
-            raise ScriptError("stack has > %d items" % self.MAX_STACK_SIZE, errno.STACK_SIZE)
+    @classmethod
+    def check_stack_size(class_, vmc):
+        if len(vmc.stack) + len(vmc.altstack) > vmc.MAX_STACK_SIZE:
+            raise ScriptError("stack has > %d items" % vmc.MAX_STACK_SIZE, errno.STACK_SIZE)
 
-    def post_script_check(self):
-        self.conditional_stack.check_final_state()
-        self.check_stack_size()
+    @classmethod
+    def post_script_check(class_, vmc):
+        vmc.conditional_stack.check_final_state()
+        class_.check_stack_size(vmc)
 
     @classmethod
     def delete_subscript(class_, script, subscript):
@@ -138,3 +169,12 @@ class VM(object):
             if section != subscript:
                 new_script.extend(section)
         return bytes(new_script)
+
+    @classmethod
+    def get_opcodes(class_, script, verify_minimal_data=False, pc=0):
+        pc = 0
+        # BRAIN DAMAGE
+        while pc < len(script):
+            opcode, data, new_pc = class_.ScriptStreamer.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
+            yield opcode, data, pc, new_pc
+            pc = new_pc

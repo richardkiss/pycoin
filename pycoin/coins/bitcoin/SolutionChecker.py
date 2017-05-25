@@ -2,7 +2,8 @@ from hashlib import sha256
 
 from ...intbytes import byte2int, indexbytes
 
-from ...tx.script.BaseSolutionChecker import SolutionChecker, VMContext, TxContext
+from ...tx.script.BaseSolutionChecker import SolutionChecker, TxContext
+from ...tx.script.BaseVM import VMContext
 from ...tx.script import errno
 from ...tx.script import ScriptError
 
@@ -51,20 +52,28 @@ class BitcoinSolutionChecker(SolutionChecker):
         if flags & VERIFY_SIGPUSHONLY:
             class_.VM.ScriptStreamer.check_script_push_only(solution_script)
 
-        vm_context = VMContext()
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
-        vm_context.flags = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
+        f1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
+
+        vm_context = VMContext(
+            solution_script, tx_context, tx_context.signature_for_hash_type_f, f1)
+
         vm_context.is_solution_script = True
-        vm_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f
         vm_context.traceback_f = traceback_f
 
         vm = class_.VM()
-        solution_stack = vm.eval_script(solution_script, tx_context, vm_context)
+        solution_stack = vm.eval_script(vm_context)
+
+        vm_context = VMContext(
+            puzzle_script, tx_context, tx_context.signature_for_hash_type_f, f1, initial_stack=solution_stack[:])
+
+        vm_context.is_solution_script = False
+        vm_context.traceback_f = traceback_f
 
         # work on a copy of the solution stack
-        stack = vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=solution_stack[:])
+        stack = vm.eval_script(vm_context)
 
-        if len(stack) == 0 or not class_.VM.bool_from_script_bytes(stack[-1]):
+        if len(stack) == 0 or not vm_context.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         had_witness = False
@@ -132,18 +141,17 @@ class BitcoinSolutionChecker(SolutionChecker):
             return
 
         vm = class_.VM()
-        vm_context = VMContext()
-        vm_context.flags = flags
-        vm_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f.witness
+        vm_context = VMContext(
+            puzzle_script, tx_context, tx_context.signature_for_hash_type_f.witness, flags, initial_stack=stack)
         vm_context.traceback_f = traceback_f
 
         for s in stack:
-            if len(s) > vm.MAX_BLOB_LENGTH:
+            if len(s) > vm_context.MAX_BLOB_LENGTH:
                 raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
-        vm.eval_script(puzzle_script, tx_context, vm_context, initial_stack=stack)
+        stack = vm.eval_script(vm_context)
 
-        if len(stack) == 0 or not class_.VM.bool_from_script_bytes(stack[-1]):
+        if len(stack) == 0 or not vm_context.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         if len(stack) != 1:
