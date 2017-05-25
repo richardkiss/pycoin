@@ -1,5 +1,5 @@
 
-from ...intbytes import byte2int, indexbytes, int2byte
+from ...intbytes import indexbytes, int2byte
 
 from . import ScriptError
 from . import errno
@@ -87,9 +87,8 @@ class ScriptStreamer(object):
             for that opcode
         :param opcode_sized_list: list of ("OPCODE_NAME", data_size) pairs, where
             OPCODE_NAME is the name of an opcode and data_size is the size
-        :param opcode_variable_list: list of ("OPCODE_NAME", min_data_size, max_data_size, enc_f, dec_f)
-            tuples where OPCODE_NAME is an opcode, min_data_size is the minimum amount of
-            data that should be pushed by this opcode, max_data_size is the maximum amount of
+        :param opcode_variable_list: list of ("OPCODE_NAME", max_data_size, enc_f, dec_f)
+            tuples where OPCODE_NAME is an opcode, max_data_size is the maximum amount of
             data that can be pushed by this opcode, enc_f is the encoder for the size of the data,
             dec_f is the decoder for the size of the data.
             enc_f should have signature (bin_data) and return an integer (length)
@@ -105,9 +104,10 @@ class ScriptStreamer(object):
 
         sized_pairs = [(opcode_lookup.get(opcode), size) for opcode, size in opcode_sized_list]
         self.sized_encoder = {v: make_sized_encoder(k) for k, v in sized_pairs}
-        self.variable_encoder = sorted(
-            (min_size, max_size, opcode_lookup.get(opcode), enc_f)
-            for opcode, min_size, max_size, enc_f, dec_f in opcode_variable_list)
+        opcode_variable_list = sorted(opcode_variable_list, key=lambda o: o[0])
+        self.variable_encoder = list(
+            (max_size, opcode_lookup.get(opcode), enc_f)
+            for opcode, max_size, enc_f, dec_f in opcode_variable_list)
 
         # build decoder
 
@@ -115,9 +115,10 @@ class ScriptStreamer(object):
 
         # deal with variable data opcodes
 
-        self.decoder.update(
-            {opcode_lookup.get(o): make_variable_handler(dec_f, self.sized_encoder.keys(), min_size)
-             for o, min_size, max_size, enc_f, dec_f in opcode_variable_list})
+        min_size = 0
+        for o, max_size, enc_f, dec_f in opcode_variable_list:
+            self.decoder[opcode_lookup.get(o)] = make_variable_handler(dec_f, self.sized_encoder.keys(), min_size)
+            min_size = max_size + 1
 
         # deal with sized data opcodes
 
@@ -154,7 +155,7 @@ class ScriptStreamer(object):
         size = len(data)
         if size in self.sized_encoder:
             return self.sized_encoder.get(size)(data)
-        for min_size, max_size, opcode, enc_f in self.variable_encoder:
+        for max_size, opcode, enc_f in self.variable_encoder:
             if size <= max_size:
                 break
         return int2byte(opcode) + enc_f(len(data)) + data

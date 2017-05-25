@@ -28,8 +28,8 @@ THE SOFTWARE.
 import io
 import warnings
 
-from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker  ## BRAIN DAMAGE
-from ..coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools  ## BRAIN DAMAGE
+from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker  # BRAIN DAMAGE
+from ..coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE
 from ..convention import SATOSHI_PER_COIN
 from ..encoding import double_sha256, from_bytes_32
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
