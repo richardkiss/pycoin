@@ -265,29 +265,38 @@ def hash160_sec_to_bitcoin_address(hash160_sec, address_prefix=b'\0'):
     """Convert the hash160 of a sec version of a public_pair to a Bitcoin address."""
     return b2a_hashed_base58(address_prefix + hash160_sec)
 
+def address_to_hash160_sec(address, address_prefix=b'\0', possible_prefixes=[b'\x6f', b'\0']):
+    hash160, actual_prefix = address_to_hash160_sec_with_prefix(address, possible_prefixes)
+    if (address_prefix == actual_prefix):
+        return hash160
+    raise EncodingError("Address %s for wrong network" % address)
+
+def address_to_hash160_sec_with_prefix(address, possible_prefixes=[b'\x6f', b'\0']):
+    blob = a2b_hashed_base58(address)
+    if len(blob) != 21:
+        raise EncodingError("incorrect binary length (%d) for address %s" %
+                            (len(blob), address))
+    if blob[:1] not in possible_prefixes:
+        raise EncodingError("incorrect first byte (%s) for address %s" % (blob[0], address))
+    return blob[1:], blob[:1]
 
 def bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address):
     """
     Convert a Bitcoin address back to the hash160_sec format and
     also return the prefix.
     """
-    blob = a2b_hashed_base58(bitcoin_address)
-    if len(blob) != 21:
-        raise EncodingError("incorrect binary length (%d) for Bitcoin address %s" %
-                            (len(blob), bitcoin_address))
-    if blob[:1] not in [b'\x6f', b'\0']:
-        raise EncodingError("incorrect first byte (%s) for Bitcoin address %s" % (blob[0], bitcoin_address))
-    return blob[1:], blob[:1]
-
+    return address_to_hash160_sec_with_prefix(bitcoin_address)
 
 def bitcoin_address_to_hash160_sec(bitcoin_address, address_prefix=b'\0'):
     """Convert a Bitcoin address back to the hash160_sec format of the public key.
     Since we only know the hash of the public key, we can't get the full public key back."""
-    hash160, actual_prefix = bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address)
-    if (address_prefix == actual_prefix):
-        return hash160
-    raise EncodingError("Bitcoin address %s for wrong network" % bitcoin_address)
+    return address_to_hash160_sec(bitcoin_address, address_prefix)
 
+def tdash_address_to_hash160_sec(tdash_address, address_prefix=b'\0'):
+    """Convert a Dash testnet address back to the hash160_sec format of the public key.
+    Since we only know the hash of the public key, we can't get the full public key back."""
+    prefixes = [b'\x8c']
+    return address_to_hash160_sec(tdash_address, address_prefix, prefixes)
 
 def public_pair_to_bitcoin_address(public_pair, compressed=True, address_prefix=b'\0'):
     """Convert a public_pair (corresponding to a public key) to a Bitcoin address."""
