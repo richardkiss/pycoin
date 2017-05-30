@@ -4,8 +4,8 @@ from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitc
 
 from pycoin.serialize import b2h
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.VM import BitcoinVM
-from pycoin.tx.script.BaseSolutionChecker import SolutionChecker
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer
 
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
@@ -95,7 +95,7 @@ def _make_output_annotations_f(input_script, output_script, signature_for_hash_t
 
 
 def annotation_f_for_scripts(input_script, output_script, signature_for_hash_type_f):
-    is_p2sh = SolutionChecker.is_pay_to_script_hash(output_script)
+    is_p2sh = BitcoinSolutionChecker.is_pay_to_script_hash(output_script)
     in_ap = b'\0'
     out_ap = b'\0'
     if is_p2sh:
@@ -114,24 +114,24 @@ def disassemble_scripts(input_script, output_script, lock_time, signature_for_ha
         input_script, output_script, signature_for_hash_type_f)
     pc = 0
     while pc < len(input_script):
-        opcode, data, new_pc = VM.ScriptStreamer.get_opcode(input_script, pc)
+        opcode, data, new_pc = BitcoinScriptStreamer.get_opcode(input_script, pc)
         pre_annotations, post_annotations = input_annotations_f(pc, opcode, data)
         yield pre_annotations, pc, opcode, instruction_for_opcode(opcode, data), post_annotations
         pc = new_pc
 
     pc = 0
     while pc < len(output_script):
-        opcode, data, new_pc = VM.ScriptStreamer.get_opcode(output_script, pc)
+        opcode, data, new_pc = BitcoinScriptStreamer.get_opcode(output_script, pc)
         pre_annotations, post_annotations = output_annotations_f(pc, opcode, data)
         yield pre_annotations, pc, opcode, instruction_for_opcode(opcode, data), post_annotations
         pc = new_pc
 
-    if not SolutionChecker.is_pay_to_script_hash(output_script):
+    if not BitcoinSolutionChecker.is_pay_to_script_hash(output_script):
         return
 
     stack = []
     # ## BRAIN DAMAGE
-    sc = SolutionChecker()
+    sc = BitcoinSolutionChecker()
     sc.eval_script(input_script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=stack)
     if stack:
         signatures, new_output_script = stack[:-1], stack[-1]
