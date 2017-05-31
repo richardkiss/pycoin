@@ -80,19 +80,16 @@ class VMContext(object):
             yield opcode, data, pc, new_pc
             pc = new_pc
 
-    def bin_script(self, x):
-        # BRAIN DAMAGE
-        from ...coins.bitcoin.ScriptTools import BitcoinScriptTools
-        return BitcoinScriptTools.compile_push_data_list(x)
-
     @classmethod
-    def delete_subscript(class_, script, subscript):
+    def delete_signature(class_, script, sig_blob):
         """
         Returns a script with the given subscript removed. The subscript
         must appear in the main script aligned to opcode boundaries for it
         to be removed.
         """
         # BRAIN DAMAGE
+        from ...coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer
+        subscript = BitcoinScriptStreamer.compile_push_data(sig_blob)
         new_script = bytearray()
         pc = 0
         for opcode, data, pc, new_pc in class_.get_opcodes(script):

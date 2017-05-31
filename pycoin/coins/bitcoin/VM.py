@@ -52,7 +52,6 @@ def make_vm():
         INSTRUCTION_LOOKUP = _make_instruction_lookup(opcodes.OPCODE_LIST)
         ScriptStreamer = BitcoinScriptStreamer
 
-        bin_script = BitcoinScriptTools.compile_push_data_list
     return BitcoinVM
 
 

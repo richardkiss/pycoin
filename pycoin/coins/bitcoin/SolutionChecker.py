@@ -82,7 +82,7 @@ class BitcoinSolutionChecker(SolutionChecker):
 
         if class_.is_pay_to_script_hash(puzzle_script) and (flags & VERIFY_P2SH):
             p2sh_solution_blob, p2sh_puzzle_script = solution_stack[:-1], solution_stack[-1]
-            p2sh_solution_script = class_.VM.bin_script(p2sh_solution_blob)
+            p2sh_solution_script = BitcoinScriptTools.compile_push_data_list(p2sh_solution_blob)
             class_.VM.ScriptStreamer.check_script_push_only(solution_script)
             vm_context.is_psh_script = True
             p2sh_flags = flags & ~VERIFY_P2SH
