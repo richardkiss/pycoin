@@ -266,7 +266,7 @@ def hash160_sec_to_bitcoin_address(hash160_sec, address_prefix=b'\0'):
     return b2a_hashed_base58(address_prefix + hash160_sec)
 
 
-def bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address):
+def bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address, allowable_prefixes=[b'\x6f', b'\0']):
     """
     Convert a Bitcoin address back to the hash160_sec format and
     also return the prefix.
@@ -275,7 +275,7 @@ def bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address):
     if len(blob) != 21:
         raise EncodingError("incorrect binary length (%d) for Bitcoin address %s" %
                             (len(blob), bitcoin_address))
-    if blob[:1] not in [b'\x6f', b'\0']:
+    if blob[:1] not in allowable_prefixes:
         raise EncodingError("incorrect first byte (%s) for Bitcoin address %s" % (blob[0], bitcoin_address))
     return blob[1:], blob[:1]
 
@@ -298,7 +298,7 @@ def public_pair_to_bitcoin_address(public_pair, compressed=True, address_prefix=
 def is_valid_bitcoin_address(bitcoin_address, allowable_prefixes=b'\0'):
     """Return True if and only if bitcoin_address is valid."""
     try:
-        hash160, prefix = bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address)
+        hash160, prefix = bitcoin_address_to_hash160_sec_with_prefix(bitcoin_address, allowable_prefixes)
     except EncodingError:
         return False
     return prefix in allowable_prefixes
