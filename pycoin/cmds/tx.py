@@ -25,9 +25,9 @@ from pycoin.services.providers import message_about_tx_cache_env, \
 from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
-from pycoin.tx.script.disassemble import disassemble_scripts, sighash_type_to_string
+from pycoin.tx.script.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
-from pycoin.tx.Tx import Spendable, Tx, TxOut
+from pycoin.tx.Tx import Spendable, Tx, TxIn, TxOut
 from pycoin.ui import standard_tx_out_script
 
 DEFAULT_VERSION = 1
@@ -100,19 +100,15 @@ def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, dis
                                           tx_in.previous_index, suffix)
         print(t.rstrip())
         if disassembly_level > 0:
-            dump_disassembly(tx_in, tx_out, tx.lock_time, signature_for_hash_type_f)
+            dump_disassembly(tx, idx)
 
         if verbose_signature:
             dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level)
 
 
-def dump_disassembly(tx_in, tx_out, lock_time, signature_for_hash_type_f):
-    out_script = b''
-    if tx_out:
-        out_script = tx_out.script
+def dump_disassembly(tx, tx_in_idx):
     for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-            disassemble_scripts(
-                tx_in.script, out_script, lock_time, signature_for_hash_type_f):
+            annotate_scripts(tx, tx_in_idx):
         for l in pre_annotations:
             print("           %s" % l)
         if 1:
@@ -167,13 +163,12 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
         return tx.signature_hash(script, idx, hash_type)
 
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
-    for idx, tx_out in enumerate(tx.txs_out):
+    for idx, tx_out in enumerate(tx.tx_outs_as_spendable()):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
         address = tx_out.bitcoin_address(netcode=netcode) or "(unknown)"
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
         if disassembly_level > 0:
-            for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-                    disassemble_scripts(b'', tx_out.script, tx.lock_time, signature_for_hash_type_f):
+            for (pre_annotations, pc, opcode, instruction, post_annotations) in annotate_spendable(tx_out):
                 for l in pre_annotations:
                     print("           %s" % l)
                 if 1:

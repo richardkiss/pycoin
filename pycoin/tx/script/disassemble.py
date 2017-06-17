@@ -5,10 +5,11 @@ from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitc
 from pycoin.serialize import b2h
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
-from pycoin.coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer
 
+from pycoin.tx.script import ScriptError
 from pycoin.tx.script.checksigops import parse_signature_blob
-from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
+from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, Tx
+from pycoin.tx.TxIn import TxIn
 
 
 def sighash_type_to_string(sighash_type):
@@ -62,15 +63,15 @@ def instruction_for_opcode(opcode, data):
     return "[PUSH_%d] %s" % (opcode, b2h(data))
 
 
-def _make_input_annotations_f(input_script, output_script, signature_for_hash_type_f, in_ap, is_p2sh):
+def _make_input_annotations_f(input_script, output_script, in_ap, is_p2sh):
 
-    def input_annotations_f(pc, opcode, data):
+    def input_annotations_f(new_pc, opcode, data, vmc):
         a0, a1 = [], []
-        if pc == 0:
+        if vmc.pc == 0:
             a0.append("--- SIGNATURE SCRIPT START")
         ld = len(data) if data is not None else 0
         if ld in (71, 72) and not is_p2sh:
-            add_signature_annotations(a1, data, signature_for_hash_type_f, output_script)
+            add_signature_annotations(a1, data, vmc.signature_for_hash_type_f, output_script)
         if ld == 20:
             add_address_annotations(a1, data, address_prefix=in_ap)
         if ld in (33, 65):
@@ -79,11 +80,11 @@ def _make_input_annotations_f(input_script, output_script, signature_for_hash_ty
     return input_annotations_f
 
 
-def _make_output_annotations_f(input_script, output_script, signature_for_hash_type_f, out_ap):
+def _make_output_annotations_f(input_script, output_script, out_ap):
 
-    def output_annotations_f(pc, opcode, data):
+    def output_annotations_f(new_pc, opcode, data, vmc):
         a0, a1 = [], []
-        if pc == 0:
+        if vmc.pc == 0:
             a0.append("--- PUBLIC KEY SCRIPT START")
         ld = len(data) if data is not None else 0
         if ld == 20:
@@ -94,50 +95,43 @@ def _make_output_annotations_f(input_script, output_script, signature_for_hash_t
     return output_annotations_f
 
 
-def annotation_f_for_scripts(input_script, output_script, signature_for_hash_type_f):
+def annotation_f_for_scripts(input_script, output_script):
     is_p2sh = BitcoinSolutionChecker.is_pay_to_script_hash(output_script)
     in_ap = b'\0'
     out_ap = b'\0'
     if is_p2sh:
         out_ap = b'\5'
 
-    iaf = _make_input_annotations_f(input_script, output_script, signature_for_hash_type_f, in_ap, is_p2sh)
-    oaf = _make_output_annotations_f(input_script, output_script, signature_for_hash_type_f, out_ap)
+    iaf = _make_input_annotations_f(input_script, output_script, in_ap, is_p2sh)
+    oaf = _make_output_annotations_f(input_script, output_script, out_ap)
 
     return iaf, oaf
 
 
-def disassemble_scripts(input_script, output_script, lock_time, signature_for_hash_type_f):
-    "yield pre_annotations, pc, opcode, instruction, post_annotations"
+def annotate_scripts(tx, tx_in_idx):
+    "return list of pre_annotations, pc, opcode, instruction, post_annotations"
 
+    r = []
     input_annotations_f, output_annotations_f = annotation_f_for_scripts(
-        input_script, output_script, signature_for_hash_type_f)
-    pc = 0
-    while pc < len(input_script):
-        opcode, data, new_pc = BitcoinScriptStreamer.get_opcode(input_script, pc)
-        pre_annotations, post_annotations = input_annotations_f(pc, opcode, data)
-        yield pre_annotations, pc, opcode, instruction_for_opcode(opcode, data), post_annotations
-        pc = new_pc
+        tx.txs_in[tx_in_idx].script, tx.unspents[tx_in_idx].script)
 
-    pc = 0
-    while pc < len(output_script):
-        opcode, data, new_pc = BitcoinScriptStreamer.get_opcode(output_script, pc)
-        pre_annotations, post_annotations = output_annotations_f(pc, opcode, data)
-        yield pre_annotations, pc, opcode, instruction_for_opcode(opcode, data), post_annotations
-        pc = new_pc
-
-    if not BitcoinSolutionChecker.is_pay_to_script_hash(output_script):
+    def traceback_f(opcode, data, pc, vmc):
+        if vmc.is_solution_script:
+            pre_annotations, post_annotations = input_annotations_f(pc, opcode, data, vmc)
+        else:
+            pre_annotations, post_annotations = output_annotations_f(pc, opcode, data, vmc)
+        r.append((pre_annotations, vmc.pc, opcode, instruction_for_opcode(opcode, data), post_annotations))
         return
 
-    stack = []
-    # ## BRAIN DAMAGE
-    sc = BitcoinSolutionChecker()
-    sc.eval_script(input_script, signature_for_hash_type_f, lock_time, expected_hash_type=None, stack=stack)
-    if stack:
-        signatures, new_output_script = stack[:-1], stack[-1]
-        new_input_script = BitcoinScriptTools.compile_push_data_list(signatures)
-    else:
-        signatures, new_output_script, new_input_script = [], b'', b''
+    try:
+        tx.check_solution(tx_in_idx, traceback_f=traceback_f)
+    except ScriptError:
+        pass
+    return r
 
-    for r in disassemble_scripts(new_input_script, new_output_script, lock_time, signature_for_hash_type_f):
-        yield r
+
+def annotate_spendable(spendable):
+    txs_in = [TxIn(b'\0' * 32, 0)]
+    fake_spend_tx = Tx(1, txs_in, [])
+    fake_spend_tx.set_unspents([spendable])
+    return annotate_scripts(fake_spend_tx, 0)
