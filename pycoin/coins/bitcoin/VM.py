@@ -4,7 +4,6 @@ from ...tx.script import intops, stackops, checksigops, miscops
 from ...tx.script import errno, opcodes, ScriptError
 
 from .ScriptStreamer import BitcoinScriptStreamer
-from .ScriptTools import BitcoinScriptTools
 
 from ...tx.script.BaseVM import VM
 

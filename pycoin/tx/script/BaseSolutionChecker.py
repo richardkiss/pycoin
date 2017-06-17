@@ -1,5 +1,3 @@
-from .BaseVM import VMContext  ## BRAIN DAMAGE
-
 
 class TxContext(object):
     pass
