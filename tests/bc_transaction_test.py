@@ -41,8 +41,9 @@ from pycoin.tx.TxIn import TxIn
 from pycoin.tx.Tx import Tx
 from pycoin.tx.exceptions import ValidationFailureError
 from pycoin.tx.Spendable import Spendable
+from pycoin.tx.script import ScriptError
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools
-
+from pycoin.coins.bitcoin.SolutionChecker import check_solution
 
 DEBUG_TX_ID_LIST = []
 
@@ -118,7 +119,12 @@ def make_f(tx, flags, comments, expect_ok=True):
             tx.check()
         except ValidationFailureError as ex:
             why = str(ex)
-        bs = tx.bad_signature_count(flags=flags)
+        bs = 0
+        for tx_in_idx in range(len(tx.txs_in)):
+            try:
+                check_solution(tx, tx_in_idx=tx_in_idx, flags=flags)
+            except ScriptError as se:
+                bs += 1
         if bs > 0:
             why = "bad sig count = %d" % bs
         if (why != None) == expect_ok:

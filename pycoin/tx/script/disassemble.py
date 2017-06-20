@@ -4,11 +4,12 @@ from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitc
 
 from pycoin.serialize import b2h
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker, check_solution
 
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script.checksigops import parse_signature_blob
-from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, Tx
+from pycoin.tx.script.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
+from pycoin.tx.Tx import Tx
 from pycoin.tx.TxIn import TxIn
 
 
@@ -110,7 +111,6 @@ def annotation_f_for_scripts(input_script, output_script):
 
 def annotate_scripts(tx, tx_in_idx):
     "return list of pre_annotations, pc, opcode, instruction, post_annotations"
-
     r = []
     input_annotations_f, output_annotations_f = annotation_f_for_scripts(
         tx.txs_in[tx_in_idx].script, tx.unspents[tx_in_idx].script)
@@ -124,7 +124,7 @@ def annotate_scripts(tx, tx_in_idx):
         return
 
     try:
-        tx.check_solution(tx_in_idx, traceback_f=traceback_f)
+        check_solution(tx, tx_in_idx, traceback_f=traceback_f)
     except ScriptError:
         pass
     return r

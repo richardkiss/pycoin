@@ -2,11 +2,14 @@ import binascii
 import unittest
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.coins.bitcoin.Solver import sign
 from pycoin.encoding import double_sha256, to_bytes_32
 from pycoin.key import Key
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
 from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup
-from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY, Tx
+from pycoin.tx.script.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
+from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 
@@ -59,10 +62,8 @@ class SegwitTest(unittest.TestCase):
         tx_u_hex = tx_u.as_hex()
         tx_s_hex = tx_s.as_hex()
         tx_u_prime.set_unspents(tx_s.unspents)
-        tx_u_prime.sign(
-            hash160_lookup=LazySecretExponentDB([Key(pk).wif() for pk in private_keys], {}),
-            p2sh_lookup=build_p2sh_lookup([h2b(x) for x in p2sh_values])
-        )
+        sign(tx_u_prime, hash160_lookup=LazySecretExponentDB([Key(pk).wif() for pk in private_keys], {}),
+             p2sh_lookup=build_p2sh_lookup([h2b(x) for x in p2sh_values]))
         self.check_signed(tx_u_prime)
         tx_hex = tx_u_prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)
@@ -84,18 +85,19 @@ class SegwitTest(unittest.TestCase):
             17
         )
 
-        self.assertEqual(b2h(tx_s1.hash_prevouts(SIGHASH_ALL)),
+        sc = BitcoinSolutionChecker(tx_s1)
+        self.assertEqual(b2h(sc.hash_prevouts(SIGHASH_ALL)),
                          "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
-        self.assertEqual(b2h(tx_s1.hash_sequence(SIGHASH_ALL)),
+        self.assertEqual(b2h(sc.hash_sequence(SIGHASH_ALL)),
                          "52b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3b")
-        self.assertEqual(b2h(tx_s1.hash_outputs(SIGHASH_ALL, 0)),
+        self.assertEqual(b2h(sc.hash_outputs(SIGHASH_ALL, 0)),
                          "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
 
         script = BitcoinScriptTools.compile("OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(tx_s1.unspents[1].script[2:]))
-        self.assertEqual(b2h(tx_s1.segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
+        self.assertEqual(b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
                          "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd3752b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3bef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a010000001976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac0046c32300000000ffffffff863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e51100000001000000")
 
-        self.assertEqual(b2h(to_bytes_32(tx_s1.signature_for_hash_type_segwit(script, 1, 1))),
+        self.assertEqual(b2h(to_bytes_32(sc.signature_for_hash_type_segwit(script, 1, 1))),
                          "c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670")
         self.check_tx_can_be_signed(tx_u1, tx_s1, [
             0xbbc27228ddcb9209d7fd6f36b02f7dfa6252af40bb2f1cbc7a557da8027ff866,
@@ -165,37 +167,38 @@ class SegwitTest(unittest.TestCase):
             (0xfe9a95c19eef81dde2b95c1284ef39be497d128e2aa46916fb02d552485e0323, SIGHASH_ANYONECANPAY|SIGHASH_NONE),
             (0x428a7aee9f0c2af0cd19af3cf1c78149951ea528726989b2e83e4778d2c3f890, SIGHASH_ANYONECANPAY|SIGHASH_SINGLE),
         ]:
-            tx_u5prime.sign(hash_type=sighash_type, hash160_lookup=build_hash160_lookup([se]), p2sh_lookup=p2sh_lookup)
+            sign(tx_u5prime, hash_type=sighash_type, hash160_lookup=build_hash160_lookup([se]), p2sh_lookup=p2sh_lookup)
 
         self.check_signed(tx_u5prime)
         tx_hex = tx_u5prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)
 
-        self.assertEqual(b2h(tx_s5.hash_prevouts(SIGHASH_ALL)),
+        sc = BitcoinSolutionChecker(tx_s5)
+        self.assertEqual(b2h(sc.hash_prevouts(SIGHASH_ALL)),
                          "74afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aaa0")
-        self.assertEqual(b2h(tx_s5.hash_sequence(SIGHASH_ALL)),
+        self.assertEqual(b2h(sc.hash_sequence(SIGHASH_ALL)),
                          "3bb13029ce7b1f559ef5e747fcac439f1455a2ec7c5f09b72290795e70665044")
-        self.assertEqual(b2h(tx_s5.hash_outputs(SIGHASH_ALL, 0)),
+        self.assertEqual(b2h(sc.hash_outputs(SIGHASH_ALL, 0)),
                          "bc4d309071414bed932f98832b27b4d76dad7e6c1346f487a8fdbb8eb90307cc")
-        self.assertEqual(b2h(tx_s5.hash_outputs(SIGHASH_SINGLE, 0)),
+        self.assertEqual(b2h(sc.hash_outputs(SIGHASH_SINGLE, 0)),
                          "9efe0c13a6b16c14a41b04ebe6a63f419bdacb2f8705b494a43063ca3cd4f708")
         script = tx_s5.txs_in[0].witness[-1]
-        self.assertEqual(b2h(tx_s5.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_ALL)),
+        self.assertEqual(b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_ALL)),
                          "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aaa03bb13029ce7b1f559ef5e747fcac439f1455a2ec7c5f09b72290795e7066504436641869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf56210307b8ae49ac90a048e9b53357a2354b3334e9c8bee813ecb98e99a7e07e8c3ba32103b28f0c28bfab54554ae8c658ac5c3e0ce6e79ad336331f78c428dd43eea8449b21034b8113d703413d57761b8b9781957b8c0ac1dfe69f492580ca4195f50376ba4a21033400f6afecb833092a9a21cfdf1ed1376e58c5d1f47de74683123987e967a8f42103a6d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b661b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de3a00000000ffffffffbc4d309071414bed932f98832b27b4d76dad7e6c1346f487a8fdbb8eb90307cc0000000001000000")
 
-        self.assertEqual(b2h(tx_s5.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_NONE)),
+        self.assertEqual(b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_NONE)),
                          "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aaa0000000000000000000000000000000000000000000000000000000000000000036641869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf56210307b8ae49ac90a048e9b53357a2354b3334e9c8bee813ecb98e99a7e07e8c3ba32103b28f0c28bfab54554ae8c658ac5c3e0ce6e79ad336331f78c428dd43eea8449b21034b8113d703413d57761b8b9781957b8c0ac1dfe69f492580ca4195f50376ba4a21033400f6afecb833092a9a21cfdf1ed1376e58c5d1f47de74683123987e967a8f42103a6d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b661b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de3a00000000ffffffff00000000000000000000000000000000000000000000000000000000000000000000000002000000")
 
-        self.assertEqual(b2h(tx_s5.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE)),
+        self.assertEqual(b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE)),
                          "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aaa0000000000000000000000000000000000000000000000000000000000000000036641869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf56210307b8ae49ac90a048e9b53357a2354b3334e9c8bee813ecb98e99a7e07e8c3ba32103b28f0c28bfab54554ae8c658ac5c3e0ce6e79ad336331f78c428dd43eea8449b21034b8113d703413d57761b8b9781957b8c0ac1dfe69f492580ca4195f50376ba4a21033400f6afecb833092a9a21cfdf1ed1376e58c5d1f47de74683123987e967a8f42103a6d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b661b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de3a00000000ffffffff9efe0c13a6b16c14a41b04ebe6a63f419bdacb2f8705b494a43063ca3cd4f7080000000003000000")
 
-        self.assertEqual(b2h(tx_s5.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_ALL | SIGHASH_ANYONECANPAY)),
+        self.assertEqual(b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_ALL | SIGHASH_ANYONECANPAY)),
                          "010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036641869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf56210307b8ae49ac90a048e9b53357a2354b3334e9c8bee813ecb98e99a7e07e8c3ba32103b28f0c28bfab54554ae8c658ac5c3e0ce6e79ad336331f78c428dd43eea8449b21034b8113d703413d57761b8b9781957b8c0ac1dfe69f492580ca4195f50376ba4a21033400f6afecb833092a9a21cfdf1ed1376e58c5d1f47de74683123987e967a8f42103a6d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b661b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de3a00000000ffffffffbc4d309071414bed932f98832b27b4d76dad7e6c1346f487a8fdbb8eb90307cc0000000081000000")
 
-        self.assertEqual(b2h(tx_s5.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_NONE | SIGHASH_ANYONECANPAY)),
+        self.assertEqual(b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_NONE | SIGHASH_ANYONECANPAY)),
                          "010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036641869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf56210307b8ae49ac90a048e9b53357a2354b3334e9c8bee813ecb98e99a7e07e8c3ba32103b28f0c28bfab54554ae8c658ac5c3e0ce6e79ad336331f78c428dd43eea8449b21034b8113d703413d57761b8b9781957b8c0ac1dfe69f492580ca4195f50376ba4a21033400f6afecb833092a9a21cfdf1ed1376e58c5d1f47de74683123987e967a8f42103a6d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b661b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de3a00000000ffffffff00000000000000000000000000000000000000000000000000000000000000000000000082000000")
 
-        self.assertEqual(b2h(tx_s5.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE | SIGHASH_ANYONECANPAY)),
+        self.assertEqual(b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE | SIGHASH_ANYONECANPAY)),
                          "010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036641869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf56210307b8ae49ac90a048e9b53357a2354b3334e9c8bee813ecb98e99a7e07e8c3ba32103b28f0c28bfab54554ae8c658ac5c3e0ce6e79ad336331f78c428dd43eea8449b21034b8113d703413d57761b8b9781957b8c0ac1dfe69f492580ca4195f50376ba4a21033400f6afecb833092a9a21cfdf1ed1376e58c5d1f47de74683123987e967a8f42103a6d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b661b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de3a00000000ffffffff9efe0c13a6b16c14a41b04ebe6a63f419bdacb2f8705b494a43063ca3cd4f7080000000083000000")
 
         tx = Tx.from_hex("010000000169c12106097dc2e0526493ef67f21269fe888ef05c7a3a5dacab38e1ac8387f14c1d000000ffffffff0101000000000000000000000000")

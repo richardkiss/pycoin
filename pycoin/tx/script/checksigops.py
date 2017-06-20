@@ -35,6 +35,7 @@ from . import ScriptError
 from . import errno
 
 from .flags import (
+    SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
     VERIFY_NULLDUMMY, VERIFY_NULLFAIL, VERIFY_STRICTENC,
     VERIFY_DERSIG, VERIFY_LOW_S, VERIFY_WITNESS_PUBKEYTYPE
 )
@@ -96,7 +97,6 @@ def check_low_der_signature(sig_pair):
 
 def check_defined_hashtype_signature(sig):
     # IsDefinedHashtypeSignature
-    from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
     if len(sig) == 0:
         raise ScriptError("signature is length 0")
     hash_type = indexbytes(sig, -1) & (~SIGHASH_ANYONECANPAY)

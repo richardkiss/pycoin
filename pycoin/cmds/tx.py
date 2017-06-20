@@ -13,6 +13,7 @@ import subprocess
 import sys
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding import hash160
 from pycoin.key import Key
@@ -27,7 +28,7 @@ from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
 from pycoin.tx.script.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
-from pycoin.tx.Tx import Spendable, Tx, TxIn, TxOut
+from pycoin.tx.Tx import Spendable, Tx, TxOut
 from pycoin.ui import standard_tx_out_script
 
 DEFAULT_VERSION = 1
@@ -80,8 +81,9 @@ def make_trace_script(do_trace, use_pdb):
 
 def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level):
 
+    sc = BitcoinSolutionChecker(tx)
     def signature_for_hash_type_f(hash_type, script):
-        return tx.signature_hash(script, idx, hash_type)
+        return sc.signature_hash(script, idx, hash_type)
 
     for idx, tx_in in enumerate(tx.txs_in):
         if tx.is_coinbase():
@@ -118,6 +120,7 @@ def dump_disassembly(tx, tx_in_idx):
 
 
 def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level):
+    sc = BitcoinSolutionChecker(tx)
     signatures = []
     for opcode in BitcoinScriptTools.opcode_list(tx_in.script):
         if not opcode.startswith("OP_"):
@@ -132,12 +135,12 @@ def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f
         for sig_pair, sig_type in signatures:
             print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
-                print("      z{}: {:#x} {}".format(i, tx.signature_hash(tx_out.script, idx, sig_type),
+                print("      z{}: {:#x} {}".format(i, sc.signature_hash(tx_out.script, idx, sig_type),
                                                    sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:
-            print("      z:{} {:#x} {}".format(' ' if i else '', tx.signature_hash(
+            print("      z:{} {:#x} {}".format(' ' if i else '', sc.signature_hash(
                 tx_out.script, idx, sig_type), sighash_type_to_string(sig_type)))
 
 
@@ -159,8 +162,9 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
 
     dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level)
 
+    sc = BitcoinSolutionChecker(tx)
     def signature_for_hash_type_f(hash_type, script):
-        return tx.signature_hash(script, idx, hash_type)
+        return sc.signature_hash(script, idx, hash_type)
 
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.tx_outs_as_spendable()):

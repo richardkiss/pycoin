@@ -6,10 +6,13 @@ import unittest
 from pycoin.block import Block
 
 from pycoin import ecdsa
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.coins.bitcoin.Solver import sign
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 from pycoin.serialize import h2b
 
-from pycoin.tx.Tx import Tx, SIGHASH_ALL
+from pycoin.tx.Tx import Tx
+from pycoin.tx.script.flags import SIGHASH_ALL
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.exceptions import SolvingError
@@ -82,7 +85,8 @@ class BuildTxTest(unittest.TestCase):
 
         tx_out_script_to_check = the_coinbase_tx.txs_out[0].script
         idx = 0
-        actual_hash = unsigned_coinbase_spend_tx.signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
+        solution_checker = BitcoinSolutionChecker(unsigned_coinbase_spend_tx)
+        actual_hash = solution_checker.signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
         self.assertEqual(actual_hash, 29819170155392455064899446505816569230970401928540834591675173488544269166940)
 
     def test_standard_tx_out(self):
@@ -138,10 +142,7 @@ class BuildTxTest(unittest.TestCase):
         unsigned_coinbase_spend_tx = standard_tx(coins_from, coins_to)
         solver = build_hash160_lookup([exponent])
 
-        coinbase_spend_tx = unsigned_coinbase_spend_tx.sign(solver)
-
-        # now check that it validates
-        self.assertEqual(coinbase_spend_tx.bad_signature_count(), 0)
+        coinbase_spend_tx = sign(unsigned_coinbase_spend_tx, solver)
 
         TX_DB[coinbase_spend_tx.hash()] = coinbase_spend_tx
 
@@ -159,7 +160,7 @@ class BuildTxTest(unittest.TestCase):
         coins_from = [(coinbase_spend_tx.hash(), 0, coinbase_spend_tx.txs_out[0])]
         unsigned_spend_tx = standard_tx(coins_from, [(int(50 * 1e8), bitcoin_address_3)])
         solver.update(build_hash160_lookup([exponent_2]))
-        spend_tx = unsigned_spend_tx.sign(solver)
+        spend_tx = sign(unsigned_spend_tx, solver)
 
         # now check that it validates
         self.assertEqual(spend_tx.bad_signature_count(), 0)
