@@ -133,8 +133,6 @@ def check_public_key_encoding(blob):
 
 def do_OP_CHECKSIG(vm):
     flags = vm.flags
-    signature_for_hash_type_f = vm.signature_for_hash_type_f
-    tmp_script = vm.script[vm.begin_code_hash:]
     try:
         pair_blob = vm.pop()
         sig_blob = vm.pop()
@@ -151,12 +149,7 @@ def do_OP_CHECKSIG(vm):
         vm.append(vm.VM_FALSE)
         return
 
-    # Drop the signature, since there's no way for a signature to sign itself
-    # see: Bitcoin Core/script/interpreter.cpp::EvalScript()
-    if not getattr(signature_for_hash_type_f, "skip_delete", False):
-        tmp_script = vm.delete_signature(tmp_script, sig_blob)
-
-    signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
+    signature_hash = vm.signature_for_hash_type_f(signature_type, [sig_blob], vm)
 
     if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair):
         vm.append(vm.VM_TRUE)
@@ -167,7 +160,7 @@ def do_OP_CHECKSIG(vm):
         vm.append(vm.VM_FALSE)
 
 
-def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script, flags):
+def sig_blob_matches(vm, sig_blobs, public_pair_blobs, flags):
     """
     sig_blobs: signature blobs
     public_pair_blobs: a list of public pair blobs
@@ -182,15 +175,11 @@ def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script, flags):
 
     strict_encoding = not not (flags & VERIFY_STRICTENC)
 
-    # Drop the signatures, since there's no way for a signature to sign itself
-    if not getattr(vm.signature_for_hash_type_f, "skip_delete", False):
-        for sig_blob in sig_blobs:
-            tmp_script = vm.delete_signature(tmp_script, sig_blob)
-
     sig_cache = {}
     sig_blob_indices = []
     ppb_idx = -1
 
+    blobs_to_remove = list(sig_blobs)
     while sig_blobs and len(sig_blobs) <= len(public_pair_blobs):
         if -1 in sig_blob_indices:
             break
@@ -202,7 +191,7 @@ def sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script, flags):
             continue
 
         if signature_type not in sig_cache:
-            sig_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, script=tmp_script)
+            sig_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, blobs_to_remove, vm)
 
         try:
             ppp = ecdsa.possible_public_pairs_for_signature(
@@ -235,7 +224,6 @@ def find_public_pair(public_pair_blobs, ppp, signature_count, strict_encoding, v
 
 def do_OP_CHECKMULTISIG(vm):
     flags = vm.flags
-    tmp_script = vm.script[vm.begin_code_hash:]
 
     key_count = vm.pop_int()
 
@@ -258,7 +246,7 @@ def do_OP_CHECKMULTISIG(vm):
     if flags & VERIFY_NULLDUMMY and hack_byte != b'':
         raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
 
-    sig_blob_indices = sig_blob_matches(vm, sig_blobs, public_pair_blobs, tmp_script, flags)
+    sig_blob_indices = sig_blob_matches(vm, sig_blobs, public_pair_blobs, flags)
 
     sig_ok = vm.VM_FALSE
     if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):

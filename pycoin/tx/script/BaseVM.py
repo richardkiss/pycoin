@@ -70,34 +70,6 @@ class VMContext(object):
     def bool_to_script_bytes(class_, v):
         return class_.VM_TRUE if v else class_.VM_FALSE
 
-    @classmethod
-    def get_opcodes(class_, script, verify_minimal_data=False, pc=0):
-        pc = 0
-        # BRAIN DAMAGE
-        from ...coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer
-        while pc < len(script):
-            opcode, data, new_pc = BitcoinScriptStreamer.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
-            yield opcode, data, pc, new_pc
-            pc = new_pc
-
-    @classmethod
-    def delete_signature(class_, script, sig_blob):
-        """
-        Returns a script with the given subscript removed. The subscript
-        must appear in the main script aligned to opcode boundaries for it
-        to be removed.
-        """
-        # BRAIN DAMAGE
-        from ...coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer
-        subscript = BitcoinScriptStreamer.compile_push_data(sig_blob)
-        new_script = bytearray()
-        pc = 0
-        for opcode, data, pc, new_pc in class_.get_opcodes(script):
-            section = script[pc:new_pc]
-            if section != subscript:
-                new_script.extend(section)
-        return bytes(new_script)
-
 
 class VM(object):
     @classmethod
@@ -151,21 +123,6 @@ class VM(object):
     def post_script_check(class_, vmc):
         vmc.conditional_stack.check_final_state()
         class_.check_stack_size(vmc)
-
-    @classmethod
-    def delete_subscript(class_, script, subscript):
-        """
-        Returns a script with the given subscript removed. The subscript
-        must appear in the main script aligned to opcode boundaries for it
-        to be removed.
-        """
-        new_script = bytearray()
-        pc = 0
-        for opcode, data, pc, new_pc in class_.get_opcodes(script):
-            section = script[pc:new_pc]
-            if section != subscript:
-                new_script.extend(section)
-        return bytes(new_script)
 
     @classmethod
     def get_opcodes(class_, script, verify_minimal_data=False, pc=0):

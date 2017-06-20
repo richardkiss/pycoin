@@ -202,6 +202,21 @@ class BitcoinSolutionChecker(SolutionChecker):
             return self.tx.TxIn(tx_in.previous_hash, tx_in.previous_index, tx_out_script, tx_in.sequence)
         return self.tx.TxIn(tx_in.previous_hash, tx_in.previous_index, b'', tx_in.sequence)
 
+    @classmethod
+    def delete_subscript(class_, script, subscript):
+        """
+        Returns a script with the given subscript removed. The subscript
+        must appear in the main script aligned to opcode boundaries for it
+        to be removed.
+        """
+        new_script = bytearray()
+        pc = 0
+        for opcode, data, pc, new_pc in class_.VM.get_opcodes(script):
+            section = script[pc:new_pc]
+            if section != subscript:
+                new_script.extend(section)
+        return bytes(new_script)
+
     def signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
         """
         Return the canonical hash for a transaction. We need to
@@ -216,7 +231,7 @@ class BitcoinSolutionChecker(SolutionChecker):
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.
-        tx_out_script = self.VM.delete_subscript(tx_out_script, self.ScriptTools.compile("OP_CODESEPARATOR"))
+        tx_out_script = self.delete_subscript(tx_out_script, self.ScriptTools.compile("OP_CODESEPARATOR"))
 
         # blank out other inputs' signatures
         txs_in = [self._tx_in_for_idx(i, tx_in, tx_out_script, unsigned_txs_out_idx)
@@ -334,17 +349,36 @@ class BitcoinSolutionChecker(SolutionChecker):
                 "just signed script Tx %s TxIn index %d did not verify" % (
                     b2h_rev(tx_in.previous_hash), tx_in_idx))
 
+    @classmethod
+    def delete_signature(class_, script, sig_blob):
+        """
+        Returns a script with the given subscript removed. The subscript
+        must appear in the main script aligned to opcode boundaries for it
+        to be removed.
+        """
+        from ...coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer  # BRAIN DAMAGE
+        subscript = BitcoinScriptStreamer.compile_push_data(sig_blob)
+        new_script = bytearray()
+        pc = 0
+        for opcode, data, pc, new_pc in class_.VM.get_opcodes(script):
+            section = script[pc:new_pc]
+            if section != subscript:
+                new_script.extend(section)
+        return bytes(new_script)
+
     def tx_context_for_idx(self, tx_in_idx):
         tx_in = self.tx.txs_in[tx_in_idx]
         unspent = self.tx.unspents[tx_in_idx]
         tx_out_script = unspent.script
 
-        def signature_for_hash_type_f(hash_type, script):
+        def signature_for_hash_type_f(hash_type, sig_blobs, vm):
+            script = vm.script[vm.begin_code_hash:]
+            for sig_blob in sig_blobs:
+                script = self.delete_signature(script, sig_blob)
             return self.signature_hash(script, tx_in_idx, hash_type)
 
-        def witness_signature_for_hash_type(hash_type, script):
-            return self.signature_for_hash_type_segwit(script, tx_in_idx, hash_type)
-        witness_signature_for_hash_type.skip_delete = True
+        def witness_signature_for_hash_type(hash_type, sig_blobs, vm):
+            return self.signature_for_hash_type_segwit(vm.script[vm.begin_code_hash:], tx_in_idx, hash_type)
 
         signature_for_hash_type_f.witness = witness_signature_for_hash_type
 

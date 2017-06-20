@@ -122,6 +122,9 @@ def make_f(tx, flags, comments, expect_ok=True):
         bs = 0
         for tx_in_idx in range(len(tx.txs_in)):
             try:
+                if DEBUG_TX_ID_LIST:
+                    import pdb
+                    pdb.set_trace()
                 check_solution(tx, tx_in_idx=tx_in_idx, flags=flags)
             except ScriptError as se:
                 bs += 1

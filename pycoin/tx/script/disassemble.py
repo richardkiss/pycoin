@@ -29,11 +29,11 @@ def sighash_type_to_string(sighash_type):
     return sighash_str
 
 
-def add_signature_annotations(annotations, signature_blob, signature_for_hash_type_f, output_script):
+def add_signature_annotations(annotations, signature_blob, vmc, output_script):
     sig_pair, sig_type = parse_signature_blob(signature_blob)
     annotations.append("r: {0:#066x}".format(sig_pair[0]))
     annotations.append("s: {0:#066x}".format(sig_pair[1]))
-    sig_hash = signature_for_hash_type_f(sig_type, output_script)
+    sig_hash = vmc.signature_for_hash_type_f(sig_type, [signature_blob], vmc)
     annotations.append("z: {0:#066x}".format(sig_hash))
     annotations.append("signature type %s" % sighash_type_to_string(sig_type))
     addresses = []
@@ -72,7 +72,7 @@ def _make_input_annotations_f(input_script, output_script, in_ap, is_p2sh):
             a0.append("--- SIGNATURE SCRIPT START")
         ld = len(data) if data is not None else 0
         if ld in (71, 72) and not is_p2sh:
-            add_signature_annotations(a1, data, vmc.signature_for_hash_type_f, output_script)
+            add_signature_annotations(a1, data, vmc, output_script)
         if ld == 20:
             add_address_annotations(a1, data, address_prefix=in_ap)
         if ld in (33, 65):
