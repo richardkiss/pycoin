@@ -337,18 +337,6 @@ class BitcoinSolutionChecker(SolutionChecker):
     def signature_for_hash_type_segwit(self, script, tx_in_idx, hash_type):
         return from_bytes_32(double_sha256(self.segwit_signature_preimage(script, tx_in_idx, hash_type)))
 
-    def verify_tx_in(self, tx_in_idx, tx_out_script, expected_hash_type=None):
-        tx_in = self.tx.txs_in[tx_in_idx]
-
-        def signature_for_hash_type_f(hash_type, script):
-            return self.signature_hash(script, tx_in_idx, hash_type)
-
-        if not tx_in.verify(
-                tx_out_script, signature_for_hash_type_f, expected_hash_type, tx_version=self.version):
-            raise ValidationFailureError(
-                "just signed script Tx %s TxIn index %d did not verify" % (
-                    b2h_rev(tx_in.previous_hash), tx_in_idx))
-
     @classmethod
     def delete_signature(class_, script, sig_blob):
         """
@@ -371,14 +359,14 @@ class BitcoinSolutionChecker(SolutionChecker):
         unspent = self.tx.unspents[tx_in_idx]
         tx_out_script = unspent.script
 
-        def signature_for_hash_type_f(hash_type, sig_blobs, vm):
-            script = vm.script[vm.begin_code_hash:]
+        def signature_for_hash_type_f(hash_type, sig_blobs, vmc):
+            script = vmc.script[vmc.begin_code_hash:]
             for sig_blob in sig_blobs:
                 script = self.delete_signature(script, sig_blob)
             return self.signature_hash(script, tx_in_idx, hash_type)
 
-        def witness_signature_for_hash_type(hash_type, sig_blobs, vm):
-            return self.signature_for_hash_type_segwit(vm.script[vm.begin_code_hash:], tx_in_idx, hash_type)
+        def witness_signature_for_hash_type(hash_type, sig_blobs, vmc):
+            return self.signature_for_hash_type_segwit(vmc.script[vmc.begin_code_hash:], tx_in_idx, hash_type)
 
         signature_for_hash_type_f.witness = witness_signature_for_hash_type
 

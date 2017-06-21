@@ -82,9 +82,6 @@ def make_trace_script(do_trace, use_pdb):
 def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level):
 
     sc = BitcoinSolutionChecker(tx)
-    def signature_for_hash_type_f(hash_type, script):
-        return sc.signature_hash(script, idx, hash_type)
-
     for idx, tx_in in enumerate(tx.txs_in):
         if tx.is_coinbase():
             print("%4d: COINBASE  %12.5f mBTC" % (idx, satoshi_to_mbtc(tx.total_in())))
@@ -161,10 +158,6 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
     dump_header(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb)
 
     dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level)
-
-    sc = BitcoinSolutionChecker(tx)
-    def signature_for_hash_type_f(hash_type, script):
-        return sc.signature_hash(script, idx, hash_type)
 
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.tx_outs_as_spendable()):
