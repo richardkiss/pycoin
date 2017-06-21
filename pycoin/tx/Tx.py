@@ -344,25 +344,12 @@ class Tx(object):
         self.set_unspents(unspents)
 
     def is_signature_ok(self, tx_in_idx, flags=None, traceback_f=None):  # BRAIN DAMAGE
-        tx_in = self.txs_in[tx_in_idx]
-        if tx_in.is_coinbase():
-            return True
-        if len(self.unspents) <= tx_in_idx or self.unspents[tx_in_idx] is None:
-            return False
-        from .script import ScriptError
-        from ..coins.bitcoin.SolutionChecker import check_solution
-        try:
-            check_solution(self, tx_in_idx, traceback_f=traceback_f, flags=flags)
-            return True
-        except ScriptError:
-            return False
+        from ..coins.bitcoin.SolutionChecker import is_signature_ok
+        return is_signature_ok(self, tx_in_idx, flags=flags, traceback_f=traceback_f)
 
-    def bad_signature_count(self, flags=None):
-        count = 0
-        for idx, tx_in in enumerate(self.txs_in):
-            if not self.is_signature_ok(idx, flags=flags):
-                count += 1
-        return count
+    def bad_signature_count(self, flags=None):  # BRAIN DAMAGE
+        from ..coins.bitcoin.SolutionChecker import bad_signature_count
+        return bad_signature_count(self, flags=flags)
 
     def total_in(self):
         if self.is_coinbase():

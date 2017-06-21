@@ -379,6 +379,18 @@ class BitcoinSolutionChecker(SolutionChecker):
         tx_context.signature_for_hash_type_f = signature_for_hash_type_f
         return tx_context
 
+    def is_signature_ok(self, tx_in_idx, flags=None, **kwargs):
+        if self.tx.txs_in[tx_in_idx].previous_hash == ZERO32:
+            return True
+        if len(self.tx.unspents) <= tx_in_idx or self.tx.unspents[tx_in_idx] is None:
+            return False
+        try:
+            tx_context = self.tx_context_for_idx(tx_in_idx)
+            self.check_solution(tx_context, flags=flags, **kwargs)
+            return True
+        except ScriptError:
+            return False
+
 
 def check_solution(tx, tx_in_idx, flags=None, traceback_f=None, solution_checker=BitcoinSolutionChecker):
     sc = solution_checker(tx)
@@ -386,9 +398,11 @@ def check_solution(tx, tx_in_idx, flags=None, traceback_f=None, solution_checker
     sc.check_solution(tx_context, flags, traceback_f=traceback_f)
 
 
-def is_signature_ok(tx, tx_in_idx, **kwargs):
-    try:
-        check_solution(tx, tx_in_idx, **kwargs)
-        return True
-    except ScriptError:
-        return False
+def is_signature_ok(tx, tx_in_idx, flags=None, solution_checker=BitcoinSolutionChecker, **kwargs):
+    sc = solution_checker(tx)
+    return sc.is_signature_ok(tx_in_idx, **kwargs)
+
+
+def bad_signature_count(tx, flags=None, solution_checker=BitcoinSolutionChecker, **kwargs):
+    sc = solution_checker(tx)
+    return sum(0 if sc.is_signature_ok(idx, **kwargs) else 1 for idx in range(len(tx.txs_in)))
