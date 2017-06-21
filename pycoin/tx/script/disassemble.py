@@ -29,7 +29,7 @@ def sighash_type_to_string(sighash_type):
     return sighash_str
 
 
-def add_signature_annotations(annotations, signature_blob, vmc, output_script):
+def add_signature_annotations(annotations, signature_blob, vmc):
     sig_pair, sig_type = parse_signature_blob(signature_blob)
     annotations.append("r: {0:#066x}".format(sig_pair[0]))
     annotations.append("s: {0:#066x}".format(sig_pair[1]))
@@ -64,7 +64,9 @@ def instruction_for_opcode(opcode, data):
     return "[PUSH_%d] %s" % (opcode, b2h(data))
 
 
-def _make_input_annotations_f(input_script, output_script, in_ap, is_p2sh):
+def _make_input_annotations_f(tx, tx_in_idx):
+    is_p2sh = BitcoinSolutionChecker.is_pay_to_script_hash(tx.unspents[tx_in_idx].script)
+    in_ap = b'\0'
 
     def input_annotations_f(new_pc, opcode, data, vmc):
         a0, a1 = [], []
@@ -72,7 +74,7 @@ def _make_input_annotations_f(input_script, output_script, in_ap, is_p2sh):
             a0.append("--- SIGNATURE SCRIPT START")
         ld = len(data) if data is not None else 0
         if ld in (71, 72) and not is_p2sh:
-            add_signature_annotations(a1, data, vmc, output_script)
+            add_signature_annotations(a1, data, vmc)
         if ld == 20:
             add_address_annotations(a1, data, address_prefix=in_ap)
         if ld in (33, 65):
@@ -81,7 +83,11 @@ def _make_input_annotations_f(input_script, output_script, in_ap, is_p2sh):
     return input_annotations_f
 
 
-def _make_output_annotations_f(input_script, output_script, out_ap):
+def _make_output_annotations_f(tx, tx_in_idx):
+    is_p2sh = BitcoinSolutionChecker.is_pay_to_script_hash(tx.unspents[tx_in_idx].script)
+    out_ap = b'\0'
+    if is_p2sh:
+        out_ap = b'\5'
 
     def output_annotations_f(new_pc, opcode, data, vmc):
         a0, a1 = [], []
@@ -96,15 +102,9 @@ def _make_output_annotations_f(input_script, output_script, out_ap):
     return output_annotations_f
 
 
-def annotation_f_for_scripts(input_script, output_script):
-    is_p2sh = BitcoinSolutionChecker.is_pay_to_script_hash(output_script)
-    in_ap = b'\0'
-    out_ap = b'\0'
-    if is_p2sh:
-        out_ap = b'\5'
-
-    iaf = _make_input_annotations_f(input_script, output_script, in_ap, is_p2sh)
-    oaf = _make_output_annotations_f(input_script, output_script, out_ap)
+def annotation_f_for_scripts(tx, tx_in_idx):
+    iaf = _make_input_annotations_f(tx, tx_in_idx)
+    oaf = _make_output_annotations_f(tx, tx_in_idx)
 
     return iaf, oaf
 
@@ -112,8 +112,7 @@ def annotation_f_for_scripts(input_script, output_script):
 def annotate_scripts(tx, tx_in_idx):
     "return list of pre_annotations, pc, opcode, instruction, post_annotations"
     r = []
-    input_annotations_f, output_annotations_f = annotation_f_for_scripts(
-        tx.txs_in[tx_in_idx].script, tx.unspents[tx_in_idx].script)
+    input_annotations_f, output_annotations_f = annotation_f_for_scripts(tx, tx_in_idx)
 
     def traceback_f(opcode, data, pc, vmc):
         if vmc.is_solution_script:
