@@ -59,15 +59,22 @@ class ScriptTools(object):
             return "[%s]" % binascii.hexlify(data).decode("utf8")
         return self.int_to_opcode.get(opcode, "???")
 
+    def get_opcodes(self, script, verify_minimal_data=False, pc=0):
+        """
+        Iterator. Return opcode, data, pc, new_pc at each step
+        """
+        while pc < len(script):
+            opcode, data, new_pc = self.scriptStreamer.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
+            yield opcode, data, pc, new_pc
+            pc = new_pc
+
     def opcode_list(self, script):
         """Disassemble the given script. Returns a list of opcodes."""
         opcodes = []
-        pc = 0
+        new_pc = 0
         try:
-            while pc < len(script):
-                opcode, data, new_pc = self.scriptStreamer.get_opcode(script, pc)
+            for opcode, data, pc, new_pc in self.get_opcodes(script):
                 opcodes.append(self.disassemble_for_opcode_data(opcode, data))
-                pc = new_pc
         except ScriptError:
             opcodes.append(binascii.hexlify(script[new_pc:]).decode("utf8"))
 

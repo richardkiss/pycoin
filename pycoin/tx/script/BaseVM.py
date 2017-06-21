@@ -123,12 +123,3 @@ class VM(object):
     def post_script_check(class_, vmc):
         vmc.conditional_stack.check_final_state()
         class_.check_stack_size(vmc)
-
-    @classmethod
-    def get_opcodes(class_, script, verify_minimal_data=False, pc=0):
-        pc = 0
-        # BRAIN DAMAGE
-        while pc < len(script):
-            opcode, data, new_pc = class_.ScriptStreamer.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
-            yield opcode, data, pc, new_pc
-            pc = new_pc

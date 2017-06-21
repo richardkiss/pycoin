@@ -120,7 +120,7 @@ class BitcoinSolutionChecker(SolutionChecker):
             raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
 
     def _puzzle_script_for_len20_segwit(self, witness_program):
-        return V0_len20_prefix + BitcoinScriptTools.compile_push_data_list(
+        return V0_len20_prefix + self.ScriptTools.compile_push_data_list(
             [witness_program]) + V0_len20_postfix
 
     def check_witness_program_v0(self, witness_solution_stack, witness_program, tx_context, flags):
@@ -211,7 +211,7 @@ class BitcoinSolutionChecker(SolutionChecker):
         """
         new_script = bytearray()
         pc = 0
-        for opcode, data, pc, new_pc in class_.VM.get_opcodes(script):
+        for opcode, data, pc, new_pc in class_.ScriptTools.get_opcodes(script):
             section = script[pc:new_pc]
             if section != subscript:
                 new_script.extend(section)
@@ -344,11 +344,10 @@ class BitcoinSolutionChecker(SolutionChecker):
         must appear in the main script aligned to opcode boundaries for it
         to be removed.
         """
-        from ...coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer  # BRAIN DAMAGE
-        subscript = BitcoinScriptStreamer.compile_push_data(sig_blob)
+        subscript = class_.ScriptTools.compile_push_data_list([sig_blob])
         new_script = bytearray()
         pc = 0
-        for opcode, data, pc, new_pc in class_.VM.get_opcodes(script):
+        for opcode, data, pc, new_pc in class_.ScriptTools.get_opcodes(script):
             section = script[pc:new_pc]
             if section != subscript:
                 new_script.extend(section)
