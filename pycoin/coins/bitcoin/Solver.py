@@ -10,19 +10,6 @@ from .VM import BitcoinVM
 from ...tx.script.flags import SIGHASH_ALL
 
 
-V0_len20_prefix = BitcoinScriptTools.compile("OP_DUP OP_HASH160")
-V0_len20_postfix = BitcoinScriptTools.compile("OP_EQUALVERIFY OP_CHECKSIG")
-OP_EQUAL = BitcoinScriptTools.int_for_opcode("OP_EQUAL")
-OP_HASH160 = BitcoinScriptTools.int_for_opcode("OP_HASH160")
-
-OP_0 = BitcoinScriptTools.int_for_opcode("OP_0")
-OP_1 = BitcoinScriptTools.int_for_opcode("OP_1")
-OP_16 = BitcoinScriptTools.int_for_opcode("OP_16")
-
-
-ZERO32 = b'\0' * 32
-
-
 class Solver(object):
     SolutionChecker = BitcoinSolutionChecker
     VM = BitcoinVM
