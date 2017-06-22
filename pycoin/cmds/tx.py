@@ -12,6 +12,8 @@ import re
 import subprocess
 import sys
 
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding import hash160
 from pycoin.key import Key
@@ -24,8 +26,7 @@ from pycoin.services.providers import message_about_tx_cache_env, \
 from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
-from pycoin.tx.script.disassemble import disassemble_scripts, sighash_type_to_string
-from pycoin.tx.script.VM import ScriptTools
+from pycoin.tx.script.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.tx.Tx import Spendable, Tx, TxOut
 from pycoin.ui import standard_tx_out_script
@@ -46,7 +47,7 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
         print("warning: can't talk to bitcoind due to missing library")
 
 
-def dump_header(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
+def dump_header(tx):
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes" % (tx.version, tx.id(), len(tx_bin)))
     print("TxIn count: %d; TxOut count: %d" % (len(tx.txs_in), len(tx.txs_out)))
@@ -65,24 +66,20 @@ def make_trace_script(do_trace, use_pdb):
     if not (do_trace or use_pdb):
         return None
 
-    def trace_script(old_pc, opcode, data, stack, altstack, conditional_stack, is_signature):
-        print("%3d : %02x  %s" % (old_pc, opcode, ScriptTools.disassemble_for_opcode_data(opcode, data)))
+    def trace_script(opcode, data, pc, vmc):
+        from pycoin.serialize import b2h
+        print("stack: [%s]" % ' '.join(b2h(s) for s in vmc.stack))
+        if len(vmc.altstack) > 0:
+            print("altstack: %s" % vmc.altstack)
+        print("condition stack: %s" % vmc.conditional_stack)
+        print("%3d : %02x  %s" % (vmc.pc, opcode, BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)))
         if use_pdb:
             import pdb
-            from pycoin.serialize import b2h
-            print("stack: [%s]" % ', '.join(b2h(s) for s in stack))
-            if len(altstack) > 0:
-                print("altstack: %s" % altstack)
-            print("condition stack: %s" % conditional_stack)
             pdb.set_trace()
     return trace_script
 
 
 def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level):
-
-    def signature_for_hash_type_f(hash_type, script):
-        return tx.signature_hash(script, idx, hash_type)
-
     for idx, tx_in in enumerate(tx.txs_in):
         if tx.is_coinbase():
             print("%4d: COINBASE  %12.5f mBTC" % (idx, satoshi_to_mbtc(tx.total_in())))
@@ -100,19 +97,15 @@ def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, dis
                                           tx_in.previous_index, suffix)
         print(t.rstrip())
         if disassembly_level > 0:
-            dump_disassembly(tx_in, tx_out, tx.lock_time, signature_for_hash_type_f)
+            dump_disassembly(tx, idx)
 
         if verbose_signature:
             dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level)
 
 
-def dump_disassembly(tx_in, tx_out, lock_time, signature_for_hash_type_f):
-    out_script = b''
-    if tx_out:
-        out_script = tx_out.script
+def dump_disassembly(tx, tx_in_idx):
     for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-            disassemble_scripts(
-                tx_in.script, out_script, lock_time, signature_for_hash_type_f):
+            annotate_scripts(tx, tx_in_idx):
         for l in pre_annotations:
             print("           %s" % l)
         if 1:
@@ -122,8 +115,9 @@ def dump_disassembly(tx_in, tx_out, lock_time, signature_for_hash_type_f):
 
 
 def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level):
+    sc = BitcoinSolutionChecker(tx)
     signatures = []
-    for opcode in ScriptTools.opcode_list(tx_in.script):
+    for opcode in BitcoinScriptTools.opcode_list(tx_in.script):
         if not opcode.startswith("OP_"):
             try:
                 signatures.append(parse_signature_blob(h2b(opcode[1:-1])))
@@ -136,12 +130,12 @@ def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f
         for sig_pair, sig_type in signatures:
             print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
-                print("      z{}: {:#x} {}".format(i, tx.signature_hash(tx_out.script, idx, sig_type),
+                print("      z{}: {:#x} {}".format(i, sc.signature_hash(tx_out.script, idx, sig_type),
                                                    sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:
-            print("      z:{} {:#x} {}".format(' ' if i else '', tx.signature_hash(
+            print("      z:{} {:#x} {}".format(' ' if i else '', sc.signature_hash(
                 tx_out.script, idx, sig_type), sighash_type_to_string(sig_type)))
 
 
@@ -159,21 +153,17 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
     missing_unspents = tx.missing_unspents()
     traceback_f = make_trace_script(do_trace, use_pdb)
 
-    dump_header(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb)
+    dump_header(tx)
 
     dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level)
 
-    def signature_for_hash_type_f(hash_type, script):
-        return tx.signature_hash(script, idx, hash_type)
-
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
-    for idx, tx_out in enumerate(tx.txs_out):
+    for idx, tx_out in enumerate(tx.tx_outs_as_spendable()):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
         address = tx_out.bitcoin_address(netcode=netcode) or "(unknown)"
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
         if disassembly_level > 0:
-            for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-                    disassemble_scripts(b'', tx_out.script, tx.lock_time, signature_for_hash_type_f):
+            for (pre_annotations, pc, opcode, instruction, post_annotations) in annotate_spendable(tx_out):
                 for l in pre_annotations:
                     print("           %s" % l)
                 if 1:

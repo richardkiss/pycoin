@@ -238,7 +238,7 @@ def prefix_transforms_for_network(network):
             except ValueError as e:
                 continue
         # Probably a bug if we get here
-        raise e
+        raise RuntimeError("can't create BIP32 key")
 
     return (
         ("P:", lambda s: BIP32Node.from_master_secret(s.encode("utf8"), netcode=network)),

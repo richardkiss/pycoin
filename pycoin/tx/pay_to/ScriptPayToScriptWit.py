@@ -1,11 +1,10 @@
 from pycoin.intbytes import byte2int
 
-from ..script.VM import ScriptTools, VM
-from ..script.SolutionChecker import VMContext
+from ..script.BaseVM import VMContext
 
 from ...serialize import b2h
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptTools, ScriptType, VM
 
 
 class ScriptPayToScriptWit(ScriptType):
@@ -47,11 +46,9 @@ class ScriptPayToScriptWit(ScriptType):
         underlying_solution = script_obj.solve(**kwargs)
         # we need to unwrap the solution
         vm = VM()
-        vm_context = VMContext()
-        vm_context.flags = 0
-        vm_context.traceback_f = None
-        vm_context.signature_for_hash_type_f = lambda *args, **kwargs: 0
-        solution = vm.eval_script(underlying_solution, None, vm_context)
+        vm_context = VMContext(
+            underlying_solution, tx_context=None, signature_for_hash_type_f=(lambda *args, **kwargs: 0), flags=0)
+        solution = vm.eval_script(vm_context)
         solution.append(underlying_script)
         return (b"", solution)
 

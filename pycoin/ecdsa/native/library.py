@@ -70,6 +70,7 @@ def load_library():
 
 def make_fast_mul_f(library):
     NID_secp256k1_GROUP = library.EC_GROUP_new_by_curve_name(714)
+
     def fast_mul(point, N):
         bn_x = library.BignumType(point.x())
         bn_y = library.BignumType(point.y())
@@ -99,6 +100,7 @@ def make_inverse_mod_f(library):
         library.BN_CTX_free(ctx)
         return a1.to_int()
     return inverse_mod
+
 
 try:
     NATIVE_LIBRARY = load_library()

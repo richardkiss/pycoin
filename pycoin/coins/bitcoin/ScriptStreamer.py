@@ -3,10 +3,10 @@ import struct
 from ...tx.script import errno, opcodes, ScriptError
 
 from ...tx.script.IntStreamer import IntStreamer
-from ...tx.script.ScriptCodec import ScriptCodec
+from ...tx.script.ScriptStreamer import ScriptStreamer
 
 
-def make_script_codec():
+def make_script_streamer():
     def make_variable_decoder(struct_data):
         struct_size = struct.calcsize(struct_data)
 
@@ -24,15 +24,15 @@ def make_script_codec():
         ("OP_1NEGATE", IntStreamer.int_to_script_bytes(-1))]
     OPCODE_SIZED_LIST = [("OP_PUSH_%d" % i, i) for i in range(1, 76)]
     OPCODE_VARIABLE_LIST = [
-        ("OP_PUSHDATA1", 0, (1 << 8)-1, lambda d: struct.pack("<B", d), make_variable_decoder("<B")),
-        ("OP_PUSHDATA2", (1 << 8)-1, (1 << 16)-1, lambda d: struct.pack("<H", d), make_variable_decoder("<H")),
-        ("OP_PUSHDATA4", (1 << 16)-1, (1 << 32)-1, lambda d: struct.pack("<L", d), make_variable_decoder("<L"))
+        ("OP_PUSHDATA1", (1 << 8)-1, lambda d: struct.pack("<B", d), make_variable_decoder("<B")),
+        ("OP_PUSHDATA2", (1 << 16)-1, lambda d: struct.pack("<H", d), make_variable_decoder("<H")),
+        ("OP_PUSHDATA4", (1 << 32)-1, lambda d: struct.pack("<L", d), make_variable_decoder("<L"))
     ]
 
     OPCODE_LOOKUP = dict(o for o in opcodes.OPCODE_LIST)
 
-    return ScriptCodec(
+    return ScriptStreamer(
         OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
 
 
-BitcoinScriptCodec = make_script_codec()
+BitcoinScriptStreamer = make_script_streamer()

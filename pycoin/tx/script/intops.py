@@ -32,7 +32,7 @@ from .flags import VERIFY_MINIMALDATA
 
 
 def do_OP_VERIFY(vm):
-    v = vm.bool_from_script_bytes(vm.stack.pop())
+    v = vm.bool_from_script_bytes(vm.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.VERIFY)
 
@@ -44,7 +44,7 @@ def do_OP_DEPTH(vm):
     >>> print(s)
     [1, 2, 1, 2, 1, 2, b'\\x06']
     """
-    vm.stack.append(vm.IntStreamer.int_to_script_bytes(len(vm.stack)))
+    vm.push_int(len(vm.stack))
 
 
 def do_OP_PICK(vm):
@@ -54,8 +54,8 @@ def do_OP_PICK(vm):
     >>> print(s)
     [b'a', b'b', b'c', b'd', b'b']
     """
-    v = vm.nonnegative_int_from_script_bytes(vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
-    vm.stack.append(vm.stack[-v-1])
+    v = vm.pop_nonnegative()
+    vm.append(vm[-v-1])
 
 
 def do_OP_ROLL(vm):
@@ -65,8 +65,8 @@ def do_OP_ROLL(vm):
     >>> print(s)
     [b'a', b'c', b'd', b'b']
     """
-    v = vm.nonnegative_int_from_script_bytes(vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
-    vm.stack.append(vm.stack.pop(-v-1))
+    v = vm.pop_nonnegative()
+    vm.append(vm.pop(-v-1))
 
 
 def do_OP_SUBSTR(vm):
@@ -76,9 +76,9 @@ def do_OP_SUBSTR(vm):
     >>> print(s)
     [b'de']
     """
-    pos = vm.nonnegative_int_from_script_bytes(vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
-    length = vm.nonnegative_int_from_script_bytes(vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
-    vm.stack.append(vm.stack.pop()[length:length+pos])
+    pos = vm.pop_nonnegative()
+    length = vm.pop_nonnegative()
+    vm.append(vm.pop()[length:length+pos])
 
 
 def do_OP_LEFT(vm):
@@ -92,8 +92,8 @@ def do_OP_LEFT(vm):
     >>> print(len(s) ==1 and s[0]==b'')
     True
     """
-    pos = vm.nonnegative_int_from_script_bytes(vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
-    vm.stack.append(vm.stack.pop()[:pos])
+    pos = vm.pop_nonnegative()
+    vm.append(vm.pop()[:pos])
 
 
 def do_OP_RIGHT(vm):
@@ -107,12 +107,12 @@ def do_OP_RIGHT(vm):
     >>> print(s==[b''])
     True
     """
-    pos = vm.nonnegative_int_from_script_bytes(vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)
+    pos = vm.pop_nonnegative()
     if pos > 0:
-        vm.stack.append(vm.stack.pop()[-pos:])
+        vm.append(vm.pop()[-pos:])
     else:
-        vm.stack.pop()
-        vm.stack.append(b'')
+        vm.pop()
+        vm.append(b'')
 
 
 def do_OP_SIZE(vm):
@@ -127,15 +127,7 @@ def do_OP_SIZE(vm):
     >>> print(binascii.hexlify(s[-1]) == b'7017')
     True
     """
-    vm.stack.append(vm.IntStreamer.int_to_script_bytes(len(vm.stack[-1])))
-
-
-def make_same_size(v1, v2):
-    larger = max(len(v1), len(v2))
-    nulls = b'\0' * larger
-    v1 = (v1 + nulls)[:larger]
-    v2 = (v2 + nulls)[:larger]
-    return v1, v2
+    vm.push_int(len(vm[-1]))
 
 
 def do_OP_EQUAL(vm):
@@ -149,35 +141,34 @@ def do_OP_EQUAL(vm):
     >>> print(s == [b''])
     True
     """
-    v1, v2 = [vm.stack.pop() for i in range(2)]
-    vm.stack.append(vm.bool_to_script_bytes(v1 == v2))
+    v1, v2 = [vm.pop() for i in range(2)]
+    vm.append(vm.bool_to_script_bytes(v1 == v2))
 
 
 def do_OP_EQUALVERIFY(vm):
     do_OP_EQUAL(vm)
-    v = vm.bool_from_script_bytes(vm.stack.pop())
+    v = vm.bool_from_script_bytes(vm.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.EQUALVERIFY)
 
 
 def pop_check_bounds(vm):
-    v = vm.stack.pop()
-    if len(v) > 4:
+    if len(vm[-1]) > 4:
         raise ScriptError("overflow in binop", errno.UNKNOWN_ERROR)
-    return vm.IntStreamer.int_from_script_bytes(v, require_minimal=vm.flags & VERIFY_MINIMALDATA)
+    return vm.pop_int()
 
 
 def make_bin_op(binop):
     def f(vm):
         v1, v2 = [pop_check_bounds(vm) for i in range(2)]
-        vm.stack.append(vm.IntStreamer.int_to_script_bytes(binop(v2, v1)))
+        vm.push_int(binop(v2, v1))
     return f
 
 
 def make_bool_bin_op(binop):
     def f(vm):
         v1, v2 = [pop_check_bounds(vm) for i in range(2)]
-        vm.stack.append(vm.bool_to_script_bytes(binop(v2, v1)))
+        vm.append(vm.bool_to_script_bytes(binop(v2, v1)))
     return f
 
 
@@ -216,15 +207,14 @@ def do_OP_WITHIN(vm):
     >>> print(s == [b''])
     True
     """
-    v3, v2, v1 = [vm.IntStreamer.int_from_script_bytes(
-        vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA) for i in range(3)]
+    v3, v2, v1 = [vm.pop_int() for i in range(3)]
     ok = (v2 <= v1 < v3)
-    vm.stack.append(vm.bool_to_script_bytes(ok))
+    vm.append(vm.bool_to_script_bytes(ok))
 
 
 def make_unary_num_op(unary_f):
     def f(vm):
-        vm.stack.append(vm.IntStreamer.int_to_script_bytes(unary_f(pop_check_bounds(vm))))
+        vm.push_int(unary_f(pop_check_bounds(vm)))
     return f
 
 
@@ -237,11 +227,10 @@ do_OP_ABS = make_unary_num_op(lambda x: abs(x))
 
 
 def do_OP_NOT(vm):
-    return vm.stack.append(vm.bool_to_script_bytes(not pop_check_bounds(vm)))
+    return vm.append(vm.bool_to_script_bytes(not pop_check_bounds(vm)))
 
 
 def do_OP_0NOTEQUAL(vm):
-    return vm.stack.append(
-        vm.IntStreamer.int_to_script_bytes(
-            vm.bool_from_script_bytes(
-                vm.stack.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA)))
+    return vm.push_int(
+        vm.bool_from_script_bytes(
+            vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA))

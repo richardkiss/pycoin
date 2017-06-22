@@ -1,18 +1,16 @@
 from pycoin.intbytes import byte2int
 
-from ..script.VM import ScriptTools
-
 from ... import encoding
 
 from ...serialize import b2h
 
 from ..exceptions import SolvingError
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptType, ScriptTools
 
 
 class ScriptPayToAddressWit(ScriptType):
-    TEMPLATE = ScriptTools.compile("OP_0 OP_PUBKEYHASH")
+    TEMPLATE = ScriptTools.compile("OP_0 'PUBKEYHASH'")
 
     def __init__(self, version, hash160):
         assert len(version) == 1

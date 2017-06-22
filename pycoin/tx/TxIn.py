@@ -29,7 +29,7 @@ from .. import encoding
 
 from ..serialize import b2h, b2h_rev, h2b
 from ..serialize.bitcoin_streamer import parse_struct, stream_struct
-from ..coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools
+from ..coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE
 
 
 ZERO = b'\0' * 32
@@ -86,31 +86,6 @@ class TxIn(object):
         return "(unknown)"
 
     bitcoin_address = address
-
-    def verify(self, tx_out_script, signature_for_hash_type_f, lock_time, expected_hash_type=None,
-               traceback_f=None, flags=None, tx_version=None):
-        """
-        Return True or False depending upon whether this TxIn verifies.
-
-        tx_out_script: the script of the TxOut that corresponds to this input
-        signature_hash: the hash of the partial transaction
-        """
-        from .script.SolutionChecker import SolutionChecker, TxContext
-        from .script import ScriptError
-        tx_context = TxContext()
-        tx_context.lock_time = lock_time
-        tx_context.version = tx_version
-        tx_context.signature_for_hash_type_f = signature_for_hash_type_f
-        tx_context.puzzle_script = tx_out_script
-        tx_context.solution_script = self.script
-        tx_context.witness_solution_stack = self.witness
-        tx_context.sequence = self.sequence
-        checker = SolutionChecker()
-        try:
-            checker.check_solution(tx_context, flags=flags, traceback_f=traceback_f)
-            return True
-        except ScriptError:
-            return False
 
     def __str__(self):
         if self.is_coinbase():

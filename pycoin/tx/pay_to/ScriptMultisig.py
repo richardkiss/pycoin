@@ -1,7 +1,5 @@
-from ..script import opcodes
 from ..script.checksigops import parse_signature_blob
 from ..script.der import UnexpectedDER
-from ..script.VM import ScriptTools, VM
 
 from ... import ecdsa
 from ... import encoding
@@ -10,10 +8,14 @@ from ...serialize import b2h
 
 from ..exceptions import SolvingError
 
-from .ScriptType import ScriptType, DEFAULT_PLACEHOLDER_SIGNATURE
+from .ScriptType import ScriptTools, ScriptType, VM, DEFAULT_PLACEHOLDER_SIGNATURE
 
 
 # see BIP11 https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki
+
+OP_1 = ScriptTools.int_for_opcode("OP_1")
+OP_16 = ScriptTools.int_for_opcode("OP_16")
+
 
 class ScriptMultisig(ScriptType):
     def __init__(self, m, sec_keys):
@@ -26,26 +28,26 @@ class ScriptMultisig(ScriptType):
         pc = 0
         if len(script) == 0:
             raise ValueError("blank script")
-        opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
+        opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
 
-        if not opcodes.OP_1 <= opcode < opcodes.OP_16:
+        if not OP_1 <= opcode < OP_16:
             raise ValueError("m value invalid")
-        m = opcode + (1 - opcodes.OP_1)
+        m = opcode + (1 - OP_1)
         sec_keys = []
         while 1:
             if pc >= len(script):
                 raise ValueError("unexpected end of script")
-            opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
+            opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
             l = len(data) if data else 0
             if l < 33 or l > 120:
                 break
             sec_keys.append(data)
-        n = opcode + (1 - opcodes.OP_1)
+        n = opcode + (1 - OP_1)
         if m > n or len(sec_keys) != n:
             raise ValueError("n value wrong")
 
-        opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
-        if opcode != opcodes.OP_CHECKMULTISIG:
+        opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
+        if opcode != ScriptTools.int_for_opcode("OP_CHECKMULTISIG"):
             raise ValueError("no OP_CHECKMULTISIG")
         if pc != len(script):
             raise ValueError("extra stuff at end")
@@ -69,10 +71,10 @@ class ScriptMultisig(ScriptType):
         secs_solved = set()
         pc = 0
         seen = 0
-        opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
+        opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
         # ignore the first opcode
         while pc < len(script) and seen < self.m:
-            opcode, data, pc = VM.ScriptCodec.get_opcode(script, pc)
+            opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
             try:
                 sig_pair, signature_type = parse_signature_blob(data)
                 seen += 1

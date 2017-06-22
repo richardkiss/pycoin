@@ -1,14 +1,12 @@
-from ..script.VM import ScriptTools
-
 from ... import encoding
 
 from ...serialize import b2h
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptTools, ScriptType
 
 
 class ScriptPayToScript(ScriptType):
-    TEMPLATE = ScriptTools.compile("OP_HASH160 OP_PUBKEYHASH OP_EQUAL")
+    TEMPLATE = ScriptTools.compile("OP_HASH160 'PUBKEYHASH' OP_EQUAL")
 
     def __init__(self, hash160):
         self.hash160 = hash160

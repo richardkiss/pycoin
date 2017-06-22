@@ -1,19 +1,14 @@
-#!/usr/bin/env python
-
 import json
 import unittest
 import os
-#import sys
-#import tempfile
 
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.SolutionChecker import check_solution
 from pycoin.serialize import h2b
-
 from pycoin.tx.Tx import TxIn, TxOut, Tx
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script import errno
 from pycoin.tx.script import flags
-from pycoin.tx.script.SolutionChecker import SolutionChecker, TxContext
-from pycoin.tx.script.VM import ScriptTools
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
@@ -49,14 +44,14 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
     print("ACTUAL: %s" % actual)
     print("MESSAGE: %s" % message)
     print(comment)
-    print(ScriptTools.disassemble(ScriptTools.compile(script_in)))
-    print(ScriptTools.disassemble(ScriptTools.compile(script_out)))
+    print(BitcoinScriptTools.disassemble(BitcoinScriptTools.compile(script_in)))
+    print(BitcoinScriptTools.disassemble(BitcoinScriptTools.compile(script_out)))
     from pycoin.serialize import b2h
     def tbf(*args):
         opcode, data, pc, vm = args
         stack = vm.stack
         altstack = vm.altstack
-        opd = ScriptTools.disassemble_for_opcode_data(opcode, data)
+        opd = BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)
         if len(altstack) == 0:
             altstack = ''
         print("%s %s\n  %3x  %s" % (stack, altstack, pc, opd))
@@ -66,11 +61,11 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
     try:
         import pdb
         pdb.set_trace()
-        spend_tx.check_solution(tx_in_idx=0, traceback_f=tbf, flags=flags)
+        check_solution(spend_tx, tx_in_idx=0, traceback_f=tbf, flags=flags)
     except Exception as ex:
         print(ex)
     try:
-        spend_tx.check_solution(tx_in_idx=0, traceback_f=tbf, flags=flags)
+        check_solution(spend_tx, tx_in_idx=0, traceback_f=tbf, flags=flags)
     except Exception as ex:
         print(ex)
         #import pdb; pdb.set_trace()
@@ -78,8 +73,8 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
 
 
 def make_script_test(script_in, script_out, flags_string, comment, expected, coin_value, script_witness):
-    script_in_bin = ScriptTools.compile(script_in)
-    script_out_bin = ScriptTools.compile(script_out)
+    script_in_bin = BitcoinScriptTools.compile(script_in)
+    script_out_bin = BitcoinScriptTools.compile(script_out)
     script_witness_bin = [h2b(w) for w in script_witness]
     flags = parse_flags(flags_string)
     def f(self):
@@ -88,7 +83,7 @@ def make_script_test(script_in, script_out, flags_string, comment, expected, coi
             spend_tx = build_spending_tx(script_in_bin, credit_tx)
             spend_tx.txs_in[0].witness = script_witness_bin
             msg = ''
-            spend_tx.check_solution(tx_in_idx=0, flags=flags)
+            check_solution(spend_tx, tx_in_idx=0, flags=flags)
             r = 0
         except ScriptError as se:
             r = se.error_code()

@@ -3,8 +3,7 @@ from ...tx.script import intops, stackops, checksigops, miscops
 
 from ...tx.script import errno, opcodes, ScriptError
 
-from .ScriptCodec import BitcoinScriptCodec
-from .ScriptTools import BitcoinScriptTools
+from .ScriptStreamer import BitcoinScriptStreamer
 
 from ...tx.script.BaseVM import VM
 
@@ -28,7 +27,7 @@ def _no_op(vm):
 
 
 def _make_instruction_lookup(opcode_pairs):
-    OPCODE_DATA_LIST = list(BitcoinScriptCodec.data_opcodes)
+    OPCODE_DATA_LIST = list(BitcoinScriptStreamer.data_opcodes)
 
     # start with all opcodes invalid
     instruction_lookup = [_make_bad_instruction(i) for i in range(256)]
@@ -36,11 +35,11 @@ def _make_instruction_lookup(opcode_pairs):
     for i in OPCODE_DATA_LIST:
         instruction_lookup[i] = _no_op
     opcode_lookups = {}
-    # BRAIN DAMAGE
     opcode_lookups.update(_collect_opcodes(checksigops))
     opcode_lookups.update(_collect_opcodes(intops))
-    opcode_lookups.update(stackops.all_opcodes())
-    opcode_lookups.update(miscops.all_opcodes())
+    opcode_lookups.update(_collect_opcodes(stackops))
+    opcode_lookups.update(_collect_opcodes(miscops))
+    opcode_lookups.update(miscops.extra_opcodes())
     for opcode_name, opcode_value in opcode_pairs:
         if opcode_name in opcode_lookups:
             instruction_lookup[opcode_value] = opcode_lookups[opcode_name]
@@ -50,10 +49,8 @@ def _make_instruction_lookup(opcode_pairs):
 def make_vm():
     class BitcoinVM(VM):
         INSTRUCTION_LOOKUP = _make_instruction_lookup(opcodes.OPCODE_LIST)
-        ScriptCodec = BitcoinScriptCodec
-        dataCodec = BitcoinScriptCodec
+        ScriptStreamer = BitcoinScriptStreamer
 
-        bin_script = BitcoinScriptTools.compile_push_data_list
     return BitcoinVM
 
 

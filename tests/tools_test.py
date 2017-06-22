@@ -2,21 +2,19 @@
 
 import unittest
 
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.VM import BitcoinVM
 from pycoin.serialize import h2b
 from pycoin.intbytes import int2byte
 from pycoin.tx.script.opcodes import OPCODE_LIST
-from pycoin.tx.script.SolutionChecker import TxContext
+from pycoin.tx.script.BaseSolutionChecker import TxContext
+from pycoin.tx.script.BaseVM import VMContext
 from pycoin.tx.script.IntStreamer import IntStreamer
-from pycoin.tx.script.VM import ScriptTools, VM
 
-bin_script = ScriptTools.compile_push_data_list
-compile = ScriptTools.compile
-disassemble = ScriptTools.disassemble
-int_to_script_bytes = ScriptTools.intStreamer.int_to_script_bytes
-
-class myVM(VM):
-    MAX_SCRIPT_LENGTH = int(1e9)
-    MAX_BLOB_LENGTH = int(1e9)
+bin_script = BitcoinScriptTools.compile_push_data_list
+compile = BitcoinScriptTools.compile
+disassemble = BitcoinScriptTools.disassemble
+int_to_script_bytes = BitcoinScriptTools.intStreamer.int_to_script_bytes
 
 
 class ToolsTest(unittest.TestCase):
@@ -25,13 +23,16 @@ class ToolsTest(unittest.TestCase):
 
         def test_bytes(as_bytes):
             script = bin_script([as_bytes])
-            ## BRAIN DAMAGE: UGLY and WRONG
-            vm = myVM()
+            # this is a pretty horrible hack to test the vm with long scripts. But it works
+            vm = BitcoinVM()
             tx_context = TxContext()
             tx_context.signature_for_hash_type_f = None
             tx_context.flags = 0
             tx_context.traceback_f = None
-            stack = vm.eval_script(script, tx_context, tx_context)
+            vm_context = VMContext(script, tx_context, tx_context.signature_for_hash_type_f, flags=0)
+            vm_context.MAX_SCRIPT_LENGTH = int(1e9)
+            vm_context.MAX_BLOB_LENGTH = int(1e9)
+            stack = vm.eval_script(vm_context)
             assert len(stack) == 1
             assert stack[0] == as_bytes
 

@@ -16,6 +16,7 @@ Version 0.77
 
 Version 0.76
 ------------
+
 * respin build to fixing a problem with "vm.py" being named "VM.py" in
   the 0.75 tar.gz file on pypi
 

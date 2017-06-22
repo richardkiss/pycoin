@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import unittest
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.ecdsa import (
     generator_secp256k1,
     sign as ecdsa_sign,
@@ -19,7 +21,9 @@ from pycoin.ui import standard_tx_out_script
 from pycoin.tx.Tx import (
     Tx,
     TxIn,
-    TxOut,
+    TxOut
+)
+from pycoin.tx.script.flags import (
     SIGHASH_ALL,
     SIGHASH_ANYONECANPAY,
     SIGHASH_SINGLE,
@@ -28,7 +32,6 @@ from pycoin.tx.script.der import (
     sigdecode_der,
     sigencode_der,
 )
-from pycoin.tx.script.VM import ScriptTools as VM
 
 PRIV_KEYS = (
       2330949616242593315303241053456316633827293588958882755297900732239663851861,
@@ -85,8 +88,8 @@ class SighashSingleTest(unittest.TestCase):
 
         # Fake a coinbase transaction
         coinbase_tx = Tx.coinbase_tx(k0.sec(), 500000000)
-        coinbase_tx.txs_out.append(TxOut(1000000000, VM.compile('%s OP_CHECKSIG' % b2h(k1.sec()))))
-        coinbase_tx.txs_out.append(TxOut(1000000000, VM.compile('%s OP_CHECKSIG' % b2h(k2.sec()))))
+        coinbase_tx.txs_out.append(TxOut(1000000000, BitcoinScriptTools.compile('%s OP_CHECKSIG' % b2h(k1.sec()))))
+        coinbase_tx.txs_out.append(TxOut(1000000000, BitcoinScriptTools.compile('%s OP_CHECKSIG' % b2h(k2.sec()))))
 
         self.assertEqual('2acbe1006f7168bad538b477f7844e53de3a31ffddfcfc4c6625276dd714155a',
                 b2h_rev(coinbase_tx.hash()))
@@ -109,60 +112,61 @@ class SighashSingleTest(unittest.TestCase):
 
         sig_type = SIGHASH_SINGLE
 
-        sig_hash = tx.signature_hash(coinbase_tx.txs_out[0].script, 0, sig_type)
+        solution_checker = BitcoinSolutionChecker(tx)
+        sig_hash = solution_checker.signature_hash(coinbase_tx.txs_out[0].script, 0, sig_type)
         self.assertEqual('cc52d785a3b4133504d1af9e60cd71ca422609cb41df3a08bbb466b2a98a885e', b2h(to_bytes_32(sig_hash)))
 
         sig = sigmake(k0, sig_hash, sig_type)
         self.assertTrue(sigcheck(k0, sig_hash, sig[:-1]))
 
-        tx.txs_in[0].script = VM.compile(b2h(sig))
+        tx.txs_in[0].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(0))
 
-        sig_hash = tx.signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
+        sig_hash = solution_checker.signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
         self.assertEqual('93bb883d70fccfba9b8aa2028567aca8357937c65af7f6f5ccc6993fd7735fb7', b2h(to_bytes_32(sig_hash)))
 
         sig = sigmake(k1, sig_hash, sig_type)
         self.assertTrue(sigcheck(k1, sig_hash, sig[:-1]))
 
-        tx.txs_in[1].script = VM.compile(b2h(sig))
+        tx.txs_in[1].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(1))
 
-        sig_hash = tx.signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
+        sig_hash = solution_checker.signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
         self.assertEqual('53ef7f67c3541bffcf4e0d06c003c6014e2aa1fb38ff33240b3e1c1f3f8e2a35', b2h(to_bytes_32(sig_hash)))
 
         sig = sigmake(k2, sig_hash, sig_type)
         self.assertTrue(sigcheck(k2, sig_hash, sig[:-1]))
 
-        tx.txs_in[2].script = VM.compile(b2h(sig))
+        tx.txs_in[2].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(2))
 
         sig_type = SIGHASH_SINGLE | SIGHASH_ANYONECANPAY
 
-        sig_hash = tx.signature_hash(coinbase_tx.txs_out[0].script, 0, sig_type)
+        sig_hash = solution_checker.signature_hash(coinbase_tx.txs_out[0].script, 0, sig_type)
         self.assertEqual('2003393d246a7f136692ce7ab819c6eadc54ffea38eb4377ac75d7d461144e75', b2h(to_bytes_32(sig_hash)))
 
         sig = sigmake(k0, sig_hash, sig_type)
         self.assertTrue(sigcheck(k0, sig_hash, sig[:-1]))
 
-        tx.txs_in[0].script = VM.compile(b2h(sig))
+        tx.txs_in[0].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(0))
 
-        sig_hash = tx.signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
+        sig_hash = solution_checker.signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
         self.assertEqual('e3f469ac88e9f35e8eff0bd8ad4ad3bf899c80eb7645947d60860de4a08a35df', b2h(to_bytes_32(sig_hash)))
 
         sig = sigmake(k1, sig_hash, sig_type)
         self.assertTrue(sigcheck(k1, sig_hash, sig[:-1]))
 
-        tx.txs_in[1].script = VM.compile(b2h(sig))
+        tx.txs_in[1].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(1))
 
-        sig_hash = tx.signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
+        sig_hash = solution_checker.signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
         self.assertEqual('bacd7c3ab79cad71807312677c1788ad9565bf3c00ab9a153d206494fb8b7e6a', b2h(to_bytes_32(sig_hash)))
 
         sig = sigmake(k2, sig_hash, sig_type)
         self.assertTrue(sigcheck(k2, sig_hash, sig[:-1]))
 
-        tx.txs_in[2].script = VM.compile(b2h(sig))
+        tx.txs_in[2].script = BitcoinScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(2))
 
 if __name__ == "__main__":

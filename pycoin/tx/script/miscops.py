@@ -30,7 +30,7 @@ from . import ScriptError
 
 from .flags import (
     SEQUENCE_LOCKTIME_DISABLE_FLAG, SEQUENCE_LOCKTIME_TYPE_FLAG,
-    VERIFY_DISCOURAGE_UPGRADABLE_NOPS, VERIFY_MINIMALDATA,
+    VERIFY_DISCOURAGE_UPGRADABLE_NOPS,
     VERIFY_CHECKLOCKTIMEVERIFY,
     VERIFY_MINIMALIF, VERIFY_CHECKSEQUENCEVERIFY,
 )
@@ -48,7 +48,7 @@ def do_OP_CODESEPARATOR(vm):
 
 
 def do_OP_TOALTSTACK(vm):
-    vm.altstack.append(vm.stack.pop())
+    vm.altstack.append(vm.pop())
 
 
 def do_OP_RESERVED(vm):
@@ -63,7 +63,7 @@ do_OP_RESERVED.outside_conditional = True
 def do_OP_FROMALTSTACK(vm):
     if len(vm.altstack) < 1:
         raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
-    vm.stack.append(vm.altstack.pop())
+    vm.append(vm.altstack.pop())
 
 
 def discourage_nops(vm):
@@ -79,9 +79,9 @@ def make_if(reverse_bool=False):
         if conditional_stack.all_if_true():
             if len(stack) < 1:
                 raise ScriptError("IF with no condition", errno.UNBALANCED_CONDITIONAL)
-            item = stack.pop()
+            item = vm.pop()
             if vm.flags & VERIFY_MINIMALIF:
-                if item not in (b'', b'\1'):
+                if item not in (vm.VM_FALSE, vm.VM_TRUE):
                     raise ScriptError("non-minimal IF", errno.MINIMALIF)
             the_bool = vm.bool_from_script_bytes(item)
         vm.conditional_stack.OP_IF(the_bool, reverse_bool=reverse_bool)
@@ -114,7 +114,8 @@ def do_OP_CHECKLOCKTIMEVERIFY(vm):
         raise ScriptError("empty stack on CHECKLOCKTIMEVERIFY")
     if len(vm.stack[-1]) > 5:
         raise ScriptError("script number overflow")
-    max_lock_time = vm.IntStreamer.int_from_script_bytes(vm.stack[-1])
+    max_lock_time = vm.pop_int()
+    vm.push_int(max_lock_time)
     if max_lock_time < 0:
         raise ScriptError("top stack item negative on CHECKLOCKTIMEVERIFY")
     era_max = (max_lock_time >= 500000000)
@@ -150,8 +151,8 @@ def do_OP_CHECKSEQUENCEVERIFY(vm):
         raise ScriptError("empty stack on CHECKSEQUENCEVERIFY", errno.INVALID_STACK_OPERATION)
     if len(vm.stack[-1]) > 5:
         raise ScriptError("script number overflow", errno.INVALID_STACK_OPERATION+1)
-    require_minimal = vm.flags & VERIFY_MINIMALDATA
-    sequence = vm.IntStreamer.int_from_script_bytes(vm.stack[-1], require_minimal=require_minimal)
+    sequence = vm.pop_int()
+    vm.push_int(sequence)
     if sequence < 0:
         raise ScriptError(
             "top stack item negative on CHECKSEQUENCEVERIFY", errno.NEGATIVE_LOCKTIME)
@@ -196,13 +197,4 @@ def extra_opcodes():
 
     for v in range(0, 128):
         d["OP_%d" % v] = lambda s: 0
-    return d
-
-
-def all_opcodes():
-    d = extra_opcodes()
-    the_globals = globals()
-    for k, v in the_globals.items():
-        if k.startswith("do_OP"):
-            d[k[3:]] = v
     return d
