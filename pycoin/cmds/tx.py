@@ -47,7 +47,7 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
         print("warning: can't talk to bitcoind due to missing library")
 
 
-def dump_header(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
+def dump_header(tx):
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes" % (tx.version, tx.id(), len(tx_bin)))
     print("TxIn count: %d; TxOut count: %d" % (len(tx.txs_in), len(tx.txs_out)))
@@ -66,15 +66,15 @@ def make_trace_script(do_trace, use_pdb):
     if not (do_trace or use_pdb):
         return None
 
-    def trace_script(old_pc, opcode, data, stack, altstack, conditional_stack, is_signature):
-        print("%3d : %02x  %s" % (old_pc, opcode, BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)))
+    def trace_script(opcode, data, pc, vmc):
+        from pycoin.serialize import b2h
+        print("stack: [%s]" % ' '.join(b2h(s) for s in vmc.stack))
+        if len(vmc.altstack) > 0:
+            print("altstack: %s" % vmc.altstack)
+        print("condition stack: %s" % vmc.conditional_stack)
+        print("%3d : %02x  %s" % (vmc.pc, opcode, BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)))
         if use_pdb:
             import pdb
-            from pycoin.serialize import b2h
-            print("stack: [%s]" % ', '.join(b2h(s) for s in stack))
-            if len(altstack) > 0:
-                print("altstack: %s" % altstack)
-            print("condition stack: %s" % conditional_stack)
             pdb.set_trace()
     return trace_script
 
@@ -155,7 +155,7 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
     missing_unspents = tx.missing_unspents()
     traceback_f = make_trace_script(do_trace, use_pdb)
 
-    dump_header(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb)
+    dump_header(tx)
 
     dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level)
 

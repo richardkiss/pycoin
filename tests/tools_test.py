@@ -23,7 +23,7 @@ class ToolsTest(unittest.TestCase):
 
         def test_bytes(as_bytes):
             script = bin_script([as_bytes])
-            ## BRAIN DAMAGE: UGLY and WRONG
+            # this is a pretty horrible hack to test the vm with long scripts. But it works
             vm = BitcoinVM()
             tx_context = TxContext()
             tx_context.signature_for_hash_type_f = None
