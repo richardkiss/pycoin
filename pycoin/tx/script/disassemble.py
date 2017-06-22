@@ -1,12 +1,11 @@
 import collections
 
 from pycoin.ecdsa import generator_secp256k1, possible_public_pairs_for_signature
-from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitcoin_address,
-                             sec_to_public_pair, is_sec_compressed)
+from pycoin.encoding import public_pair_to_bitcoin_address, sec_to_public_pair, is_sec_compressed
 
 from pycoin.serialize import b2h
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker, check_solution
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
+from pycoin.coins.bitcoin.SolutionChecker import check_solution
 
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script.checksigops import parse_signature_blob
@@ -102,6 +101,7 @@ def annotate_scripts(tx, tx_in_idx):
     # input_annotations_f, output_annotations_f = annotation_f_for_scripts(tx, tx_in_idx)
 
     data_annotations = collections.defaultdict(list)
+
     def traceback_f(opcode, data, pc, vmc):
         if opcode in (OP_CHECKSIG, OP_CHECKSIGVERIFY):
             annotate_checksig(vmc, data_annotations)
@@ -115,6 +115,7 @@ def annotate_scripts(tx, tx_in_idx):
         pass
 
     r = []
+
     def traceback_f(opcode, data, pc, vmc):
         a0 = []
         if vmc.pc == 0:

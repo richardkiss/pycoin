@@ -4,9 +4,7 @@ from hashlib import sha256
 
 from ...encoding import double_sha256, from_bytes_32
 from ...intbytes import byte2int, indexbytes
-from ...serialize import b2h_rev
 
-from ...tx.exceptions import ValidationFailureError
 from ...tx.script.BaseSolutionChecker import SolutionChecker, TxContext
 from ...tx.script.BaseVM import VMContext
 from ...tx.script import errno
