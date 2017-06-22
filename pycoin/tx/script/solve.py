@@ -2,31 +2,31 @@
 
 import pdb
 
-from .. import Tx, TxIn, TxOut
+from ..Tx import Tx, TxIn, TxOut
 from ...key import Key
 from ...ui import standard_tx_out_script
 from ..script.checksigops import parse_signature_blob
 
 from pycoin import ecdsa
 from pycoin import encoding
-from pycoin.tx.script import der
-from pycoin.intbytes import bytes_from_int
-from pycoin.tx.script.VM import VM
-
 from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey
+from pycoin.tx.script import der
+from pycoin.intbytes import int2byte
+
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker, check_solution
 
 
 DEFAULT_PLACEHOLDER_SIGNATURE = b''
 
 
 def _create_script_signature(
-        secret_exponent, signature_for_hash_type_f, signature_type, script):
-    sign_value = signature_for_hash_type_f(signature_type, script)
+        secret_exponent, sign_value, signature_type, script):
     order = ecdsa.generator_secp256k1.order()
     r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
     if s + s > order:
         s = order - s
-    return der.sigencode_der(r, s) + bytes_from_int(signature_type)
+    return der.sigencode_der(r, s) + int2byte(signature_type)
 
 
 def _find_signatures(script, signature_for_hash_type_f, script_to_hash, max_sigs, sec_keys):
@@ -36,8 +36,9 @@ def _find_signatures(script, signature_for_hash_type_f, script_to_hash, max_sigs
     seen = 0
     opcode, data, pc = VM.get_opcode(script, pc)
     # ignore the first opcode
-    while pc < len(script) and seen < max_sigs:
-        opcode, data, pc = VM.get_opcode(script, pc)
+    for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(script):
+        if seen >= max_sigs:
+            break
         try:
             sig_pair, signature_type = parse_signature_blob(data)
             seen += 1
@@ -98,32 +99,36 @@ class Operator(Atom):
     def __repr__(self):
         return "(%s %s)" % (self._op_name, ' '.join(repr(a) for a in self._args))
 
+OP_HASH160 = BitcoinScriptTools.int_for_opcode("OP_HASH160")
+OP_EQUALVERIFY = BitcoinScriptTools.int_for_opcode("OP_EQUALVERIFY")
+OP_CHECKSIG = BitcoinScriptTools.int_for_opcode("OP_CHECKSIG")
+OP_CHECKMULTISIG = BitcoinScriptTools.int_for_opcode("OP_CHECKMULTISIG")
 
 def make_traceback_f(constraints):
     def traceback_f(*args):
         opcode, data, pc, vm = args
         if vm.pc == 0:
             # reset stack
-            vm.stack = vm.Stack(reversed([Atom("x_%d" % i) for i in range(10)]))
+            vm.stack = list(reversed([Atom("x_%d" % i) for i in range(10)]))
         stack = vm.stack
         altstack = vm.altstack
         if len(altstack) == 0:
             altstack = ''
         # print("%s %s\n  %3x  %s" % (vm.stack, altstack, vm.pc, vm.disassemble_for_opcode_data(opcode, data)))
-        if opcode == vm.OP_HASH160 and not isinstance(vm.stack[-1], bytes):
+        if opcode == OP_HASH160 and not isinstance(vm.stack[-1], bytes):
             def my_op_hash160(vm):
                 t = vm.stack.pop()
                 t = Operator('HASH160', t)
                 vm.stack.append(t)
             return my_op_hash160
-        if opcode == vm.OP_EQUALVERIFY and any(not isinstance(v, bytes) for v in vm.stack[-2:]):
+        if opcode == OP_EQUALVERIFY and any(not isinstance(v, bytes) for v in vm.stack[-2:]):
             def my_op_equalverify(vm):
                 t1 = vm.stack.pop()
                 t2 = vm.stack.pop()
                 c = Operator('EQUAL', t1, t2)
                 constraints.append(c)
             return my_op_equalverify
-        if opcode == vm.OP_CHECKSIG:
+        if opcode == OP_CHECKSIG:
             def my_op_checksig(vm):
                 t1 = vm.stack.pop()
                 t2 = vm.stack.pop()
@@ -135,9 +140,9 @@ def make_traceback_f(constraints):
                     constraints.append(Operator('IS_TRUE', vm.stack[-1]))
                     if len(vm.stack) > 1:
                         constraints.append(Operator('STACK_EMPTY_AFTER', vm.stack[-2]))
-                    vm.stack = vm.Stack([vm.VM_TRUE])
+                    vm.stack = list([vm.VM_TRUE])
             return my_op_checksig
-        if opcode == vm.OP_CHECKMULTISIG:
+        if opcode == OP_CHECKMULTISIG:
             def my_op_checkmultisig(vm):
                 key_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
                 public_pair_blobs = []
@@ -157,14 +162,14 @@ def make_traceback_f(constraints):
                     constraints.append(Operator('IS_TRUE', vm.stack[-1]))
                     if len(vm.stack) > 1:
                         constraints.append(Operator('STACK_EMPTY_AFTER', vm.stack[-2]))
-                    vm.stack = vm.Stack([vm.VM_TRUE])
+                    vm.stack = [vm.VM_TRUE]
             return my_op_checkmultisig
     return traceback_f
 
 
 def determine_constraints(tx, tx_in_idx):
     constraints = []
-    tx.check_solution(tx_in_idx, traceback_f=make_traceback_f(constraints))
+    check_solution(tx, tx_in_idx, traceback_f=make_traceback_f(constraints))
     return constraints
 
 
@@ -193,7 +198,7 @@ def solve(tx, tx_in_idx, **kwargs):
             progress = progress or (len(s) > 0)
 
     solution_list = [solved_values.get(Atom("x_%d" % i)) for i in reversed(range(max_stack_size))]
-    return VM.bin_script(solution_list)
+    return BitcoinScriptTools.compile_push_data_list(solution_list)
 
 
 class CONSTANT(object):
@@ -255,7 +260,6 @@ def solutions_for_constraint(c):
     if m:
 
         def f(solved_values, **kwargs):
-            pdb.set_trace()
             signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f")
             script_to_hash = kwargs.get("script_to_hash")
 
@@ -336,10 +340,9 @@ def constraint_matches(c, m):
 
 def test_solve(tx, tx_in_idx, **kwargs):
     solution_script = solve(tx, 0, **kwargs)
-    print(VM.disassemble(solution_script))
-
+    print(BitcoinScriptTools.disassemble(solution_script))
     tx.txs_in[tx_in_idx].script = solution_script
-    tx.check_solution(0)
+    check_solution(tx, 0)
 
 
 def make_test_tx(input_script):
@@ -369,12 +372,12 @@ def test_tx(incoming_script, max_stack_size):
                 return key.secret_exponent()
 
     def signature_for_secret_exponent(secret_exponent):
+        sc = BitcoinSolutionChecker(tx)
+        tx_context = sc.tx_context_for_idx(tx_in_idx)
         signature_type = 1  # BRAIN DAMAGE
-
-        def signature_for_hash_type_f(hash_type, script):
-            return tx.signature_hash(script, tx_in_idx, hash_type)
-
-        return _create_script_signature(secret_exponent, signature_for_hash_type_f, signature_type, incoming_script)
+        tx_out_script = tx.unspents[tx_in_idx].script
+        sig_hash = sc.signature_hash(tx_out_script, tx_in_idx, signature_type)
+        return _create_script_signature(secret_exponent, sig_hash, signature_type, incoming_script)
 
     kwargs = dict(pubkey_for_hash=pubkey_for_hash,
                   privkey_for_pubkey=privkey_for_pubkey,
@@ -396,7 +399,7 @@ def test_p2pk():
 
 def test_nonstandard_p2pkh():
     key = Key(1)
-    test_tx(VM.compile("OP_SWAP") + standard_tx_out_script(key.address()), 2)
+    test_tx(BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(key.address()), 2)
 
 
 def test_p2multisig():
