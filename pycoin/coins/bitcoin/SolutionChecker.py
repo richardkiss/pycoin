@@ -108,6 +108,7 @@ class BitcoinSolutionChecker(SolutionChecker):
             p2sh_tx_context.sequence = tx_context.sequence
             p2sh_tx_context.version = tx_context.version
             p2sh_tx_context.lock_time = tx_context.lock_time
+            p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
             self.check_solution(p2sh_tx_context, p2sh_flags, traceback_f=traceback_f)
             return
 
@@ -151,9 +152,12 @@ class BitcoinSolutionChecker(SolutionChecker):
         else:
             return
 
+        def witness_signature_for_hash_type(hash_type, sig_blobs, vmc):
+            return self.signature_for_hash_type_segwit(vmc.script[vmc.begin_code_hash:], tx_context.tx_in_idx, hash_type)
+
         vm = self.VM()
         vm_context = VMContext(
-            puzzle_script, tx_context, tx_context.signature_for_hash_type_f.witness, flags, initial_stack=stack)
+            puzzle_script, tx_context, witness_signature_for_hash_type, flags, initial_stack=stack)
         vm_context.traceback_f = traceback_f
         vm_context.is_solution_script = False
 
@@ -362,11 +366,6 @@ class BitcoinSolutionChecker(SolutionChecker):
                 script = self.delete_signature(script, sig_blob)
             return self.signature_hash(script, tx_in_idx, hash_type)
 
-        def witness_signature_for_hash_type(hash_type, sig_blobs, vmc):
-            return self.signature_for_hash_type_segwit(vmc.script[vmc.begin_code_hash:], tx_in_idx, hash_type)
-
-        signature_for_hash_type_f.witness = witness_signature_for_hash_type
-
         tx_context = TxContext()
         tx_context.lock_time = self.tx.lock_time
         tx_context.version = self.tx.version
@@ -375,6 +374,7 @@ class BitcoinSolutionChecker(SolutionChecker):
         tx_context.witness_solution_stack = tx_in.witness
         tx_context.sequence = tx_in.sequence
         tx_context.signature_for_hash_type_f = signature_for_hash_type_f
+        tx_context.tx_in_idx = tx_in_idx
         return tx_context
 
     def is_signature_ok(self, tx_in_idx, flags=None, **kwargs):

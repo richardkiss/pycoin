@@ -160,70 +160,9 @@ def do_OP_CHECKSIG(vm):
         vm.append(vm.VM_FALSE)
 
 
-def sig_blob_matches(vm, sig_blobs, public_pair_blobs, flags):
-    """
-    sig_blobs: signature blobs
-    public_pair_blobs: a list of public pair blobs
-    tmp_script: the script as of the last code separator
-    signature_for_hash_type_f: signature_for_hash_type_f
-    flags: verification flags to apply
-    for checking a supposedly validated transaction. A -1 indicates no match.
-
-    Returns a list of indices into public_pairs. It may return early.
-    If sig_blob_indices isn't long enough or contains a -1, the signature is not valid.
-    """
-
-    strict_encoding = not not (flags & VERIFY_STRICTENC)
-
-    sig_cache = {}
-    sig_blob_indices = []
-    ppb_idx = -1
-
-    blobs_to_remove = list(sig_blobs)
-    while sig_blobs and len(sig_blobs) <= len(public_pair_blobs):
-        if -1 in sig_blob_indices:
-            break
-        sig_blob, sig_blobs = sig_blobs[0], sig_blobs[1:]
-        try:
-            sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
-        except (der.UnexpectedDER, ValueError):
-            sig_blob_indices.append(-1)
-            continue
-
-        if signature_type not in sig_cache:
-            sig_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, blobs_to_remove, vm)
-
-        try:
-            ppp = ecdsa.possible_public_pairs_for_signature(
-                ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
-        except ecdsa.NoSuchPointError:
-            ppp = []
-        ppb_idx = find_public_pair(
-            public_pair_blobs, ppp, len(sig_blobs), strict_encoding, flags & VERIFY_WITNESS_PUBKEYTYPE, ppb_idx)
-        sig_blob_indices.append(ppb_idx)
-    return sig_blob_indices
-
-
-def find_public_pair(public_pair_blobs, ppp, signature_count, strict_encoding, verify_witness_pubkeytype, ppb_idx):
-    while len(public_pair_blobs) > signature_count:
-        public_pair_blob, public_pair_blobs = public_pair_blobs[0], public_pair_blobs[1:]
-        ppb_idx += 1
-        if strict_encoding:
-            check_public_key_encoding(public_pair_blob)
-        if verify_witness_pubkeytype:
-            if byte2int(public_pair_blob) not in (2, 3) or len(public_pair_blob) != 33:
-                raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
-        try:
-            public_pair = sec_to_public_pair(public_pair_blob, strict=strict_encoding)
-        except EncodingError:
-            public_pair = None
-        if public_pair in ppp:
-            return ppb_idx
-    return -1
-
-
 def do_OP_CHECKMULTISIG(vm):
     flags = vm.flags
+    verify_strict = not not (flags & VERIFY_STRICTENC)
 
     key_count = vm.pop_int()
 
@@ -240,29 +179,54 @@ def do_OP_CHECKMULTISIG(vm):
             "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
 
     sig_blobs = [vm.pop() for _ in range(signature_count)]
+    orig_sig_blobs = list(sig_blobs)
 
     # check that we have the required hack 00 byte
     hack_byte = vm.pop()
     if flags & VERIFY_NULLDUMMY and hack_byte != b'':
         raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
 
-    sig_blob_indices = sig_blob_matches(vm, sig_blobs, public_pair_blobs, flags)
+    public_pair_blobs.reverse()
+    sig_blobs.reverse()
 
-    sig_ok = vm.VM_FALSE
-    if -1 not in sig_blob_indices and len(sig_blob_indices) == len(sig_blobs):
-        # bitcoin requires the signatures to be in the same order as the public keys
-        # so let's make sure the indices are strictly increasing
-        for i in range(len(sig_blob_indices) - 1):
-            if sig_blob_indices[i] >= sig_blob_indices[i+1]:
-                break
-        else:
-            sig_ok = vm.VM_TRUE
+    any_nonblank = (flags & VERIFY_NULLFAIL) and any(len(s) > 0 for s in sig_blobs)
 
-    if not sig_ok and flags & VERIFY_NULLFAIL:
-        if any(len(sig_blob) > 0 for sig_blob in sig_blobs):
-            raise ScriptError("bad signature not NULL", errno.NULLFAIL)
+    sighash_cache = {}
 
-    vm.append(sig_ok)
+    verify_witness_pubkeytype = flags & VERIFY_WITNESS_PUBKEYTYPE
+    while len(sig_blobs) > 0:
+        sig_blob = sig_blobs.pop()
+        try:
+            sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
+        except (der.UnexpectedDER, ValueError):
+            public_pair_blobs = []
+        while True:
+            if len(sig_blobs) >= len(public_pair_blobs):
+                if any_nonblank:
+                    raise ScriptError("bad signature not NULL", errno.NULLFAIL)
+                vm.append(vm.VM_FALSE)
+                return
+
+            pair_blob = public_pair_blobs.pop()
+            if verify_strict:
+                check_public_key_encoding(pair_blob)
+            if verify_witness_pubkeytype:
+                if byte2int(pair_blob) not in (2, 3) or len(pair_blob) != 33:
+                    raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
+            try:
+                public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
+            except EncodingError:
+                continue
+
+            if signature_type not in sighash_cache:
+                sighash_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, orig_sig_blobs, vm)
+
+            try:
+                if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sighash_cache[signature_type], sig_pair):
+                    break
+            except ecdsa.NoSuchPointError:
+                pass
+    vm.append(vm.VM_TRUE)
 
 
 def do_OP_CHECKMULTISIGVERIFY(vm):
