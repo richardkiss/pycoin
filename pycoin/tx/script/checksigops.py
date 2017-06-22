@@ -131,82 +131,21 @@ def check_public_key_encoding(blob):
     raise ScriptError("invalid public key blob", errno.PUBKEYTYPE)
 
 
-def do_OP_CHECKSIG(vm):
+def checksigs(vm, sig_blobs, public_pair_blobs):
+    sig_blobs_remaining = list(sig_blobs)
     flags = vm.flags
-    try:
-        pair_blob = vm.pop()
-        sig_blob = vm.pop()
-        verify_strict = not not (flags & VERIFY_STRICTENC)
-        # if verify_strict flag is set, we fail the script immediately on bad encoding
-        if verify_strict:
-            check_public_key_encoding(pair_blob)
-        if flags & VERIFY_WITNESS_PUBKEYTYPE:
-            if byte2int(pair_blob) not in (2, 3) or len(pair_blob) != 33:
-                raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
-        sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
-        public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
-    except (der.UnexpectedDER, ValueError, EncodingError):
-        vm.append(vm.VM_FALSE)
-        return
-
-    signature_hash = vm.signature_for_hash_type_f(signature_type, [sig_blob], vm)
-
-    if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair):
-        vm.append(vm.VM_TRUE)
-    else:
-        if flags & VERIFY_NULLFAIL:
-            if len(sig_blob) > 0:
-                raise ScriptError("bad signature not NULL", errno.NULLFAIL)
-        vm.append(vm.VM_FALSE)
-
-
-def do_OP_CHECKMULTISIG(vm):
-    flags = vm.flags
+    sighash_cache = {}
+    verify_witness_pubkeytype = flags & VERIFY_WITNESS_PUBKEYTYPE
     verify_strict = not not (flags & VERIFY_STRICTENC)
-
-    key_count = vm.pop_int()
-
-    vm.op_count += key_count
-
-    if key_count < 0 or key_count > 20:
-        raise ScriptError("key_count not in range 0 to 20", errno.PUBKEY_COUNT)
-
-    public_pair_blobs = [vm.pop() for _ in range(key_count)]
-
-    signature_count = vm.pop_int()
-    if signature_count < 0 or signature_count > key_count:
-        raise ScriptError(
-            "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
-
-    sig_blobs = [vm.pop() for _ in range(signature_count)]
-    orig_sig_blobs = list(sig_blobs)
-
-    # check that we have the required hack 00 byte
-    hack_byte = vm.pop()
-    if flags & VERIFY_NULLDUMMY and hack_byte != b'':
-        raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
-
-    public_pair_blobs.reverse()
-    sig_blobs.reverse()
-
     any_nonblank = (flags & VERIFY_NULLFAIL) and any(len(s) > 0 for s in sig_blobs)
 
-    sighash_cache = {}
-
-    verify_witness_pubkeytype = flags & VERIFY_WITNESS_PUBKEYTYPE
-    while len(sig_blobs) > 0:
-        sig_blob = sig_blobs.pop()
+    while len(sig_blobs_remaining) > 0:
+        sig_blob = sig_blobs_remaining.pop()
         try:
             sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
         except (der.UnexpectedDER, ValueError):
             public_pair_blobs = []
-        while True:
-            if len(sig_blobs) >= len(public_pair_blobs):
-                if any_nonblank:
-                    raise ScriptError("bad signature not NULL", errno.NULLFAIL)
-                vm.append(vm.VM_FALSE)
-                return
-
+        while len(sig_blobs_remaining) < len(public_pair_blobs):
             pair_blob = public_pair_blobs.pop()
             if verify_strict:
                 check_public_key_encoding(pair_blob)
@@ -219,14 +158,50 @@ def do_OP_CHECKMULTISIG(vm):
                 continue
 
             if signature_type not in sighash_cache:
-                sighash_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, orig_sig_blobs, vm)
+                sighash_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, sig_blobs, vm)
 
             try:
                 if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sighash_cache[signature_type], sig_pair):
                     break
             except ecdsa.NoSuchPointError:
                 pass
+        else:
+            if any_nonblank:
+                raise ScriptError("bad signature not NULL", errno.NULLFAIL)
+            vm.append(vm.VM_FALSE)
+            return
     vm.append(vm.VM_TRUE)
+
+
+def do_OP_CHECKSIG(vm):
+    flags = vm.flags
+    pair_blob = vm.pop()
+    sig_blob = vm.pop()
+    checksigs(vm, [sig_blob], [pair_blob])
+
+
+def do_OP_CHECKMULTISIG(vm):
+    key_count = vm.pop_int()
+    if key_count < 0 or key_count > 20:
+        raise ScriptError("key_count not in range 0 to 20", errno.PUBKEY_COUNT)
+    public_pair_blobs = [vm.pop() for _ in range(key_count)]
+    public_pair_blobs.reverse()
+
+    signature_count = vm.pop_int()
+    if signature_count < 0 or signature_count > key_count:
+        raise ScriptError(
+            "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
+    sig_blobs = [vm.pop() for _ in range(signature_count)]
+    sig_blobs.reverse()
+
+    # check that we have the required hack 00 byte
+    hack_byte = vm.pop()
+    if vm.flags & VERIFY_NULLDUMMY and hack_byte != b'':
+        raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
+
+    checksigs(vm, sig_blobs, public_pair_blobs)
+
+    vm.op_count += key_count
 
 
 def do_OP_CHECKMULTISIGVERIFY(vm):
