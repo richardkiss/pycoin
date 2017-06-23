@@ -298,11 +298,11 @@ def tdash_address_to_hash160_sec(tdash_address, address_prefix=b'\0'):
     prefixes = [b'\x8c']
     return address_to_hash160_sec(tdash_address, address_prefix, prefixes)
 
-def dash_address_to_hash160_sec(tdash_address, address_prefix=b'\0'):
+def dash_address_to_hash160_sec(dash_address, address_prefix=b'\x4c'):
     """Convert a Dash testnet address back to the hash160_sec format of the public key.
     Since we only know the hash of the public key, we can't get the full public key back."""
-    prefixes = [b'\x30']
-    return address_to_hash160_sec(tdash_address, address_prefix, prefixes)
+    prefixes = [b'\x4c']
+    return address_to_hash160_sec(dash_address, address_prefix, prefixes)
 
 def public_pair_to_bitcoin_address(public_pair, compressed=True, address_prefix=b'\0'):
     """Convert a public_pair (corresponding to a public key) to a Bitcoin address."""
