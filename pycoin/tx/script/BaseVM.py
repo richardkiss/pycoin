@@ -77,6 +77,10 @@ class VM(object):
         if len(vmc.script) > vmc.MAX_SCRIPT_LENGTH:
             raise ScriptError("script too long", errno.SCRIPT_SIZE)
 
+        f = getattr(vmc.traceback_f, "prelaunch", None)
+        if f:
+            f(vmc)
+
         while vmc.pc < len(vmc.script):
             class_.eval_instruction(vmc)
 
