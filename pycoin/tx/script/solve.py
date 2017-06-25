@@ -429,7 +429,7 @@ def make_test_tx(input_script):
     return tx
 
 
-def test_tx(incoming_script, max_stack_size, **kwargs):
+def test_tx(incoming_script, **kwargs):
     keys = [Key(i) for i in range(1, 20)]
     tx = make_test_tx(incoming_script)
     tx_in_idx = 0
@@ -454,7 +454,6 @@ def test_tx(incoming_script, max_stack_size, **kwargs):
     kwargs.update(dict(pubkey_for_hash=pubkey_for_hash,
                        privkey_for_pubkey=privkey_for_pubkey,
                        signature_for_secret_exponent=signature_for_secret_exponent,
-                       max_stack_size=max_stack_size,
                        signature_type=1))
 
     test_solve(tx, tx_in_idx, **kwargs)
@@ -462,23 +461,23 @@ def test_tx(incoming_script, max_stack_size, **kwargs):
 
 def test_p2pkh():
     key = Key(1)
-    test_tx(standard_tx_out_script(key.address()), 2)
+    test_tx(standard_tx_out_script(key.address()))
 
 
 def test_p2pk():
     key = Key(1)
-    test_tx(ScriptPayToPublicKey.from_key(key).script(), 1)
+    test_tx(ScriptPayToPublicKey.from_key(key).script())
 
 
 def test_nonstandard_p2pkh():
     key = Key(1)
-    test_tx(BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(key.address()), 2)
+    test_tx(BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(key.address()))
 
 
 def test_p2multisig():
     keys = [Key(i) for i in (1, 2, 3)]
     secs = [k.sec() for k in keys]
-    test_tx(ScriptMultisig(2, secs).script(), 3)
+    test_tx(ScriptMultisig(2, secs).script())
 
 
 def test_p2sh():
@@ -489,7 +488,7 @@ def test_p2sh():
     address = address_for_pay_to_script(underlying_script)
     assert address == "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q"
     script = standard_tx_out_script(address)
-    test_tx(script, 4, p2sh_lookup=build_p2sh_lookup([underlying_script]))
+    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
 
 def main():
