@@ -99,6 +99,28 @@ class Operator(Atom):
     def __repr__(self):
         return "(%s %s)" % (self._op_name, ' '.join(repr(a) for a in self._args))
 
+
+class DynamicStack(list):
+    def __init__(self):
+        self.total_item_count = 0
+
+    def _fill(self):
+        self.insert(0, Atom("x_%d" % self.total_item_count))
+        self.total_item_count += 1
+
+    def pop(self, i=-1):
+        while len(self) < abs(i):
+            self._fill()
+        return super(DynamicStack, self).pop(i)
+
+    def __getitem__(self, *args, **kwargs):
+        while True:
+            try:
+                return super(DynamicStack, self).__getitem__(*args, **kwargs)
+            except IndexError:
+                self._fill()
+
+
 OP_HASH160 = BitcoinScriptTools.int_for_opcode("OP_HASH160")
 OP_EQUAL = BitcoinScriptTools.int_for_opcode("OP_EQUAL")
 OP_EQUALVERIFY = BitcoinScriptTools.int_for_opcode("OP_EQUALVERIFY")
@@ -108,9 +130,9 @@ OP_CHECKMULTISIG = BitcoinScriptTools.int_for_opcode("OP_CHECKMULTISIG")
 def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
 
     def prelaunch(vmc):
-        if vmc.is_solution_script:
+        if not vmc.is_solution_script:
             # reset stack
-            vmc.stack = list(reversed([Atom("x_%d" % i) for i in range(10)]))
+            vmc.stack = DynamicStack()
 
     def traceback_f(opcode, data, pc, vm):
         stack = vm.stack
@@ -146,11 +168,6 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
                 constraints.append(Operator('IS_PUBKEY', t1))
                 constraints.append(Operator('IS_SIGNATURE', t2))
                 vm.stack.append(t)
-                if pc >= len(vm.script):
-                    constraints.append(Operator('IS_TRUE', vm.stack[-1]))
-                    if len(vm.stack) > 1:
-                        constraints.append(Operator('STACK_EMPTY_AFTER', vm.stack[-2]))
-                    vm.stack = list([vm.VM_TRUE])
             return my_op_checksig
         if opcode == OP_CHECKMULTISIG:
             def my_op_checkmultisig(vm):
@@ -168,13 +185,16 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
                 constraints.append(Operator('IS_TRUE', Operator('EQUAL', t1, b'')))
                 t = Operator('CHECKMULTISIG', public_pair_blobs, sig_blobs)
                 vm.stack.append(t)
-                if pc >= len(vm.script):
-                    constraints.append(Operator('IS_TRUE', vm.stack[-1]))
-                    if len(vm.stack) > 1:
-                        constraints.append(Operator('STACK_EMPTY_AFTER', vm.stack[-2]))
-                    vm.stack = [vm.VM_TRUE]
             return my_op_checkmultisig
+
+    def postscript(vmc):
+        if not vmc.is_solution_script:
+            constraints.append(Operator('IS_TRUE', vmc.stack[-1]))
+            constraints.append(Operator('SOLUTION_STACK_SIZE', vmc.stack.total_item_count))
+            vmc.stack = [vmc.VM_TRUE]
+
     traceback_f.prelaunch = prelaunch
+    traceback_f.postscript = postscript
     return traceback_f
 
 
@@ -194,19 +214,20 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
     except ScriptError:
         pass
     if script_hash:
-        pdb.set_trace()
+        size_constraint = constraints[-1]
         constraints = [Operator('P2SH', Atom("x_0"), Atom("x_1"), underlying_script, tuple(constraints))]
+        constraints.append(Operator('SOLUTION_STACK_SIZE', size_constraint._args[0] + 1))
     return constraints
 
 
 def solve_for_constraints(constraints, **kwargs):
     solutions = []
     for c in constraints:
-        s = solutions_for_constraint(c)
+        s = solutions_for_constraint(c, **kwargs)
         # s = (solution_f, target atom, dependency atom list)
         if s:
             solutions.append(s)
-    max_stack_size = kwargs["max_stack_size"]  # BRAIN DAMAGE
+    max_stack_size = solutions.pop()[0](None)["stack_size"] # gross hack
     solved_values = dict((Atom("x_%d" % i), None) for i in range(max_stack_size))
     progress = True
     while progress and any(v is None for v in solved_values.values()):
@@ -246,7 +267,7 @@ class LIST(object):
         self._name = name
 
 
-def solutions_for_constraint(c):
+def solutions_for_constraint(c, **kwargs):
     # given a constraint c
     # return None or
     # a solution (solution_f, target atom, dependency atom list)
@@ -332,12 +353,22 @@ def solutions_for_constraint(c):
     m = constraint_matches(c, (('P2SH', VAR("0"), VAR("1"), CONSTANT("2"), LIST("3"))))
     if m:
 
+        solution_list = solve_for_constraints(m["3"], **kwargs)
         def f(solved_values, **kwargs):
             underlying_script = m["2"]
             constraints = m["3"]
-            solution_script = solve_for_constraints(constraints, **kwargs)
-            return { m["0"]: BitcoinScriptTools.compile_push_data_list([solution_script]), m["1"]: underlying_script }
+            pdb.set_trace()
+            d = { m["%d" % (idx+1)]: s for idx, s in enumerate(solution_list) }
+            d[m["0"]] = underlying_script
+            return d
         return (f, [m["0"], m["1"]], ())
+
+    m = constraint_matches(c, ('SOLUTION_STACK_SIZE', CONSTANT("0")))
+    if m:
+
+        def f(solved_values, **kwargs):
+            return { "stack_size" : m["0"] }
+        return (f, (), ())
 
 
     return None
@@ -363,7 +394,7 @@ def constraint_matches(c, m):
                 d.update(d1)
                 continue
             if isinstance(m1, CONSTANT):
-                if isinstance(c1, bytes):
+                if isinstance(c1, (int, bytes)):
                     d[m1._name] = c1
                     continue
             if isinstance(m1, VAR):
