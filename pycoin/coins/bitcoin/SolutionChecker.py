@@ -101,21 +101,7 @@ class BitcoinSolutionChecker(SolutionChecker):
             had_witness = self.check_witness(tx_context, flags, traceback_f)
 
         if self.is_pay_to_script_hash(puzzle_script) and (flags & VERIFY_P2SH):
-            p2sh_solution_blob, p2sh_puzzle_script = solution_stack[:-1], solution_stack[-1]
-            p2sh_solution_script = self.ScriptTools.compile_push_data_list(p2sh_solution_blob)
-            self.VM.ScriptStreamer.check_script_push_only(solution_script)
-            vm_context.is_psh_script = True
-            p2sh_flags = flags & ~VERIFY_P2SH
-            p2sh_tx_context = TxContext()
-            p2sh_tx_context.puzzle_script = p2sh_puzzle_script
-            p2sh_tx_context.solution_script = p2sh_solution_script
-            p2sh_tx_context.witness_solution_stack = tx_context.witness_solution_stack
-            p2sh_tx_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f
-            p2sh_tx_context.sequence = tx_context.sequence
-            p2sh_tx_context.version = tx_context.version
-            p2sh_tx_context.lock_time = tx_context.lock_time
-            p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
-            self.check_solution(p2sh_tx_context, p2sh_flags, traceback_f=traceback_f)
+            self._check_p2sh(tx_context, solution_stack[:-1], solution_stack[-1], flags=flags, traceback_f=traceback_f)
             return
 
         if flags & VERIFY_CLEANSTACK and len(stack) != 1:
@@ -123,6 +109,21 @@ class BitcoinSolutionChecker(SolutionChecker):
 
         if (flags & VERIFY_WITNESS) and not had_witness and len(tx_context.witness_solution_stack) > 0:
             raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
+
+    def _check_p2sh(self, tx_context, solution_blob, puzzle_script, flags=None, traceback_f=None):
+            solution_script = self.ScriptTools.compile_push_data_list(solution_blob)
+            self.VM.ScriptStreamer.check_script_push_only(tx_context.solution_script)
+            flags = flags & ~VERIFY_P2SH
+            p2sh_tx_context = TxContext()
+            p2sh_tx_context.puzzle_script = puzzle_script
+            p2sh_tx_context.solution_script = solution_script
+            p2sh_tx_context.witness_solution_stack = tx_context.witness_solution_stack
+            p2sh_tx_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f
+            p2sh_tx_context.sequence = tx_context.sequence
+            p2sh_tx_context.version = tx_context.version
+            p2sh_tx_context.lock_time = tx_context.lock_time
+            p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
+            self.check_solution(p2sh_tx_context, flags=flags, traceback_f=traceback_f)
 
     def _puzzle_script_for_len20_segwit(self, witness_program):
         return V0_len20_prefix + self.ScriptTools.compile_push_data_list(
