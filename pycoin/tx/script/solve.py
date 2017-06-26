@@ -1,6 +1,7 @@
 # generic solver
 
 import functools
+import hashlib
 import pdb
 
 from ..Tx import Tx, TxIn, TxOut
@@ -145,7 +146,7 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
     def prelaunch(vmc):
         if not vmc.is_solution_script:
             # reset stack
-            vmc.stack = DynamicStack(vmc.stack, kwargs.get("solution_reserve_count", 0))
+            vmc.stack = DynamicStack(vmc.stack, kwargs.get("solution_reserve_count", 0), kwargs.get("fill_template", "x_%d"))
 
     def traceback_f(opcode, data, pc, vm):
         stack = vm.stack
@@ -229,6 +230,16 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
             raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
         tx_context.solution_script = BitcoinScriptTools.compile_push_data_list([underlying_script])
         kwargs["solution_reserve_count"] = 1
+    witness_version = solution_checker.witness_program_version(tx_context.puzzle_script)
+    if witness_version == 0:
+        witness_program = tx_context.puzzle_script[2:]
+        if len(witness_program) == 32:
+            underlying_script = kwargs.get("p2sh_lookup", {}).get(witness_program, None)
+            if underlying_script is None:
+                raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
+            kwargs["fill_template"] = "w_%d"
+            kwargs["solution_reserve_count"] = 1
+            tx_context.witness_solution_stack = [underlying_script]
     constraints = []
     try:
         solution_checker.check_solution(
@@ -237,6 +248,9 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
         pass
     if script_hash:
         constraints.append(Operator('IS_EQUAL', Atom("x_0"), underlying_script))
+    if witness_version == 0:
+        if len(witness_program) == 32:
+            constraints.append(Operator('IS_EQUAL', Atom("w_0"), underlying_script))
     return constraints
 
 
@@ -430,8 +444,8 @@ def constraint_matches(c, m):
 def test_solve(tx, tx_in_idx, **kwargs):
     solution_list, witness_list = solve(tx, tx_in_idx, **kwargs)
     solution_script = BitcoinScriptTools.compile_push_data_list(solution_list)
-    print(BitcoinScriptTools.disassemble(solution_script))
-    print(witness_list)
+    print("SOLUTION LIST: ", solution_list)
+    print("WITNESS LIST : ", witness_list)
     tx.txs_in[tx_in_idx].script = solution_script
     tx.txs_in[tx_in_idx].witness = witness_list
     check_solution(tx, tx_in_idx)
@@ -510,13 +524,24 @@ def test_p2pkh_wit():
     test_tx(script)
 
 
+def test_p2sh_wit():
+    keys = [Key(i) for i in (1, 2, 3)]
+    secs = [k.sec() for k in keys]
+    underlying_script = ScriptMultisig(2, secs).script()
+    print("UNDERLYING: ", underlying_script)
+    script = BitcoinScriptTools.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
+    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
+
+
 def main():
     if 1:
         test_p2pkh()
         test_p2pk()
         test_nonstandard_p2pkh()
         test_p2multisig()
-    test_p2sh()
+        test_p2sh()
+        test_p2pkh_wit()
+    test_p2sh_wit()
 
 
 if __name__ == '__main__':
