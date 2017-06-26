@@ -22,8 +22,7 @@ from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker, check_s
 DEFAULT_PLACEHOLDER_SIGNATURE = b''
 
 
-def _create_script_signature(
-        secret_exponent, sign_value, signature_type, script):
+def _create_script_signature(secret_exponent, sign_value, signature_type):
     order = ecdsa.generator_secp256k1.order()
     r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
     if s + s > order:
@@ -176,15 +175,23 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
             return my_op_equalverify
         if opcode == OP_CHECKSIG:
             def my_op_checksig(vm):
+
+                def sighash_f(signature_type):
+                    return vm.signature_for_hash_type_f(signature_type, [], vm)
+
                 t1 = vm.stack.pop()
                 t2 = vm.stack.pop()
-                t = Operator('CHECKSIG', t1, t2)
+                t = Operator('CHECKSIG', t1, t2, sighash_f)
                 constraints.append(Operator('IS_PUBKEY', t1))
                 constraints.append(Operator('IS_SIGNATURE', t2))
                 vm.stack.append(t)
             return my_op_checksig
         if opcode == OP_CHECKMULTISIG:
             def my_op_checkmultisig(vm):
+
+                def sighash_f(signature_type):
+                    return vm.signature_for_hash_type_f(signature_type, [], vm)
+
                 key_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
                 public_pair_blobs = []
                 for i in range(key_count):
@@ -197,7 +204,7 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
                     sig_blobs.append(stack.pop())
                 t1 = vm.stack.pop()
                 constraints.append(Operator('IS_TRUE', Operator('EQUAL', t1, b'')))
-                t = Operator('CHECKMULTISIG', public_pair_blobs, sig_blobs)
+                t = Operator('CHECKMULTISIG', public_pair_blobs, sig_blobs, sighash_f)
                 vm.stack.append(t)
             return my_op_checkmultisig
 
@@ -315,18 +322,19 @@ def solutions_for_constraint(c, **kwargs):
 
         return (f, [m["0"]], ())
 
-    m = constraint_matches(c, (('IS_TRUE', ('CHECKSIG', VAR("0"), VAR("1")))))
+    m = constraint_matches(c, (('IS_TRUE', ('CHECKSIG', VAR("0"), VAR("1"), CONSTANT("2")))))
     if m:
 
         def f(solved_values, **kwargs):
             pubkey = lookup_solved_value(solved_values, m["0"])
             privkey = kwargs["privkey_for_pubkey"](pubkey)
             signature_type = kwargs.get("signature_type")
-            signature = kwargs["signature_for_secret_exponent"](privkey, signature_type)
+            sig_hash = m["2"](signature_type)
+            signature = _create_script_signature(privkey, sig_hash, signature_type)
             return {m["1"]: signature}
         return (f, [m["1"]], filtered_dependencies(m["0"]))
 
-    m = constraint_matches(c, (('IS_TRUE', ('CHECKMULTISIG', LIST("0"), LIST("1")))))
+    m = constraint_matches(c, (('IS_TRUE', ('CHECKMULTISIG', LIST("0"), LIST("1"), CONSTANT("2")))))
     if m:
 
         def f(solved_values, **kwargs):
@@ -357,7 +365,9 @@ def solutions_for_constraint(c, **kwargs):
                 secret_exponent = privkey_for_pubkey(sec_key)
                 if not secret_exponent:
                     continue
-                binary_signature = kwargs["signature_for_secret_exponent"](secret_exponent, signature_type)
+                signature_type = kwargs.get("signature_type")
+                sig_hash = m["2"](signature_type)
+                binary_signature = _create_script_signature(secret_exponent, sig_hash, signature_type)
                 existing_signatures.append((signature_order, binary_signature))
 
             # pad with placeholder signatures
@@ -400,7 +410,7 @@ def constraint_matches(c, m):
                 d.update(d1)
                 continue
             if isinstance(m1, CONSTANT):
-                if isinstance(c1, (int, bytes)):
+                if not isinstance(c1, Atom):
                     d[m1._name] = c1
                     continue
             if isinstance(m1, VAR):
@@ -453,16 +463,8 @@ def test_tx(incoming_script, **kwargs):
             if pubkey == key.sec():
                 return key.secret_exponent()
 
-    def signature_for_secret_exponent(secret_exponent, signature_type):
-        sc = BitcoinSolutionChecker(tx)
-        tx_context = sc.tx_context_for_idx(tx_in_idx)
-        tx_out_script = tx.unspents[tx_in_idx].script
-        sig_hash = sc.signature_hash(tx_out_script, tx_in_idx, signature_type)
-        return _create_script_signature(secret_exponent, sig_hash, signature_type, incoming_script)
-
     kwargs.update(dict(pubkey_for_hash=pubkey_for_hash,
                        privkey_for_pubkey=privkey_for_pubkey,
-                       signature_for_secret_exponent=signature_for_secret_exponent,
                        signature_type=1))
 
     test_solve(tx, tx_in_idx, **kwargs)
