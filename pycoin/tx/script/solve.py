@@ -4,9 +4,10 @@ import functools
 import pdb
 
 from ..Tx import Tx, TxIn, TxOut
+from ..script.checksigops import parse_signature_blob
 from ...key import Key
 from ...ui import address_for_pay_to_script, standard_tx_out_script
-from ..script.checksigops import parse_signature_blob
+from ...serialize import b2h
 
 from pycoin import ecdsa
 from pycoin import encoding
@@ -65,6 +66,10 @@ class Atom(object):
     def dependencies(self):
         return frozenset([self])
 
+    def __len__(self):
+        # HACK to allow MAX_BLOB_LENGTH comparison to succeed
+        return 0
+
     def __eq__(self, other):
         if isinstance(other, Atom):
             return self.name == other.name
@@ -108,12 +113,13 @@ class Operator(Atom):
 
 
 class DynamicStack(list):
-    def __init__(self, l=[], reserve_count=0):
+    def __init__(self, l=[], reserve_count=0, fill_template="x_%d"):
         self.total_item_count = reserve_count
+        self.fill_template = fill_template
         super(DynamicStack, self).__init__(l)
 
     def _fill(self):
-        self.insert(0, Atom("x_%d" % self.total_item_count))
+        self.insert(0, Atom(self.fill_template % self.total_item_count))
         self.total_item_count += 1
 
     def pop(self, i=-1):
@@ -208,6 +214,7 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
 def determine_constraints(tx, tx_in_idx, **kwargs):
     solution_checker = BitcoinSolutionChecker(tx)
     tx_context = solution_checker.tx_context_for_idx(tx_in_idx)
+    tx_context.witness_solution_stack = DynamicStack([Atom("w_%d" % (1-_)) for _ in range(2)], fill_template="w_%d")
     script_hash = solution_checker.script_hash_from_script(tx_context.puzzle_script)
     if script_hash:
         underlying_script = kwargs.get("p2sh_lookup", {}).get(script_hash, None)
@@ -249,8 +256,11 @@ def solve_for_constraints(constraints, **kwargs):
             solved_values.update(s)
             progress = progress or (len(s) > 0)
 
-    solution_list = [solved_values.get(k) for k in sorted(solved_values.keys(), reverse=True)]
-    return solution_list
+    x_keys = sorted((k for k in solved_values.keys() if k > Atom("x")), reverse=True)
+    w_keys = sorted((k for k in solved_values.keys() if k < Atom("x")), reverse=True)
+    solution_list = [solved_values.get(k) for k in x_keys]
+    witness_list = [solved_values.get(k) for k in w_keys]
+    return solution_list, witness_list
 
 
 def solve(tx, tx_in_idx, **kwargs):
@@ -408,9 +418,12 @@ def constraint_matches(c, m):
 
 
 def test_solve(tx, tx_in_idx, **kwargs):
-    solution_script = BitcoinScriptTools.compile_push_data_list(solve(tx, tx_in_idx, **kwargs))
+    solution_list, witness_list = solve(tx, tx_in_idx, **kwargs)
+    solution_script = BitcoinScriptTools.compile_push_data_list(solution_list)
     print(BitcoinScriptTools.disassemble(solution_script))
+    print(witness_list)
     tx.txs_in[tx_in_idx].script = solution_script
+    tx.txs_in[tx_in_idx].witness = witness_list
     check_solution(tx, tx_in_idx)
 
 
@@ -487,6 +500,12 @@ def test_p2sh():
 
     script = ScriptPayToPublicKey.from_key(keys[2]).script()
     test_tx(script, p2sh_lookup=build_p2sh_lookup([script]))
+
+
+def test_p2pkh_wit():
+    key = Key(1)
+    script = BitcoinScriptTools.compile("OP_0 [%s]" % b2h(key.hash160()))
+    test_tx(script)
 
 
 def main():
