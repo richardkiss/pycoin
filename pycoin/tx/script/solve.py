@@ -482,6 +482,12 @@ def test_p2sh():
     script = ScriptMultisig(1, secs).script()
     test_tx(script, p2sh_lookup=build_p2sh_lookup([script]))
 
+    script = BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(keys[0].address())
+    test_tx(script, p2sh_lookup=build_p2sh_lookup([script]))
+
+    script = ScriptPayToPublicKey.from_key(keys[2]).script()
+    test_tx(script, p2sh_lookup=build_p2sh_lookup([script]))
+
 
 def main():
     if 1:
