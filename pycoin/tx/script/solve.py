@@ -1,5 +1,6 @@
 # generic solver
 
+import functools
 import pdb
 
 from ..Tx import Tx, TxIn, TxOut
@@ -56,16 +57,22 @@ def _find_signatures(script, signature_for_hash_type_f, script_to_hash, max_sigs
     return signatures, secs_solved
 
 
+@functools.total_ordering
 class Atom(object):
     def __init__(self, name):
         self.name = name
 
     def dependencies(self):
-        return frozenset([self.name])
+        return frozenset([self])
 
     def __eq__(self, other):
         if isinstance(other, Atom):
             return self.name == other.name
+        return False
+
+    def __lt__(self, other):
+        if isinstance(other, Atom):
+            return self.name < other.name
         return False
 
     def __hash__(self):
@@ -101,8 +108,9 @@ class Operator(Atom):
 
 
 class DynamicStack(list):
-    def __init__(self):
-        self.total_item_count = 0
+    def __init__(self, l=[], reserve_count=0):
+        self.total_item_count = reserve_count
+        super(DynamicStack, self).__init__(l)
 
     def _fill(self):
         self.insert(0, Atom("x_%d" % self.total_item_count))
@@ -132,7 +140,7 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
     def prelaunch(vmc):
         if not vmc.is_solution_script:
             # reset stack
-            vmc.stack = DynamicStack()
+            vmc.stack = DynamicStack(vmc.stack, kwargs.get("solution_reserve_count", 0))
 
     def traceback_f(opcode, data, pc, vm):
         stack = vm.stack
@@ -190,7 +198,6 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
     def postscript(vmc):
         if not vmc.is_solution_script:
             constraints.append(Operator('IS_TRUE', vmc.stack[-1]))
-            constraints.append(Operator('SOLUTION_STACK_SIZE', vmc.stack.total_item_count))
             vmc.stack = [vmc.VM_TRUE]
 
     traceback_f.prelaunch = prelaunch
@@ -206,7 +213,8 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
         underlying_script = kwargs.get("p2sh_lookup", {}).get(script_hash, None)
         if underlying_script is None:
             raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
-        tx_context.puzzle_script = underlying_script
+        tx_context.solution_script = BitcoinScriptTools.compile_push_data_list([underlying_script])
+        kwargs["solution_reserve_count"] = 1
     constraints = []
     try:
         solution_checker.check_solution(
@@ -214,9 +222,7 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
     except ScriptError:
         pass
     if script_hash:
-        size_constraint = constraints[-1]
-        constraints = [Operator('P2SH', Atom("x_0"), Atom("x_1"), underlying_script, tuple(constraints))]
-        constraints.append(Operator('SOLUTION_STACK_SIZE', size_constraint._args[0] + 1))
+        constraints.append(Operator('IS_EQUAL', Atom("x_0"), underlying_script))
     return constraints
 
 
@@ -227,8 +233,10 @@ def solve_for_constraints(constraints, **kwargs):
         # s = (solution_f, target atom, dependency atom list)
         if s:
             solutions.append(s)
-    max_stack_size = solutions.pop()[0](None)["stack_size"] # gross hack
-    solved_values = dict((Atom("x_%d" % i), None) for i in range(max_stack_size))
+    deps = set()
+    for c in constraints:
+        deps.update(c.dependencies())
+    solved_values = { d: None for d in deps }
     progress = True
     while progress and any(v is None for v in solved_values.values()):
         progress = False
@@ -241,8 +249,8 @@ def solve_for_constraints(constraints, **kwargs):
             solved_values.update(s)
             progress = progress or (len(s) > 0)
 
-    solution_list = [solved_values.get(Atom("x_%d" % i)) for i in reversed(range(max_stack_size))]
-    return BitcoinScriptTools.compile_push_data_list(solution_list)
+    solution_list = [solved_values.get(k) for k in sorted(solved_values.keys(), reverse=True)]
+    return solution_list
 
 
 def solve(tx, tx_in_idx, **kwargs):
@@ -350,25 +358,13 @@ def solutions_for_constraint(c, **kwargs):
             return dict(zip(signature_variables, (es[-1] for es in existing_signatures)))
         return (f, m["1"], ())
 
-    m = constraint_matches(c, (('P2SH', VAR("0"), VAR("1"), CONSTANT("2"), LIST("3"))))
-    if m:
-
-        solution_list = solve_for_constraints(m["3"], **kwargs)
-        def f(solved_values, **kwargs):
-            underlying_script = m["2"]
-            constraints = m["3"]
-            pdb.set_trace()
-            d = { m["%d" % (idx+1)]: s for idx, s in enumerate(solution_list) }
-            d[m["0"]] = underlying_script
-            return d
-        return (f, [m["0"], m["1"]], ())
-
-    m = constraint_matches(c, ('SOLUTION_STACK_SIZE', CONSTANT("0")))
+    m = constraint_matches(c, (('IS_EQUAL', VAR("0"), CONSTANT("1"))))
     if m:
 
         def f(solved_values, **kwargs):
-            return { "stack_size" : m["0"] }
-        return (f, (), ())
+            return {m["0"]: m["1"]}
+        return (f, [m["0"]], ())
+
 
 
     return None
@@ -412,7 +408,7 @@ def constraint_matches(c, m):
 
 
 def test_solve(tx, tx_in_idx, **kwargs):
-    solution_script = solve(tx, tx_in_idx, **kwargs)
+    solution_script = BitcoinScriptTools.compile_push_data_list(solve(tx, tx_in_idx, **kwargs))
     print(BitcoinScriptTools.disassemble(solution_script))
     tx.txs_in[tx_in_idx].script = solution_script
     check_solution(tx, tx_in_idx)
@@ -481,14 +477,10 @@ def test_p2multisig():
 
 
 def test_p2sh():
-    M, N = 3, 3
-    keys = [Key(secret_exponent=i) for i in range(1, N+2)]
-    tx_in = TxIn.coinbase_tx_in(script=b'')
-    underlying_script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
-    address = address_for_pay_to_script(underlying_script)
-    assert address == "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q"
-    script = standard_tx_out_script(address)
-    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
+    keys = [Key(i) for i in (1, 2, 3)]
+    secs = [k.sec() for k in keys]
+    script = ScriptMultisig(1, secs).script()
+    test_tx(script, p2sh_lookup=build_p2sh_lookup([script]))
 
 
 def main():
