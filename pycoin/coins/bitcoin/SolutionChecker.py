@@ -53,8 +53,6 @@ class BitcoinSolutionChecker(SolutionChecker):
 
     def check_solution(self, tx_context, flags, traceback_f=None):
         """
-        solution_script: alleged solution to the puzzle_script
-        puzzle_script: the script protecting the coins
         tx_context: information about the transaction that the VM may need
         flags: gives the VM hints about which additional constraints to check
         """
@@ -356,6 +354,10 @@ class BitcoinSolutionChecker(SolutionChecker):
         return bytes(new_script)
 
     def tx_context_for_idx(self, tx_in_idx):
+        """
+        solution_script: alleged solution to the puzzle_script
+        puzzle_script: the script protecting the coins
+        """
         tx_in = self.tx.txs_in[tx_in_idx]
         unspent = self.tx.unspents[tx_in_idx]
         tx_out_script = unspent.script
