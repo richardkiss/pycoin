@@ -224,22 +224,23 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
     tx_context = solution_checker.tx_context_for_idx(tx_in_idx)
     tx_context.witness_solution_stack = DynamicStack([Atom("w_%d" % (1-_)) for _ in range(2)], fill_template="w_%d")
     script_hash = solution_checker.script_hash_from_script(tx_context.puzzle_script)
+    witness_version = solution_checker.witness_program_version(tx_context.puzzle_script)
     if script_hash:
         underlying_script = kwargs.get("p2sh_lookup", {}).get(script_hash, None)
         if underlying_script is None:
             raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
         tx_context.solution_script = BitcoinScriptTools.compile_push_data_list([underlying_script])
         kwargs["solution_reserve_count"] = 1
-    witness_version = solution_checker.witness_program_version(tx_context.puzzle_script)
+        witness_version = solution_checker.witness_program_version(underlying_script)
     if witness_version == 0:
-        witness_program = tx_context.puzzle_script[2:]
+        witness_program = (underlying_script if script_hash else tx_context.puzzle_script)[2:]
         if len(witness_program) == 32:
-            underlying_script = kwargs.get("p2sh_lookup", {}).get(witness_program, None)
-            if underlying_script is None:
+            underlying_script_wit = kwargs.get("p2sh_lookup", {}).get(witness_program, None)
+            if underlying_script_wit is None:
                 raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
             kwargs["fill_template"] = "w_%d"
             kwargs["solution_reserve_count"] = 1
-            tx_context.witness_solution_stack = [underlying_script]
+            tx_context.witness_solution_stack = [underlying_script_wit]
     constraints = []
     try:
         solution_checker.check_solution(
@@ -250,7 +251,7 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
         constraints.append(Operator('IS_EQUAL', Atom("x_0"), underlying_script))
     if witness_version == 0:
         if len(witness_program) == 32:
-            constraints.append(Operator('IS_EQUAL', Atom("w_0"), underlying_script))
+            constraints.append(Operator('IS_EQUAL', Atom("w_0"), underlying_script_wit))
     return constraints
 
 
@@ -508,14 +509,17 @@ def test_p2multisig():
 def test_p2sh():
     keys = [Key(i) for i in (1, 2, 3)]
     secs = [k.sec() for k in keys]
-    script = ScriptMultisig(1, secs).script()
-    test_tx(script, p2sh_lookup=build_p2sh_lookup([script]))
+    underlying_script = ScriptMultisig(1, secs).script()
+    script = standard_tx_out_script(address_for_pay_to_script(underlying_script))
+    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
-    script = BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(keys[0].address())
-    test_tx(script, p2sh_lookup=build_p2sh_lookup([script]))
+    underlying_script = BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(keys[0].address())
+    script = standard_tx_out_script(address_for_pay_to_script(underlying_script))
+    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
-    script = ScriptPayToPublicKey.from_key(keys[2]).script()
-    test_tx(script, p2sh_lookup=build_p2sh_lookup([script]))
+    underlying_script = ScriptPayToPublicKey.from_key(keys[2]).script()
+    script = standard_tx_out_script(address_for_pay_to_script(underlying_script))
+    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
 
 def test_p2pkh_wit():
@@ -528,9 +532,17 @@ def test_p2sh_wit():
     keys = [Key(i) for i in (1, 2, 3)]
     secs = [k.sec() for k in keys]
     underlying_script = ScriptMultisig(2, secs).script()
-    print("UNDERLYING: ", underlying_script)
     script = BitcoinScriptTools.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
     test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
+
+
+def test_p2multisig_wit():
+    keys = [Key(i) for i in (1, 2, 3)]
+    secs = [k.sec() for k in keys]
+    underlying_script = ScriptMultisig(2, secs).script()
+    p2sh_script = BitcoinScriptTools.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
+    script = standard_tx_out_script(address_for_pay_to_script(p2sh_script))
+    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script, p2sh_script]))
 
 
 def main():
@@ -541,7 +553,8 @@ def main():
         test_p2multisig()
         test_p2sh()
         test_p2pkh_wit()
-    test_p2sh_wit()
+        test_p2sh_wit()
+    test_p2multisig_wit()
 
 
 if __name__ == '__main__':
