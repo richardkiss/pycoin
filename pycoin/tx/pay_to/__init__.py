@@ -35,7 +35,6 @@ def build_hash160_lookup(secret_exponents):
     d = {}
     for secret_exponent in secret_exponents:
         key = Key(secret_exponent)
-        public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, secret_exponent)
         for compressed in (True, False):
             t = (secret_exponent, key.public_pair(), compressed)
             d[key.hash160(use_uncompressed=not compressed)] = t

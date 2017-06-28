@@ -103,8 +103,8 @@ class Solver(object):
     def solve(self, *args, **kwargs):
         s1 = self.solve_old(*args, **kwargs)
         s2 = self.solve_new(*args, **kwargs)
-        #assert s1 == s2
-        return s2
+        assert s1 == s2
+        return s1
 
     def sign(self, hash160_lookup, tx_in_idx_set=None, hash_type=None, **kwargs):
         """

@@ -112,7 +112,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_signature_count(), 1)
-        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys)
+        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:M])
         sign(tx2, hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)

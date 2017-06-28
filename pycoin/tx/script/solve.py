@@ -331,7 +331,7 @@ def solutions_for_constraint(c, **kwargs):
             result = db.get(the_hash)
             if result is None:
                 raise SolvingError("can't find secret exponent for %s" % b2h(pubkey))
-            return {m["1"]: Key(result[0]).sec(use_uncompressed=result[2])}
+            return {m["1"]: Key(result[0]).sec(use_uncompressed=not result[2])}
 
         return (f, [m["1"]], ())
 
