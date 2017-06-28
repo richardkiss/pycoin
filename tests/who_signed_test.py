@@ -20,7 +20,7 @@ from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup, script_obj
 from pycoin.ui import address_for_pay_to_script, standard_tx_out_script, script_obj_from_address
 
 
-class ScriptTypesTest(unittest.TestCase):
+class WhoSignedTest(unittest.TestCase):
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
@@ -31,7 +31,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_signature_count(), 1)
-        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys)
+        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:M])
         sign(tx2, hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
@@ -63,7 +63,7 @@ class ScriptTypesTest(unittest.TestCase):
         for i in range(1, N+1):
             self.assertEqual(tx2.bad_signature_count(), 1)
             self.assertEqual(tx2.id(), ids[i-1])
-            hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[i-1:i])
+            hash160_lookup = build_hash160_lookup([keys[i-1].secret_exponent()])
             sign(tx2, hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
             self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0)), sorted(((key.address(), SIGHASH_ALL) for key in keys[:i])))
