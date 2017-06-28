@@ -44,7 +44,8 @@ class Solver(object):
             kwargs["existing_script"] = [
                 data for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(
                     self.tx.txs_in[tx_in_idx].script) if data is not None]
-        solution_list, witness_list = solve(self.tx, tx_in_idx, hash160_lookup=hash160_lookup, signature_type=hash_type, **kwargs)
+        kwargs["signature_type"] = hash_type
+        solution_list, witness_list = solve(self.tx, tx_in_idx, hash160_lookup=hash160_lookup, **kwargs)
         solution_script = BitcoinScriptTools.compile_push_data_list(solution_list)
         if witness_list:
             return solution_script, witness_list
