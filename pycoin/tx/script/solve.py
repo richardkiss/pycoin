@@ -12,7 +12,7 @@ from ...serialize import b2h
 
 from pycoin import ecdsa
 from pycoin import encoding
-from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptPayToScript, build_p2sh_lookup
+from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptPayToScript, build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx.script import der, ScriptError
 from pycoin.intbytes import int2byte
 
@@ -21,6 +21,7 @@ from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker, check_s
 
 
 DEFAULT_PLACEHOLDER_SIGNATURE = b''
+DEFAULT_SIGNATURE_TYPE = 1
 
 
 def _create_script_signature(secret_exponent, sign_value, signature_type):
@@ -31,14 +32,13 @@ def _create_script_signature(secret_exponent, sign_value, signature_type):
     return der.sigencode_der(r, s) + int2byte(signature_type)
 
 
-def _find_signatures(script, signature_for_hash_type_f, script_to_hash, max_sigs, sec_keys):
+def _find_signatures(script_blobs, signature_for_hash_type_f, max_sigs, sec_keys):
     signatures = []
     secs_solved = set()
     pc = 0
     seen = 0
-    opcode, data, pc = VM.get_opcode(script, pc)
     # ignore the first opcode
-    for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(script):
+    for data in script_blobs:
         if seen >= max_sigs:
             break
         try:
@@ -46,13 +46,13 @@ def _find_signatures(script, signature_for_hash_type_f, script_to_hash, max_sigs
             seen += 1
             for idx, sec_key in enumerate(sec_keys):
                 public_pair = encoding.sec_to_public_pair(sec_key)
-                sign_value = signature_for_hash_type_f(signature_type, script_to_hash)
+                sign_value = signature_for_hash_type_f(signature_type)
                 v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
                 if v:
                     signatures.append((idx, data))
                     secs_solved.add(sec_key)
                     break
-        except (encoding.EncodingError, der.UnexpectedDER):
+        except (ValueError, encoding.EncodingError, der.UnexpectedDER):
             # if public_pair is invalid, we just ignore it
             pass
     return signatures, secs_solved
@@ -225,6 +225,7 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
     tx_context.witness_solution_stack = DynamicStack([Atom("w_%d" % (1-_)) for _ in range(2)], fill_template="w_%d")
     script_hash = solution_checker.script_hash_from_script(tx_context.puzzle_script)
     witness_version = solution_checker.witness_program_version(tx_context.puzzle_script)
+    tx_context.solution_script = b''
     if script_hash:
         underlying_script = kwargs.get("p2sh_lookup", {}).get(script_hash, None)
         if underlying_script is None:
@@ -326,7 +327,11 @@ def solutions_for_constraint(c, **kwargs):
         the_hash = m["0"]
 
         def f(solved_values, **kwargs):
-            return {m["1"]: kwargs["pubkey_for_hash"](the_hash)}
+            db = kwargs.get("hash160_lookup", {})
+            result = db.get(the_hash)
+            if result is None:
+                raise SolvingError("can't find secret exponent for %s" % b2h(pubkey))
+            return {m["1"]: Key(result[0]).sec(use_uncompressed=result[2])}
 
         return (f, [m["1"]], ())
 
@@ -342,8 +347,14 @@ def solutions_for_constraint(c, **kwargs):
 
         def f(solved_values, **kwargs):
             pubkey = lookup_solved_value(solved_values, m["0"])
-            privkey = kwargs["privkey_for_pubkey"](pubkey)
-            signature_type = kwargs.get("signature_type")
+            db = kwargs.get("hash160_lookup")
+            if db is None:
+                raise SolvingError("missing hash160_lookup parameter")
+            result = db.get(pubkey)
+            if result is None:
+                raise SolvingError("can't find secret exponent for %s" % b2h(pubkey))
+            privkey = result[0]
+            signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
             sig_hash = m["2"](signature_type)
             signature = _create_script_signature(privkey, sig_hash, signature_type)
             return {m["1"]: signature}
@@ -354,33 +365,33 @@ def solutions_for_constraint(c, **kwargs):
 
         def f(solved_values, **kwargs):
             signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f")
-            script_to_hash = kwargs.get("script_to_hash")
 
             secs_solved = set()
-            signature_type = kwargs.get("signature_type")
+            signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
 
             existing_signatures = []
             existing_script = kwargs.get("existing_script")
             if existing_script:
-                existing_signatures, secs_solved = _find_signatures(
-                    existing_script, signature_for_hash_type_f, script_to_hash)
+                existing_signatures, secs_solved = _find_signatures(existing_script, m["2"], len(m["1"]), m["0"])
 
             sec_keys = m["0"]
             signature_variables = m["1"]
 
             signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
 
-            privkey_for_pubkey = kwargs["privkey_for_pubkey"]
+            db = kwargs.get("hash160_lookup", {})
+            if db is None:
+                raise SolvingError("missing hash160_lookup parameter")
 
             for signature_order, sec_key in enumerate(sec_keys):
                 if sec_key in secs_solved:
                     continue
                 if len(existing_signatures) >= len(signature_variables):
                     break
-                secret_exponent = privkey_for_pubkey(sec_key)
-                if not secret_exponent:
+                result = db.get(sec_key)
+                if result is None:
                     continue
-                signature_type = kwargs.get("signature_type")
+                secret_exponent = result[0]
                 sig_hash = m["2"](signature_type)
                 binary_signature = _create_script_signature(secret_exponent, sig_hash, signature_type)
                 existing_signatures.append((signature_order, binary_signature))
@@ -399,8 +410,6 @@ def solutions_for_constraint(c, **kwargs):
         def f(solved_values, **kwargs):
             return {m["0"]: m["1"]}
         return (f, [m["0"]], ())
-
-
 
     return None
 
@@ -467,21 +476,7 @@ def test_tx(incoming_script, **kwargs):
     keys = [Key(i) for i in range(1, 20)]
     tx = make_test_tx(incoming_script)
     tx_in_idx = 0
-
-    def pubkey_for_hash(the_hash):
-        for key in keys:
-            if the_hash == key.hash160():
-                return key.sec()
-
-    def privkey_for_pubkey(pubkey):
-        for key in keys:
-            if pubkey == key.sec():
-                return key.secret_exponent()
-
-    kwargs.update(dict(pubkey_for_hash=pubkey_for_hash,
-                       privkey_for_pubkey=privkey_for_pubkey,
-                       signature_type=1))
-
+    kwargs["hash160_lookup"] = build_hash160_lookup(k.secret_exponent() for k in keys)
     test_solve(tx, tx_in_idx, **kwargs)
 
 
@@ -545,6 +540,30 @@ def test_p2multisig_wit():
     test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script, p2sh_script]))
 
 
+def test_p2multisig_incremental():
+    keys = [Key(i) for i in (1, 2, 3)]
+    secs = [k.sec() for k in keys]
+    tx = make_test_tx(ScriptMultisig(3, secs).script())
+    tx_in_idx = 0
+    for k in keys:
+        try:
+            check_solution(tx, tx_in_idx)
+            assert 0
+        except ScriptError:
+            pass
+        kwargs = { "hash160_lookup": build_hash160_lookup([k.secret_exponent()]) }
+        kwargs["existing_script"] = [
+            data for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(
+                tx.txs_in[tx_in_idx].script) if data is not None]
+        solution_list, witness_list = solve(tx, tx_in_idx, **kwargs)
+        solution_script = BitcoinScriptTools.compile_push_data_list(solution_list)
+        print("SOLUTION LIST: ", solution_list)
+        print("WITNESS LIST : ", witness_list)
+        tx.txs_in[tx_in_idx].script = solution_script
+        tx.txs_in[tx_in_idx].witness = witness_list
+    check_solution(tx, tx_in_idx)
+
+
 def main():
     if 1:
         test_p2pkh()
@@ -554,7 +573,8 @@ def main():
         test_p2sh()
         test_p2pkh_wit()
         test_p2sh_wit()
-    test_p2multisig_wit()
+        test_p2multisig_wit()
+    test_p2multisig_incremental()
 
 
 if __name__ == '__main__':
