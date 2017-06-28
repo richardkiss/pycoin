@@ -9,6 +9,9 @@ from .VM import BitcoinVM
 
 from ...tx.script.flags import SIGHASH_ALL
 
+from pycoin.tx.pay_to.ScriptType import DEFAULT_PLACEHOLDER_SIGNATURE
+from pycoin.tx.script.solve import solve
+
 
 class Solver(object):
     SolutionChecker = BitcoinSolutionChecker
@@ -20,7 +23,34 @@ class Solver(object):
         self.solution_checker = self.SolutionChecker(tx)
         # self.sighash_cache = {}
 
-    def solve(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
+    def solve_new(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
+        """
+        Sign a standard transaction.
+        hash160_lookup:
+            An object with a get method that accepts a hash160 and returns the
+            corresponding (secret exponent, public_pair, is_compressed) tuple or
+            None if it's unknown (in which case the script will obviously not be signed).
+            A standard dictionary will do nicely here.
+        tx_in_idx:
+            the index of the tx_in we are currently signing
+        """
+        if hash_type is None:
+            hash_type = SIGHASH_ALL
+        if "signature_placeholder" not in kwargs:
+            kwargs["signature_placeholder"] = DEFAULT_PLACEHOLDER_SIGNATURE
+        if self.tx.txs_in[tx_in_idx].witness:
+            kwargs["existing_script"] = self.tx.txs_in[tx_in_idx].witness
+        else:
+            kwargs["existing_script"] = [
+                data for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(
+                    self.tx.txs_in[tx_in_idx].script) if data is not None]
+        solution_list, witness_list = solve(self.tx, tx_in_idx, hash160_lookup=hash160_lookup, signature_type=hash_type, **kwargs)
+        solution_script = BitcoinScriptTools.compile_push_data_list(solution_list)
+        if witness_list:
+            return solution_script, witness_list
+        return solution_script
+
+    def solve_old(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
         """
         Sign a standard transaction.
         hash160_lookup:
@@ -69,6 +99,12 @@ class Solver(object):
             existing_script=self.tx.txs_in[tx_in_idx].script, existing_witness=tx_in.witness,
             script_to_hash=script_to_hash, signature_for_hash_type_f=signature_for_hash_type_f, **kwargs)
         return solution
+
+    def solve(self, *args, **kwargs):
+        s1 = self.solve_old(*args, **kwargs)
+        s2 = self.solve_new(*args, **kwargs)
+        #assert s1 == s2
+        return s2
 
     def sign(self, hash160_lookup, tx_in_idx_set=None, hash_type=None, **kwargs):
         """

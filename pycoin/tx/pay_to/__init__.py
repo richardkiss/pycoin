@@ -31,12 +31,16 @@ def script_obj_from_script(script):
 
 
 def build_hash160_lookup(secret_exponents):
+    from ...key import Key
     d = {}
     for secret_exponent in secret_exponents:
+        key = Key(secret_exponent)
         public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, secret_exponent)
         for compressed in (True, False):
-            hash160 = encoding.public_pair_to_hash160_sec(public_pair, compressed=compressed)
-            d[hash160] = (secret_exponent, public_pair, compressed)
+            t = (secret_exponent, key.public_pair(), compressed)
+            d[key.hash160(use_uncompressed=not compressed)] = t
+            d[key.sec(use_uncompressed=not compressed)] = t
+            d[key.public_pair()] = t
     return d
 
 
