@@ -177,7 +177,7 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
 
                 t1 = vm.stack.pop()
                 t2 = vm.stack.pop()
-                t = Operator('CHECKSIG', t1, t2, sighash_f)
+                t = Operator('SIGNATURES_CORRECT', [t1], [t2], sighash_f)
                 constraints.append(Operator('IS_PUBKEY', t1))
                 constraints.append(Operator('IS_SIGNATURE', t2))
                 vm.stack.append(t)
@@ -200,7 +200,7 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
                     sig_blobs.append(vm.stack.pop())
                 t1 = vm.stack.pop()
                 constraints.append(Operator('IS_TRUE', Operator('EQUAL', t1, b'')))
-                t = Operator('CHECKMULTISIG', public_pair_blobs, sig_blobs, sighash_f)
+                t = Operator('SIGNATURES_CORRECT', public_pair_blobs, sig_blobs, sighash_f)
                 vm.stack.append(t)
             return my_op_checkmultisig
 
@@ -275,7 +275,7 @@ def solve_for_constraints(constraints, **kwargs):
         deps.update(c.dependencies())
     solved_values = { d: None for d in deps }
     progress = True
-    while progress and any(v is None for v in solved_values.values()):
+    while progress and None in solved_values.values():
         progress = False
         for solution, target, dependencies in solutions:
             if any(solved_values.get(t) is not None for t in target):
@@ -350,30 +350,10 @@ def solutions_for_constraint(c, **kwargs):
 
         return (f, [m["0"]], ())
 
-    m = constraint_matches(c, (('IS_TRUE', ('CHECKSIG', VAR("0"), VAR("1"), CONSTANT("2")))))
+    m = constraint_matches(c, (('IS_TRUE', ('SIGNATURES_CORRECT', LIST("0"), LIST("1"), CONSTANT("2")))))
     if m:
 
         def f(solved_values, **kwargs):
-            pubkey = lookup_solved_value(solved_values, m["0"])
-            db = kwargs.get("hash160_lookup")
-            if db is None:
-                raise SolvingError("missing hash160_lookup parameter")
-            result = db.get(pubkey)
-            if result is None:
-                raise SolvingError("can't find secret exponent for %s" % b2h(pubkey))
-            privkey = result[0]
-            signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
-            sig_hash = m["2"](signature_type)
-            signature = _create_script_signature(privkey, sig_hash, signature_type)
-            return {m["1"]: signature}
-        return (f, [m["1"]], filtered_dependencies(m["0"]))
-
-    m = constraint_matches(c, (('IS_TRUE', ('CHECKMULTISIG', LIST("0"), LIST("1"), CONSTANT("2")))))
-    if m:
-
-        def f(solved_values, **kwargs):
-            signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f")
-
             secs_solved = set()
             signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
 
@@ -392,6 +372,7 @@ def solutions_for_constraint(c, **kwargs):
                 raise SolvingError("missing hash160_lookup parameter")
 
             for signature_order, sec_key in enumerate(sec_keys):
+                sec_key = lookup_solved_value(solved_values, sec_key)
                 if sec_key in secs_solved:
                     continue
                 if len(existing_signatures) >= len(signature_variables):
@@ -410,7 +391,7 @@ def solutions_for_constraint(c, **kwargs):
                     existing_signatures.append((-1, signature_placeholder))
             existing_signatures.sort()
             return dict(zip(signature_variables, (es[-1] for es in existing_signatures)))
-        return (f, m["1"], ())
+        return (f, m["1"], [a for a in m["0"] if isinstance(a, Atom)])
 
     m = constraint_matches(c, (('IS_EQUAL', VAR("0"), CONSTANT("1"))))
     if m:
@@ -460,7 +441,7 @@ def constraint_matches(c, m):
 
 
 def test_solve(tx, tx_in_idx, **kwargs):
-    solution_list, witness_list = solve(tx, tx_in_idx, **kwargs)
+    solution_list, witness_list = solve(tx, tx_in_idx, verbose=True, **kwargs)
     solution_script = BitcoinScriptTools.compile_push_data_list(solution_list)
     print("SOLUTION LIST: ", solution_list)
     print("WITNESS LIST : ", witness_list)
