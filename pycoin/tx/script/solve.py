@@ -149,11 +149,6 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
             vmc.stack = DynamicStack(vmc.stack, kwargs.get("solution_reserve_count", 0), kwargs.get("fill_template", "x_%d"))
 
     def traceback_f(opcode, data, pc, vm):
-        stack = vm.stack
-        altstack = vm.altstack
-        if len(altstack) == 0:
-            altstack = ''
-        print("%s %s\n  %3x  %s" % (vm.stack, altstack, vm.pc, BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)))
         if opcode == OP_HASH160 and not isinstance(vm.stack[-1], bytes):
             def my_op_hash160(vm):
                 t = vm.stack.pop()
@@ -198,11 +193,11 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
                 for i in range(key_count):
                     constraints.append(Operator('IS_PUBKEY', vm.stack[-1]))
                     public_pair_blobs.append(vm.stack.pop())
-                signature_count = vm.IntStreamer.int_from_script_bytes(stack.pop(), require_minimal=False)
+                signature_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
                 sig_blobs = []
                 for i in range(signature_count):
                     constraints.append(Operator('IS_SIGNATURE', vm.stack[-1]))
-                    sig_blobs.append(stack.pop())
+                    sig_blobs.append(vm.stack.pop())
                 t1 = vm.stack.pop()
                 constraints.append(Operator('IS_TRUE', Operator('EQUAL', t1, b'')))
                 t = Operator('CHECKMULTISIG', public_pair_blobs, sig_blobs, sighash_f)
@@ -244,8 +239,20 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
             tx_context.witness_solution_stack = [underlying_script_wit]
     constraints = []
     try:
-        solution_checker.check_solution(
-            tx_context, traceback_f=make_traceback_f(solution_checker, tx_context, constraints, **kwargs))
+        traceback_f = make_traceback_f(solution_checker, tx_context, constraints, **kwargs)
+        if kwargs.get("verbose"):
+            otf = traceback_f
+            def tf(opcode, data, pc, vm):
+                stack = vm.stack
+                altstack = vm.altstack
+                if len(altstack) == 0:
+                    altstack = ''
+                print("%s %s\n  %3x  %s" % (vm.stack, altstack, vm.pc, BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)))
+                return otf(opcode, data, pc, vm)
+            tf.prelaunch = traceback_f.prelaunch
+            tf.postscript = traceback_f.postscript
+            traceback_f = tf
+        solution_checker.check_solution(tx_context, traceback_f=traceback_f)
     except ScriptError:
         pass
     if script_hash:
@@ -288,8 +295,9 @@ def solve_for_constraints(constraints, **kwargs):
 
 def solve(tx, tx_in_idx, **kwargs):
     constraints = determine_constraints(tx, tx_in_idx, **kwargs)
-    for c in constraints:
-        print(c, sorted(c.dependencies()))
+    if kwargs.get("verbose"):
+        for c in constraints:
+            print(c, sorted(c.dependencies()))
     return solve_for_constraints(constraints, **kwargs)
 
 
@@ -555,7 +563,7 @@ def test_p2multisig_incremental():
         kwargs["existing_script"] = [
             data for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(
                 tx.txs_in[tx_in_idx].script) if data is not None]
-        solution_list, witness_list = solve(tx, tx_in_idx, **kwargs)
+        solution_list, witness_list = solve(tx, tx_in_idx, verbose=True, **kwargs)
         solution_script = BitcoinScriptTools.compile_push_data_list(solution_list)
         print("SOLUTION LIST: ", solution_list)
         print("WITNESS LIST : ", witness_list)
