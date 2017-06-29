@@ -12,7 +12,6 @@ from ...serialize import b2h
 
 from pycoin import ecdsa
 from pycoin import encoding
-from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptPayToScript, build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx.script import der, ScriptError
 from pycoin.intbytes import int2byte
 
@@ -35,9 +34,7 @@ def _create_script_signature(secret_exponent, sign_value, signature_type):
 def _find_signatures(script_blobs, signature_for_hash_type_f, max_sigs, sec_keys):
     signatures = []
     secs_solved = set()
-    pc = 0
     seen = 0
-    # ignore the first opcode
     for data in script_blobs:
         if seen >= max_sigs:
             break
@@ -146,7 +143,8 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
     def prelaunch(vmc):
         if not vmc.is_solution_script:
             # reset stack
-            vmc.stack = DynamicStack(vmc.stack, kwargs.get("solution_reserve_count", 0), kwargs.get("fill_template", "x_%d"))
+            vmc.stack = DynamicStack(
+                vmc.stack, kwargs.get("solution_reserve_count", 0), kwargs.get("fill_template", "x_%d"))
 
     def traceback_f(opcode, data, pc, vm):
         if opcode == OP_HASH160 and not isinstance(vm.stack[-1], bytes):
@@ -242,12 +240,13 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
         traceback_f = make_traceback_f(solution_checker, tx_context, constraints, **kwargs)
         if kwargs.get("verbose"):
             otf = traceback_f
+
             def tf(opcode, data, pc, vm):
-                stack = vm.stack
                 altstack = vm.altstack
                 if len(altstack) == 0:
                     altstack = ''
-                print("%s %s\n  %3x  %s" % (vm.stack, altstack, vm.pc, BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)))
+                print("%s %s\n  %3x  %s" % (
+                    vm.stack, altstack, vm.pc, BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)))
                 return otf(opcode, data, pc, vm)
             tf.prelaunch = traceback_f.prelaunch
             tf.postscript = traceback_f.postscript
@@ -273,7 +272,7 @@ def solve_for_constraints(constraints, **kwargs):
     deps = set()
     for c in constraints:
         deps.update(c.dependencies())
-    solved_values = { d: None for d in deps }
+    solved_values = {d: None for d in deps}
     progress = True
     while progress and None in solved_values.values():
         progress = False
@@ -338,7 +337,7 @@ def solutions_for_constraint(c, **kwargs):
             db = kwargs.get("hash160_lookup", {})
             result = db.get(the_hash)
             if result is None:
-                raise SolvingError("can't find secret exponent for %s" % b2h(pubkey))
+                raise SolvingError("can't find secret exponent for %s" % b2h(the_hash))
             return {m["1"]: Key(result[0]).sec(use_uncompressed=not result[2])}
 
         return (f, [m["1"]], ())
@@ -368,9 +367,6 @@ def solutions_for_constraint(c, **kwargs):
             signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
 
             db = kwargs.get("hash160_lookup", {})
-            if db is None:
-                raise SolvingError("missing hash160_lookup parameter")
-
             for signature_order, sec_key in enumerate(sec_keys):
                 sec_key = lookup_solved_value(solved_values, sec_key)
                 if sec_key in secs_solved:
@@ -438,6 +434,13 @@ def constraint_matches(c, m):
                 continue
             return False
         return d
+
+
+# TESTS
+
+from pycoin.tx.pay_to import (
+    ScriptMultisig, ScriptPayToPublicKey, build_hash160_lookup, build_p2sh_lookup
+)
 
 
 def test_solve(tx, tx_in_idx, **kwargs):
@@ -540,7 +543,7 @@ def test_p2multisig_incremental():
             assert 0
         except ScriptError:
             pass
-        kwargs = { "hash160_lookup": build_hash160_lookup([k.secret_exponent()]) }
+        kwargs = {"hash160_lookup": build_hash160_lookup([k.secret_exponent()])}
         kwargs["existing_script"] = [
             data for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(
                 tx.txs_in[tx_in_idx].script) if data is not None]
