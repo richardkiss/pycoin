@@ -137,6 +137,8 @@ OP_EQUAL = BitcoinScriptTools.int_for_opcode("OP_EQUAL")
 OP_EQUALVERIFY = BitcoinScriptTools.int_for_opcode("OP_EQUALVERIFY")
 OP_CHECKSIG = BitcoinScriptTools.int_for_opcode("OP_CHECKSIG")
 OP_CHECKMULTISIG = BitcoinScriptTools.int_for_opcode("OP_CHECKMULTISIG")
+OP_IF = BitcoinScriptTools.int_for_opcode("OP_IF")
+
 
 def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
 
@@ -147,6 +149,13 @@ def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
                 vmc.stack, kwargs.get("solution_reserve_count", 0), kwargs.get("fill_template", "x_%d"))
 
     def traceback_f(opcode, data, pc, vm):
+        if opcode == OP_IF and not isinstance(vm.stack[-1], bytes):
+            def my_op_if(vm):
+                pdb.set_trace()
+                t = vm.stack.pop()
+                t = Operator('IF', t)
+                vm.stack.append(t)
+            return my_op_if
         if opcode == OP_HASH160 and not isinstance(vm.stack[-1], bytes):
             def my_op_hash160(vm):
                 t = vm.stack.pop()
@@ -531,6 +540,11 @@ def test_p2multisig_wit():
     script = standard_tx_out_script(address_for_pay_to_script(p2sh_script))
     test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script, p2sh_script]))
 
+
+def test_if():
+    script = BitcoinScriptTools.compile("IF 1 ELSE 0 ENDIF")
+    print(BitcoinScriptTools.disassemble(script))
+    test_tx(script)
 
 def test_p2multisig_incremental():
     keys = [Key(i) for i in (1, 2, 3)]
