@@ -140,76 +140,94 @@ OP_CHECKMULTISIG = BitcoinScriptTools.int_for_opcode("OP_CHECKMULTISIG")
 OP_IF = BitcoinScriptTools.int_for_opcode("OP_IF")
 
 
-def make_traceback_f(solution_checker, tx_context, constraints, **kwargs):
+def my_op_if(vm):
+    pdb.set_trace()
+    t = vm.stack.pop()
+    t = Operator('IF', t)
+    vm.stack.append(t)
+
+
+def my_op_hash160(vm):
+    t = vm.stack.pop()
+    t = Operator('HASH160', t)
+    vm.stack.append(t)
+
+
+my_op_hash160.stack_size = 1
+
+
+def my_op_equal(vm):
+    t1 = vm.stack.pop()
+    t2 = vm.stack.pop()
+    c = Operator('EQUAL', t1, t2)
+    vm.append(c)
+
+
+my_op_equal.stack_size = 2
+
+
+def make_traceback_f(solution_checker, tx_context, constraints, reset_stack_f):
+
+    def my_op_equalverify(vm):
+        t1 = vm.stack.pop()
+        t2 = vm.stack.pop()
+        c = Operator('IS_TRUE', Operator('EQUAL', t1, t2))
+        constraints.append(c)
+    my_op_equalverify.stack_size = 2
+
+    def my_op_checksig(vm):
+
+        def sighash_f(signature_type):
+            return vm.signature_for_hash_type_f(signature_type, [], vm)
+
+        t1 = vm.stack.pop()
+        t2 = vm.stack.pop()
+        t = Operator('SIGNATURES_CORRECT', [t1], [t2], sighash_f)
+        constraints.append(Operator('IS_PUBKEY', t1))
+        constraints.append(Operator('IS_SIGNATURE', t2))
+        vm.stack.append(t)
+
+    def my_op_checkmultisig(vm):
+
+        def sighash_f(signature_type):
+            return vm.signature_for_hash_type_f(signature_type, [], vm)
+
+        key_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
+        public_pair_blobs = []
+        for i in range(key_count):
+            constraints.append(Operator('IS_PUBKEY', vm.stack[-1]))
+            public_pair_blobs.append(vm.stack.pop())
+        signature_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
+        sig_blobs = []
+        for i in range(signature_count):
+            constraints.append(Operator('IS_SIGNATURE', vm.stack[-1]))
+            sig_blobs.append(vm.stack.pop())
+        t1 = vm.stack.pop()
+        constraints.append(Operator('IS_TRUE', Operator('EQUAL', t1, b'')))
+        t = Operator('SIGNATURES_CORRECT', public_pair_blobs, sig_blobs, sighash_f)
+        vm.stack.append(t)
+
+    MY_OPCODES = {
+        OP_HASH160: my_op_hash160,
+        OP_EQUALVERIFY: my_op_equalverify,
+        OP_EQUAL: my_op_equal,
+        OP_CHECKSIG: my_op_checksig,
+        OP_CHECKMULTISIG: my_op_checkmultisig,
+    }
 
     def prelaunch(vmc):
         if not vmc.is_solution_script:
             # reset stack
-            vmc.stack = DynamicStack(
-                vmc.stack, kwargs.get("solution_reserve_count", 0), kwargs.get("fill_template", "x_%d"))
+            vmc.stack = reset_stack_f(vmc.stack)
 
     def traceback_f(opcode, data, pc, vm):
-        if opcode == OP_IF and not isinstance(vm.stack[-1], bytes):
-            def my_op_if(vm):
-                pdb.set_trace()
-                t = vm.stack.pop()
-                t = Operator('IF', t)
-                vm.stack.append(t)
-            return my_op_if
-        if opcode == OP_HASH160 and not isinstance(vm.stack[-1], bytes):
-            def my_op_hash160(vm):
-                t = vm.stack.pop()
-                t = Operator('HASH160', t)
-                vm.stack.append(t)
-            return my_op_hash160
-        if opcode == OP_EQUALVERIFY and any(not isinstance(v, bytes) for v in vm.stack[-2:]):
-            def my_op_equalverify(vm):
-                t1 = vm.stack.pop()
-                t2 = vm.stack.pop()
-                c = Operator('IS_TRUE', Operator('EQUAL', t1, t2))
-                constraints.append(c)
-            return my_op_equalverify
-        if opcode == OP_EQUAL and any(not isinstance(v, bytes) for v in vm.stack[-2:]):
-            def my_op_equalverify(vm):
-                t1 = vm.stack.pop()
-                t2 = vm.stack.pop()
-                c = Operator('EQUAL', t1, t2)
-                vm.append(c)
-            return my_op_equalverify
-        if opcode == OP_CHECKSIG:
-            def my_op_checksig(vm):
-
-                def sighash_f(signature_type):
-                    return vm.signature_for_hash_type_f(signature_type, [], vm)
-
-                t1 = vm.stack.pop()
-                t2 = vm.stack.pop()
-                t = Operator('SIGNATURES_CORRECT', [t1], [t2], sighash_f)
-                constraints.append(Operator('IS_PUBKEY', t1))
-                constraints.append(Operator('IS_SIGNATURE', t2))
-                vm.stack.append(t)
-            return my_op_checksig
-        if opcode == OP_CHECKMULTISIG:
-            def my_op_checkmultisig(vm):
-
-                def sighash_f(signature_type):
-                    return vm.signature_for_hash_type_f(signature_type, [], vm)
-
-                key_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
-                public_pair_blobs = []
-                for i in range(key_count):
-                    constraints.append(Operator('IS_PUBKEY', vm.stack[-1]))
-                    public_pair_blobs.append(vm.stack.pop())
-                signature_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
-                sig_blobs = []
-                for i in range(signature_count):
-                    constraints.append(Operator('IS_SIGNATURE', vm.stack[-1]))
-                    sig_blobs.append(vm.stack.pop())
-                t1 = vm.stack.pop()
-                constraints.append(Operator('IS_TRUE', Operator('EQUAL', t1, b'')))
-                t = Operator('SIGNATURES_CORRECT', public_pair_blobs, sig_blobs, sighash_f)
-                vm.stack.append(t)
-            return my_op_checkmultisig
+        f = MY_OPCODES.get(opcode)
+        if f is None:
+            return
+        stack_size = getattr(f, "stack_size", 0)
+        if stack_size and all(not isinstance(v, Atom) for v in vm.stack[-stack_size:]):
+            return
+        return f
 
     def postscript(vmc):
         if not vmc.is_solution_script:
@@ -228,12 +246,14 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
     script_hash = solution_checker.script_hash_from_script(tx_context.puzzle_script)
     witness_version = solution_checker.witness_program_version(tx_context.puzzle_script)
     tx_context.solution_script = b''
+    solution_reserve_count = 0
+    fill_template = "x_%d"
     if script_hash:
         underlying_script = kwargs.get("p2sh_lookup", {}).get(script_hash, None)
         if underlying_script is None:
             raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
         tx_context.solution_script = BitcoinScriptTools.compile_push_data_list([underlying_script])
-        kwargs["solution_reserve_count"] = 1
+        solution_reserve_count = 1
         witness_version = solution_checker.witness_program_version(underlying_script)
     if witness_version == 0:
         witness_program = (underlying_script if script_hash else tx_context.puzzle_script)[2:]
@@ -241,12 +261,16 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
             underlying_script_wit = kwargs.get("p2sh_lookup", {}).get(witness_program, None)
             if underlying_script_wit is None:
                 raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
-            kwargs["fill_template"] = "w_%d"
-            kwargs["solution_reserve_count"] = 1
+            fill_template = "w_%d"
+            solution_reserve_count = 1
             tx_context.witness_solution_stack = [underlying_script_wit]
     constraints = []
+
+    def reset_stack_f(stack):
+        return DynamicStack(stack, solution_reserve_count, fill_template)
+
     try:
-        traceback_f = make_traceback_f(solution_checker, tx_context, constraints, **kwargs)
+        traceback_f = make_traceback_f(solution_checker, tx_context, constraints, reset_stack_f)
         if kwargs.get("verbose"):
             otf = traceback_f
 
@@ -264,17 +288,17 @@ def determine_constraints(tx, tx_in_idx, **kwargs):
     except ScriptError:
         pass
     if script_hash:
-        constraints.append(Operator('IS_EQUAL', Atom("x_0"), underlying_script))
+        constraints.append(Operator('IS_TRUE', Operator('EQUAL', Atom("x_0"), underlying_script)))
     if witness_version == 0:
         if len(witness_program) == 32:
-            constraints.append(Operator('IS_EQUAL', Atom("w_0"), underlying_script_wit))
+            constraints.append(Operator('IS_TRUE', Operator('EQUAL', Atom("w_0"), underlying_script_wit)))
     return constraints
 
 
 def solve_for_constraints(constraints, **kwargs):
     solutions = []
     for c in constraints:
-        s = solutions_for_constraint(c, **kwargs)
+        s = solutions_for_constraint(c)
         # s = (solution_f, target atom, dependency atom list)
         if s:
             solutions.append(s)
@@ -324,25 +348,19 @@ class LIST(object):
         self._name = name
 
 
-def solutions_for_constraint(c, **kwargs):
-    # given a constraint c
-    # return None or
-    # a solution (solution_f, target atom, dependency atom list)
-    # where solution_f take list of solved values
+def lookup_solved_value(solved_values, item):
+    if isinstance(item, Atom):
+        return solved_values[item]
+    return item
 
-    def lookup_solved_value(solved_values, item):
-        if isinstance(item, Atom):
-            return solved_values[item]
-        return item
 
-    def filtered_dependencies(*args):
-        return [a for a in args if isinstance(a, Atom)]
+def solution_constraint_lookup():
+    l = []
 
-    m = constraint_matches(c, ('IS_TRUE', ('EQUAL', CONSTANT("0"), ('HASH160', VAR("1")))))
-    if m:
-        the_hash = m["0"]
+    def factory(m):
 
         def f(solved_values, **kwargs):
+            the_hash = m["the_hash"]
             db = kwargs.get("hash160_lookup", {})
             result = db.get(the_hash)
             if result is None:
@@ -351,27 +369,29 @@ def solutions_for_constraint(c, **kwargs):
 
         return (f, [m["1"]], ())
 
-    m = constraint_matches(c, ('IS_TRUE', ('EQUAL', VAR("0"), CONSTANT('1'))))
-    if m:
+    factory.pattern = ('IS_TRUE', ('EQUAL', CONSTANT("the_hash"), ('HASH160', VAR("1"))))
+    l.append(factory)
+
+    def factory(m):
+
         def f(solved_values, **kwargs):
-            return {m["0"]: m["1"]}
+            return {m["var"]: m["const"]}
 
-        return (f, [m["0"]], ())
+        return (f, [m["var"]], ())
 
-    m = constraint_matches(c, (('IS_TRUE', ('SIGNATURES_CORRECT', LIST("0"), LIST("1"), CONSTANT("2")))))
-    if m:
+    factory.pattern = ('IS_TRUE', ('EQUAL', VAR("var"), CONSTANT('const')))
+    l.append(factory)
 
+    def factory(m):
         def f(solved_values, **kwargs):
             secs_solved = set()
             signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
 
-            existing_signatures = []
-            existing_script = kwargs.get("existing_script")
-            if existing_script:
-                existing_signatures, secs_solved = _find_signatures(existing_script, m["2"], len(m["1"]), m["0"])
+            existing_signatures, secs_solved = _find_signatures(kwargs.get(
+                "existing_script", b''), m["signature_for_hash_type_f"], len(m["sig_list"]), m["sec_list"])
 
-            sec_keys = m["0"]
-            signature_variables = m["1"]
+            sec_keys = m["sec_list"]
+            signature_variables = m["sig_list"]
 
             signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
 
@@ -386,7 +406,7 @@ def solutions_for_constraint(c, **kwargs):
                 if result is None:
                     continue
                 secret_exponent = result[0]
-                sig_hash = m["2"](signature_type)
+                sig_hash = m["signature_for_hash_type_f"](signature_type)
                 binary_signature = _create_script_signature(secret_exponent, sig_hash, signature_type)
                 existing_signatures.append((signature_order, binary_signature))
 
@@ -396,16 +416,31 @@ def solutions_for_constraint(c, **kwargs):
                     existing_signatures.append((-1, signature_placeholder))
             existing_signatures.sort()
             return dict(zip(signature_variables, (es[-1] for es in existing_signatures)))
-        return (f, m["1"], [a for a in m["0"] if isinstance(a, Atom)])
+        return (f, m["sig_list"], [a for a in m["sec_list"] if isinstance(a, Atom)])
 
-    m = constraint_matches(c, (('IS_EQUAL', VAR("0"), CONSTANT("1"))))
-    if m:
+    factory.pattern = ('IS_TRUE', (
+        'SIGNATURES_CORRECT', LIST("sec_list"), LIST("sig_list"), CONSTANT("signature_for_hash_type_f")))
+    l.append(factory)
 
-        def f(solved_values, **kwargs):
-            return {m["0"]: m["1"]}
-        return (f, [m["0"]], ())
+    return l
 
-    return None
+
+SOLUTIONS_BY_CONSTRAINT = solution_constraint_lookup()
+
+
+def solutions_for_constraint(c):
+    # given a constraint c
+    # return None or
+    # a solution (solution_f, target atom, dependency atom list)
+    # where solution_f take list of solved values
+
+    def filtered_dependencies(*args):
+        return [a for a in args if isinstance(a, Atom)]
+
+    for f_factory in SOLUTIONS_BY_CONSTRAINT:
+        m = constraint_matches(c, f_factory.pattern)
+        if m:
+            return f_factory(m)
 
 
 def constraint_matches(c, m):
@@ -545,6 +580,7 @@ def test_if():
     script = BitcoinScriptTools.compile("IF 1 ELSE 0 ENDIF")
     print(BitcoinScriptTools.disassemble(script))
     test_tx(script)
+
 
 def test_p2multisig_incremental():
     keys = [Key(i) for i in (1, 2, 3)]
