@@ -10,7 +10,30 @@ from .VM import BitcoinVM
 from ...tx.script.flags import SIGHASH_ALL
 
 from pycoin.tx.pay_to.ScriptType import DEFAULT_PLACEHOLDER_SIGNATURE
-from pycoin.tx.script.solve import Atom, DynamicStack, Operator, make_traceback_f, solutions_for_constraint
+from pycoin.tx.script.solve import Atom, Operator, make_traceback_f, solutions_for_constraint
+
+
+class DynamicStack(list):
+    def __init__(self, l=[], reserve_count=0, fill_template="x_%d"):
+        self.total_item_count = reserve_count
+        self.fill_template = fill_template
+        super(DynamicStack, self).__init__(l)
+
+    def _fill(self):
+        self.insert(0, Atom(self.fill_template % self.total_item_count))
+        self.total_item_count += 1
+
+    def pop(self, i=-1):
+        while len(self) < abs(i):
+            self._fill()
+        return super(DynamicStack, self).pop(i)
+
+    def __getitem__(self, *args, **kwargs):
+        while True:
+            try:
+                return super(DynamicStack, self).__getitem__(*args, **kwargs)
+            except IndexError:
+                self._fill()
 
 
 class Solver(object):

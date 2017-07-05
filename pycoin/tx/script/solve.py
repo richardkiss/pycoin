@@ -20,14 +20,6 @@ DEFAULT_PLACEHOLDER_SIGNATURE = b''
 DEFAULT_SIGNATURE_TYPE = 1
 
 
-def _create_script_signature(secret_exponent, sign_value, signature_type):
-    order = ecdsa.generator_secp256k1.order()
-    r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
-    if s + s > order:
-        s = order - s
-    return der.sigencode_der(r, s) + int2byte(signature_type)
-
-
 def _find_signatures(script_blobs, signature_for_hash_type_f, max_sigs, sec_keys):
     signatures = []
     secs_solved = set()
@@ -104,29 +96,6 @@ class Operator(Atom):
 
     def __repr__(self):
         return "(%s %s)" % (self._op_name, ' '.join(repr(a) for a in self._args))
-
-
-class DynamicStack(list):
-    def __init__(self, l=[], reserve_count=0, fill_template="x_%d"):
-        self.total_item_count = reserve_count
-        self.fill_template = fill_template
-        super(DynamicStack, self).__init__(l)
-
-    def _fill(self):
-        self.insert(0, Atom(self.fill_template % self.total_item_count))
-        self.total_item_count += 1
-
-    def pop(self, i=-1):
-        while len(self) < abs(i):
-            self._fill()
-        return super(DynamicStack, self).pop(i)
-
-    def __getitem__(self, *args, **kwargs):
-        while True:
-            try:
-                return super(DynamicStack, self).__getitem__(*args, **kwargs)
-            except IndexError:
-                self._fill()
 
 
 OP_HASH160 = BitcoinScriptTools.int_for_opcode("OP_HASH160")
@@ -287,11 +256,10 @@ def solution_constraint_lookup():
 
     def factory(m):
         def f(solved_values, **kwargs):
-            secs_solved = set()
             signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
-
+            signature_for_hash_type_f = m["signature_for_hash_type_f"]
             existing_signatures, secs_solved = _find_signatures(kwargs.get(
-                "existing_script", b''), m["signature_for_hash_type_f"], len(m["sig_list"]), m["sec_list"])
+                "existing_script", b''), signature_for_hash_type_f, len(m["sig_list"]), m["sec_list"])
 
             sec_keys = m["sec_list"]
             signature_variables = m["sig_list"]
@@ -299,6 +267,7 @@ def solution_constraint_lookup():
             signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
 
             db = kwargs.get("hash160_lookup", {})
+            order = ecdsa.generator_secp256k1.order()
             for signature_order, sec_key in enumerate(sec_keys):
                 sec_key = lookup_solved_value(solved_values, sec_key)
                 if sec_key in secs_solved:
@@ -309,8 +278,11 @@ def solution_constraint_lookup():
                 if result is None:
                     continue
                 secret_exponent = result[0]
-                sig_hash = m["signature_for_hash_type_f"](signature_type)
-                binary_signature = _create_script_signature(secret_exponent, sig_hash, signature_type)
+                sig_hash = signature_for_hash_type_f(signature_type)
+                r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sig_hash)
+                if s + s > order:
+                    s = order - s
+                binary_signature = der.sigencode_der(r, s) + int2byte(signature_type)
                 existing_signatures.append((signature_order, binary_signature))
 
             # pad with placeholder signatures
@@ -337,9 +309,6 @@ def solutions_for_constraint(c):
     # a solution (solution_f, target atom, dependency atom list)
     # where solution_f take list of solved values
 
-    def filtered_dependencies(*args):
-        return [a for a in args if isinstance(a, Atom)]
-
     for f_factory in SOLUTIONS_BY_CONSTRAINT:
         m = constraint_matches(c, f_factory.pattern)
         if m:
@@ -350,34 +319,24 @@ def constraint_matches(c, m):
     """
     Return False or dict with indices the substitution values
     """
-    d = {}
+    if c == m:
+        return {}
+    if isinstance(m, CONSTANT):
+        if not isinstance(c, Atom):
+            return {m._name: c}
+    if isinstance(m, VAR):
+        if isinstance(c, (bytes, Atom)):
+            return {m._name: c}
+    if isinstance(m, LIST):
+        if isinstance(c, (tuple, list)):
+            return {m._name: c}
     if isinstance(m, tuple):
-        if not isinstance(c, Operator):
-            return False
-        if c._op_name != m[0]:
-            return False
-        if len(c._args) != len(m[1:]):
-            return False
-        for c1, m1 in zip(c._args, m[1:]):
-            if isinstance(m1, tuple) and isinstance(c1, Operator):
-                d1 = constraint_matches(c1, m1)
-                if d1 is False:
-                    return False
-                d.update(d1)
-                continue
-            if isinstance(m1, CONSTANT):
-                if not isinstance(c1, Atom):
-                    d[m1._name] = c1
-                    continue
-            if isinstance(m1, VAR):
-                if isinstance(c1, (bytes, Atom)):
-                    d[m1._name] = c1
-                    continue
-            if isinstance(m1, LIST):
-                if isinstance(c1, (tuple, list)):
-                    d[m1._name] = c1
-                    continue
-            if c1 == m1:
-                continue
-            return False
-        return d
+        if isinstance(c, Operator):
+            d = {}
+            for c1, m1 in zip(c._args, m[1:]):
+                r = constraint_matches(c1, m1)
+                if r is False:
+                    return r
+                d.update(r)
+            return d
+    return False
