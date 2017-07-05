@@ -1,23 +1,20 @@
 # generic solver
 
 import functools
-import hashlib
 import pdb
 
-from ..Tx import Tx, TxIn, TxOut
 from ..script.checksigops import parse_signature_blob
 from ...key import Key
-from ...ui import address_for_pay_to_script, standard_tx_out_script
 from ...serialize import b2h
 
 from pycoin import ecdsa
 from pycoin import encoding
-from pycoin.tx.script import der, ScriptError
+from pycoin.tx.script import der
 from pycoin.intbytes import int2byte
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker, check_solution
 
+from pycoin.tx.exceptions import SolvingError
 
 DEFAULT_PLACEHOLDER_SIGNATURE = b''
 DEFAULT_SIGNATURE_TYPE = 1
@@ -239,84 +236,6 @@ def make_traceback_f(solution_checker, tx_context, constraints, reset_stack_f):
     return traceback_f
 
 
-def determine_constraints(tx, tx_in_idx, p2sh_lookup={}):
-    solution_checker = BitcoinSolutionChecker(tx)
-    tx_context = solution_checker.tx_context_for_idx(tx_in_idx)
-    tx_context.witness_solution_stack = DynamicStack([Atom("w_%d" % (1-_)) for _ in range(2)], fill_template="w_%d")
-    script_hash = solution_checker.script_hash_from_script(tx_context.puzzle_script)
-    witness_version = solution_checker.witness_program_version(tx_context.puzzle_script)
-    tx_context.solution_script = b''
-    solution_reserve_count = 0
-    fill_template = "x_%d"
-    if script_hash:
-        underlying_script = p2sh_lookup.get(script_hash, None)
-        if underlying_script is None:
-            raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
-        tx_context.solution_script = BitcoinScriptTools.compile_push_data_list([underlying_script])
-        solution_reserve_count = 1
-        witness_version = solution_checker.witness_program_version(underlying_script)
-    if witness_version == 0:
-        witness_program = (underlying_script if script_hash else tx_context.puzzle_script)[2:]
-        if len(witness_program) == 32:
-            underlying_script_wit = p2sh_lookup.get(witness_program, None)
-            if underlying_script_wit is None:
-                raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
-            fill_template = "w_%d"
-            solution_reserve_count = 1
-            tx_context.witness_solution_stack = [underlying_script_wit]
-    constraints = []
-
-    def reset_stack_f(stack):
-        return DynamicStack(stack, solution_reserve_count, fill_template)
-
-    try:
-        traceback_f = make_traceback_f(solution_checker, tx_context, constraints, reset_stack_f)
-        solution_checker.check_solution(tx_context, traceback_f=traceback_f)
-    except ScriptError:
-        pass
-    if script_hash:
-        constraints.append(Operator('IS_TRUE', Operator('EQUAL', Atom("x_0"), underlying_script)))
-    if witness_version == 0:
-        if len(witness_program) == 32:
-            constraints.append(Operator('IS_TRUE', Operator('EQUAL', Atom("w_0"), underlying_script_wit)))
-    return constraints
-
-
-def solve_for_constraints(constraints, **kwargs):
-    solutions = []
-    for c in constraints:
-        s = solutions_for_constraint(c)
-        # s = (solution_f, target atom, dependency atom list)
-        if s:
-            solutions.append(s)
-    deps = set()
-    for c in constraints:
-        deps.update(c.dependencies())
-    solved_values = {d: None for d in deps}
-    progress = True
-    while progress and None in solved_values.values():
-        progress = False
-        for solution, target, dependencies in solutions:
-            if any(solved_values.get(t) is not None for t in target):
-                continue
-            if any(solved_values[d] is None for d in dependencies):
-                continue
-            s = solution(solved_values, **kwargs)
-            solved_values.update(s)
-            progress = progress or (len(s) > 0)
-
-    x_keys = sorted((k for k in solved_values.keys() if k > Atom("x")), reverse=True)
-    w_keys = sorted((k for k in solved_values.keys() if k < Atom("x")), reverse=True)
-    solution_list = [solved_values.get(k) for k in x_keys]
-    witness_list = [solved_values.get(k) for k in w_keys]
-    return solution_list, witness_list
-
-
-def solve(tx, tx_in_idx, **kwargs):
-    constraints = determine_constraints(tx, tx_in_idx, p2sh_lookup=kwargs.get("p2sh_lookup"))
-    return solve_for_constraints(constraints, **kwargs)
-
-
 class CONSTANT(object):
     def __init__(self, name):
         self._name = name
@@ -462,174 +381,3 @@ def constraint_matches(c, m):
                 continue
             return False
         return d
-
-
-# TESTS
-
-from pycoin.tx.pay_to import (
-    ScriptMultisig, ScriptPayToPublicKey, build_hash160_lookup, build_p2sh_lookup
-)
-
-
-def test_solve(tx, tx_in_idx, **kwargs):
-    constraints = determine_constraints(tx, tx_in_idx, p2sh_lookup=kwargs.get("p2sh_lookup"))
-    for c in constraints:
-        print(c, sorted(c.dependencies()))
-    solution_list, witness_list = solve_for_constraints(constraints, **kwargs)
-    solution_script = BitcoinScriptTools.compile_push_data_list(solution_list)
-    print("SOLUTION LIST: ", solution_list)
-    print("WITNESS LIST : ", witness_list)
-    tx.txs_in[tx_in_idx].script = solution_script
-    tx.txs_in[tx_in_idx].witness = witness_list
-    if not kwargs.get("nocheck"):
-        check_solution(tx, tx_in_idx)
-    return solution_script, witness_list
-
-
-def make_test_tx(input_script):
-    previous_hash = b'\1' * 32
-    txs_in = [TxIn(previous_hash, 0)]
-    txs_out = [TxOut(1000, standard_tx_out_script(Key(1).address()))]
-    version, lock_time = 1, 0
-    tx = Tx(version, txs_in, txs_out, lock_time)
-    unspents = [TxOut(1000, input_script)]
-    tx.set_unspents(unspents)
-    return tx
-
-
-def test_tx(incoming_script, **kwargs):
-    keys = [Key(i) for i in range(1, 20)]
-    tx = make_test_tx(incoming_script)
-    tx_in_idx = 0
-    kwargs["hash160_lookup"] = build_hash160_lookup(k.secret_exponent() for k in keys)
-    test_solve(tx, tx_in_idx, **kwargs)
-
-
-def test_p2pkh():
-    key = Key(1)
-    test_tx(standard_tx_out_script(key.address()))
-
-
-def test_p2pk():
-    key = Key(1)
-    test_tx(ScriptPayToPublicKey.from_key(key).script())
-
-
-def test_nonstandard_p2pkh():
-    key = Key(1)
-    test_tx(BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(key.address()))
-
-
-def test_p2multisig():
-    keys = [Key(i) for i in (1, 2, 3)]
-    secs = [k.sec() for k in keys]
-    test_tx(ScriptMultisig(2, secs).script())
-
-
-def test_p2sh():
-    keys = [Key(i) for i in (1, 2, 3)]
-    secs = [k.sec() for k in keys]
-    underlying_script = ScriptMultisig(1, secs).script()
-    script = standard_tx_out_script(address_for_pay_to_script(underlying_script))
-    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
-
-    underlying_script = BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(keys[0].address())
-    script = standard_tx_out_script(address_for_pay_to_script(underlying_script))
-    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
-
-    underlying_script = ScriptPayToPublicKey.from_key(keys[2]).script()
-    script = standard_tx_out_script(address_for_pay_to_script(underlying_script))
-    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
-
-
-def test_p2pkh_wit():
-    key = Key(1)
-    script = BitcoinScriptTools.compile("OP_0 [%s]" % b2h(key.hash160()))
-    test_tx(script)
-
-
-def test_p2sh_wit():
-    keys = [Key(i) for i in (1, 2, 3)]
-    secs = [k.sec() for k in keys]
-    underlying_script = ScriptMultisig(2, secs).script()
-    script = BitcoinScriptTools.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
-    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
-
-
-def test_p2multisig_wit():
-    keys = [Key(i) for i in (1, 2, 3)]
-    secs = [k.sec() for k in keys]
-    underlying_script = ScriptMultisig(2, secs).script()
-    p2sh_script = BitcoinScriptTools.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
-    script = standard_tx_out_script(address_for_pay_to_script(p2sh_script))
-    test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script, p2sh_script]))
-
-
-def test_if():
-    script = BitcoinScriptTools.compile("IF 1 ELSE 0 ENDIF")
-    print(BitcoinScriptTools.disassemble(script))
-    test_tx(script)
-
-
-def test_p2multisig_incremental():
-    keys = [Key(i) for i in (1, 2, 3)]
-    secs = [k.sec() for k in keys]
-    tx = make_test_tx(ScriptMultisig(3, secs).script())
-    tx_in_idx = 0
-    for k in keys:
-        try:
-            check_solution(tx, tx_in_idx)
-            assert 0
-        except ScriptError:
-            pass
-        kwargs = {"hash160_lookup": build_hash160_lookup([k.secret_exponent()])}
-        kwargs["existing_script"] = [
-            data for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(
-                tx.txs_in[tx_in_idx].script) if data is not None]
-        kwargs["nocheck"] = True
-        solution_list, witness_list = test_solve(tx, tx_in_idx, **kwargs)
-    check_solution(tx, tx_in_idx)
-
-
-def main():
-    if 1:
-        test_p2pkh()
-        test_p2pk()
-        test_nonstandard_p2pkh()
-        test_p2multisig()
-        test_p2sh()
-        test_p2pkh_wit()
-        test_p2sh_wit()
-        test_p2multisig_wit()
-    test_p2multisig_incremental()
-
-
-if __name__ == '__main__':
-    main()
-
-
-"""
-WE REQUIRE: b'u\x1ev\xe8\x19\x91\x96\xd4T\x94\x1cE\xd1\xb3\xa3#\xf1C;\xd6' == hash160(<X_0>)
-WE REQUIRE: <X_0> to be a public key
-WE REQUIRE: <X_1> to be a signature
-WE REQUIRE: checksig(<X_0>, <X_1>) be true
-hash160(x0) == K
-for x0_candidates = public_keys()
-for x0 in invhash160(k, x0_candidates):
-   for x1 in invchecksig(x0, private_keys):
-
-build a list of Constraints for each variable
-
-x0 :
-  is a public key
-  has hash160 of K
-
-x1 :
-  is a signature with PK x0
-
-
-public_key_candidates
-x0 = hashes_to_k(K)
-x1 = sign(x0, sig_type)
-
-"""
