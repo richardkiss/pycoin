@@ -10,7 +10,8 @@ from .VM import BitcoinVM
 from ...tx.script.flags import SIGHASH_ALL
 
 from pycoin.tx.pay_to.ScriptType import DEFAULT_PLACEHOLDER_SIGNATURE
-from pycoin.tx.script.solve import Atom, Operator, make_traceback_f, solutions_for_constraint
+from pycoin.tx.script.constraints import Atom, Operator, make_traceback_f
+from pycoin.tx.script.solve import solutions_for_constraint
 
 
 class DynamicStack(list):
@@ -76,7 +77,7 @@ class Solver(object):
             return DynamicStack(stack, solution_reserve_count, fill_template)
 
         try:
-            traceback_f = make_traceback_f(self.solution_checker, tx_context, constraints, reset_stack_f)
+            traceback_f = make_traceback_f(constraints, reset_stack_f)
             self.solution_checker.check_solution(tx_context, traceback_f=traceback_f)
         except ScriptError:
             pass
@@ -110,8 +111,8 @@ class Solver(object):
                 solved_values.update(s)
                 progress = progress or (len(s) > 0)
 
-        x_keys = sorted((k for k in solved_values.keys() if k > Atom("x")), reverse=True)
-        w_keys = sorted((k for k in solved_values.keys() if k < Atom("x")), reverse=True)
+        x_keys = sorted((k for k in solved_values.keys() if k.name.startswith("x")), reverse=True)
+        w_keys = sorted((k for k in solved_values.keys() if k.name.startswith("w")), reverse=True)
         solution_list = [solved_values.get(k) for k in x_keys]
         witness_list = [solved_values.get(k) for k in w_keys]
         return solution_list, witness_list
