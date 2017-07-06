@@ -58,41 +58,14 @@ class BitcoinSolutionChecker(SolutionChecker):
         """
         if flags is None:
             flags = VERIFY_P2SH | VERIFY_WITNESS
-        solution_script = tx_context.solution_script
-        puzzle_script = tx_context.puzzle_script
 
-        if flags & VERIFY_SIGPUSHONLY:
-            self.VM.ScriptStreamer.check_script_push_only(solution_script)
-
-        # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
-        f1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
-
-        vm_context = VMContext(
-            solution_script, tx_context, tx_context.signature_for_hash_type_f, f1)
-
-        vm_context.is_solution_script = True
-        vm_context.traceback_f = traceback_f
-
-        vm = self.VM()
-        solution_stack = vm.eval_script(vm_context)
-
-        vm_context = VMContext(
-            puzzle_script, tx_context, tx_context.signature_for_hash_type_f, f1, initial_stack=solution_stack[:])
-
-        vm_context.is_solution_script = False
-        vm_context.traceback_f = traceback_f
-
-        # work on a copy of the solution stack
-        stack = vm.eval_script(vm_context)
-
-        if len(stack) == 0 or not vm_context.bool_from_script_bytes(stack[-1]):
-            raise ScriptError("eval false", errno.EVAL_FALSE)
+        stack, solution_stack = self._check_solution(tx_context, flags, traceback_f)
 
         had_witness = False
         if flags & VERIFY_WITNESS:
             had_witness = self.check_witness(tx_context, flags, traceback_f)
 
-        if self.is_pay_to_script_hash(puzzle_script) and (flags & VERIFY_P2SH):
+        if self.is_pay_to_script_hash(tx_context.puzzle_script) and (flags & VERIFY_P2SH):
             self._check_p2sh(tx_context, solution_stack[:-1], solution_stack[-1], flags=flags, traceback_f=traceback_f)
             return
 
@@ -102,20 +75,55 @@ class BitcoinSolutionChecker(SolutionChecker):
         if (flags & VERIFY_WITNESS) and not had_witness and len(tx_context.witness_solution_stack) > 0:
             raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
 
-    def _check_p2sh(self, tx_context, solution_blob, puzzle_script, flags=None, traceback_f=None):
-            solution_script = self.ScriptTools.compile_push_data_list(solution_blob)
-            self.VM.ScriptStreamer.check_script_push_only(tx_context.solution_script)
-            flags = flags & ~VERIFY_P2SH
-            p2sh_tx_context = TxContext()
-            p2sh_tx_context.puzzle_script = puzzle_script
-            p2sh_tx_context.solution_script = solution_script
-            p2sh_tx_context.witness_solution_stack = tx_context.witness_solution_stack
-            p2sh_tx_context.signature_for_hash_type_f = tx_context.signature_for_hash_type_f
-            p2sh_tx_context.sequence = tx_context.sequence
-            p2sh_tx_context.version = tx_context.version
-            p2sh_tx_context.lock_time = tx_context.lock_time
-            p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
-            self.check_solution(p2sh_tx_context, flags=flags, traceback_f=traceback_f)
+    def _check_solution(self, tx_context, flags, traceback_f):
+        solution_script = tx_context.solution_script
+        puzzle_script = tx_context.puzzle_script
+
+        if flags & VERIFY_SIGPUSHONLY:
+            self.VM.ScriptStreamer.check_script_push_only(solution_script)
+
+        # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
+        f1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
+
+        def sig_for_hash_type_f(hash_type, sig_blobs, vmc):
+            script = vmc.script[vmc.begin_code_hash:]
+            for sig_blob in sig_blobs:
+                script = self.delete_signature(script, sig_blob)
+            return self.signature_hash(script, tx_context.tx_in_idx, hash_type)
+
+        vm_context = VMContext(solution_script, tx_context, sig_for_hash_type_f, f1)
+
+        vm_context.is_solution_script = True
+        vm_context.traceback_f = traceback_f
+
+        vm = self.VM()
+        solution_stack = vm.eval_script(vm_context)
+
+        vm_context = VMContext(puzzle_script, tx_context, sig_for_hash_type_f, f1, initial_stack=solution_stack[:])
+
+        vm_context.is_solution_script = False
+        vm_context.traceback_f = traceback_f
+
+        # work on a copy of the solution stack
+        stack = vm.eval_script(vm_context)
+        if len(stack) == 0 or not vm_context.bool_from_script_bytes(stack[-1]):
+            raise ScriptError("eval false", errno.EVAL_FALSE)
+
+        return stack, solution_stack
+
+    def _check_p2sh(self, tx_context, solution_blob, puzzle_script, flags, traceback_f):
+        solution_script = self.ScriptTools.compile_push_data_list(solution_blob)
+        self.VM.ScriptStreamer.check_script_push_only(tx_context.solution_script)
+        flags = flags & ~VERIFY_P2SH
+        p2sh_tx_context = TxContext()
+        p2sh_tx_context.puzzle_script = puzzle_script
+        p2sh_tx_context.solution_script = solution_script
+        p2sh_tx_context.witness_solution_stack = tx_context.witness_solution_stack
+        p2sh_tx_context.sequence = tx_context.sequence
+        p2sh_tx_context.version = tx_context.version
+        p2sh_tx_context.lock_time = tx_context.lock_time
+        p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
+        self.check_solution(p2sh_tx_context, flags=flags, traceback_f=traceback_f)
 
     def _puzzle_script_for_len20_segwit(self, witness_program):
         return V0_len20_prefix + self.ScriptTools.compile_push_data_list(
@@ -140,8 +148,7 @@ class BitcoinSolutionChecker(SolutionChecker):
             raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
         return stack, puzzle_script
 
-    def check_witness_program(
-            self, version, witness_program, tx_context, flags, traceback_f):
+    def check_witness_program(self, version, witness_program, tx_context, flags, traceback_f):
         if version == 0:
             stack, puzzle_script = self.check_witness_program_v0(
                 tx_context.witness_solution_stack, witness_program, flags, tx_context)
@@ -152,7 +159,8 @@ class BitcoinSolutionChecker(SolutionChecker):
             return
 
         def witness_signature_for_hash_type(hash_type, sig_blobs, vmc):
-            return self.signature_for_hash_type_segwit(vmc.script[vmc.begin_code_hash:], tx_context.tx_in_idx, hash_type)
+            return self.signature_for_hash_type_segwit(
+                vmc.script[vmc.begin_code_hash:], tx_context.tx_in_idx, hash_type)
 
         vm = self.VM()
         vm_context = VMContext(
@@ -363,12 +371,6 @@ class BitcoinSolutionChecker(SolutionChecker):
         unspent = self.tx.unspents[tx_in_idx]
         tx_out_script = unspent.script
 
-        def signature_for_hash_type_f(hash_type, sig_blobs, vmc):
-            script = vmc.script[vmc.begin_code_hash:]
-            for sig_blob in sig_blobs:
-                script = self.delete_signature(script, sig_blob)
-            return self.signature_hash(script, tx_in_idx, hash_type)
-
         tx_context = TxContext()
         tx_context.lock_time = self.tx.lock_time
         tx_context.version = self.tx.version
@@ -376,7 +378,6 @@ class BitcoinSolutionChecker(SolutionChecker):
         tx_context.solution_script = tx_in.script
         tx_context.witness_solution_stack = tx_in.witness
         tx_context.sequence = tx_in.sequence
-        tx_context.signature_for_hash_type_f = signature_for_hash_type_f
         tx_context.tx_in_idx = tx_in_idx
         return tx_context
 
