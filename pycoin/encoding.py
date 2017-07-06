@@ -292,6 +292,12 @@ def bitcoin_address_to_hash160_sec(bitcoin_address, address_prefix=b'\0'):
     Since we only know the hash of the public key, we can't get the full public key back."""
     return address_to_hash160_sec(bitcoin_address, address_prefix)
 
+def testnet_address_to_hash160_sec(testnet_address, address_prefix=b'\x6f'):
+    """Convert a testnet address back to the hash160_sec format of the public key.
+    Since we only know the hash of the public key, we can't get the full public key back."""
+    prefixes = [b'\x6f']
+    return address_to_hash160_sec(testnet_address, address_prefix, prefixes)
+
 def tdash_address_to_hash160_sec(tdash_address, address_prefix=b'\0'):
     """Convert a Dash testnet address back to the hash160_sec format of the public key.
     Since we only know the hash of the public key, we can't get the full public key back."""
