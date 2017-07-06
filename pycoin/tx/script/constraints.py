@@ -93,7 +93,7 @@ def make_op_equalverify(constraints):
         t1 = vm.stack.pop()
         t2 = vm.stack.pop()
         c = Operator('EQUAL', t1, t2)
-        constraints.append(Operator('IS_TRUE', c))
+        constraints.append(c)
     my_op_equalverify.stack_size = 2
     return my_op_equalverify
 
@@ -130,7 +130,7 @@ def make_op_checkmultisig(constraints):
             constraints.append(Operator('IS_SIGNATURE', vm.stack[-1]))
             sig_blobs.append(vm.stack.pop())
         t1 = vm.stack.pop()
-        constraints.append(Operator('IS_TRUE', Operator('EQUAL', t1, b'')))
+        constraints.append(Operator('EQUAL', t1, b''))
         t = Operator('SIGNATURES_CORRECT', public_pair_blobs, sig_blobs, sighash_f)
         vm.stack.append(t)
     return my_op_checkmultisig
@@ -164,7 +164,8 @@ def make_traceback_f(constraints, reset_stack_f):
 
     def postscript(vmc):
         if not vmc.is_solution_script:
-            constraints.append(Operator('IS_TRUE', vmc.stack[-1]))
+            if isinstance(vmc.stack[-1], Atom):
+                constraints.append(vmc.stack[-1])
             vmc.stack = [vmc.VM_TRUE]
 
     traceback_f.prelaunch = prelaunch

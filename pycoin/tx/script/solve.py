@@ -57,7 +57,7 @@ def constraint_matches(c, m):
     """
     if isinstance(m, tuple):
         d = {}
-        if isinstance(c, Operator):
+        if isinstance(c, Operator) and c._op_name == m[0]:
             for c1, m1 in zip(c._args, m[1:]):
                 r = constraint_matches(c1, m1)
                 if r is False:
@@ -83,7 +83,7 @@ class VAR(object):
         self._name = name
 
     def match(self, c):
-        if isinstance(c, (bytes, Atom)):
+        if isinstance(c, Atom) and not isinstance(c, Operator):
             return {self._name: c}
         return False
 
@@ -111,7 +111,7 @@ def hash_lookup_solver(m):
     return (f, [m["1"]], ())
 
 
-hash_lookup_solver.pattern = ('IS_TRUE', ('EQUAL', CONSTANT("the_hash"), ('HASH160', VAR("1"))))
+hash_lookup_solver.pattern = ('EQUAL', CONSTANT("the_hash"), ('HASH160', VAR("1")))
 register_solver(hash_lookup_solver)
 
 
@@ -123,7 +123,7 @@ def constant_equality_solver(m):
     return (f, [m["var"]], ())
 
 
-constant_equality_solver.pattern = ('IS_TRUE', ('EQUAL', VAR("var"), CONSTANT('const')))
+constant_equality_solver.pattern = ('EQUAL', VAR("var"), CONSTANT('const'))
 register_solver(constant_equality_solver)
 
 
@@ -167,8 +167,8 @@ def signing_solver(m):
     return (f, m["sig_list"], [a for a in m["sec_list"] if isinstance(a, Atom)])
 
 
-signing_solver.pattern = ('IS_TRUE', (
-    'SIGNATURES_CORRECT', LIST("sec_list"), LIST("sig_list"), CONSTANT("signature_for_hash_type_f")))
+signing_solver.pattern = ('SIGNATURES_CORRECT', LIST("sec_list"), LIST("sig_list"),
+                          CONSTANT("signature_for_hash_type_f"))
 register_solver(signing_solver)
 
 

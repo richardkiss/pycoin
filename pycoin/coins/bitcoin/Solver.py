@@ -82,10 +82,10 @@ class Solver(object):
         except ScriptError:
             pass
         if script_hash:
-            constraints.append(Operator('IS_TRUE', Operator('EQUAL', Atom("x_0"), underlying_script)))
+            constraints.append(Operator('EQUAL', Atom("x_0"), underlying_script))
         if witness_version == 0:
             if len(witness_program) == 32:
-                constraints.append(Operator('IS_TRUE', Operator('EQUAL', Atom("w_0"), underlying_script_wit)))
+                constraints.append(Operator('EQUAL', Atom("w_0"), underlying_script_wit))
         return constraints
 
     def solve_for_constraints(self, constraints, **kwargs):
