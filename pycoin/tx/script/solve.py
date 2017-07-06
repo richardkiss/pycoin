@@ -147,7 +147,7 @@ def signing_solver(m):
                 continue
             if len(existing_signatures) >= len(signature_variables):
                 break
-            result = db.get(sec_key)
+            result = db.get(encoding.hash160(sec_key))
             if result is None:
                 continue
             secret_exponent = result[0]
