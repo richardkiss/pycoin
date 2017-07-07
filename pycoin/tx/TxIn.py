@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Deal with the part of a Tx that specifies where the Bitcoin comes from.
 
@@ -41,6 +40,7 @@ class TxIn(object):
     """
     The part of a Tx that specifies where the Bitcoin comes from.
     """
+
     def __init__(self, previous_hash, previous_index, script=b'', sequence=4294967295):
         self.previous_hash = previous_hash
         self.previous_index = previous_index

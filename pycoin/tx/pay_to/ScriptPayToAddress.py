@@ -10,7 +10,7 @@ from .ScriptType import ScriptType
 
 
 class ScriptPayToAddress(ScriptType):
-    TEMPLATE = tools.compile("OP_DUP OP_HASH160 OP_PUBKEYHASH OP_EQUALVERIFY OP_CHECKSIG")
+    TEMPLATE = tools.compile("OP_DUP OP_HASH160 'PUBKEYHASH' OP_EQUALVERIFY OP_CHECKSIG")
 
     def __init__(self, hash160):
         self.hash160 = hash160

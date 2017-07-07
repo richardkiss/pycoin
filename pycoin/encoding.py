@@ -29,7 +29,8 @@ THE SOFTWARE.
 
 import hashlib
 
-from .intbytes import byte_to_int, bytes_from_int
+from .intbytes import byte2int, int2byte, iterbytes
+from .serialize import bytes_as_revhex
 
 
 BASE58_ALPHABET = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -43,6 +44,7 @@ class EncodingError(Exception):
 
 def ripemd160(data):
     return hashlib.new("ripemd160", data)
+
 
 try:
     ripemd160(b'').digest()
@@ -100,28 +102,28 @@ def from_long(v, prefix, base, charset):
     return bytes(l)
 
 
-def to_bytes_32(v):
-    v = from_long(v, 0, 256, lambda x: x)
-    if len(v) > 32:
-        raise ValueError("input to to_bytes_32 is too large")
-    return ((b'\0' * 32) + v)[-32:]
-
 if hasattr(int, "to_bytes"):
-    to_bytes_32 = lambda v: v.to_bytes(32, byteorder="big")
+    def to_bytes_32(v):
+        return v.to_bytes(32, byteorder="big")
 
+    def from_bytes_32(v):
+        return int.from_bytes(v, byteorder="big")
+else:
+    def to_bytes_32(v):
+        v = from_long(v, 0, 256, lambda x: x)
+        if len(v) > 32:
+            raise ValueError("input to to_bytes_32 is too large")
+        return ((b'\0' * 32) + v)[-32:]
 
-def from_bytes_32(v):
-    if len(v) > 32:
-        raise OverflowError("int too big to convert")
-    return to_long(256, byte_to_int, v)[0]
-
-if hasattr(int, "from_bytes"):
-    from_bytes_32 = lambda v: int.from_bytes(v, byteorder="big")
+    def from_bytes_32(v):
+        if len(v) > 32:
+            raise OverflowError("int too big to convert")
+        return to_long(256, byte2int, v)[0]
 
 
 def double_sha256(data):
     """A standard compound hash."""
-    return hashlib.sha256(hashlib.sha256(data).digest()).digest()
+    return bytes_as_revhex(hashlib.sha256(hashlib.sha256(data).digest()).digest())
 
 
 def hash160(data):
@@ -131,7 +133,7 @@ def hash160(data):
 
 def b2a_base58(s):
     """Convert binary to base58 using BASE58_ALPHABET. Like Bitcoin addresses."""
-    v, prefix = to_long(256, byte_to_int, s)
+    v, prefix = to_long(256, lambda x: x, iterbytes(s))
     s = from_long(v, prefix, BASE58_BASE, lambda v: BASE58_ALPHABET[v])
     return s.decode("utf8")
 
@@ -224,7 +226,7 @@ def public_pair_to_sec(public_pair, compressed=True):
     gross internal sec binary format used by OpenSSL."""
     x_str = to_bytes_32(public_pair[0])
     if compressed:
-        return bytes_from_int((2 + (public_pair[1] & 1))) + x_str
+        return int2byte((2 + (public_pair[1] & 1))) + x_str
     y_str = to_bytes_32(public_pair[1])
     return b'\4' + x_str + y_str
 

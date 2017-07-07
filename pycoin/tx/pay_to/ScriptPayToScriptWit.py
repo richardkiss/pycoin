@@ -1,4 +1,4 @@
-from pycoin.intbytes import byte_to_int
+from pycoin.intbytes import byte2int
 
 from ..script import tools
 
@@ -13,7 +13,7 @@ class ScriptPayToScriptWit(ScriptType):
         assert isinstance(version, bytes)
         assert len(hash256) == 32
         assert isinstance(hash256, bytes)
-        version_int = byte_to_int(version[0])
+        version_int = byte2int(version)
         assert 0 <= version_int <= 16
         self.version = version_int
         self.hash256 = hash256
@@ -39,7 +39,6 @@ class ScriptPayToScriptWit(ScriptType):
         if underlying_script is None:
             raise ValueError("underlying script cannot be determined for %s" % b2h(self.hash256))
         script_obj = script_obj_from_script(underlying_script)
-        print(script_obj)
 
         kwargs["signature_for_hash_type_f"] = kwargs["signature_for_hash_type_f"].witness
         kwargs["script_to_hash"] = underlying_script

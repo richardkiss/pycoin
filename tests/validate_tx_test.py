@@ -6,8 +6,9 @@ import unittest
 
 from pycoin.block import Block
 from pycoin.serialize import h2b
-from pycoin.tx import Tx, ValidationFailureError
+from pycoin.tx.exceptions import ValidationFailureError
 from pycoin.tx.script import tools
+from pycoin.tx.Tx import Tx
 
 
 class ValidatingTest(unittest.TestCase):
@@ -181,17 +182,6 @@ W4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=
         TX_DB[original_tx_hash] = tx_from_b64(TX_2_HEX)
         tx_to_validate.unspents_from_db(TX_DB)
         self.assertEqual(tx_to_validate.bad_signature_count(), 0)
-
-    def test_endian(self):
-        from pycoin.intbytes import int_from_bytes, int_to_bytes, from_bytes, to_bytes
-        assert int_from_bytes(int_to_bytes(768)) == 768
-        assert int_from_bytes(int_to_bytes(3)) == 3
-        assert int_from_bytes(int_to_bytes(66051)) == 66051
-
-        for e in ("big", "little"):
-            assert from_bytes(to_bytes(768, 2, e), e) == 768
-            assert from_bytes(to_bytes(3, 1, e), e) == 3
-            assert from_bytes(to_bytes(66051, 3, e), e) == 66051
 
 if __name__ == "__main__":
     unittest.main()

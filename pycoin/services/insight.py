@@ -7,14 +7,14 @@ import io
 
 from .agent import request, urlencode, urlopen
 
-from pycoin.block import BlockHeader
+from pycoin.block import Block
 from pycoin.convention import btc_to_satoshi
 from pycoin.encoding import double_sha256
 from pycoin.merkle import merkle
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
 from pycoin.tx.script import tools
-from pycoin.tx import Spendable, Tx, TxIn, TxOut
+from pycoin.tx.Tx import Spendable, Tx, TxIn, TxOut
 
 
 class InsightProvider(object):
@@ -45,7 +45,7 @@ class InsightProvider(object):
         difficulty = int(r.get("bits"), 16)
         nonce = int(r.get("nonce"))
         tx_hashes = [h2b_rev(tx_hash) for tx_hash in r.get("tx")]
-        blockheader = BlockHeader(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
+        blockheader = Block(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
         if blockheader.hash() != block_hash:
             return None, None
         calculated_hash = merkle(tx_hashes, double_sha256)

@@ -24,17 +24,7 @@ signature_template = '''\
 -----END {net_name} SIGNED MESSAGE-----'''
 
 
-def parse_signed_message(msg_in):
-    """
-    Take an "armoured" message and split into the message body, signing address
-    and the base64 signature. Should work on all altcoin networks, and should
-    accept both Inputs.IO and Multibit formats but not Armory.
-
-    Looks like RFC2550 <https://www.ietf.org/rfc/rfc2440.txt> was an "inspiration"
-    for this, so in case of confusion it's a reference, but I've never found
-    a real spec for this. Should be a BIP really.
-    """
-
+def parse_sections(msg_in):
     # Convert to Unix line feeds from DOS style, iff we find them, but
     # restore to same at the end. The RFC implies we should be using
     # DOS \r\n in the message, but that does not always happen in today's
@@ -56,6 +46,25 @@ def parse_signed_message(msg_in):
         msg, hdr = ''.join(parts[:-1]), parts[-1]
     except:
         raise ValueError("expected BEGIN SIGNATURE line", body)
+
+    if dos_nl:
+        msg = msg.replace('\n', '\r\n')
+
+    return msg, hdr
+
+
+def parse_signed_message(msg_in):
+    """
+    Take an "armoured" message and split into the message body, signing address
+    and the base64 signature. Should work on all altcoin networks, and should
+    accept both Inputs.IO and Multibit formats but not Armory.
+
+    Looks like RFC2550 <https://www.ietf.org/rfc/rfc2440.txt> was an "inspiration"
+    for this, so in case of confusion it's a reference, but I've never found
+    a real spec for this. Should be a BIP really.
+    """
+
+    msg, hdr = parse_sections(msg_in)
 
     # after message, expect something like an email/http headers, so split into lines
     hdr = list(filter(None, [i.strip() for i in hdr.split('\n')]))
@@ -87,9 +96,6 @@ def parse_signed_message(msg_in):
 
     if not addr or addr == sig:
         raise ValueError("Could not find address")
-
-    if dos_nl:
-        msg = msg.replace('\n', '\r\n')
 
     return msg, addr, sig
 

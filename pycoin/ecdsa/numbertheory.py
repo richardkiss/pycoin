@@ -4,34 +4,40 @@ except ImportError:
     NATIVE_LIBRARY = None
 
 
-def inverse_mod( a, m ):
-  """Inverse of a mod m."""
+def _inverse_mod(a, m):
+    """Inverse of a mod m."""
 
-  if a < 0 or m <= a: a = a % m
+    if a < 0 or m <= a:
+        a = a % m
 
-  # From Ferguson and Schneier, roughly:
+    # From Ferguson and Schneier, roughly:
 
-  c, d = a, m
-  uc, vc, ud, vd = 1, 0, 0, 1
-  while c != 0:
-    q, c, d = divmod( d, c ) + ( c, )
-    uc, vc, ud, vd = ud - q*uc, vd - q*vc, uc, vc
+    c, d = a, m
+    uc, vc, ud, vd = 1, 0, 0, 1
+    while c != 0:
+        q, c, d = divmod(d, c) + (c,)
+        uc, vc, ud, vd = ud - q*uc, vd - q*vc, uc, vc
 
-  # At this point, d is the GCD, and ud*a+vd*m = d.
-  # If d == 1, this means that ud is a inverse.
+    # At this point, d is the GCD, and ud*a+vd*m = d.
+    # If d == 1, this means that ud is a inverse.
 
-  assert d == 1
-  if ud > 0: return ud
-  else: return ud + m
+    assert d == 1
+    if ud > 0:
+        return ud
+    else:
+        return ud + m
 
 
 if NATIVE_LIBRARY:
     inverse_mod = NATIVE_LIBRARY.inverse_mod
+else:
+    inverse_mod = _inverse_mod
 
 
 # from http://eli.thegreenplace.net/2009/03/07/computing-modular-square-roots-in-python/
 # with few fixes and suggestions from
 # http://codereview.stackexchange.com/questions/43210/tonelli-shanks-algorithm-implementation-of-prime-modular-square-root
+
 
 def modular_sqrt(a, p):
     """ Find a quadratic residue (mod p) of 'a'. p
@@ -113,6 +119,7 @@ def modular_sqrt(a, p):
         x = (x * gs) % p
         b = (b * g) % p
         r = m
+
 
 def legendre_symbol(a, p):
     """ Compute the Legendre symbol a|p using
