@@ -131,6 +131,29 @@ def check_public_key_encoding(blob):
     raise ScriptError("invalid public key blob", errno.PUBKEYTYPE)
 
 
+def checksig(vm, sig_pair, signature_type, pair_blob, blobs_to_delete,
+             sighash_cache, verify_witness_pubkeytype, verify_strict):
+    if verify_strict:
+        check_public_key_encoding(pair_blob)
+    if verify_witness_pubkeytype:
+        if byte2int(pair_blob) not in (2, 3) or len(pair_blob) != 33:
+            raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
+    try:
+        public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
+    except EncodingError:
+        return False
+
+    if signature_type not in sighash_cache:
+        sighash_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, blobs_to_delete, vm)
+
+    try:
+        if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sighash_cache[signature_type], sig_pair):
+            return True
+    except ecdsa.NoSuchPointError:
+        pass
+    return False
+
+
 def checksigs(vm, sig_blobs, public_pair_blobs):
     sig_blobs_remaining = list(sig_blobs)
     flags = vm.flags
@@ -147,24 +170,9 @@ def checksigs(vm, sig_blobs, public_pair_blobs):
             public_pair_blobs = []
         while len(sig_blobs_remaining) < len(public_pair_blobs):
             pair_blob = public_pair_blobs.pop()
-            if verify_strict:
-                check_public_key_encoding(pair_blob)
-            if verify_witness_pubkeytype:
-                if byte2int(pair_blob) not in (2, 3) or len(pair_blob) != 33:
-                    raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
-            try:
-                public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
-            except EncodingError:
-                continue
-
-            if signature_type not in sighash_cache:
-                sighash_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, sig_blobs, vm)
-
-            try:
-                if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sighash_cache[signature_type], sig_pair):
-                    break
-            except ecdsa.NoSuchPointError:
-                pass
+            if checksig(vm, sig_pair, signature_type, pair_blob, sig_blobs,
+                        sighash_cache, verify_witness_pubkeytype, verify_strict):
+                break
         else:
             if any_nonblank:
                 raise ScriptError("bad signature not NULL", errno.NULLFAIL)
@@ -174,7 +182,6 @@ def checksigs(vm, sig_blobs, public_pair_blobs):
 
 
 def do_OP_CHECKSIG(vm):
-    flags = vm.flags
     pair_blob = vm.pop()
     sig_blob = vm.pop()
     checksigs(vm, [sig_blob], [pair_blob])
