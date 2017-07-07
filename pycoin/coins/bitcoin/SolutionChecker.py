@@ -368,13 +368,11 @@ class BitcoinSolutionChecker(SolutionChecker):
         puzzle_script: the script protecting the coins
         """
         tx_in = self.tx.txs_in[tx_in_idx]
-        unspent = self.tx.unspents[tx_in_idx]
-        tx_out_script = unspent.script
 
         tx_context = TxContext()
         tx_context.lock_time = self.tx.lock_time
         tx_context.version = self.tx.version
-        tx_context.puzzle_script = tx_out_script
+        tx_context.puzzle_script = self.tx.unspents[tx_in_idx].script
         tx_context.solution_script = tx_in.script
         tx_context.witness_solution_stack = tx_in.witness
         tx_context.sequence = tx_in.sequence
