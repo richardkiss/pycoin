@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
 
