@@ -14,8 +14,8 @@ class Group(Curve, Point):
         Point.__init__(self, *basis, self)
         self._order = order
 
-    def public_pair_for_secret_exponent(self, e):
-        return e * self
+    def order(self):
+        return self._order
 
     def public_pair_for_x(self, x, is_even):
         p = self._p
@@ -64,7 +64,7 @@ class Group(Curve, Point):
         s = (self.inverse(k) * (val + (secret_exponent * r) % n)) % n
         if s == 0:
             raise RuntimeError("amazingly unlucky random number s")
-        return Point(r, s)
+        return self.Point(r, s)
 
     def verify(self, public_pair, val, sig):
         """

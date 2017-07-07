@@ -51,6 +51,9 @@ class Curve(object):
         self._b = b
         self._infinity = Point(None, None, self)
 
+    def p(self):
+        return self._p
+
     def contains_point(self, point):
         """Is the point (x,y) on this curve?"""
         x, y = point
