@@ -39,7 +39,6 @@ class ScriptPayToScriptWit(ScriptType):
         if underlying_script is None:
             raise ValueError("underlying script cannot be determined for %s" % b2h(self.hash256))
         script_obj = script_obj_from_script(underlying_script)
-        print(script_obj)
 
         kwargs["signature_for_hash_type_f"] = kwargs["signature_for_hash_type_f"].witness
         kwargs["script_to_hash"] = underlying_script
