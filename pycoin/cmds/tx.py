@@ -46,7 +46,7 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
         print("warning: can't talk to bitcoind due to missing library")
 
 
-def dump_header(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
+def dump_header(tx):
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes" % (tx.version, tx.id(), len(tx_bin)))
     print("TxIn count: %d; TxOut count: %d" % (len(tx.txs_in), len(tx.txs_out)))
@@ -161,7 +161,7 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
     missing_unspents = tx.missing_unspents()
     traceback_f = make_trace_script(do_trace, use_pdb)
 
-    dump_header(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb)
+    dump_header(tx)
 
     dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level)
 
