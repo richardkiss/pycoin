@@ -51,7 +51,13 @@ class BitcoinSolutionChecker(SolutionChecker):
         return (len(script_public_key) == 23 and byte2int(script_public_key) == OP_HASH160 and
                 indexbytes(script_public_key, -1) == OP_EQUAL)
 
-    def check_solution(self, tx_context, flags, traceback_f=None):
+    @classmethod
+    def script_hash_from_script(class_, puzzle_script):
+        if class_.is_pay_to_script_hash(puzzle_script):
+            return puzzle_script[2:-1]
+        return False
+
+    def check_solution(self, tx_context, flags=None, traceback_f=None):
         """
         tx_context: information about the transaction that the VM may need
         flags: gives the VM hints about which additional constraints to check
