@@ -22,7 +22,7 @@ from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
 from pycoin.tx.exceptions import BadSpendableError
-from pycoin.tx.script.tools import opcode_list
+from pycoin.tx.script.tools import opcode_list, disassemble_for_opcode_data
 from pycoin.tx.script.check_signature import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
 from pycoin.tx.script.disassemble import disassemble_scripts, sighash_type_to_string
@@ -65,17 +65,15 @@ def make_trace_script(do_trace, use_pdb):
     if not (do_trace or use_pdb):
         return None
 
-    def trace_script(old_pc, opcode, data, stack, altstack, if_condition_stack, is_signature):
-        from pycoin.tx.script.tools import disassemble_for_opcode_data
-        print("%3d : %02x  %s" % (old_pc, opcode, disassemble_for_opcode_data(opcode, data)))
+    def trace_script(pc, opcode, data, stack, altstack, if_condition_stack, is_signature):
+        from pycoin.serialize import b2h
+        print("stack: [%s]" % ' '.join(b2h(s) for s in stack))
+        if len(altstack) > 0:
+            print("altstack: %s" % altstack)
+        print("condition stack: %s" % if_condition_stack)
+        print("%3d : %02x  %s" % (pc, opcode, disassemble_for_opcode_data(opcode, data)))
         if use_pdb:
             import pdb
-            from pycoin.serialize import b2h
-            print("stack: [%s]" % ', '.join(b2h(s) for s in stack))
-            if len(altstack) > 0:
-                print("altstack: %s" % altstack)
-            if len(if_condition_stack) > 0:
-                print("condition stack: %s" % ', '.join(int(s) for s in if_condition_stack))
             pdb.set_trace()
     return trace_script
 
