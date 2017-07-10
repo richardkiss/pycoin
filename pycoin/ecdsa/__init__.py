@@ -6,7 +6,7 @@ from .rfc6979 import deterministic_generate_k
 
 
 def is_public_pair_valid(self, p):
-    return self.contains_point(p)
+    return self.contains_point(*p)
 
 
 def possible_public_pairs_for_signature(self, value, signature):

@@ -3,7 +3,6 @@
 import unittest
 
 from pycoin.ecdsa import generator_secp256k1
-from pycoin.ecdsa.ellipticcurve import Point, NoSuchPointError
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node
@@ -307,15 +306,14 @@ class KeyUtilsTest(unittest.TestCase):
         test_points.append((k, x, y))
 
         for k, x, y in test_points:
-            p = Point(secp256k1_curve, x, y)
-            self.assertTrue(secp256k1_curve.contains_point(p.x(), p.y()))
+            self.assertTrue(secp256k1_curve.contains_point(x, y))
             K = Key(public_pair=(x, y))
             k = Key(secret_exponent=k)
             self.assertEqual(K.public_pair(), k.public_pair())
 
-        x = y = 0
-        self.assertRaises(NoSuchPointError, Point, secp256k1_curve, x, y)
-        self.assertRaises(InvalidPublicPairError, Key, public_pair=(0, 0))
+        p = secp256k1_curve.Point(0, 0)
+        self.assertRaises(ValueError, p.check_on_curve)
+        self.assertRaises(InvalidPublicPairError, Key, public_pair=p)
 
 
     def test_repr(self):

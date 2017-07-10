@@ -37,10 +37,6 @@ from .Point import Point
 from .numbertheory import inverse_mod
 
 
-class NoSuchPointError(ValueError):
-    pass
-
-
 class Curve(object):
 
     """Elliptic Curve over the field of integers modulo a prime."""
@@ -54,9 +50,14 @@ class Curve(object):
     def p(self):
         return self._p
 
-    def contains_point(self, point):
-        """Is the point (x,y) on this curve?"""
-        x, y = point
+    def check_point(self, p):
+        """Is the point (x, y) on this curve?"""
+        return self.contains_point(*p)
+
+    def contains_point(self, x, y):
+        """Is the point (x, y) on this curve?"""
+        if x is None and y is None:
+            return True
         return (y * y - (x * x * x + self._a * x + self._b)) % self._p == 0
 
     def add(self, p0, p1):
@@ -140,4 +141,4 @@ class Curve(object):
         return '{}({!r},{!r},{!r})'.format(self.__class__.__name__, self._p, self._a, self._b)
 
     def __str__(self):
-        return 'y^2 = x^3 + {}*x + {} (mod {})'.format(self.__a, self.__b, self.__p)
+        return 'y^2 = x^3 + {}*x + {} (mod {})'.format(self._a, self._b, self._p)
