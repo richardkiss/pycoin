@@ -152,7 +152,7 @@ def test_special_k():
     like the old one, minus my salt.
     """
     import random
-    from pycoin.ecdsa.ecdsa import deterministic_generate_k
+    from pycoin.ecdsa.rfc6979 import deterministic_generate_k
     from pycoin.ecdsa import generator_secp256k1
 
     from pycoin.contrib.msg_signing import deterministic_make_k

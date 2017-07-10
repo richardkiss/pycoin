@@ -212,7 +212,7 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
         try:
             ppp = ecdsa.possible_public_pairs_for_signature(
                 ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
-        except ecdsa.NoSuchPointError:
+        except ValueError:
             ppp = []
 
         while len(sig_blobs) < len(public_pair_blobs):

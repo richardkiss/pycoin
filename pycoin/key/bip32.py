@@ -47,11 +47,11 @@ import struct
 from .. import ecdsa
 
 from ..encoding import public_pair_to_sec, from_bytes_32, to_bytes_32
-from ..ecdsa.ellipticcurve import INFINITY
 
 logger = logging.getLogger(__name__)
 
 ORDER = ecdsa.generator_secp256k1.order()
+INFINITY = ecdsa.generator_secp256k1._infinity
 
 _SUBKEY_VALIDATION_LOG_ERR_FMT = """
 BUY A LOTTO TICKET RIGHT NOW! (And consider giving up your wallet to
@@ -140,7 +140,7 @@ def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
     x, y = public_pair
 
     the_point = I_left_as_exponent * ecdsa.generator_secp256k1 + \
-        ecdsa.Point(ecdsa.generator_secp256k1.curve(), x, y, ORDER)
+        ecdsa.generator_secp256k1.Point(x, y)
     if the_point == INFINITY:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
         raise DerivationError('K_{} == {}'.format(i, the_point))

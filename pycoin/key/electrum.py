@@ -72,7 +72,7 @@ class ElectrumWallet(Key):
             )
         p1 = offset * ecdsa.generator_secp256k1
         x, y = self.public_pair()
-        p2 = ecdsa.Point(ecdsa.generator_secp256k1.curve(), x, y, ORDER)
+        p2 = ecdsa.generator_secp256k1.Point(x, y)
         p = p1 + p2
         return Key(public_pair=p.pair(), prefer_uncompressed=True)
 

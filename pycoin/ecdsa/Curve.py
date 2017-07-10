@@ -98,6 +98,8 @@ class Curve(object):
 
         # From X9.62 D.3.2:
 
+        if e == 0 or self == self._infinity:
+            return self._infinity
         e3 = 3 * e
         negative_p = self.Point(p[0], -p[1])
         i = leftmost_bit(e3) // 2

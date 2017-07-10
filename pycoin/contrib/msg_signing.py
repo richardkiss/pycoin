@@ -7,7 +7,7 @@ import re
 from binascii import b2a_base64, a2b_base64
 
 from ..serialize.bitcoin_streamer import stream_bc_string
-from ..ecdsa import ellipticcurve, numbertheory, generator_secp256k1
+from ..ecdsa import numbertheory, generator_secp256k1
 
 from ..networks import address_prefix_for_netcode, network_name_for_netcode
 from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256
@@ -259,7 +259,7 @@ def _extract_public_pair(generator, recid, r, s, value):
 
     x = r + (n * (recid // 2))
 
-    alpha = (pow(x, 3, p) + curve.a() * x + curve.b()) % p
+    alpha = (pow(x, 3, p) + curve._a * x + curve._b) % p
     beta = numbertheory.modular_sqrt(alpha, p)
     inv_r = numbertheory.inverse_mod(r, order)
 
@@ -267,7 +267,7 @@ def _extract_public_pair(generator, recid, r, s, value):
 
     minus_e = -value % order
 
-    R = ellipticcurve.Point(curve, x, y, order)
+    R = G.Point(x, y)
     Q = inv_r * (s * R + minus_e * G)
     public_pair = (Q.x(), Q.y())
 

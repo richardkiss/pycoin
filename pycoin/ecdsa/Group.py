@@ -1,7 +1,7 @@
 from .Curve import Curve
 from .Point import Point
 
-from .numbertheory import inverse_mod, modular_sqrt
+from .numbertheory import modular_sqrt
 from .rfc6979 import deterministic_generate_k
 
 
@@ -29,7 +29,7 @@ class Group(Curve, Point):
         return modular_sqrt(a, self._p)
 
     def inverse(self, a):
-        return inverse_mod(a, self._order)
+        return self.inverse_mod(a, self._order)
 
     def possible_public_pairs_for_signature(self, value, signature):
         p = self._p
