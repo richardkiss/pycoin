@@ -53,6 +53,7 @@ class Group(Curve, Point):
         for y in [beta, p - beta]:
             # 1.4 the constructor checks that nR is at infinity
             R = self.Point(x, y)
+            R.check_on_curve()
             # 1.6 compute Q = r^-1 (sR - eG)
             Q = inv_r * (s * R + minus_e * self)
             # check that Q is the public key
