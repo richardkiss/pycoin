@@ -176,23 +176,14 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
     # Calculate the specific public key used to sign this message.
     assert 0 <= recid < 4, recid
     x = r + (generator_secp256k1.order() * (recid // 2))
-    assert recid < 2
-    y_is_odd = recid & 1
     pairs = generator_secp256k1.public_pairs_for_x(x)
     R = pairs[0]
-    if R[1] & 1 != y_is_odd:
+    if R[1] & 1 != recid & 1:
         R = pairs[1]
 
     inv_r = generator_secp256k1.inverse(r)
     minus_e = (-mhash % generator_secp256k1.order()) * generator_secp256k1
     pair = inv_r * (s * R + minus_e)
-
-    pair1 = pair
-    pair = _extract_public_pair(generator_secp256k1, recid, r, s, mhash)
-    assert pair == pair1
-    #if (pair[1] & 1) and y_is_even:
-    #    pair = pairs[1]
-    #assert (pair[1] & 1) ^ 1 == y_is_even
 
     # Check signing public pair is the one expected for the signature. It must be an
     # exact match for this key's public pair... or else we are looking at a validly
@@ -258,40 +249,6 @@ def _decode_signature(signature):
     is_compressed = bool(first & 0x4)
 
     return is_compressed, (first & 0x3), r, s
-
-
-def _extract_public_pair(generator, recid, r, s, value):
-    """
-    Using the already-decoded parameters of the bitcoin signature,
-    return the specific public key pair used to sign this message.
-    Caller must verify this pubkey is what was expected.
-    """
-    assert 0 <= recid < 4, recid
-
-    G = generator
-    n = G.order()
-
-    curve = G.curve()
-    order = G.order()
-    p = curve.p()
-
-    x = r + (n * (recid // 2))
-
-    alpha = (pow(x, 3, p) + curve._a * x + curve._b) % p
-    beta = numbertheory.modular_sqrt(alpha, p)
-    inv_r = numbertheory.inverse_mod(r, order)
-
-    y = beta if ((beta - recid) % 2 == 0) else (p - beta)
-
-    minus_e = -value % order
-
-    R = G.Point(x, y)
-    Q = inv_r * (s * R + minus_e * G)
-    public_pair = (Q.x(), Q.y())
-
-    # check that this is the RIGHT public key? No. Leave that for the caller.
-
-    return public_pair
 
 
 def hash_for_signing(msg, netcode='BTC'):
