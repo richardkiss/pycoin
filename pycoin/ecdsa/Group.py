@@ -11,7 +11,7 @@ class Group(Curve, Point):
 
     def __init__(self, p, a, b, basis, order):
         Curve.__init__(self, p, a, b)
-        Point.__init__(self, *basis, self)
+        Point.__init__(self, basis[0], basis[1], self)
         self._order = order
 
     def order(self):

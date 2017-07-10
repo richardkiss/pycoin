@@ -15,7 +15,7 @@ class Point(tuple):
 
     def check_on_curve(self):
         if not self._curve.check_point(self):
-            raise NoSuchPointError('({},{}) is not on the curve {}'.format(*self, self._curve))
+            raise NoSuchPointError('({},{}) is not on the curve {}'.format(self[0], self[1], self._curve))
 
     def __add__(self, other):
         """Add one point to another point."""
