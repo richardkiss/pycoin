@@ -17,13 +17,19 @@ class Group(Curve, Point):
     def order(self):
         return self._order
 
-    def public_pair_for_x(self, x, is_even):
+    def y_values_for_x(self, x):
         p = self._p
         alpha = (pow(x, 3, p) + self._a * x + self._b) % p
         beta = self.modular_sqrt(alpha)
-        if bool(is_even) == bool(beta & 1):
-            return (x, p - beta)
-        return (x, beta)
+        return (beta, p - beta)
+
+    def public_pairs_for_x(self, x):
+        return [self.Point(x, y) for y in self.y_values_for_x(x)]
+
+    def public_pair_for_x(self, x, is_even):
+        for y in self.y_values_for_x(x):
+            if bool(is_even) != bool(y & 1):
+                return self.Point(x, y)
 
     def modular_sqrt(self, a):
         return modular_sqrt(a, self._p)
