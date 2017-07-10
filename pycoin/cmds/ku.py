@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from pycoin import encoding
-from pycoin.ecdsa import is_public_pair_valid, generator_secp256k1, public_pair_for_x, secp256k1
+from pycoin.ecdsa import is_public_pair_valid, generator_secp256k1, public_pair_for_x
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
 from pycoin.key.key_from_text import key_from_text
@@ -63,7 +63,7 @@ def parse_as_number(s):
 
 def parse_as_secret_exponent(s):
     v = parse_as_number(s)
-    if v and v < secp256k1._r:
+    if v and v < generator_secp256k1.order():
         return v
 
 
