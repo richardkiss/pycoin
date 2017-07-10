@@ -174,7 +174,25 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
     mhash = hash_for_signing(message, netcode) if message is not None else msg_hash
 
     # Calculate the specific public key used to sign this message.
+    assert 0 <= recid < 4, recid
+    x = r + (generator_secp256k1.order() * (recid // 2))
+    assert recid < 2
+    y_is_odd = recid & 1
+    pairs = generator_secp256k1.public_pairs_for_x(x)
+    R = pairs[0]
+    if R[1] & 1 != y_is_odd:
+        R = pairs[1]
+
+    inv_r = generator_secp256k1.inverse(r)
+    minus_e = (-mhash % generator_secp256k1.order()) * generator_secp256k1
+    pair = inv_r * (s * R + minus_e)
+
+    pair1 = pair
     pair = _extract_public_pair(generator_secp256k1, recid, r, s, mhash)
+    assert pair == pair1
+    #if (pair[1] & 1) and y_is_even:
+    #    pair = pairs[1]
+    #assert (pair[1] & 1) ^ 1 == y_is_even
 
     # Check signing public pair is the one expected for the signature. It must be an
     # exact match for this key's public pair... or else we are looking at a validly

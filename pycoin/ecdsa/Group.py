@@ -17,13 +17,20 @@ class Group(Curve, Point):
     def order(self):
         return self._order
 
-    def public_pair_for_x(self, x, is_even):
+    def public_pairs_for_x(self, x):
+        y0, y1 = self.y_values_for_x(x)
+        return (self.Point(x, y0), self.Point(x, y1))
+
+    def public_pair_for_x(self, x, is_y_even):
+        for p in self.public_pairs_for_x(x):
+            if bool(is_y_even) == bool(p[1] & 1):
+                return p
+
+    def y_values_for_x(self, x):
         p = self._p
         alpha = (pow(x, 3, p) + self._a * x + self._b) % p
         beta = self.modular_sqrt(alpha)
-        if bool(is_even) == bool(beta & 1):
-            return (x, p - beta)
-        return (x, beta)
+        return (beta, p - beta)
 
     def modular_sqrt(self, a):
         return modular_sqrt(a, self._p)
@@ -32,27 +39,17 @@ class Group(Curve, Point):
         return self.inverse_mod(a, self._order)
 
     def possible_public_pairs_for_signature(self, value, signature):
-        p = self._p
-
         r, s = signature
+        mE = (-value % self._order) * self
 
         # recid = nV - 27
         # 1.1
         inv_r = self.inverse(r)
-        minus_e = -value % self._order
-        x = r
-        # 1.3
-        alpha = (pow(x, 3, p) + self._a * x + self._b) % p
-        beta = self.modular_sqrt(alpha)
-        for y in [beta, p - beta]:
+        for y in self.y_values_for_x(r):
             # 1.4 the constructor checks that nR is at infinity
-            R = self.Point(x, y)
+            R = self.Point(r, y)
             # 1.6 compute Q = r^-1 (sR - eG)
-            Q = inv_r * (s * R + minus_e * self)
-            # check that Q is the public key
-            if self.verify(Q, value, signature):
-                # check that we get the original signing address
-                yield Q
+            yield inv_r * (s * R + mE)
 
     def sign(self, secret_exponent, val, gen_k=deterministic_generate_k):
         n = self._order
@@ -83,6 +80,6 @@ class Group(Curve, Point):
         s_inverse = self.inverse(s)
         u1 = (val * s_inverse) % n
         u2 = (r * s_inverse) % n
-        point = u1 * self + u2 * self.Point(public_pair[0], public_pair[1])
+        point = u1 * self + u2 * self.Point(*public_pair)
         v = point[0] % n
         return v == r
