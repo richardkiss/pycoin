@@ -66,9 +66,7 @@ class GroupTestCase(unittest.TestCase):
         g = Point(13, 7, self.c23)
 
         check = self.c23._infinity
-        for i in range(1, 7 + 1):
-            import pdb
-            pdb.set_trace()
+        for i in range(8):
             p = (i % 7) * g
             print("%s * %d = %s, expected %s . . ." % (g, i, p, check))
             self.assertEqual(p, check)
