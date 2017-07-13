@@ -196,7 +196,7 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
         key = Key.from_text(key_or_address)
 
     try:
-        pair, is_compressed = pair_for_message(signature, message, msg_hash, netcode)
+        pair, is_compressed = pair_for_message(signature, message, msg_hash, key.netcode())
     except EncodingError:
         return False
     return pair_matches_key(pair, key, is_compressed)
