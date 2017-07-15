@@ -88,7 +88,7 @@ def make_fast_mul_f(library):
         library.EC_POINT_free(ec_point)
         library.EC_POINT_free(ec_result)
         library.BN_CTX_free(ctx)
-        return type(point)(point.curve(), bn_x.to_int(), bn_y.to_int())
+        return (bn_x.to_int(), bn_y.to_int())
     return fast_mul
 
 
@@ -108,5 +108,8 @@ except:
     NATIVE_LIBRARY = None
 
 if NATIVE_LIBRARY:
-    NATIVE_LIBRARY.fast_mul = make_fast_mul_f(NATIVE_LIBRARY)
-    NATIVE_LIBRARY.inverse_mod = make_inverse_mod_f(NATIVE_LIBRARY)
+    fast_mul = make_fast_mul_f(NATIVE_LIBRARY)
+    inverse_mod = make_inverse_mod_f(NATIVE_LIBRARY)
+else:
+    fast_mul = None
+    inverse_mod = None
