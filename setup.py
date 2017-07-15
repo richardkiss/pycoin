@@ -33,6 +33,7 @@ setup(
                 'block = pycoin.cmds.block:main',
                 'ku = pycoin.cmds.ku:main',
                 'tx = pycoin.cmds.tx:main',
+                'msg = pycoin.cmds.msg:main',
                 'cache_tx = pycoin.cmds.cache_tx:main',
                 'fetch_unspent = pycoin.cmds.fetch_unspent:main',
                 # these scripts are obsolete

@@ -17,27 +17,31 @@ class Group(Curve, Point):
     def order(self):
         return self._order
 
-    def y_values_for_x(self, x):
-        p = self._p
-        alpha = (pow(x, 3, p) + self._a * x + self._b) % p
-        beta = self.modular_sqrt(alpha)
-        return (beta, p - beta)
-
-    def public_pairs_for_x(self, x):
-        return [self.Point(x, y) for y in self.y_values_for_x(x)]
-
-    def public_pair_for_x(self, x, is_even):
-        for y in self.y_values_for_x(x):
-            if bool(is_even) != bool(y & 1):
-                return self.Point(x, y)
-
     def modular_sqrt(self, a):
         return modular_sqrt(a, self._p)
 
     def inverse(self, a):
         return self.inverse_mod(a, self._order)
 
-    def possible_public_pairs_for_signature(self, value, signature):
+    def y_values_for_x(self, x, y_parity=None):
+        p = self._p
+        alpha = (pow(x, 3, p) + self._a * x + self._b) % p
+        beta = self.modular_sqrt(alpha)
+        if y_parity is None:
+            return (beta, p - beta)
+        if beta & 1 == y_parity:
+            return [beta]
+        return [p - beta]
+
+    def public_pairs_for_x(self, x, y_parity=None):
+        return [self.Point(x, y) for y in self.y_values_for_x(x, y_parity=y_parity)]
+
+    def public_pair_for_x(self, x, is_even):
+        y = self.y_values_for_x(x, y_parity=1^is_even)[0]
+        return self.Point(x, y)
+
+    def possible_public_pairs_for_signature(self, value, signature, y_parity=None):
+        # y_parity is None, 0 or 1
         p = self._p
 
         r, s = signature
@@ -47,19 +51,16 @@ class Group(Curve, Point):
         inv_r = self.inverse(r)
         minus_e = -value % self._order
         x = r
-        # 1.3
-        alpha = (pow(x, 3, p) + self._a * x + self._b) % p
-        beta = self.modular_sqrt(alpha)
-        for y in [beta, p - beta]:
+        l = []
+        for y in self.y_values_for_x(x, y_parity=y_parity):
             # 1.4 the constructor checks that nR is at infinity
             R = self.Point(x, y)
             R.check_on_curve()
             # 1.6 compute Q = r^-1 (sR - eG)
             Q = inv_r * (s * R + minus_e * self)
             # check that Q is the public key
-            if self.verify(Q, value, signature):
-                # check that we get the original signing address
-                yield Q
+            l.append(Q)
+        return l
 
     def sign(self, secret_exponent, val, gen_k=deterministic_generate_k):
         n = self._order
