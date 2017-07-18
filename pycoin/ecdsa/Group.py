@@ -13,6 +13,11 @@ class Group(Curve, Point):
         Curve.__init__(self, p, a, b)
         Point.__init__(self, basis[0], basis[1], self)
         self._order = order
+        self._powers = []
+        Gp = self
+        for _ in range(256):
+            self._powers.append(Gp)
+            Gp += Gp
 
     def order(self):
         return self._order
@@ -94,3 +99,16 @@ class Group(Curve, Point):
         point = u1 * self + u2 * self.Point(*public_pair)
         v = point[0] % n
         return v == r
+
+    def __mul__(self, e):
+        """Multiply a point by an integer."""
+        P = self._infinity
+        for _ in range(256):
+            a = [P, P + self._powers[_]]
+            P = a[e & 1]
+            e >>= 1
+        return P
+
+    def __rmul__(self, other):
+        """Multiply a point by an integer."""
+        return self * other
