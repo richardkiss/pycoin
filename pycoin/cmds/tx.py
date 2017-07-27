@@ -518,7 +518,7 @@ def parse_context(args, parser):
     if args.fetch_spendables:
         warning_spendables = message_about_spendables_for_address_env(args.network)
         for address in args.fetch_spendables:
-            spendables.extend(spendables_for_address(address))
+            spendables.extend(spendables_for_address(address, args.network))
 
     return (txs, spendables, payables, key_iters, tx_db, warning_spendables)
 
