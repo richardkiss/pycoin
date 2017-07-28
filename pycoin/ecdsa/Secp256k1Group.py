@@ -41,14 +41,12 @@ if libsecp256k1 is not None:
                 return self._infinity
             return self.Point(*libsecp256k1._public_pair_for_secret_exponent(e))
 
-        def zsign(self, secret_exponent, val, gen_k=None):
-            import pdb
-            pdb.set_trace()
+        def sign(self, secret_exponent, val, gen_k=None):
             if 0: #gen_k is not None:
                 return super(LibSECP256K1GroupBestClass, self).sign(secret_exponent, val, gen_k=gen_k)
-            return self.Point(*libsecp256k1._sign(secret_exponent, val, gen_k))
+            return libsecp256k1._sign(secret_exponent, val, gen_k)
 
-        def zverify(self, public_pair, val, sig):
+        def verify(self, public_pair, val, sig):
             return libsecp256k1._verify(public_pair, val, sig)
 
     BestClass = LibSECP256K1GroupBestClass
