@@ -3,11 +3,29 @@
 import hashlib
 import unittest
 
-from pycoin.ecdsa import generator_secp256k1, sign, verify, public_pair_for_secret_exponent, deterministic_generate_k
+from pycoin.ecdsa import secp256k1_group, generator_secp256k1, sign, verify, public_pair_for_secret_exponent, deterministic_generate_k
 from pycoin.ecdsa.intstream import to_bytes, from_bytes
 from pycoin.ecdsa.numbertheory import inverse_mod
 
 class ECDSATestCase(unittest.TestCase):
+
+    def test_infinity(self):
+        self.assertEqual(secp256k1_group * 0, secp256k1_group._infinity)
+        self.assertEqual(0 * secp256k1_group, secp256k1_group._infinity)
+
+    def test_sign_simple(self):
+        secret_exponent = 1
+        public_point = secp256k1_group * secret_exponent
+        self.assertEqual(public_point, (
+            55066263022277343669578718895168534326250603453777594175500187360389116729240,
+            32670510020758816978083085130507043184471273380659243275938904335757337482424)
+        )
+        v = 1
+        sig = secp256k1_group.sign(secret_exponent, v)
+        self.assertEqual(sig, (
+            46340862580836590753275244201733144181782255593078084106116359912084275628184,
+            81369331955758484632176499244870227132558660296342819670803726373940306621624)
+        )
 
     def test_sign_verify(self):
         def do_test(secret_exponent, val_list):

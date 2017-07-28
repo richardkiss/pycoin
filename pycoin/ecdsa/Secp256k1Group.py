@@ -9,7 +9,8 @@ _Gy = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
 _r = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 
 
-secp256k1_group = Group(_p, _a, _b, (_Gx, _Gy), _r)
+BestClass = Group
+
 
 
 
@@ -17,7 +18,7 @@ from .native.openssl import fast_mul, inverse_mod
 
 if fast_mul and inverse_mod:
 
-    class OpenSSLGroup(Group):
+    class OpenSSLGroup(BestClass):
 
         def multiply(self, p, e):
             if e == 0:
@@ -27,6 +28,30 @@ if fast_mul and inverse_mod:
         def inverse_mod(self, a, p):
             return inverse_mod(a, p)
 
-    secp256k1_group = OpenSSLGroup(_p, _a, _b, (_Gx, _Gy), _r)
-else:
-    secp256k1_group = Group(_p, _a, _b, (_Gx, _Gy), _r)
+    BestClass = OpenSSLGroup
+
+
+from .native.secp256k1_mp import libsecp256k1
+
+if libsecp256k1 is not None:
+
+    class LibSECP256K1GroupBestClass(BestClass):
+        def __mul__(self, e):
+            if e == 0:
+                return self._infinity
+            return self.Point(*libsecp256k1._public_pair_for_secret_exponent(e))
+
+        def zsign(self, secret_exponent, val, gen_k=None):
+            import pdb
+            pdb.set_trace()
+            if 0: #gen_k is not None:
+                return super(LibSECP256K1GroupBestClass, self).sign(secret_exponent, val, gen_k=gen_k)
+            return self.Point(*libsecp256k1._sign(secret_exponent, val, gen_k))
+
+        def zverify(self, public_pair, val, sig):
+            return libsecp256k1._verify(public_pair, val, sig)
+
+    BestClass = LibSECP256K1GroupBestClass
+
+
+secp256k1_group = BestClass(_p, _a, _b, (_Gx, _Gy), _r)
