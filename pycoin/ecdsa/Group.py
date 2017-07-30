@@ -32,6 +32,8 @@ class Group(Curve, Point):
         p = self._p
         alpha = (pow(x, 3, p) + self._a * x + self._b) % p
         beta = self.modular_sqrt(alpha)
+        if beta == 0:
+            return []
         if y_parity is None:
             return (beta, p - beta)
         if beta & 1 == y_parity:
@@ -42,8 +44,10 @@ class Group(Curve, Point):
         return [self.Point(x, y) for y in self.y_values_for_x(x, y_parity=y_parity)]
 
     def public_pair_for_x(self, x, is_even):
-        y = self.y_values_for_x(x, y_parity=1 ^ is_even)[0]
-        return self.Point(x, y)
+        y_list = self.y_values_for_x(x, y_parity=1 ^ is_even)
+        if y_list:
+            return self.Point(x, y_list[0])
+        return None
 
     def possible_public_pairs_for_signature(self, value, signature, y_parity=None):
         # y_parity is None, 0 or 1
