@@ -6,7 +6,7 @@ from ctypes import cdll, byref, c_int, c_uint, c_char_p, c_void_p, c_size_t, cre
 from pycoin.ecdsa import secp256k1_group, generator_secp256k1, sign, verify, public_pair_for_secret_exponent
 from pycoin.ecdsa.intstream import to_bytes, from_bytes
 from pycoin.ecdsa.numbertheory import inverse_mod
-from pycoin.ecdsa.native.secp256k1 import libsecp256k1, secp256k1, SECP256K1_EC_UNCOMPRESSED
+from pycoin.ecdsa.native.secp256k1 import libsecp256k1, SECP256K1_EC_UNCOMPRESSED
 from pycoin.ecdsa.rfc6979 import deterministic_generate_k
 from pycoin.encoding import from_bytes_32, to_bytes_32
 from pycoin.intbytes import int2byte, byte2int

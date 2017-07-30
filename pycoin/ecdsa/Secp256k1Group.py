@@ -1,4 +1,6 @@
 from .Group import Group
+from .native.openssl import OpenSSLGroup
+from .native.secp256k1 import LibSECP256K1Group
 
 # Certicom secp256-k1
 _a = 0x0000000000000000000000000000000000000000000000000000000000000000
@@ -10,31 +12,14 @@ _r = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 
 
 BestClass = Group
-
-
-from .native.openssl import OpenSSLGroup
-
 if OpenSSLGroup:
     BestClass = OpenSSLGroup
 
+if LibSECP256K1Group:
+    class NewGroupBestClass(BestClass, LibSECP256K1Group):
+        pass
 
-from .native.secp256k1 import libsecp256k1
-
-if libsecp256k1 is not None:
-
-    class LibSECP256K1GroupBestClass(BestClass):
-        def __mul__(self, e):
-            if e == 0:
-                return self._infinity
-            return self.Point(*libsecp256k1._public_pair_for_secret_exponent(e))
-
-        def sign(self, secret_exponent, val, gen_k=None):
-            return libsecp256k1._sign(secret_exponent, val, gen_k)
-
-        def verify(self, public_pair, val, sig):
-            return libsecp256k1._verify(public_pair, val, sig)
-
-    BestClass = LibSECP256K1GroupBestClass
+    BestClass = NewGroupBestClass
 
 
 secp256k1_group = BestClass(_p, _a, _b, (_Gx, _Gy), _r)
