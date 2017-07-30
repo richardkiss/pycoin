@@ -3,9 +3,10 @@
 import hashlib
 import unittest
 
-from pycoin.ecdsa import secp256k1_group, generator_secp256k1, sign, verify, public_pair_for_secret_exponent, deterministic_generate_k
+from pycoin.ecdsa import secp256k1_group, generator_secp256k1, sign, verify, public_pair_for_secret_exponent
 from pycoin.ecdsa.intstream import to_bytes, from_bytes
 from pycoin.ecdsa.numbertheory import inverse_mod
+from pycoin.ecdsa.rfc6979 import deterministic_generate_k
 
 
 class ECDSATestCase(unittest.TestCase):
@@ -23,7 +24,6 @@ class ECDSATestCase(unittest.TestCase):
         )
         hash_value = 1
         sig = secp256k1_group.sign(secret_exponent, hash_value)
-        print(sig)
         r = secp256k1_group.verify(public_pair, hash_value, sig)
         self.assertTrue(r)
         r = secp256k1_group.verify(public_pair, hash_value, (sig[0], sig[1] ^ 1))
@@ -62,6 +62,16 @@ class ECDSATestCase(unittest.TestCase):
         do_test(0x1111111111111111111111111111111111111111111111111111111111111111, val_list)
         do_test(0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd, val_list)
         do_test(0x47f7616ea6f9b923076625b4488115de1ef1187f760e65f89eb6f4f7ff04b012, val_list)
+
+    def test_custom_k(self):
+        secret_exponent = 1
+        sig_hash = 1
+        gen_k = lambda *args: 1
+        signature = secp256k1_group.sign(secret_exponent, sig_hash, gen_k)
+        self.assertEqual(signature, (
+            55066263022277343669578718895168534326250603453777594175500187360389116729240,
+            55066263022277343669578718895168534326250603453777594175500187360389116729241
+        ))
 
     def test_inverse_mod(self):
         prime = generator_secp256k1.curve().p()

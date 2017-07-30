@@ -12,8 +12,6 @@ _r = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 BestClass = Group
 
 
-
-
 from .native.openssl import fast_mul, inverse_mod
 
 if fast_mul and inverse_mod:
@@ -42,8 +40,6 @@ if libsecp256k1 is not None:
             return self.Point(*libsecp256k1._public_pair_for_secret_exponent(e))
 
         def sign(self, secret_exponent, val, gen_k=None):
-            if 0: #gen_k is not None:
-                return super(LibSECP256K1GroupBestClass, self).sign(secret_exponent, val, gen_k=gen_k)
             return libsecp256k1._sign(secret_exponent, val, gen_k)
 
         def verify(self, public_pair, val, sig):

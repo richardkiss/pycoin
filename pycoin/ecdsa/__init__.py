@@ -2,8 +2,6 @@ from .Secp256k1Group import secp256k1_group
 
 from .Point import Point
 
-from .rfc6979 import deterministic_generate_k
-
 
 def is_public_pair_valid(self, p):
     return self.contains_point(*p)
@@ -17,7 +15,7 @@ def public_pair_for_x(self, x, is_even):
     return self.public_pair_for_x(x, is_even)
 
 
-def sign(generator, secret_exponent, val, gen_k=deterministic_generate_k):
+def sign(generator, secret_exponent, val, gen_k=None):
     return generator.sign(secret_exponent, val, gen_k)
 
 

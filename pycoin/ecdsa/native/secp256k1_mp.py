@@ -1,4 +1,4 @@
-from ctypes import cdll, byref, c_int, c_uint, c_char_p, c_size_t, c_void_p, create_string_buffer
+from ctypes import cdll, byref, c_byte, c_int, c_uint, c_char_p, c_size_t, c_void_p, create_string_buffer, CFUNCTYPE, POINTER
 import os
 import platform
 
@@ -33,8 +33,6 @@ SECP256K1_EC_UNCOMPRESSED = (SECP256K1_FLAGS_TYPE_COMPRESSION)
 try:
     secp256k1 = cdll.LoadLibrary('libsecp256k1.%s' % SO_EXT)
 
-    SECP256K1_START_VERIFY = 1
-    SECP256K1_START_SIGN = 2
     secp256k1.secp256k1_context_create.argtypes = [c_uint]
     secp256k1.secp256k1_context_create.restype = c_void_p
 
@@ -80,9 +78,22 @@ try:
 
         @classmethod
         def _sign(class_, secexp, signature_hash, gen_k):
+            nonce_function = None
+            if gen_k is not None:
+                def adaptor(nonce32_p, msg32_p, key32_p, algo16_p, data, attempt):
+                    # BRAIN DAMAGE
+                    n = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
+                    secret_exponent = from_bytes_32(key32_p.contents)
+                    val = from_bytes_32(msg32_p.contents)
+                    r = gen_k(n, secret_exponent, val)
+                    for _, b in enumerate(to_bytes_32(r)):
+                        nonce32_p.contents[_] = b
+                    return 1
+                nonce_function = CFUNCTYPE(c_int, POINTER(c_byte*32), POINTER(c_byte*32), POINTER(c_byte*32), POINTER(c_byte*16), c_void_p, c_uint)(adaptor)
+
             sig = create_string_buffer(64)
             sig_hash_bytes = to_bytes_32(signature_hash)
-            secp256k1.secp256k1_ecdsa_sign(class_.ctx, sig, sig_hash_bytes, to_bytes_32(secexp), None, None)
+            secp256k1.secp256k1_ecdsa_sign(class_.ctx, sig, sig_hash_bytes, to_bytes_32(secexp), nonce_function, None)
             compact_signature = create_string_buffer(64)
             secp256k1.secp256k1_ecdsa_signature_serialize_compact(class_.ctx, compact_signature, sig)
             r = from_bytes_32(compact_signature[:32])

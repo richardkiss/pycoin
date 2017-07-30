@@ -42,13 +42,11 @@ class Group(Curve, Point):
         return [self.Point(x, y) for y in self.y_values_for_x(x, y_parity=y_parity)]
 
     def public_pair_for_x(self, x, is_even):
-        y = self.y_values_for_x(x, y_parity=1^is_even)[0]
+        y = self.y_values_for_x(x, y_parity=1 ^ is_even)[0]
         return self.Point(x, y)
 
     def possible_public_pairs_for_signature(self, value, signature, y_parity=None):
         # y_parity is None, 0 or 1
-        p = self._p
-
         r, s = signature
 
         # recid = nV - 27
