@@ -115,12 +115,7 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
     mhash = hash_for_signing(message, netcode) if message else msg_hash
 
     # Use a deterministic K so our signatures are deterministic.
-    try:
-        r, s, y_odd = _my_sign(generator_secp256k1, secret_exponent, mhash)
-    except RuntimeError:
-        # .. except if extremely unlucky
-        k = from_bytes_32(os.urandom(32))
-        r, s, y_odd = _my_sign(generator_secp256k1, secret_exponent, mhash, _k=k)
+    r, s, y_odd = generator_secp256k1.sign_with_y_index(secret_exponent, mhash)
 
     is_compressed = not key._use_uncompressed(use_uncompressed)
     assert y_odd in (0, 1)
@@ -269,73 +264,3 @@ def hash_for_signing(msg, netcode='BTC'):
 
     # return as a number, since it's an input to signing algos like that anyway
     return from_bytes_32(double_sha256(fd.getvalue()))
-
-
-def deterministic_make_k(generator_order, secret_exponent, val,
-                         hash_f=hashlib.sha256, trust_no_one=True):
-    """
-    Generate K value BUT NOT according to https://tools.ietf.org/html/rfc6979
-
-    ecsda.deterministic_generate_k() was more general than it needs to be,
-    and I felt the hand of NSA in the wholly constants, so I simplified and
-    changed the salt.
-    """
-    n = generator_order
-    assert hash_f().digest_size == 32
-
-    # code below has been specialized for SHA256 / bitcoin usage
-    assert n.bit_length() == 256
-    hash_size = 32
-
-    if trust_no_one:
-        v = b"Edward Snowden rocks the world!!"
-        k = b"Qwest CEO Joseph Nacchio is free"
-    else:
-        v = b'\x01' * hash_size
-        k = b'\x00' * hash_size
-
-    priv = to_bytes_32(secret_exponent)
-
-    if val > n:
-        val -= n
-
-    h1 = to_bytes_32(val)
-    k = hmac.new(k, v + b'\x00' + priv + h1, hash_f).digest()
-    v = hmac.new(k, v, hash_f).digest()
-    k = hmac.new(k, v + b'\x01' + priv + h1, hash_f).digest()
-    v = hmac.new(k, v, hash_f).digest()
-
-    while 1:
-        t = hmac.new(k, v, hash_f).digest()
-
-        k1 = from_bytes_32(t)
-
-        if k1 >= 1 and k1 < n:
-            return k1
-
-        k = hmac.new(k, v + b'\x00', hash_f).digest()
-        v = hmac.new(k, v, hash_f).digest()
-
-
-def _my_sign(generator, secret_exponent, val, _k=None):
-    """
-        Return a signature for the provided hash (val), using the provided
-        random nonce, _k or generate a deterministic K as needed.
-
-        May raise RuntimeError, in which case retrying with a new
-        random value k is in order.
-    """
-    G = generator
-    n = G.order()
-
-    k = _k or deterministic_make_k(n, secret_exponent, val)
-    p1 = k * G
-    r = p1.x()
-    if r == 0:
-        raise RuntimeError("amazingly unlucky random number r")
-    s = (numbertheory.inverse_mod(k, n) *
-         (val + (secret_exponent * r) % n)) % n
-    if s == 0:
-        raise RuntimeError("amazingly unlucky random number s")
-
-    return (r, s, p1.y() % 2)

@@ -69,7 +69,9 @@ class Group(Curve, Point):
             l.append(Q)
         return l
 
-    def sign(self, secret_exponent, val, gen_k=deterministic_generate_k):
+    def sign_with_y_index(self, secret_exponent, val, gen_k=None):
+        if gen_k is None:
+            gen_k = deterministic_generate_k
         n = self._order
         k = gen_k(n, secret_exponent, val)
         p1 = k * self
@@ -79,7 +81,10 @@ class Group(Curve, Point):
         s = (self.inverse(k) * (val + (secret_exponent * r) % n)) % n
         if s == 0:
             raise RuntimeError("amazingly unlucky random number s")
-        return self.Point(r, s)
+        return r, s, p1[1] & 1
+
+    def sign(self, secret_exponent, val, gen_k=None):
+        return self.sign_with_y_parity(secret_exponent, val, gen_k)[0]
 
     def verify(self, public_pair, val, sig):
         """

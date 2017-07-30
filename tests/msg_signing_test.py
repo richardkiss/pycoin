@@ -146,41 +146,12 @@ IEackZgifpBJs3SqQQ6leUwzvakTZgUKTDuCCn6rVMOQgHlIEzWSYZGQu2H+1chvu68uutzt04cGmsHy
     assert ok
 
 
-def test_special_k():
-    """
-    Check that my reworked version of ecdsa.deterministic_generate_k works
-    like the old one, minus my salt.
-    """
-    import random
-    from pycoin.ecdsa.rfc6979 import deterministic_generate_k
-    from pycoin.ecdsa import generator_secp256k1
-
-    from pycoin.contrib.msg_signing import deterministic_make_k
-
-    order = generator_secp256k1.order()
-    r = random.Random(42)
-    saw = set()
-    for i in range(10000):
-        se = r.randint(2, order-2)
-        val = r.randint(0, 2**32)
-
-        old = deterministic_generate_k(order, se, val)
-        new = deterministic_make_k(order, se, val, trust_no_one=False)
-
-        assert old == new
-        assert new not in saw
-        saw.add(new)
-
-
 class MsgSigningTests(unittest.TestCase):
     def test_1(self):
         test_against_myself()
 
     def test_2(self):
         test_msg_parse()
-
-    def test_k(self):
-        test_special_k()
 
 
 if __name__ == "__main__":
