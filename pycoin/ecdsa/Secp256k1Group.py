@@ -29,7 +29,7 @@ if fast_mul and inverse_mod:
     BestClass = OpenSSLGroup
 
 
-from .native.secp256k1_mp import libsecp256k1
+from .native.secp256k1 import libsecp256k1
 
 if libsecp256k1 is not None:
 
