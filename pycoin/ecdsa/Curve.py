@@ -50,6 +50,9 @@ class Curve(object):
     def p(self):
         return self._p
 
+    def infinity(self):
+        return self._infinity
+
     def check_point(self, p):
         """Is the point (x, y) on this curve?"""
         return self.contains_point(*p)

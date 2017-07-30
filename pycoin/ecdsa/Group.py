@@ -84,7 +84,7 @@ class Group(Curve, Point):
         return r, s, p1[1] & 1
 
     def sign(self, secret_exponent, val, gen_k=None):
-        return self.sign_with_y_parity(secret_exponent, val, gen_k)[0]
+        return self.sign_with_y_index(secret_exponent, val, gen_k)[0:2]
 
     def verify(self, public_pair, val, sig):
         """

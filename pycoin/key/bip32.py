@@ -51,7 +51,7 @@ from ..encoding import public_pair_to_sec, from_bytes_32, to_bytes_32
 logger = logging.getLogger(__name__)
 
 ORDER = ecdsa.generator_secp256k1.order()
-INFINITY = ecdsa.generator_secp256k1._infinity
+INFINITY = ecdsa.generator_secp256k1.infinity()
 
 _SUBKEY_VALIDATION_LOG_ERR_FMT = """
 BUY A LOTTO TICKET RIGHT NOW! (And consider giving up your wallet to
