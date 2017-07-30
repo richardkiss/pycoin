@@ -2,6 +2,7 @@ import ctypes.util
 import os
 import platform
 
+from ..Group import Group
 from .bignum import bignum_type_for_library
 
 
@@ -17,7 +18,7 @@ def set_api(library, api_info):
 
 
 def load_library():
-    if os.getenv("PYCOIN_NATIVE") != "openssl":
+    if os.getenv("PYCOIN_NATIVE").lower() != "openssl":
         return None
 
     system = platform.system()
@@ -68,48 +69,40 @@ def load_library():
     return library
 
 
-def make_fast_mul_f(library):
-    NID_secp256k1_GROUP = library.EC_GROUP_new_by_curve_name(714)
+OpenSSL = load_library()
 
-    def fast_mul(point, N):
-        bn_x = library.BignumType(point.x())
-        bn_y = library.BignumType(point.y())
-        bn_n = library.BignumType(N)
+if OpenSSL:
+    NID_secp256k1_GROUP = OpenSSL.EC_GROUP_new_by_curve_name(714)
 
-        ctx = library.BN_CTX_new()
-        ec_result = library.EC_POINT_new(NID_secp256k1_GROUP)
-        ec_point = library.EC_POINT_new(NID_secp256k1_GROUP)
+    class OpenSSLGroup(Group):
 
-        library.EC_POINT_set_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_point, bn_x, bn_y, ctx)
+        def multiply(self, p, e):
+            if e == 0 or p == self._infinity:
+                return self._infinity
 
-        library.EC_POINT_mul(NID_secp256k1_GROUP, ec_result, None, ec_point, bn_n, ctx)
+            bn_x = OpenSSL.BignumType(p[0])
+            bn_y = OpenSSL.BignumType(p[1])
+            bn_n = OpenSSL.BignumType(e)
 
-        library.EC_POINT_get_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_result, bn_x, bn_y, ctx)
-        library.EC_POINT_free(ec_point)
-        library.EC_POINT_free(ec_result)
-        library.BN_CTX_free(ctx)
-        return (bn_x.to_int(), bn_y.to_int())
-    return fast_mul
+            ctx = OpenSSL.BN_CTX_new()
+            ec_result = OpenSSL.EC_POINT_new(NID_secp256k1_GROUP)
+            ec_point = OpenSSL.EC_POINT_new(NID_secp256k1_GROUP)
 
+            OpenSSL.EC_POINT_set_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_point, bn_x, bn_y, ctx)
 
-def make_inverse_mod_f(library):
-    def inverse_mod(a, n):
-        ctx = library.BN_CTX_new()
-        a1 = library.BignumType(a)
-        library.BN_mod_inverse(a1, a1, library.BignumType(n), ctx)
-        library.BN_CTX_free(ctx)
-        return a1.to_int()
-    return inverse_mod
+            OpenSSL.EC_POINT_mul(NID_secp256k1_GROUP, ec_result, None, ec_point, bn_n, ctx)
 
+            OpenSSL.EC_POINT_get_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_result, bn_x, bn_y, ctx)
+            OpenSSL.EC_POINT_free(ec_point)
+            OpenSSL.EC_POINT_free(ec_result)
+            OpenSSL.BN_CTX_free(ctx)
+            return self.Point(bn_x.to_int(), bn_y.to_int())
 
-try:
-    NATIVE_LIBRARY = load_library()
-except:
-    NATIVE_LIBRARY = None
-
-if NATIVE_LIBRARY:
-    fast_mul = make_fast_mul_f(NATIVE_LIBRARY)
-    inverse_mod = make_inverse_mod_f(NATIVE_LIBRARY)
+        def inverse_mod(self, a, p):
+            ctx = OpenSSL.BN_CTX_new()
+            a1 = OpenSSL.BignumType(a)
+            OpenSSL.BN_mod_inverse(a1, a1, OpenSSL.BignumType(p), ctx)
+            OpenSSL.BN_CTX_free(ctx)
+            return a1.to_int()
 else:
-    fast_mul = None
-    inverse_mod = None
+    OpenSSLGroup = None

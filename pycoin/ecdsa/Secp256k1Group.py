@@ -12,20 +12,9 @@ _r = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 BestClass = Group
 
 
-from .native.openssl import fast_mul, inverse_mod
+from .native.openssl import OpenSSLGroup
 
-if fast_mul and inverse_mod:
-
-    class OpenSSLGroup(BestClass):
-
-        def multiply(self, p, e):
-            if e == 0:
-                return self._infinity
-            return self.Point(*fast_mul(p, e))
-
-        def inverse_mod(self, a, p):
-            return inverse_mod(a, p)
-
+if OpenSSLGroup:
     BestClass = OpenSSLGroup
 
 

@@ -93,6 +93,9 @@ class Curve(object):
     def multiply(self, p, e):
         """Multiply a point by an integer."""
 
+        if p == self._infinity:
+            return p
+
         def leftmost_bit(x):
             assert x > 0
             result = 1

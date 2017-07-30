@@ -12,8 +12,12 @@ from pycoin.ecdsa.rfc6979 import deterministic_generate_k
 class ECDSATestCase(unittest.TestCase):
 
     def test_infinity(self):
-        self.assertEqual(secp256k1_group * 0, secp256k1_group._infinity)
-        self.assertEqual(0 * secp256k1_group, secp256k1_group._infinity)
+        infinity = secp256k1_group.infinity()
+        self.assertEqual(secp256k1_group * 0, infinity)
+        self.assertEqual(0 * secp256k1_group, infinity)
+        for _ in range(0, 100, 10):
+            self.assertEqual(_ * infinity, infinity)
+            self.assertEqual(infinity * _, infinity)
 
     def test_sign_simple(self):
         secret_exponent = 1
