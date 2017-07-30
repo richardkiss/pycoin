@@ -1,9 +1,10 @@
-from ctypes import cdll, byref, c_byte, c_int, c_uint, c_char_p, c_size_t, c_void_p, create_string_buffer, CFUNCTYPE, POINTER
+from ctypes import (
+    cdll, byref, c_byte, c_int, c_uint, c_char_p, c_size_t, c_void_p, create_string_buffer, CFUNCTYPE, POINTER
+)
 import os
 import platform
 
 from pycoin.encoding import from_bytes_32, to_bytes_32
-from pycoin.serialize import b2h
 
 
 SO_EXT = 'dylib' if platform.system() == 'Darwin' else 'so'
@@ -89,7 +90,8 @@ try:
                     for _, b in enumerate(to_bytes_32(r)):
                         nonce32_p.contents[_] = b
                     return 1
-                nonce_function = CFUNCTYPE(c_int, POINTER(c_byte*32), POINTER(c_byte*32), POINTER(c_byte*32), POINTER(c_byte*16), c_void_p, c_uint)(adaptor)
+                p_b32 = POINTER(c_byte*32)
+                nonce_function = CFUNCTYPE(c_int, p_b32, p_b32, p_b32, POINTER(c_byte*16), c_void_p, c_uint)(adaptor)
 
             sig = create_string_buffer(64)
             sig_hash_bytes = to_bytes_32(signature_hash)
