@@ -1,6 +1,5 @@
 import ctypes
 import os
-import platform
 import warnings
 
 from ctypes import (

@@ -1,4 +1,4 @@
-from pycoin.ecdsa import generator_secp256k1, possible_public_pairs_for_signature
+from pycoin.ecdsa import generator_secp256k1
 from pycoin.encoding import (public_pair_to_bitcoin_address, hash160_sec_to_bitcoin_address,
                              sec_to_public_pair, is_sec_compressed)
 
@@ -35,7 +35,7 @@ def add_signature_annotations(annotations, signature_blob, signature_for_hash_ty
     annotations.append("z: {0:#066x}".format(sig_hash))
     annotations.append("signature type %s" % sighash_type_to_string(sig_type))
     addresses = []
-    pairs = possible_public_pairs_for_signature(generator_secp256k1, sig_hash, sig_pair)
+    pairs = generator_secp256k1.possible_public_pairs_for_signature(sig_hash, sig_pair)
     for pair in pairs:
         for comp in (True, False):
             address = public_pair_to_bitcoin_address(pair, compressed=comp, address_prefix=b'\0')

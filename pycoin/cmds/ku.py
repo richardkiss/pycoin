@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from pycoin import encoding
-from pycoin.ecdsa import is_public_pair_valid, generator_secp256k1, public_pair_for_x
+from pycoin.ecdsa import generator_secp256k1
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
 from pycoin.key.key_from_text import key_from_text
@@ -74,10 +74,10 @@ def parse_as_public_pair(s):
             v0 = parse_as_number(s0)
             if v0:
                 if s1 in ("even", "odd"):
-                    return public_pair_for_x(generator_secp256k1, v0, is_even=(s1 == 'even'))
+                    return generator_secp256k1.public_pair_for_x(v0, is_even=(s1 == 'even'))
                 v1 = parse_as_number(s1)
                 if v1:
-                    if not is_public_pair_valid(generator_secp256k1, (v0, v1)):
+                    if not generator_secp256k1.contains_point(v0, v1):
                         sys.stderr.write("invalid (x, y) pair\n")
                         sys.exit(1)
                     return (v0, v1)

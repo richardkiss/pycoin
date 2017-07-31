@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from ... import ecdsa
+from ...ecdsa import generator_secp256k1
 from ...encoding import sec_to_public_pair, EncodingError
 from ...intbytes import byte2int, indexbytes, iterbytes
 
@@ -92,7 +92,7 @@ def check_valid_signature(sig):
 def check_low_der_signature(sig_pair):
     # IsLowDERSignature
     r, s = sig_pair
-    hi_s = ecdsa.generator_secp256k1.curve().p() - s
+    hi_s = generator_secp256k1.curve().p() - s
     if hi_s < s:
         raise ScriptError("signature has high S value", errno.SIG_HIGH_S)
 
@@ -161,7 +161,7 @@ def op_checksig(stack, signature_for_hash_type_f, expected_hash_type, tmp_script
 
     signature_hash = signature_for_hash_type_f(signature_type, script=tmp_script)
 
-    if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, signature_hash, sig_pair):
+    if generator_secp256k1.verify(public_pair, signature_hash, sig_pair):
         stack.append(VCH_TRUE)
     else:
         if flags & VERIFY_NULLFAIL:
@@ -210,8 +210,7 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
             sig_cache[signature_type] = signature_for_hash_type_f(signature_type, script=tmp_script)
 
         try:
-            ppp = ecdsa.possible_public_pairs_for_signature(
-                ecdsa.generator_secp256k1, sig_cache[signature_type], sig_pair)
+            ppp = generator_secp256k1.possible_public_pairs_for_signature(sig_cache[signature_type], sig_pair)
         except ValueError:
             ppp = []
 

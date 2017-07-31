@@ -2,7 +2,7 @@ from ..script import opcodes, tools
 from ..script.check_signature import parse_signature_blob
 from ..script.der import UnexpectedDER
 
-from ... import ecdsa
+from ...ecdsa import generator_secp256k1
 from ... import encoding
 
 from ...serialize import b2h
@@ -78,7 +78,7 @@ class ScriptMultisig(ScriptType):
                 for idx, sec_key in enumerate(self.sec_keys):
                     public_pair = encoding.sec_to_public_pair(sec_key)
                     sign_value = signature_for_hash_type_f(signature_type, script_to_hash)
-                    v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
+                    v = generator_secp256k1.verify(public_pair, sign_value, sig_pair)
                     if v:
                         signatures.append((idx, data))
                         secs_solved.add(sec_key)

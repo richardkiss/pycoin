@@ -2,7 +2,7 @@ import collections
 
 from pycoin import ecdsa
 
-from ..script import der, opcodes, tools
+from ..script import der, tools
 
 
 from pycoin.intbytes import int2byte
@@ -84,7 +84,7 @@ class ScriptType(object):
             self, secret_exponent, signature_for_hash_type_f, signature_type, script):
         sign_value = signature_for_hash_type_f(signature_type, script)
         order = ecdsa.generator_secp256k1.order()
-        r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
+        r, s = ecdsa.generator_secp256k1.sign(secret_exponent, sign_value)
         if s + s > order:
             s = order - s
         return der.sigencode_der(r, s) + int2byte(signature_type)

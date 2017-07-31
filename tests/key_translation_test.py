@@ -2,7 +2,7 @@
 
 import unittest
 
-from pycoin.ecdsa import public_pair_for_secret_exponent, generator_secp256k1
+from pycoin.ecdsa import generator_secp256k1
 
 from pycoin.encoding import bitcoin_address_to_hash160_sec, is_sec_compressed, public_pair_to_sec, secret_exponent_to_wif, public_pair_to_bitcoin_address, wif_to_tuple_of_secret_exponent_compressed, sec_to_public_pair, public_pair_to_hash160_sec
 from pycoin.serialize import h2b
@@ -30,7 +30,7 @@ class BuildTxTest(unittest.TestCase):
             self.assertEqual(exponent, secret_exponent)
             self.assertTrue(compressed)
 
-            public_pair = public_pair_for_secret_exponent(generator_secp256k1, secret_exponent)
+            public_pair = secret_exponent * generator_secp256k1
 
             pk_public_pair = sec_to_public_pair(sec)
             compressed = is_sec_compressed(sec)
