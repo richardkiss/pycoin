@@ -92,10 +92,11 @@ class Curve(object):
     def multiply(self, p, e):
         """Multiply a point by an integer."""
 
-        if p == self._infinity:
-            return p
+        if p == self._infinity or e == 0:
+            return self._infinity
 
         def leftmost_bit(x):
+            # this is closer to constant time than bit-twiddling hacks
             assert x > 0
             result = 1
             while result <= x:
@@ -104,8 +105,6 @@ class Curve(object):
 
         # From X9.62 D.3.2:
 
-        if e == 0 or self == self._infinity:
-            return self._infinity
         e3 = 3 * e
         negative_p = self.Point(p[0], -p[1])
         i = leftmost_bit(e3) // 2

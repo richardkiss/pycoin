@@ -1,8 +1,10 @@
-from ctypes import (
-    cdll, byref, c_byte, c_int, c_uint, c_char_p, c_size_t, c_void_p, create_string_buffer, CFUNCTYPE, POINTER
-)
+import ctypes
 import os
 import platform
+
+from ctypes import (
+    byref, c_byte, c_int, c_uint, c_char_p, c_size_t, c_void_p, create_string_buffer, CFUNCTYPE, POINTER
+)
 
 from pycoin.encoding import from_bytes_32, to_bytes_32
 
@@ -27,9 +29,9 @@ SECP256K1_EC_UNCOMPRESSED = (SECP256K1_FLAGS_TYPE_COMPRESSION)
 
 def load_library():
     try:
-        SO_EXT = 'dylib' if platform.system() == 'Darwin' else 'so'
+        library_path = ctypes.util.find_library('libsecp256k1')
 
-        secp256k1 = cdll.LoadLibrary('libsecp256k1.%s' % SO_EXT)
+        secp256k1 = ctypes.cdll.LoadLibrary(library_path)
 
         secp256k1.secp256k1_context_create.argtypes = [c_uint]
         secp256k1.secp256k1_context_create.restype = c_void_p
@@ -125,6 +127,10 @@ class Optimizations:
 def create_LibSECP256K1Optimizations():
     class noop:
         pass
+
+    native = os.getenv("PYCOIN_NATIVE")
+    if native and native.lower() != "libsecp256k1":
+        return noop
 
     if not libsecp256k1:
         return noop

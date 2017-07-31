@@ -17,9 +17,6 @@ def set_api(library, api_info):
 
 
 def load_library():
-    if os.getenv("PYCOIN_NATIVE").lower() != "openssl":
-        return None
-
     system = platform.system()
     if system == 'Windows':
         if platform.architecture()[0] == '64bit':
@@ -109,6 +106,10 @@ class Optimizations:
 def create_OpenSSLOptimizations():
     class noop:
         pass
+
+    native = os.getenv("PYCOIN_NATIVE")
+    if native and native.lower() != "openssl":
+        return noop
 
     if not OpenSSL:
         return noop
