@@ -3,9 +3,8 @@
 import hashlib
 import unittest
 
-from pycoin.ecdsa import secp256k1_group, generator_secp256k1, sign, verify, public_pair_for_secret_exponent
+from pycoin.ecdsa import secp256k1_group
 from pycoin.ecdsa.intstream import to_bytes, from_bytes
-from pycoin.ecdsa.numbertheory import inverse_mod
 from pycoin.ecdsa.rfc6979 import deterministic_generate_k
 
 
@@ -52,13 +51,16 @@ class ECDSATestCase(unittest.TestCase):
 
     def test_sign_verify(self):
         def do_test(secret_exponent, val_list):
-            public_point = public_pair_for_secret_exponent(generator_secp256k1, secret_exponent)
+            public_point = secret_exponent * secp256k1_group
             for v in val_list:
-                signature = sign(generator_secp256k1, secret_exponent, v)
-                r = verify(generator_secp256k1, public_point, v, signature)
+                signature = secp256k1_group.sign(secret_exponent, v)
+                r = secp256k1_group.verify(public_point, v, signature)
+                assert r == True
+                signature = secp256k1_group.sign(secret_exponent, v)
+                r = secp256k1_group.verify(public_point, v, (signature[0], secp256k1_group.order() - signature[1]))
                 assert r == True
                 signature = signature[0],signature[1]+1
-                r = verify(generator_secp256k1, public_point, v, signature)
+                r = secp256k1_group.verify(public_point, v, signature)
                 assert r == False
 
         val_list = [100,20000,30000000,400000000000,50000000000000000,60000000000000000000000]
@@ -78,13 +80,13 @@ class ECDSATestCase(unittest.TestCase):
         ))
 
     def test_inverse_mod(self):
-        prime = generator_secp256k1.curve().p()
-        order = generator_secp256k1.order()
+        prime = secp256k1_group.curve().p()
+        order = secp256k1_group.order()
         for v in range(70):
             n = int(float("1e%d" % v))
-            i = inverse_mod(n, prime)
+            i = secp256k1_group.inverse_mod(n, prime)
             assert n * i % prime == 1
-            i = inverse_mod(n, order)
+            i = secp256k1_group.inverse_mod(n, order)
             assert n * i % order == 1
 
     def test_deterministic_generate_k_A_1(self):

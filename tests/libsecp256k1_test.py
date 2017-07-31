@@ -5,7 +5,6 @@ from ctypes import cdll, byref, c_int, c_uint, c_char_p, c_void_p, c_size_t, cre
 
 from pycoin.ecdsa import secp256k1_group, generator_secp256k1, sign, verify, public_pair_for_secret_exponent
 from pycoin.ecdsa.intstream import to_bytes, from_bytes
-from pycoin.ecdsa.numbertheory import inverse_mod
 from pycoin.ecdsa.native.secp256k1 import libsecp256k1, SECP256K1_EC_UNCOMPRESSED
 from pycoin.ecdsa.rfc6979 import deterministic_generate_k
 from pycoin.encoding import from_bytes_32, to_bytes_32
@@ -18,10 +17,6 @@ legacy_secp256k1_group = Group(_p, _a, _b, (_Gx, _Gy), _r)
 
 
 class ECDSATestCase(unittest.TestCase):
-
-    def test_infinity(self):
-        self.assertEqual(secp256k1_group * 0, secp256k1_group._infinity)
-        self.assertEqual(0 * secp256k1_group, secp256k1_group._infinity)
 
     def test_public_pair_for_secret_exponent(self):
         self.assertEqual(libsecp256k1._public_pair_for_secret_exponent(1), (

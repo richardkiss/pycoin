@@ -74,17 +74,17 @@ LibSECP256K1GroupBestClass = None
 libsecp256k1 = load_library()
 
 if libsecp256k1:
-    secp256k1 = libsecp256k1
+
     class LibSECP256K1Group(Group):
 
         def __mul__(self, e):
             if e == 0:
                 return self._infinity
             pubkey = create_string_buffer(65)
-            secp256k1.secp256k1_ec_pubkey_create(libsecp256k1.ctx, pubkey, c_char_p(to_bytes_32(e)))
+            libsecp256k1.secp256k1_ec_pubkey_create(libsecp256k1.ctx, pubkey, c_char_p(to_bytes_32(e)))
             pubkey_size = c_size_t(65)
             pubkey_serialized = create_string_buffer(65)
-            secp256k1.secp256k1_ec_pubkey_serialize(
+            libsecp256k1.secp256k1_ec_pubkey_serialize(
                 libsecp256k1.ctx, pubkey_serialized, byref(pubkey_size), pubkey, SECP256K1_EC_UNCOMPRESSED)
             x = from_bytes_32(pubkey_serialized[1:33])
             y = from_bytes_32(pubkey_serialized[33:])
@@ -104,9 +104,9 @@ if libsecp256k1:
 
             sig = create_string_buffer(64)
             sig_hash_bytes = to_bytes_32(val)
-            secp256k1.secp256k1_ecdsa_sign(libsecp256k1.ctx, sig, sig_hash_bytes, to_bytes_32(secret_exponent), nonce_function, None)
+            libsecp256k1.secp256k1_ecdsa_sign(libsecp256k1.ctx, sig, sig_hash_bytes, to_bytes_32(secret_exponent), nonce_function, None)
             compact_signature = create_string_buffer(64)
-            secp256k1.secp256k1_ecdsa_signature_serialize_compact(libsecp256k1.ctx, compact_signature, sig)
+            libsecp256k1.secp256k1_ecdsa_signature_serialize_compact(libsecp256k1.ctx, compact_signature, sig)
             r = from_bytes_32(compact_signature[:32])
             s = from_bytes_32(compact_signature[32:])
             return self.Point(r, s)
@@ -114,14 +114,14 @@ if libsecp256k1:
         def verify(self, public_pair, val, signature_pair):
             sig = create_string_buffer(64)
             input64 = to_bytes_32(signature_pair[0]) + to_bytes_32(signature_pair[1])
-            r = secp256k1.secp256k1_ecdsa_signature_parse_compact(libsecp256k1.ctx, sig, input64)
+            r = libsecp256k1.secp256k1_ecdsa_signature_parse_compact(libsecp256k1.ctx, sig, input64)
             assert r
-            r = secp256k1.secp256k1_ecdsa_signature_normalize(libsecp256k1.ctx, sig, sig)
+            r = libsecp256k1.secp256k1_ecdsa_signature_normalize(libsecp256k1.ctx, sig, sig)
 
             public_pair_bytes = b'\4' + to_bytes_32(public_pair[0]) + to_bytes_32(public_pair[1])
             pubkey = create_string_buffer(64)
-            r = secp256k1.secp256k1_ec_pubkey_parse(libsecp256k1.ctx, pubkey, public_pair_bytes, len(public_pair_bytes))
+            r = libsecp256k1.secp256k1_ec_pubkey_parse(libsecp256k1.ctx, pubkey, public_pair_bytes, len(public_pair_bytes))
             assert r
 
-            return 1 == secp256k1.secp256k1_ecdsa_verify(libsecp256k1.ctx, sig, to_bytes_32(val), pubkey)
+            return 1 == libsecp256k1.secp256k1_ecdsa_verify(libsecp256k1.ctx, sig, to_bytes_32(val), pubkey)
 

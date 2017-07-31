@@ -1,7 +1,6 @@
 from .Curve import Curve
 from .Point import Point
 
-from .numbertheory import modular_sqrt
 from .rfc6979 import deterministic_generate_k
 
 
@@ -18,12 +17,14 @@ class Group(Curve, Point):
         for _ in range(256):
             self._powers.append(Gp)
             Gp += Gp
+        assert p % 4 == 3, "p % 4 must be 3 due to modular_sqrt optimization"
+        self._mod_sqrt_power = (p + 1) // 4
 
     def order(self):
         return self._order
 
     def modular_sqrt(self, a):
-        return modular_sqrt(a, self._p)
+        return pow(a, self._mod_sqrt_power, self._p)
 
     def inverse(self, a):
         return self.inverse_mod(a, self._order)
