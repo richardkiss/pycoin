@@ -56,7 +56,6 @@ class ECDSATestCase(unittest.TestCase):
                 signature = secp256k1_group.sign(secret_exponent, v)
                 r = secp256k1_group.verify(public_point, v, signature)
                 assert r == True
-                signature = secp256k1_group.sign(secret_exponent, v)
                 r = secp256k1_group.verify(public_point, v, (signature[0], secp256k1_group.order() - signature[1]))
                 assert r == True
                 signature = signature[0],signature[1]+1

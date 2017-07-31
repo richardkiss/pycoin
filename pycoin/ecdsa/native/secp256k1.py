@@ -1,6 +1,7 @@
 import ctypes
 import os
 import platform
+import warnings
 
 from ctypes import (
     byref, c_byte, c_int, c_uint, c_char_p, c_size_t, c_void_p, create_string_buffer, CFUNCTYPE, POINTER
@@ -29,7 +30,8 @@ SECP256K1_EC_UNCOMPRESSED = (SECP256K1_FLAGS_TYPE_COMPRESSION)
 
 def load_library():
     try:
-        library_path = ctypes.util.find_library('libsecp256k1')
+        PYCOIN_LIBSECP256K1_PATH = os.getenv("PYCOIN_LIBSECP256K1_PATH")
+        library_path = PYCOIN_LIBSECP256K1_PATH or ctypes.util.find_library('libsecp256k1')
 
         secp256k1 = ctypes.cdll.LoadLibrary(library_path)
 
@@ -63,7 +65,9 @@ def load_library():
         r = secp256k1.secp256k1_context_randomize(secp256k1.ctx, os.urandom(32))
         if r:
             return secp256k1
-    except OSError:
+    except (OSError, AttributeError):
+        if PYCOIN_LIBSECP256K1_PATH:
+            warnings.warn("PYCOIN_LIBSECP256K1_PATH set but libsecp256k1 optimizations not loaded")
         return None
 
 
@@ -129,7 +133,7 @@ def create_LibSECP256K1Optimizations():
         pass
 
     native = os.getenv("PYCOIN_NATIVE")
-    if native and native.lower() != "libsecp256k1":
+    if native and native.lower() != "secp256k1":
         return noop
 
     if not libsecp256k1:
