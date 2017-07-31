@@ -1,6 +1,6 @@
 from .Group import Group
-from .native.openssl import OpenSSLGroup
-from .native.secp256k1 import LibSECP256K1Group
+from .native.openssl import OpenSSLOptimizations
+from .native.secp256k1 import LibSECP256K1Optimizations
 
 # Certicom secp256-k1
 _a = 0x0000000000000000000000000000000000000000000000000000000000000000
@@ -11,15 +11,8 @@ _Gy = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
 _r = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 
 
-BestClass = Group
-if OpenSSLGroup:
-    BestClass = OpenSSLGroup
-
-if LibSECP256K1Group:
-    class NewGroupBestClass(BestClass, LibSECP256K1Group):
-        pass
-
-    BestClass = NewGroupBestClass
+class BestClass(LibSECP256K1Optimizations, OpenSSLOptimizations, Group):
+    pass
 
 
 secp256k1_group = BestClass(_p, _a, _b, (_Gx, _Gy), _r)

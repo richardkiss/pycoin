@@ -2,7 +2,6 @@ import ctypes.util
 import os
 import platform
 
-from ..Group import Group
 from .bignum import bignum_type_for_library
 
 
@@ -74,35 +73,47 @@ OpenSSL = load_library()
 if OpenSSL:
     NID_secp256k1_GROUP = OpenSSL.EC_GROUP_new_by_curve_name(714)
 
-    class OpenSSLGroup(Group):
 
-        def multiply(self, p, e):
-            if e == 0 or p == self._infinity:
-                return self._infinity
+class Optimizations:
 
-            bn_x = OpenSSL.BignumType(p[0])
-            bn_y = OpenSSL.BignumType(p[1])
-            bn_n = OpenSSL.BignumType(e)
+    def multiply(self, p, e):
+        if e == 0 or p == self._infinity:
+            return self._infinity
 
-            ctx = OpenSSL.BN_CTX_new()
-            ec_result = OpenSSL.EC_POINT_new(NID_secp256k1_GROUP)
-            ec_point = OpenSSL.EC_POINT_new(NID_secp256k1_GROUP)
+        bn_x = OpenSSL.BignumType(p[0])
+        bn_y = OpenSSL.BignumType(p[1])
+        bn_n = OpenSSL.BignumType(e)
 
-            OpenSSL.EC_POINT_set_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_point, bn_x, bn_y, ctx)
+        ctx = OpenSSL.BN_CTX_new()
+        ec_result = OpenSSL.EC_POINT_new(NID_secp256k1_GROUP)
+        ec_point = OpenSSL.EC_POINT_new(NID_secp256k1_GROUP)
 
-            OpenSSL.EC_POINT_mul(NID_secp256k1_GROUP, ec_result, None, ec_point, bn_n, ctx)
+        OpenSSL.EC_POINT_set_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_point, bn_x, bn_y, ctx)
 
-            OpenSSL.EC_POINT_get_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_result, bn_x, bn_y, ctx)
-            OpenSSL.EC_POINT_free(ec_point)
-            OpenSSL.EC_POINT_free(ec_result)
-            OpenSSL.BN_CTX_free(ctx)
-            return self.Point(bn_x.to_int(), bn_y.to_int())
+        OpenSSL.EC_POINT_mul(NID_secp256k1_GROUP, ec_result, None, ec_point, bn_n, ctx)
 
-        def inverse_mod(self, a, p):
-            ctx = OpenSSL.BN_CTX_new()
-            a1 = OpenSSL.BignumType(a)
-            OpenSSL.BN_mod_inverse(a1, a1, OpenSSL.BignumType(p), ctx)
-            OpenSSL.BN_CTX_free(ctx)
-            return a1.to_int()
-else:
-    OpenSSLGroup = None
+        OpenSSL.EC_POINT_get_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_result, bn_x, bn_y, ctx)
+        OpenSSL.EC_POINT_free(ec_point)
+        OpenSSL.EC_POINT_free(ec_result)
+        OpenSSL.BN_CTX_free(ctx)
+        return self.Point(bn_x.to_int(), bn_y.to_int())
+
+    def inverse_mod(self, a, p):
+        ctx = OpenSSL.BN_CTX_new()
+        a1 = OpenSSL.BignumType(a)
+        OpenSSL.BN_mod_inverse(a1, a1, OpenSSL.BignumType(p), ctx)
+        OpenSSL.BN_CTX_free(ctx)
+        return a1.to_int()
+
+
+def create_OpenSSLOptimizations():
+    class noop:
+        pass
+
+    if not OpenSSL:
+        return noop
+
+    return Optimizations
+
+
+OpenSSLOptimizations = create_OpenSSLOptimizations()
