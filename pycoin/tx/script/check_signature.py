@@ -224,7 +224,7 @@ def sig_blob_matches(sig_blobs, public_pair_blobs, tmp_script, signature_for_has
                     raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
             try:
                 public_pair = sec_to_public_pair(public_pair_blob, strict=strict_encoding)
-            except EncodingError:
+            except (EncodingError, ValueError):
                 public_pair = None
             if public_pair in ppp:
                 sig_blob_indices.append(ppb_idx)

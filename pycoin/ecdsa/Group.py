@@ -63,7 +63,6 @@ class Group(Curve, Point):
         for y in self.y_values_for_x(x, y_parity=y_parity):
             # 1.4 the constructor checks that nR is at infinity
             R = self.Point(x, y)
-            R.check_on_curve()
             # 1.6 compute Q = r^-1 (sR - eG)
             Q = inv_r * (s * R + minus_e * self)
             # check that Q is the public key
@@ -75,14 +74,13 @@ class Group(Curve, Point):
             gen_k = deterministic_generate_k
         n = self._order
         k = gen_k(n, secret_exponent, val)
-        p1 = k * self
-        r = p1[0]
-        if r == 0:
-            raise RuntimeError("amazingly unlucky random number r")
-        s = (self.inverse(k) * (val + (secret_exponent * r) % n)) % n
-        if s == 0:
-            raise RuntimeError("amazingly unlucky random number s")
-        return r, s, p1[1] & 1
+        while True:
+            p1 = k * self
+            r = p1[0]
+            s = (self.inverse(k) * (val + (secret_exponent * r) % n)) % n
+            if r != 0 and s != 0:
+                return r, s, p1[1] & 1
+            k += 1
 
     def sign(self, secret_exponent, val, gen_k=None):
         return self.sign_with_y_index(secret_exponent, val, gen_k)[0:2]
@@ -93,13 +91,9 @@ class Group(Curve, Point):
         Return True if the signature is valid.
         """
 
-        # From X9.62 J.3.1.
-
         n = self._order
         r, s = sig
-        if r < 1 or r > n-1:
-            return False
-        if s < 1 or s > n-1:
+        if r < 1 or r > n-1 or s < 1 or s > n-1:
             return False
         s_inverse = self.inverse(s)
         u1 = (val * s_inverse) % n
@@ -109,14 +103,16 @@ class Group(Curve, Point):
         return v == r
 
     def __mul__(self, e):
-        """Multiply a point by an integer."""
+        """Multiply the generator by an integer."""
         P = self._infinity
-        for _ in range(256):
-            a = [P, P + self._powers[_]]
+        for bit in range(256):
+            # add the power of the generator every time to make it more time-deterministic
+            a = [P, P + self._powers[bit]]
+            # choose the correct result
             P = a[e & 1]
             e >>= 1
         return P
 
-    def __rmul__(self, other):
-        """Multiply a point by an integer."""
-        return self * other
+    def __rmul__(self, e):
+        """Multiply the generator by an integer."""
+        return self.__mul__(e)

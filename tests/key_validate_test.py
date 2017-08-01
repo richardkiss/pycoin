@@ -311,9 +311,8 @@ class KeyUtilsTest(unittest.TestCase):
             k = Key(secret_exponent=k)
             self.assertEqual(K.public_pair(), k.public_pair())
 
-        p = secp256k1_curve.Point(0, 0)
-        self.assertRaises(ValueError, p.check_on_curve)
-        self.assertRaises(InvalidPublicPairError, Key, public_pair=p)
+        self.assertRaises(ValueError, lambda: secp256k1_curve.Point(0, 0))
+        self.assertRaises(InvalidPublicPairError, Key, public_pair=(0, 0))
 
 
     def test_repr(self):

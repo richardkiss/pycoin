@@ -44,14 +44,14 @@ import hmac
 import logging
 import struct
 
-from .. import ecdsa
+from ..ecdsa import generator_secp256k1
 
 from ..encoding import public_pair_to_sec, from_bytes_32, to_bytes_32
 
 logger = logging.getLogger(__name__)
 
-ORDER = ecdsa.generator_secp256k1.order()
-INFINITY = ecdsa.generator_secp256k1.infinity()
+INFINITY = generator_secp256k1.infinity()
+ORDER = generator_secp256k1.order()
 
 _SUBKEY_VALIDATION_LOG_ERR_FMT = """
 BUY A LOTTO TICKET RIGHT NOW! (And consider giving up your wallet to
@@ -100,7 +100,7 @@ def subkey_secret_exponent_chain_code_pair(
         data = b'\0' + to_bytes_32(secret_exponent) + i_as_bytes
     else:
         if public_pair is None:
-            public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, secret_exponent)
+            public_pair = secret_exponent * generator_secp256k1
         sec = public_pair_to_sec(public_pair, compressed=True)
         data = sec + i_as_bytes
 
@@ -139,8 +139,7 @@ def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
     I_left_as_exponent = from_bytes_32(I64[:32])
     x, y = public_pair
 
-    the_point = I_left_as_exponent * ecdsa.generator_secp256k1 + \
-        ecdsa.generator_secp256k1.Point(x, y)
+    the_point = I_left_as_exponent * generator_secp256k1 + generator_secp256k1.Point(x, y)
     if the_point == INFINITY:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
         raise DerivationError('K_{} == {}'.format(i, the_point))
@@ -149,6 +148,5 @@ def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
     if I_left_as_exponent >= ORDER:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
         raise DerivationError('I_L >= {}'.format(ORDER))
-    new_public_pair = the_point.pair()
     new_chain_code = I64[32:]
-    return new_public_pair, new_chain_code
+    return the_point, new_chain_code

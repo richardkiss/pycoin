@@ -16,7 +16,7 @@ class GroupTestCase(unittest.TestCase):
         p2 = Point(x2, y2, c)
         p3 = p1 + p2
         print("%s + %s = %s" % (p1, p2, p3))
-        if p3.x() != x3 or p3.y() != y3:
+        if p3[0] != x3 or p3[1] != y3:
             raise FailedTest("Failure: should give (%d,%d)." % (x3, y3))
         else:
             print(" Good.")
@@ -24,9 +24,9 @@ class GroupTestCase(unittest.TestCase):
     def do_test_double(self, c, x1, y1, x3, y3):
         """We expect that on curve c, 2*(x1,y1) = (x3, y3)."""
         p1 = Point(x1, y1, c)
-        p3 = p1.double()
+        p3 = p1 + p1
         print("%s doubled = %s" % (p1, p3))
-        if p3.x() != x3 or p3.y() != y3:
+        if p3[0] != x3 or p3[1] != y3:
             raise FailedTest("Failure: should give (%d,%d)." % (x3, y3))
         else:
             print(" Good.")
@@ -34,10 +34,10 @@ class GroupTestCase(unittest.TestCase):
     def do_test_double_infinity(self, c):
         """We expect that on curve c, 2*INFINITY = INFINITY."""
         p1 = c._infinity
-        p3 = p1.double()
+        p3 = p1 + p1
         print("%s doubled = %s" % (p1, p3))
-        if p3.x() != p1.x() or p3.y() != p1.y():
-            raise FailedTest("Failure: should give (%d,%d)." % (p1.x(), p1.y()))
+        if p3[0] != p1[0] or p3[1] != p1[1]:
+            raise FailedTest("Failure: should give (%d,%d)." % (p1[0], p1[1]))
         else:
             print(" Good.")
 
@@ -46,7 +46,7 @@ class GroupTestCase(unittest.TestCase):
         p1 = Point(x1, y1, c)
         p3 = p1 * m
         print("%s * %d = %s" % (p1, m, p3))
-        if p3.x() != x3 or p3.y() != y3:
+        if p3[0] != x3 or p3[1] != y3:
             raise FailedTest("Failure: should give (%d,%d)." % (x3, y3))
         else:
             print(" Good.")
@@ -88,24 +88,24 @@ class GroupTestCase(unittest.TestCase):
 
         d = 651056770906015076056810763456358567190100156695615665659
         Q = d * p192
-        if Q.x() != 0x62B12D60690CDCF330BABAB6E69763B471F994DD702D16A5:
+        if Q[0] != 0x62B12D60690CDCF330BABAB6E69763B471F994DD702D16A5:
             raise FailedTest("p192 * d came out wrong.")
         else:
             print("p192 * d came out right.")
 
         k = 6140507067065001063065065565667405560006161556565665656654
         R = k * p192
-        if R.x() != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD \
-           or R.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
+        if R[0] != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD \
+           or R[1] != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
             raise FailedTest("k * p192 came out wrong.")
         else:
             print("k * p192 came out right.")
 
-            u1 = 2563697409189434185194736134579731015366492496392189760599
-            u2 = 6266643813348617967186477710235785849136406323338782220568
-            temp = u1 * p192 + u2 * Q
-            if temp.x() != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD \
-               or temp.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
-                raise FailedTest("u1 * p192 + u2 * Q came out wrong.")
-            else:
-                print("u1 * p192 + u2 * Q came out right.")
+        u1 = 2563697409189434185194736134579731015366492496392189760599
+        u2 = 6266643813348617967186477710235785849136406323338782220568
+        temp = u1 * p192 + u2 * Q
+        if temp[0] != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD \
+           or temp[1] != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
+            raise FailedTest("u1 * p192 + u2 * Q came out wrong.")
+        else:
+            print("u1 * p192 + u2 * Q came out right.")
