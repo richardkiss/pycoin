@@ -17,6 +17,34 @@ class ECDSATestCase(unittest.TestCase):
         for _ in range(0, 100, 10):
             self.assertEqual(_ * infinity, infinity)
             self.assertEqual(infinity * _, infinity)
+        g2 = secp256k1_group * 2
+        g2_neg = secp256k1_group * -2
+        self.assertEqual(g2 + g2_neg, infinity)
+        self.assertEqual(g2 + infinity, g2)
+        self.assertEqual(g2_neg + infinity, g2_neg)
+        self.assertEqual(-g2, g2_neg)
+
+    def test_multiply(self):
+        g2 = secp256k1_group * 2
+        g2p = g2 * 1
+        self.assertEqual(g2p, g2)
+        g4 = g2 * 2
+        self.assertEqual(g4, secp256k1_group * 4)
+        g8 = g2 * 4
+        self.assertEqual(g8, secp256k1_group * 8)
+        g24 = g8 * 3
+        self.assertEqual(g24, secp256k1_group * 24)
+        g_big = g2 * (71 ** 41)
+        self.assertEqual(g_big, secp256k1_group * ((2 * 71 ** 41) % secp256k1_group.order()))
+
+    def test_add(self):
+        G = secp256k1_group
+        a, b = 2, 3
+        self.assertEqual(a * G + b * G, (a + b) * G)
+        a, b = 200, 300
+        self.assertEqual(a * G + b * G, (a + b) * G)
+        a, b = 71**41, 41**47
+        self.assertEqual(a * G + b * G, (a + b) * G)
 
     def test_sign_simple(self):
         secret_exponent = 1
