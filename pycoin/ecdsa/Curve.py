@@ -67,6 +67,7 @@ class Curve(object):
     def multiply(self, p, e):
         """Multiply a point by an integer."""
 
+        e %= self.order()
         if p == self._infinity or e == 0:
             return self._infinity
 

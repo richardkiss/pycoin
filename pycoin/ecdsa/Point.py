@@ -38,7 +38,7 @@ class Point(tuple):
 
     def __neg__(self):
         """Unary negation"""
-        return self.__class__(self[0], -self[1], self._curve)
+        return self.__class__(self[0], self._curve.p()-self[1], self._curve)
 
     def curve(self):
         return self._curve

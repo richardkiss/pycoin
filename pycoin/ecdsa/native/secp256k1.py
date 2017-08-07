@@ -60,6 +60,10 @@ def load_library():
 
         secp256k1.secp256k1_ecdsa_signature_serialize_compact.argtypes = [c_void_p, c_char_p, c_char_p]
         secp256k1.secp256k1_ecdsa_signature_serialize_compact.restype = c_int
+
+        secp256k1.secp256k1_ec_pubkey_tweak_mul.argtypes = [c_void_p, c_char_p, c_char_p]
+        secp256k1.secp256k1_ec_pubkey_tweak_mul.restype = c_int
+
         secp256k1.ctx = secp256k1.secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY)
         r = secp256k1.secp256k1_context_randomize(secp256k1.ctx, os.urandom(32))
         if r:
@@ -76,6 +80,7 @@ libsecp256k1 = load_library()
 class Optimizations:
 
     def __mul__(self, e):
+        e %= self.order()
         if e == 0:
             return self._infinity
         pubkey = create_string_buffer(65)
@@ -125,6 +130,29 @@ class Optimizations:
             return False
 
         return 1 == libsecp256k1.secp256k1_ecdsa_verify(libsecp256k1.ctx, sig, to_bytes_32(val), pubkey)
+
+    def multiply(self, p, e):
+        """Multiply a point by an integer."""
+        e %= self.order()
+        if p == self._infinity or e == 0:
+            return self._infinity
+        pubkey = create_string_buffer(64)
+        public_pair_bytes = b'\4' + to_bytes_32(p[0]) + to_bytes_32(p[1])
+        r = libsecp256k1.secp256k1_ec_pubkey_parse(
+            libsecp256k1.ctx, pubkey, public_pair_bytes, len(public_pair_bytes))
+        if not r:
+            return False
+        r = libsecp256k1.secp256k1_ec_pubkey_tweak_mul(libsecp256k1.ctx, pubkey, to_bytes_32(e))
+        if not r:
+            return self._infinity
+
+        pubkey_serialized = create_string_buffer(65)
+        pubkey_size = c_size_t(65)
+        libsecp256k1.secp256k1_ec_pubkey_serialize(
+            libsecp256k1.ctx, pubkey_serialized, byref(pubkey_size), pubkey, SECP256K1_EC_UNCOMPRESSED)
+        x = from_bytes_32(pubkey_serialized[1:33])
+        y = from_bytes_32(pubkey_serialized[33:])
+        return self.Point(x, y)
 
 
 def create_LibSECP256K1Optimizations():
