@@ -9,9 +9,8 @@ class Group(Curve, Point):
         return tuple.__new__(self, basis)
 
     def __init__(self, p, a, b, basis, order):
-        Curve.__init__(self, p, a, b)
+        Curve.__init__(self, p, a, b, order)
         Point.__init__(self, basis[0], basis[1], self)
-        self._order = order
         self._powers = []
         Gp = self
         for _ in range(256):
@@ -19,9 +18,6 @@ class Group(Curve, Point):
             Gp += Gp
         assert p % 4 == 3, "p % 4 must be 3 due to modular_sqrt optimization"
         self._mod_sqrt_power = (p + 1) // 4
-
-    def order(self):
-        return self._order
 
     def modular_sqrt(self, a):
         return pow(a, self._mod_sqrt_power, self._p)

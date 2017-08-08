@@ -18,16 +18,20 @@ class Curve(object):
     Elliptic Curve over the field of integers modulo a prime.
     A curve is instantiated with a prime modulus p, and coefficients a and b.
     """
-    def __init__(self, p, a, b):
+    def __init__(self, p, a, b, order=None):
         """The curve of points satisfying y^2 = x^3 + a*x + b (mod p)."""
         self._p = p
         self._a = a
         self._b = b
+        self._order = order
         self._infinity = Point(None, None, self)
 
     def p(self):
         """The prime modulus of the curve."""
         return self._p
+
+    def order(self):
+        return self._order
 
     def infinity(self):
         """The "point at infinity" (also known as 0)."""
@@ -67,7 +71,8 @@ class Curve(object):
     def multiply(self, p, e):
         """Multiply a point by an integer."""
 
-        e %= self.order()
+        if self._order:
+            e %= self._order
         if p == self._infinity or e == 0:
             return self._infinity
 
