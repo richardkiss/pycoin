@@ -96,6 +96,7 @@ class Group(Curve, Point):
 
     def __mul__(self, e):
         """Multiply the generator by an integer."""
+        e %= self._order
         P = self._infinity
         for bit in range(256):
             # add the power of the generator every time to make it more time-deterministic
