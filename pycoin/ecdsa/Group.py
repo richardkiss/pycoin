@@ -25,26 +25,15 @@ class Group(Curve, Point):
     def inverse(self, a):
         return self.inverse_mod(a, self._order)
 
-    def y_values_for_x(self, x, y_parity=None):
+    def y_value_for_x(self, x, y_parity):
         p = self._p
         alpha = (pow(x, 3, p) + self._a * x + self._b) % p
         beta = self.modular_sqrt(alpha)
         if beta == 0:
-            return []
-        if y_parity is None:
-            return (beta, p - beta)
+            return None
         if beta & 1 == y_parity:
-            return [beta]
-        return [p - beta]
-
-    def public_pairs_for_x(self, x, y_parity=None):
-        return [self.Point(x, y) for y in self.y_values_for_x(x, y_parity=y_parity)]
-
-    def public_pair_for_x(self, x, is_even):
-        y_list = self.y_values_for_x(x, y_parity=1 ^ is_even)
-        if y_list:
-            return self.Point(x, y_list[0])
-        return None
+            return beta
+        return p - beta
 
     def possible_public_pairs_for_signature(self, value, signature, y_parity=None):
         # y_parity is None, 0 or 1
@@ -53,14 +42,21 @@ class Group(Curve, Point):
         # recid = nV - 27
         # 1.1
         inv_r = self.inverse(r)
-        minus_e = -value % self._order
+        s_over_r = s * inv_r
+        minus_E_over_r = -inv_r * value * self
         x = r
+
+        # BRAIN DAMAGE: this is ugly. We probably need to change the signature of this method
+        y_vals = [self.y_value_for_x(x, y_parity=y_parity or 0)]
+        if y_parity is None:
+            y_vals.append(self._p - y_vals[0])
+
         l = []
-        for y in self.y_values_for_x(x, y_parity=y_parity):
+        for y in y_vals:
             # 1.4 the constructor checks that nR is at infinity
             R = self.Point(x, y)
             # 1.6 compute Q = r^-1 (sR - eG)
-            Q = inv_r * (s * R + minus_e * self)
+            Q = s_over_r * R + minus_E_over_r
             # check that Q is the public key
             l.append(Q)
         return l
