@@ -551,10 +551,9 @@ def merge_txs(txs, spendables, payables):
 
 
 def calculate_lock_time_and_version(args, txs):
-    lock_time = args.lock_time
-    version = args.transaction_version
 
     # if no lock_time is explicitly set, inherit from the first tx or use default
+    lock_time = args.lock_time
     if lock_time is None:
         if txs:
             lock_time = txs[0].lock_time
@@ -562,6 +561,7 @@ def calculate_lock_time_and_version(args, txs):
             lock_time = DEFAULT_LOCK_TIME
 
     # if no version is explicitly set, inherit from the first tx or use default
+    version = args.transaction_version
     if version is None:
         if txs:
             version = txs[0].version
@@ -676,9 +676,7 @@ def validate_against_bitcoind(tx, tx_db, network, bitcoind_url):
     return tx_db
 
 
-def main():
-    parser = create_parser()
-    args = parser.parse_args()
+def tx(args, parser):
 
     (txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
 
@@ -714,6 +712,11 @@ def main():
     if warning_spendables:
         print("warning: %s" % warning_spendables, file=sys.stderr)
 
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+    tx(args, parser)
 
 if __name__ == '__main__':
     main()

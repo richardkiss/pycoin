@@ -10,13 +10,14 @@ from pycoin.services import get_tx_db
 from pycoin.tx import Tx
 
 
-def main():
+def create_parser():
     parser = argparse.ArgumentParser(description="Add a transaction to tx cache.")
     parser.add_argument("tx_id_or_path", nargs="+",
                         help='The id of the transaction to fetch from web services or the path to it.')
+    return parser
 
-    args = parser.parse_args()
 
+def cache_tx(args, parser):
     TX_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
     tx_db = get_tx_db()
@@ -37,6 +38,12 @@ def main():
 
         tx_db[tx.hash()] = tx
         print("cached %s" % tx.id())
+
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+    cache_tx(args, parser)
 
 
 if __name__ == '__main__':

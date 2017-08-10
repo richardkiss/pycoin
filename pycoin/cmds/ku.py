@@ -300,10 +300,7 @@ def generate_output(args, output_dict, output_order):
         dump_output(output_dict, output_order)
 
 
-def main():
-    parser = create_parser()
-    args = parser.parse_args()
-
+def ku(args):
     if args.override_network:
         # force network arg to match override, but also will override decoded data below.
         args.network = args.override_network
@@ -330,6 +327,12 @@ def main():
             output_dict, output_order = create_output(item, key)
 
             generate_output(args, output_dict, output_order)
+
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+    ku(args, parser)
 
 
 if __name__ == '__main__':
