@@ -112,10 +112,10 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
     mhash = hash_for_signing(message, netcode) if message else msg_hash
 
     # Use a deterministic K so our signatures are deterministic.
-    r, s, y_odd = generator_secp256k1.sign_with_y_index(secret_exponent, mhash)
+    r, s, recid = generator_secp256k1.sign_with_recid(secret_exponent, mhash)
 
     is_compressed = not key._use_uncompressed(use_uncompressed)
-    assert y_odd in (0, 1)
+    assert recid in (0, 1, 2, 3)
 
     # See http://bitcoin.stackexchange.com/questions/14263
     # for discussion of the proprietary format used for the signature
@@ -126,7 +126,7 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
     #                  0x1D = second key with even y, 0x1E = second key with odd y,
     #                  add 0x04 for compressed keys.
 
-    first = 27 + y_odd + (4 if is_compressed else 0)
+    first = 27 + recid + (4 if is_compressed else 0)
     sig = b2a_base64(bytearray([first]) + to_bytes_32(r) + to_bytes_32(s)).strip()
 
     if not isinstance(sig, str):

@@ -74,7 +74,8 @@ def parse_as_public_pair(s):
             v0 = parse_as_number(s0)
             if v0:
                 if s1 in ("even", "odd"):
-                    y = generator_secp256k1.y_value_for_x(v0, y_parity=(s1 != 'even'))
+                    is_y_odd = (s1 == "odd")
+                    y = generator_secp256k1.y_values_for_x(v0)[is_y_odd]
                     return generator_secp256k1.Point(v0, y)
                 v1 = parse_as_number(s1)
                 if v1:
