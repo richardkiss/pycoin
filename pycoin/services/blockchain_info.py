@@ -5,7 +5,7 @@ import warnings
 from .agent import request, urlencode, urlopen
 
 from pycoin.serialize import b2h, h2b
-from pycoin.tx import Spendable
+from pycoin.tx.Spendable import Spendable
 
 
 class BlockchainInfoProvider(object):
