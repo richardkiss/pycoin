@@ -1,4 +1,4 @@
-ku.py P:foo
+ku P:foo
 
 input                        : P:foo
 network                      : Bitcoin mainnet

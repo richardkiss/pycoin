@@ -41,8 +41,6 @@ TOOL_LOOKUP = {
 class CmdlineTest(ToolTest):
     def invoke_tool(self, args):
         tool_name = args[0]
-        if tool_name.endswith(".py"):
-            tool_name = tool_name[:-3]
         parser, main = TOOL_LOOKUP[tool_name]
         return main(parser.parse_args(args[1:]), parser)
 

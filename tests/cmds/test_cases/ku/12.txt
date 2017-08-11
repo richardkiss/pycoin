@@ -1,4 +1,4 @@
-ku.py -n TVI -j -w P:foo -s 5-10
+ku -n TVI -j -w P:foo -s 5-10
 {
    "TVI_address": "tG1J3Vu5Tb9aGeA4s5T3LfVXKz4Swab1tN",
    "TVI_address_uncompressed": "tFFhu56SJjcqsTcJnVbSCkLnMpe3mi5LGY",

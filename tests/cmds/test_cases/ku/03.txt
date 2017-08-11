@@ -1,2 +1,2 @@
-ku.py -W 1
+ku -W 1
 KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn

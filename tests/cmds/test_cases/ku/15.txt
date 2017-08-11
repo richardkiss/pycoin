@@ -1,4 +1,4 @@
-ku.py -n DOGE -j -w P:foo -s 5-10
+ku -n DOGE -j -w P:foo -s 5-10
 {
    "DOGE_address": "DEDnXxz8b6CawbdfVP98JW6DH44wyC5hPK",
    "DOGE_address_uncompressed": "DDUCPYBVSEfrYR5uQoHXAawUJteYqzT94d",

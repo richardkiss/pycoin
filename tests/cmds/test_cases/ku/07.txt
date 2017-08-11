@@ -1,4 +1,4 @@
-ku.py -n BTC -j -w P:foo -s 5-10
+ku -n BTC -j -w P:foo -s 5-10
 {
    "BTC_address": "1A5gzi3VHgJJQbT4ko9ZkjvcPvLeeA6NGi",
    "BTC_address_segwit": "p2y3Z1b2ERP5c5VVSvd1ygD9JyQdg9R5Y5AH",

@@ -1,4 +1,4 @@
-ku.py -n LTC -j -w P:foo -s 5-10
+ku -n LTC -j -w P:foo -s 5-10
 {
    "LTC_address": "LUJeFvMKNLYMfQ9Dvw8s2kzNc8hvmGtpsV",
    "LTC_address_uncompressed": "LTZ47VYgDV1dGDbTrMHFtqqddyHXeW16bf",
