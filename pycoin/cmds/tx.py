@@ -308,7 +308,7 @@ def create_parser():
                         type=argparse.FileType('r'), help='a file containing hex scripts '
                         '(one per line) corresponding to pay-to-script inputs')
 
-    parser.add_argument("argument", nargs="+", help='generic argument: can be a hex transaction id '
+    parser.add_argument("argument", nargs="*", help='generic argument: can be a hex transaction id '
                         '(exactly 64 characters) to be fetched from cache or a web service;'
                         ' a transaction as a hex string; a path name to a transaction to be loaded;'
                         ' a spendable 4-tuple of the form tx_id/tx_out_idx/script_hex/satoshi_count '
@@ -621,6 +621,9 @@ def print_output(tx, include_unspents, output_file, show_unspents, network, verb
         f.close()
     elif show_unspents:
         for spendable in tx.tx_outs_as_spendable():
+            print(spendable.as_text())
+    elif len(tx.txs_out) == 0:
+        for spendable in tx.unspents:
             print(spendable.as_text())
     else:
         if not tx.missing_unspents():
