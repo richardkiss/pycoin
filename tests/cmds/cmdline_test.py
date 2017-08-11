@@ -4,8 +4,6 @@ import subprocess
 import sys
 import tempfile
 
-from pycoin.cmds import ku, tx
-
 from .ToolTest import ToolTest
 
 
@@ -32,17 +30,8 @@ def get_test_cases():
     return l
 
 
-TOOL_LOOKUP = {
-    "tx" : (tx.create_parser(), tx.tx),
-    "ku" : (ku.create_parser(), lambda args, parser: ku.ku(args))
-}
-
-
 class CmdlineTest(ToolTest):
-    def invoke_tool(self, args):
-        tool_name = args[0]
-        parser, main = TOOL_LOOKUP[tool_name]
-        return main(parser.parse_args(args[1:]), parser)
+    pass
 
 
 def make_f(cmd, expected_output):
@@ -58,9 +47,9 @@ def make_f(cmd, expected_output):
         for c in cmd.split(";"):
             actual_output = self.launch_tool(c)
         if actual_output != expected_output:
-            print(repr(cmd))
-            print(repr(actual_output))
-            print(repr(expected_output))
+            print(cmd)
+            print(actual_output)
+            print(expected_output)
         os.environ = old_environ
         self.assertEqual(expected_output, actual_output)
     return f
