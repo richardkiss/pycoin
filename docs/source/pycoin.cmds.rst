@@ -10,15 +10,6 @@ Commands
     :show-inheritance:
 
 
-:mod:`cache_tx` Module
-----------------------------------
-
-.. automodule:: pycoin.cmds.cache_tx
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 :mod:`fetch_unspent` Module
 ----------------------------------
 

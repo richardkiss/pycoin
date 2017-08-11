@@ -1,6 +1,7 @@
 Version 0.xx
 ------------
 
+* remove cache_tx tool (use tx -C)
 * remove BlockHeader
 
 
