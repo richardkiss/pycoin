@@ -15,7 +15,7 @@ DEFAULT_ENV = {
 
 TOOL_LOOKUP = {
     "tx" : (tx.create_parser(), tx.tx),
-    "ku" : (ku.create_parser(), lambda args, parser: ku.ku(args))
+    "ku" : (ku.create_parser(), ku.ku)
 }
 
 

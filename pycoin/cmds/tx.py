@@ -35,6 +35,18 @@ DEFAULT_LOCK_TIME = 0
 LOCKTIME_THRESHOLD = 500000000
 
 
+def range_int(min, max, name):
+
+    def cast(v):
+        v = int(v)
+        if not (min <= v <= max):
+            raise ValueError()
+        return v
+
+    cast.__name__ = name
+    return cast
+
+
 def validate_bitcoind(tx, tx_db, bitcoind_url):
     try:
         from pycoin.services.bitcoind import bitcoind_agrees_on_transaction_validity
@@ -225,6 +237,9 @@ def parse_locktime(s):
     return int(s)
 
 
+parse_locktime.__name__ = 'locktime'
+
+
 def parse_fee(fee):
     if fee in ["standard"]:
         return fee
@@ -237,7 +252,7 @@ def create_parser():
         description="Manipulate bitcoin (or alt coin) transactions.",
         epilog=EPILOG)
 
-    parser.add_argument('-t', "--transaction-version", type=int,
+    parser.add_argument('-t', "--transaction-version", type=range_int(0, 255, "version"),
                         help='Transaction version, either 1 (default) or 3 (not yet supported).')
 
     parser.add_argument('-l', "--lock-time", type=parse_locktime, help='Lock time; either a block'
@@ -720,6 +735,7 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
     tx(args, parser)
+
 
 if __name__ == '__main__':
     main()

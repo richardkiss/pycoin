@@ -300,7 +300,7 @@ def generate_output(args, output_dict, output_order):
         dump_output(output_dict, output_order)
 
 
-def ku(args):
+def ku(args, parser):
     if args.override_network:
         # force network arg to match override, but also will override decoded data below.
         args.network = args.override_network
