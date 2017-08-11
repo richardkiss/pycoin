@@ -255,7 +255,7 @@ def create_parser():
 
     parser.add_argument("-i", "--fetch-spendables", metavar="address", action="append",
                         help='Add all unspent spendables for the given bitcoin address. This information'
-                        ' is fetched from web services.')
+                        ' is fetched from web services. With no outputs, incoming spendables will be printed.')
 
     parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append", default=[],
                         help='file containing WIF or BIP0032 private keys. If file name ends with .gpg, '

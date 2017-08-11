@@ -1,3 +1,4 @@
+# sign a transaction
 tx 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098/0/210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac/5000000000 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
 Version:  1  tx hash b2ad3b7adf83d593837aae88eb79b4422a7355d85280ae35d6452651eb303464  157 bytes
 TxIn count: 1; TxOut count: 1
