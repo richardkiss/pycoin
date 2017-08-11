@@ -1,10 +1,9 @@
-#!/usr/bin/env python
-
 import unittest
 import os
 import sys
 import tempfile
 
+from pycoin.cmds import tx
 from pycoin.serialize import h2b
 from pycoin.tx.Tx import Tx
 
@@ -18,6 +17,14 @@ WIF_1_GPG = h2b(
 
 
 class TxTest(ToolTest):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.parser = tx.create_parser()
+        cls.tool_name = "tx"
+
+    def invoke_tool(self, args):
+        tx.tx(self.parser.parse_args(args[1:]), self.parser)
 
     def test_tx_fetch(self):
         self.launch_tool("tx.py 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098")

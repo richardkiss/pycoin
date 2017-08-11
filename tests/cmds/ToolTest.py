@@ -1,6 +1,5 @@
-
+import io
 import os
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -13,18 +12,24 @@ DEFAULT_ENV = {
 
 class ToolTest(unittest.TestCase):
 
-    def get_tempdir(self):
-        return tempfile.mkdtemp()
+    def invoke_tool(self, args):
+        raise NotImplemented
 
-    def launch_tool(self, cmd_line=None, args=None, env=DEFAULT_ENV):
-        python_path = sys.executable
-        script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "pycoin", "cmds"))
+    def launch_tool(self, cmd_line=None, args=None):
         if args is None:
             args = cmd_line.split()
-        script_path = os.path.join(script_dir, args[0])
-        output = subprocess.check_output([python_path, script_path] + args[1:], env=env)
-        return output.decode("utf8")
+        # capture io
+        f = io.StringIO()
+        old_stdout = sys.stdout
+        sys.stdout = f
+
+        self.invoke_tool(args)
+
+        sys.stdout = old_stdout
+        output = f.getvalue()
+        return output
 
     def set_cache_dir(self):
         temp_dir = tempfile.mkdtemp()
-        return {"PYCOIN_CACHE_DIR": temp_dir}
+        os.environ["PYCOIN_CACHE_DIR"] = temp_dir
+        return temp_dir

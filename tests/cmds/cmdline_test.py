@@ -1,10 +1,10 @@
-#!/usr/bin/env python
-
 import unittest
 import os
 import subprocess
 import sys
 import tempfile
+
+from pycoin.cmds import ku, tx
 
 from .ToolTest import ToolTest
 
@@ -32,23 +32,38 @@ def get_test_cases():
     return l
 
 
-class CmdlineTest(ToolTest):
-    pass
+TOOL_LOOKUP = {
+    "tx" : (tx.create_parser(), tx.tx),
+    "ku" : (ku.create_parser(), lambda args, parser: ku.ku(args))
+}
 
+
+class CmdlineTest(ToolTest):
+    def invoke_tool(self, args):
+        tool_name = args[0]
+        if tool_name.endswith(".py"):
+            tool_name = tool_name[:-3]
+        parser, main = TOOL_LOOKUP[tool_name]
+        return main(parser.parse_args(args[1:]), parser)
 
 
 def make_f(cmd, expected_output):
 
     def f(self):
         CACHE_DIR = tempfile.mkdtemp()
-        env = dict(PYCOIN_CACHE_DIR=CACHE_DIR)
+        old_environ = dict(os.environ)
+        new_environ = dict(PYCOIN_CACHE_DIR=CACHE_DIR)
+        for k in "PATH PYCOIN_BTC_PROVIDERS".split():
+            new_environ[k] = os.environ.get(k, "")
+        os.environ = new_environ
         os.chdir(CACHE_DIR)
         for c in cmd.split(";"):
-            actual_output = self.launch_tool(c, env=env)
+            actual_output = self.launch_tool(c)
         if actual_output != expected_output:
             print(repr(cmd))
             print(repr(actual_output))
             print(repr(expected_output))
+        os.environ = old_environ
         self.assertEqual(expected_output, actual_output)
     return f
 
