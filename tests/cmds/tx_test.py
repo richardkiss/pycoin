@@ -4,6 +4,7 @@ import sys
 import tempfile
 
 from pycoin.cmds import tx
+from pycoin.key import Key
 from pycoin.serialize import h2b
 from pycoin.tx.Tx import Tx
 
@@ -34,6 +35,36 @@ class TxTest(ToolTest):
         tx_id = "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098"
         self.launch_tool("tx -C %s" % tx_id, env=dict(PYCOIN_CACHE_DIR=the_dir))
         self.assertTrue(os.path.exists(os.path.join(the_dir, "txs", "%s_tx.bin" % tx_id)))
+
+    def test_pay_to_script_file(self):
+        the_dir = self.set_cache_dir()
+        p2sh_file = tempfile.NamedTemporaryFile()
+        p2sh_file.write(
+            "52210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817982102c60"
+            "47f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee52102f9308a019258"
+            "c31049344f85f89d5229b531c845836f99b08601f113bce036f953ae\n".encode("utf8"))
+        p2sh_file.write(
+            "53210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817982102c60"
+            "47f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee52102f9308a019258"
+            "c31049344f85f89d5229b531c845836f99b08601f113bce036f953ae\n".encode("utf8"))
+        p2sh_file.flush()
+        tx_source_hex = (
+            "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0"
+            "0ffffffff0200f902950000000017a91415fc0754e73eb85d1cbce08786fadb7320ecb8dc8700f90295"
+            "0000000017a914594f349df0bac3084ffea8a477bba5f03dcd45078700000000")
+        self.launch_tool("tx -C %s" % tx_source_hex)
+        tx_to_sign = ( "01000000020a316ea8980ef9ba02f4e6637c88229bf059f39b06238d48d06a8e"
+            "f672aea2bb0000000000ffffffff0a316ea8980ef9ba02f4e6637c88229bf059"
+            "f39b06238d48d06a8ef672aea2bb0100000000ffffffff01f0ca052a01000000"
+            "1976a914751e76e8199196d454941c45d1b3a323f1433bd688ac0000000000f9"
+            "02950000000017a91415fc0754e73eb85d1cbce08786fadb7320ecb8dc8700f9"
+            "02950000000017a914594f349df0bac3084ffea8a477bba5f03dcd450787")
+        wifs = ' '.join(Key(_).wif() for _ in (1, 2, 3))
+        signed = tempfile.mktemp(suffix=".hex")
+        self.launch_tool("tx -a -P %s --db %s %s %s -o %s" % (
+            p2sh_file.name, tx_source_hex, tx_to_sign, wifs, signed), env=dict(PYCOIN_CACHE_DIR=the_dir))
+        tx = Tx.from_hex(open(signed).read())
+        self.assertEqual(tx.id(), "9d991ddccf77e33cb4584e4fc061a36da0da43589232b2e78a1aa0748ac3254b")
 
     def test_tx_with_gpg(self):
         # binary data with GPG-encrypted WIF KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn for secret exponent 1
