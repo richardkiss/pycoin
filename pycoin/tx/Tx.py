@@ -377,9 +377,9 @@ class Tx(object):
             hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
             p2sh_lookup = kwargs.get("p2sh_lookup")
             if p2sh_lookup is None:
-                raise ValueError("p2sh_lookup not set")
+                raise SolvingError("p2sh_lookup not set")
             if hash160 not in p2sh_lookup:
-                raise ValueError("hash160=%s not found in p2sh_lookup" %
+                raise SolvingError("hash160=%s not found in p2sh_lookup" %
                                  b2h(hash160))
 
             script_to_hash = p2sh_lookup[hash160]
