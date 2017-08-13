@@ -606,6 +606,8 @@ def wif_iter(iters):
 def generate_tx(txs, spendables, payables, args):
     txs_in, txs_out, unspents = merge_txs(txs, spendables, payables)
     lock_time, version = calculate_lock_time_and_version(args, txs)
+    if len(unspents) == len(txs_in):
+        unspents = remove_indices(unspents, args.remove_tx_in)
     txs_in = remove_indices(txs_in, args.remove_tx_in)
     txs_out = remove_indices(txs_out, args.remove_tx_out)
     tx = Tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
