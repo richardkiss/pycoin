@@ -1,4 +1,5 @@
 from .. import encoding
+from ..serialize import b2h
 from .validate import netcode_and_type_for_text
 from .electrum import ElectrumWallet
 
@@ -29,10 +30,10 @@ def key_from_text(text, is_compressed=True):
         return Key(hash160=data, is_compressed=is_compressed, netcode=netcode)
 
     if key_type == 'elc_seed':
-        return ElectrumWallet(initial_key=data)
+        return ElectrumWallet(initial_key=b2h(data))
 
     if key_type == 'elc_prv':
-        return ElectrumWallet(master_private_key=data)
+        return ElectrumWallet(master_private_key=encoding.from_bytes_32(data))
 
     if key_type == 'elc_pub':
         return ElectrumWallet(master_public_key=data)

@@ -1,4 +1,4 @@
-ku.py -n XLT -j -w P:foo -s 5-10
+ku -n XLT -j -w P:foo -s 5-10
 {
    "XLT_address": "mpbeHm8U6hjZBhvgUN7waf8wFuwMV6rWDy",
    "XLT_address_uncompressed": "mor49LKpwrCpnXNvPnGLSjzCHkWxNkuxXs",

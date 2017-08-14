@@ -271,6 +271,9 @@ def parse_key(item, PREFIX_TRANSFORMS, network):
     if key:
         return key
 
+    if HASH160_RE.match(item):
+        return Key(hash160=h2b(item), netcode=network)
+
     secret_exponent = parse_as_secret_exponent(item)
     if secret_exponent:
         return Key(secret_exponent=secret_exponent, netcode=network)
@@ -282,8 +285,6 @@ def parse_key(item, PREFIX_TRANSFORMS, network):
     if public_pair:
         return Key(public_pair=public_pair, netcode=network)
 
-    if HASH160_RE.match(item):
-        return Key(hash160=h2b(item), netcode=network)
     return None
 
 
@@ -302,10 +303,7 @@ def generate_output(args, output_dict, output_order):
         dump_output(output_dict, output_order)
 
 
-def main():
-    parser = create_parser()
-    args = parser.parse_args()
-
+def ku(args, parser):
     if args.override_network:
         # force network arg to match override, but also will override decoded data below.
         args.network = args.override_network
@@ -332,6 +330,12 @@ def main():
             output_dict, output_order = create_output(item, key)
 
             generate_output(args, output_dict, output_order)
+
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+    ku(args, parser)
 
 
 if __name__ == '__main__':

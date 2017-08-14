@@ -1,6 +1,8 @@
 Version 0.xx
 ------------
 
+* remove fetch_unspents tool (use tx -i)
+* remove cache_tx tool (use tx -C)
 * remove BlockHeader
 
 

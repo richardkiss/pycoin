@@ -34,8 +34,6 @@ setup(
                 'ku = pycoin.cmds.ku:main',
                 'tx = pycoin.cmds.tx:main',
                 'msg = pycoin.cmds.msg:main',
-                'cache_tx = pycoin.cmds.cache_tx:main',
-                'fetch_unspent = pycoin.cmds.fetch_unspent:main',
                 # these scripts are obsolete
                 'genwallet = pycoin.cmds.genwallet:main',
                 'spend = pycoin.cmds.spend:main',

@@ -1,4 +1,4 @@
-ku.py -n XTN -j -w P:foo -s 5-10
+ku -n XTN -j -w P:foo -s 5-10
 {
    "XTN_address": "mpbeHm8U6hjZBhvgUN7waf8wFuwMV6rWDy",
    "XTN_address_segwit": "QWz6pMHs8xLNxBx3SzguZcywcnuH1PzUqdix",
