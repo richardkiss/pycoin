@@ -269,6 +269,9 @@ def parse_key(item, PREFIX_TRANSFORMS, network):
     if key:
         return key
 
+    if HASH160_RE.match(item):
+        return Key(hash160=h2b(item), netcode=network)
+
     secret_exponent = parse_as_secret_exponent(item)
     if secret_exponent:
         return Key(secret_exponent=secret_exponent, netcode=network)
@@ -280,8 +283,6 @@ def parse_key(item, PREFIX_TRANSFORMS, network):
     if public_pair:
         return Key(public_pair=public_pair, netcode=network)
 
-    if HASH160_RE.match(item):
-        return Key(hash160=h2b(item), netcode=network)
     return None
 
 
