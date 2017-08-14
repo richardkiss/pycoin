@@ -4,7 +4,8 @@ DEFAULT_ARGS_ORDER = (
     'wif', 'address', 'pay_to_script', 'prv32', 'pub32',
     'tx', 'block',
     'magic_header', 'default_port', 'dns_bootstrap',
-    'address_wit', 'pay_to_script_wit'
+    'address_wit', 'pay_to_script_wit',
+    'address_bech32hrp'
 )
 
 

@@ -4,5 +4,6 @@ from .registry import (  # noqa
     network_name_for_netcode, subnet_name_for_netcode, full_network_name_for_netcode,
     wif_prefix_for_netcode, address_prefix_for_netcode, pay_to_script_prefix_for_netcode,
     prv32_prefix_for_netcode, pub32_prefix_for_netcode,
-    address_wit_prefix_for_netcode, pay_to_script_wit_prefix_for_netcode
+    address_wit_prefix_for_netcode, pay_to_script_wit_prefix_for_netcode,
+    address_bech32hrp_for_netcode
 )
