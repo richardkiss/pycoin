@@ -1,9 +1,13 @@
-import io
 import os
 import shlex
 import sys
 import tempfile
 import unittest
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from pycoin.cmds import ku, msg, tx
 
@@ -37,7 +41,7 @@ class ToolTest(unittest.TestCase):
         new_environ.update(DEFAULT_ENV)
 
         # capture io
-        new_stdout = io.StringIO()
+        new_stdout = StringIO()
         old_stdout = sys.stdout
         old_environ = os.environ
 
