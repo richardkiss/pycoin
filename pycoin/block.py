@@ -141,7 +141,7 @@ class Block(object):
     def check_merkle_hash(self):
         """Raise a BadMerkleRootError if the Merkle hash of the
         transactions does not match the Merkle hash included in the block."""
-        calculated_hash = merkle([tx.hash() for tx in self.txs], double_sha256)
+        calculated_hash = merkle([tx.txid() for tx in self.txs], double_sha256)
         if calculated_hash != self.merkle_root:
             raise BadMerkleRootError(
                 "calculated %s but block contains %s" % (b2h(calculated_hash), b2h(self.merkle_root)))
