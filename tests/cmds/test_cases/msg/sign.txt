@@ -1,0 +1,3 @@
+# sign a message with WIF from ku 1
+msg sign KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn -m "this is a test message"
+IKL0V6y/kEfixn2e2Yl/23o5XFRVVVG8Hn1Eh8Tp3CYEHpJL/qBBHTq4TALAEuknMuroCC+bc76ZUEMGfx6N2Mo=

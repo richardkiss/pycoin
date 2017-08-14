@@ -1,10 +1,11 @@
 import io
 import os
+import shlex
 import sys
 import tempfile
 import unittest
 
-from pycoin.cmds import ku, tx
+from pycoin.cmds import ku, msg, tx
 
 
 DEFAULT_ENV = {
@@ -15,7 +16,8 @@ DEFAULT_ENV = {
 
 TOOL_LOOKUP = {
     "tx" : (tx.create_parser(), tx.tx),
-    "ku" : (ku.create_parser(), ku.ku)
+    "ku" : (ku.create_parser(), ku.ku),
+    "msg" : (msg.create_parser(), msg.msg)
 }
 
 
@@ -29,7 +31,7 @@ class ToolTest(unittest.TestCase):
 
     def launch_tool(self, cmd_line=None, args=None, env=None):
         if args is None:
-            args = cmd_line.split()
+            args = shlex.split(cmd_line)
 
         new_environ = dict(env or {})
         new_environ.update(DEFAULT_ENV)
