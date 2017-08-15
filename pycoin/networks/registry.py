@@ -106,6 +106,10 @@ def address_wit_prefix_for_netcode(netcode):
     "Return the 1 byte prefix for addresses for the given netcode (or None)"
     return _lookup(netcode, "address_wit")
 
+def address_bech32hrp_for_netcode(netcode):
+    "Return the bech32 hrp prefix for addresses for the given netcode (or None)"
+    return _lookup(netcode, "address_bech32hrp")
+
 
 def pay_to_script_prefix_for_netcode(netcode):
     "Return the 1 byte prefix for pay-to-script addresses for the given netcode (or None)"

@@ -19,6 +19,7 @@ BUILT_IN_NETWORKS = [
             "bitseed.xf2.org", "dnsseed.bluematt.me",
         ],
         address_wit=b'\6', pay_to_script_wit=b'\x0a',
+        address_bech32hrp='bc'
     ),
 
     # BTC bitcoin testnet : tprv/tpub
@@ -31,19 +32,26 @@ BUILT_IN_NETWORKS = [
             "bluematt.me", "testnet-seed.bluematt.me"
         ],
         address_wit=b'\3', pay_to_script_wit=b'\x28',
+        address_bech32hrp='tb'
     ),
 
     # LTC litecoin mainnet : Ltpv/Ltub
-    Network("LTC", "Litecoin", "mainnet",
-            b'\xb0', b'\x30', b'\5',
-            h2b('019d9cfe'), h2b('019da462'),
-            tx=BitcoinTx, block=BitcoinBlock),
+    Network(
+        "LTC", "Litecoin", "mainnet",
+        b'\xb0', b'\x30', b'\5',
+        h2b('019d9cfe'), h2b('019da462'),
+        tx=BitcoinTx, block=BitcoinBlock,
+        address_bech32hrp='lc'
+    ),
 
     # LTC litecoin testnet : ttpv/ttub
-    Network("XLT", "Litecoin", "testnet",
-            b'\xef', b'\x6f', b'\xc4',
-            h2b('0436ef7d'), h2b('0436f6e1'),
-            tx=BitcoinTx, block=BitcoinBlock)
+    Network(
+        "XLT", "Litecoin", "testnet",
+        b'\xef', b'\x6f', b'\xc4',
+        h2b('0436ef7d'), h2b('0436f6e1'),
+        tx=BitcoinTx, block=BitcoinBlock,
+        address_bech32hrp='tl'
+    )
 
 ]
 
