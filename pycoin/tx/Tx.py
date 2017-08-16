@@ -380,7 +380,7 @@ class Tx(object):
                 raise SolvingError("p2sh_lookup not set")
             if hash160 not in p2sh_lookup:
                 raise SolvingError("hash160=%s not found in p2sh_lookup" %
-                                 b2h(hash160))
+                                   b2h(hash160))
 
             script_to_hash = p2sh_lookup[hash160]
         else:

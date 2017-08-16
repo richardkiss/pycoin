@@ -14,9 +14,8 @@ from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
 from pycoin.key.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
-from pycoin.networks import (
-    address_wit_prefix_for_netcode, full_network_name_for_netcode, network_name_for_netcode, network_codes
-)
+from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, network_codes
+from pycoin.ui import address_for_pay_to_script
 from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
 
 
@@ -121,6 +120,44 @@ def create_public_pair_output(key, add_output):
         add_output("key_pair_as_sec_uncompressed", b2h(key.sec(use_uncompressed=True)), " uncompressed")
 
 
+def create_hash160_output(key, add_output, output_dict):
+    network_name = network_name_for_netcode(key._netcode)
+    hash160_c = key.hash160(use_uncompressed=False)
+    hash160_u = key.hash160(use_uncompressed=True)
+    hash160 = hash160_c or hash160_u
+    if hash160:
+        add_output("hash160", b2h(hash160))
+    if hash160_c and hash160_u:
+        add_output("hash160_uncompressed", b2h(hash160_u), " uncompressed")
+
+    if hash160:
+        address = key.address(use_uncompressed=hash160_c is None)
+        add_output("address", address, "%s address" % network_name)
+        output_dict["%s_address" % key._netcode] = address
+
+    if hash160_c and hash160_u:
+        address = key.address(use_uncompressed=True)
+        add_output("address_uncompressed", address, "%s address uncompressed" % network_name)
+        output_dict["%s_address_uncompressed" % key._netcode] = address
+
+    # don't print segwit addresses unless we're sure we have a compressed key
+    if hash160_c:
+        p2aw_script = ScriptPayToAddressWit(b'\0', hash160_c)
+        address_segwit = p2aw_script.info()["address_f"](key._netcode)
+        if address_segwit:
+            # this network seems to support segwit
+            add_output("address_segwit", address_segwit, "%s segwit address" % network_name)
+            output_dict["%s_address_segwit" % key._netcode] = address_segwit
+
+            p2sh_script = p2aw_script.script()
+            p2s_address = address_for_pay_to_script(p2aw_script.script(), key._netcode)
+            if p2s_address:
+                add_output("p2sh_segwit", p2s_address)
+
+            p2sh_script_hex = b2h(p2sh_script)
+            add_output("p2sh_segwit_script", p2sh_script_hex, " corresponding p2sh script")
+
+
 def create_output(item, key, subkey_path=None):
     output_dict = {}
     output_order = []
@@ -132,7 +169,6 @@ def create_output(item, key, subkey_path=None):
             output_dict[json_key.strip().lower()] = value
         output_order.append((json_key.lower(), human_readable_key))
 
-    network_name = network_name_for_netcode(key._netcode)
     full_network_name = full_network_name_for_netcode(key._netcode)
     add_output("input", item)
     add_output("network", full_network_name)
@@ -149,27 +185,7 @@ def create_output(item, key, subkey_path=None):
 
     create_public_pair_output(key, add_output)
 
-    hash160_c = key.hash160(use_uncompressed=False)
-    if hash160_c:
-        add_output("hash160", b2h(hash160_c))
-    hash160_u = key.hash160(use_uncompressed=True)
-    if hash160_u:
-        add_output("hash160_uncompressed", b2h(hash160_u), " uncompressed")
-
-    if hash160_c:
-        address = key.address(use_uncompressed=False)
-        add_output("address", address, "%s address" % network_name)
-        output_dict["%s_address" % key._netcode] = address
-
-    if hash160_u:
-        address = key.address(use_uncompressed=True)
-        add_output("address_uncompressed", address, "%s address uncompressed" % network_name)
-        output_dict["%s_address_uncompressed" % key._netcode] = address
-
-    if hash160_c and address_wit_prefix_for_netcode(key._netcode):
-        address = ScriptPayToAddressWit(b'\0', hash160_c).info()["address_f"](key._netcode)
-        add_output("address segwit", address, "%s segwit address" % network_name)
-        output_dict["%s_address_segwit" % key._netcode] = address
+    create_hash160_output(key, add_output, output_dict)
 
     return output_dict, output_order
 

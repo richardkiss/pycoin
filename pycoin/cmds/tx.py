@@ -511,7 +511,8 @@ def parse_context(args, parser):
 
     for arg in args.argument:
 
-        if is_address_valid(arg, allowable_netcodes=[args.network]):
+        if is_address_valid(arg, allowable_netcodes=[args.network], allowable_types=[
+                "address", "pay_to_script", "segwit"]):
             payables.append((arg, 0))
             continue
 

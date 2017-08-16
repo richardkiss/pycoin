@@ -1,4 +1,4 @@
-ku -n BC -j -w P:foo -s 5-10
+ku -n BC -j P:foo -s 5-10
 {
    "BC_address": "BDXmcRVh3BtCrRwENHUXssjH8XnERet47W",
    "BC_address_uncompressed": "BCnBTzh3tLMUTFPUHhcvjxaYANMqKt6zvk",

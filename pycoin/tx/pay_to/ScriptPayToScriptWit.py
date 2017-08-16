@@ -8,6 +8,7 @@ from .ScriptType import ScriptType
 
 from pycoin.contrib import segwit_addr
 
+
 class ScriptPayToScriptWit(ScriptType):
     def __init__(self, version, hash256):
         assert len(version) == 1
@@ -64,15 +65,16 @@ class ScriptPayToScriptWit(ScriptType):
 
     def info(self, netcode=None):
         def address_f(netcode=netcode):
-            from pycoin.networks import address_bech32hrp_for_netcode
+            from pycoin.networks import bech32_hrp_for_netcode
             from pycoin.networks.default import get_current_netcode
             if netcode is None:
                 netcode = get_current_netcode()
 
-            address_bech32hrp = address_bech32hrp_for_netcode(netcode)
-            address = segwit_addr.encode(address_bech32hrp, self.version, self.hash256)
+            bech32_hrp = bech32_hrp_for_netcode(netcode)
+            address = segwit_addr.encode(bech32_hrp, self.version, self.hash256)
             return address
         return dict(type="pay to witness script hash", address="DEPRECATED call address_f instead",
                     address_f=address_f, hash256=self.hash256, script=self._script)
+
     def __repr__(self):
         return "<Script: pay to %s (segwit)>" % self.address()

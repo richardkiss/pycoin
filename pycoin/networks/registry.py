@@ -2,18 +2,15 @@ from .all import BUILT_IN_NETWORKS
 from .network import Network
 
 
-_NETWORK_NAME_LOOKUP = {}
-
-_NETWORK_PREFIXES = {}
-
-_NETWORK_CODES = []
-
-
 def clear_all_networks():
-    global _NETWORK_NAME_LOOKUP, _NETWORK_PREFIXES, _NETWORK_CODES
+    global _NETWORK_NAME_LOOKUP, _NETWORK_PREFIXES, _NETWORK_CODES, _BECH32_PREFIXES
     _NETWORK_NAME_LOOKUP = {}
     _NETWORK_PREFIXES = {}
+    _BECH32_PREFIXES = {}
     _NETWORK_CODES = []
+
+
+clear_all_networks()
 
 
 def register_network(network_info):
@@ -29,12 +26,17 @@ def register_network(network_info):
         raise ValueError("code %s already defined" % code)
     _NETWORK_NAME_LOOKUP[code] = network_info
     _NETWORK_CODES.append(code)
-    for prop in "wif address pay_to_script prv32 pub32 address_wit pay_to_script_wit".split():
+    for prop in "wif address pay_to_script prv32 pub32".split():
         v = getattr(network_info, prop, None)
         if v is not None:
             if v not in _NETWORK_PREFIXES:
                 _NETWORK_PREFIXES[v] = []
             _NETWORK_PREFIXES[v].append((code, prop))
+    v = getattr(network_info, "bech32_hrp", None)
+    if v is not None:
+        if v not in _BECH32_PREFIXES:
+            _BECH32_PREFIXES[v] = []
+        _BECH32_PREFIXES[v].append(code)
 
 
 def _register_default_networks():
@@ -58,10 +60,18 @@ def network_codes():
 
 def network_prefixes():
     """
-    Return a dictionary of 1 and 4 byte prefixes that returns a pair (a, b) where
-    a is the netcode and b is one of "wif", "address", "pay_to_script", "prv32" or "pub32".
+    Return a dictionary of 1 and 4 byte prefixes that returns a list of pairs (a, b) where
+    a is the netcode and b is one of "wif", "address", "pay_to_script", "prv32", "pub32" or "segwit".
     """
     return _NETWORK_PREFIXES
+
+
+def bech32_prefixes():
+    """
+    Return a dictionary of 2 byte prefixes that returns a list of pairs (a, b) where
+    a is the netcode and b is one of "wif", "address", "pay_to_script", "prv32", "pub32" or "segwit".
+    """
+    return _BECH32_PREFIXES
 
 
 def _lookup(netcode, property):
@@ -102,23 +112,14 @@ def address_prefix_for_netcode(netcode):
     return _lookup(netcode, "address")
 
 
-def address_wit_prefix_for_netcode(netcode):
-    "Return the 1 byte prefix for addresses for the given netcode (or None)"
-    return _lookup(netcode, "address_wit")
-
-def address_bech32hrp_for_netcode(netcode):
+def bech32_hrp_for_netcode(netcode):
     "Return the bech32 hrp prefix for addresses for the given netcode (or None)"
-    return _lookup(netcode, "address_bech32hrp")
+    return _lookup(netcode, "bech32_hrp")
 
 
 def pay_to_script_prefix_for_netcode(netcode):
     "Return the 1 byte prefix for pay-to-script addresses for the given netcode (or None)"
     return _lookup(netcode, "pay_to_script")
-
-
-def pay_to_script_wit_prefix_for_netcode(netcode):
-    "Return the 1 byte prefix for addresses for the given netcode (or None)"
-    return _lookup(netcode, "pay_to_script_wit")
 
 
 def prv32_prefix_for_netcode(netcode):

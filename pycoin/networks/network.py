@@ -5,7 +5,7 @@ DEFAULT_ARGS_ORDER = (
     'tx', 'block',
     'magic_header', 'default_port', 'dns_bootstrap',
     'address_wit', 'pay_to_script_wit',
-    'address_bech32hrp'
+    'bech32_hrp'
 )
 
 

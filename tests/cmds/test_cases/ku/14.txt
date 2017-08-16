@@ -1,4 +1,4 @@
-ku -n MEC -j -w P:foo -s 5-10
+ku -n MEC -j P:foo -s 5-10
 {
    "MEC_address": "MGyrE8wtnhU7JGRPymoW11Xws9Dp88uK9A",
    "MEC_address_uncompressed": "MGEG5i9FdqwNu5sduBwts6PCtyoR5HNr5C",
