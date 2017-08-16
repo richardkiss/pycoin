@@ -68,8 +68,7 @@ def network_prefixes():
 
 def bech32_prefixes():
     """
-    Return a dictionary of 2 byte prefixes that returns a list of pairs (a, b) where
-    a is the netcode and b is one of "wif", "address", "pay_to_script", "prv32", "pub32" or "segwit".
+    Return a dictionary of 2 byte prefixes that returns a list of netcodes that have this prefix.
     """
     return _BECH32_PREFIXES
 
