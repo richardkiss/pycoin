@@ -36,6 +36,18 @@ DEFAULT_LOCK_TIME = 0
 LOCKTIME_THRESHOLD = 500000000
 
 
+def range_int(min, max, name):
+
+    def cast(v):
+        v = int(v)
+        if not (min <= v <= max):
+            raise ValueError()
+        return v
+
+    cast.__name__ = name
+    return cast
+
+
 def validate_bitcoind(tx, tx_db, bitcoind_url):
     try:
         from pycoin.services.bitcoind import bitcoind_agrees_on_transaction_validity
@@ -50,6 +62,8 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
 def dump_header(tx):
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes" % (tx.version, tx.id(), len(tx_bin)))
+    if tx.has_witness_data():
+        print("      segwit tx hash %s" % tx.w_id())
     print("TxIn count: %d; TxOut count: %d" % (len(tx.txs_in), len(tx.txs_out)))
     if tx.lock_time == 0:
         meaning = "valid anytime"
@@ -215,6 +229,9 @@ def parse_locktime(s):
     return int(s)
 
 
+parse_locktime.__name__ = 'locktime'
+
+
 def parse_fee(fee):
     if fee in ["standard"]:
         return fee
@@ -227,7 +244,7 @@ def create_parser():
         description="Manipulate bitcoin (or alt coin) transactions.",
         epilog=EPILOG)
 
-    parser.add_argument('-t', "--transaction-version", type=int,
+    parser.add_argument('-t', "--transaction-version", type=range_int(0, 255, "version"),
                         help='Transaction version, either 1 (default) or 3 (not yet supported).')
 
     parser.add_argument('-l', "--lock-time", type=parse_locktime, help='Lock time; either a block'
@@ -245,7 +262,7 @@ def create_parser():
 
     parser.add_argument("-i", "--fetch-spendables", metavar="address", action="append",
                         help='Add all unspent spendables for the given bitcoin address. This information'
-                        ' is fetched from web services.')
+                        ' is fetched from web services. With no outputs, incoming spendables will be printed.')
 
     parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append", default=[],
                         help='file containing WIF or BIP0032 private keys. If file name ends with .gpg, '
@@ -298,7 +315,7 @@ def create_parser():
                         type=argparse.FileType('r'), help='a file containing hex scripts '
                         '(one per line) corresponding to pay-to-script inputs')
 
-    parser.add_argument("argument", nargs="+", help='generic argument: can be a hex transaction id '
+    parser.add_argument("argument", nargs="*", help='generic argument: can be a hex transaction id '
                         '(exactly 64 characters) to be fetched from cache or a web service;'
                         ' a transaction as a hex string; a path name to a transaction to be loaded;'
                         ' a spendable 4-tuple of the form tx_id/tx_out_idx/script_hex/satoshi_count '
@@ -486,7 +503,8 @@ def parse_context(args, parser):
 
     for arg in args.argument:
 
-        if is_address_valid(arg, allowable_netcodes=[args.network]):
+        if is_address_valid(arg, allowable_netcodes=[args.network], allowable_types=[
+                "address", "pay_to_script", "segwit"]):
             payables.append((arg, 0))
             continue
 
@@ -508,7 +526,7 @@ def parse_context(args, parser):
     if args.fetch_spendables:
         warning_spendables = message_about_spendables_for_address_env(args.network)
         for address in args.fetch_spendables:
-            spendables.extend(spendables_for_address(address))
+            spendables.extend(spendables_for_address(address, args.network))
 
     return (txs, spendables, payables, key_iters, tx_db, warning_spendables)
 
@@ -541,10 +559,9 @@ def merge_txs(txs, spendables, payables):
 
 
 def calculate_lock_time_and_version(args, txs):
-    lock_time = args.lock_time
-    version = args.transaction_version
 
     # if no lock_time is explicitly set, inherit from the first tx or use default
+    lock_time = args.lock_time
     if lock_time is None:
         if txs:
             lock_time = txs[0].lock_time
@@ -552,6 +569,7 @@ def calculate_lock_time_and_version(args, txs):
             lock_time = DEFAULT_LOCK_TIME
 
     # if no version is explicitly set, inherit from the first tx or use default
+    version = args.transaction_version
     if version is None:
         if txs:
             version = txs[0].version
@@ -581,6 +599,8 @@ def wif_iter(iters):
 def generate_tx(txs, spendables, payables, args):
     txs_in, txs_out, unspents = merge_txs(txs, spendables, payables)
     lock_time, version = calculate_lock_time_and_version(args, txs)
+    if len(unspents) == len(txs_in):
+        unspents = remove_indices(unspents, args.remove_tx_in)
     txs_in = remove_indices(txs_in, args.remove_tx_in)
     txs_out = remove_indices(txs_out, args.remove_tx_out)
     tx = Tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
@@ -611,6 +631,9 @@ def print_output(tx, include_unspents, output_file, show_unspents, network, verb
         f.close()
     elif show_unspents:
         for spendable in tx.tx_outs_as_spendable():
+            print(spendable.as_text())
+    elif len(tx.txs_out) == 0:
+        for spendable in tx.unspents:
             print(spendable.as_text())
     else:
         if not tx.missing_unspents():
@@ -666,9 +689,7 @@ def validate_against_bitcoind(tx, tx_db, network, bitcoind_url):
     return tx_db
 
 
-def main():
-    parser = create_parser()
-    args = parser.parse_args()
+def tx(args, parser):
 
     (txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
 
@@ -703,6 +724,12 @@ def main():
                 print("warning: %s" % m, file=sys.stderr)
     if warning_spendables:
         print("warning: %s" % warning_spendables, file=sys.stderr)
+
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+    tx(args, parser)
 
 
 if __name__ == '__main__':

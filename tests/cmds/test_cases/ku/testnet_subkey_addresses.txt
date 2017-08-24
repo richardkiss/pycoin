@@ -1,0 +1,5 @@
+# testnet subkey addresses
+ku -n XTN -s 0/0-2 ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaymFLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm -a
+n2NgXADFpST7cjjUVKi17hboVKo19MLgj9
+mqJWGYKbis64H6kkpZhPUTYGfWGerSwWNY
+mw3oJoeemFSWPRaB8n4Ffm4BwYGdtqCt65

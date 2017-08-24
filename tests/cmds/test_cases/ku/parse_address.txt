@@ -1,0 +1,8 @@
+# parse an address
+ku 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+
+input           : 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+network         : Bitcoin mainnet
+netcode         : BTC
+hash160         : 751e76e8199196d454941c45d1b3a323f1433bd6
+Bitcoin address : 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH

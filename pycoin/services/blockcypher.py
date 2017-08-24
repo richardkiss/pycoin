@@ -5,7 +5,7 @@ from .agent import urlopen
 
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
-from pycoin.tx import Tx, Spendable
+from pycoin.tx.Tx import Spendable, Tx
 
 
 class BlockcypherProvider(object):

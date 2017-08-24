@@ -2,6 +2,9 @@ Version 0.xx
 ------------
 
 * change how ScriptNullData works (arbitrary data now allowed after OP_RETURN)
+
+* remove fetch_unspents tool (use tx -i)
+* remove cache_tx tool (use tx -C)
 * remove BlockHeader
 
 Version 0.77

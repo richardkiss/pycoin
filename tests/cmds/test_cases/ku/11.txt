@@ -1,4 +1,4 @@
-ku.py -n VIA -j -w P:foo -s 5-10
+ku -n VIA -j P:foo -s 5-10
 {
    "VIA_address": "Vj5WuRCwhVCWUNMDVaoCBeFU5jdd8CM3mC",
    "VIA_address_uncompressed": "ViKvkzQJYdfn5BoTQzwb3j6j7aDDxsyeKt",

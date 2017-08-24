@@ -1,0 +1,21 @@
+# parse SEC with leading 03
+ku 0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+
+input                        : 0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+network                      : Bitcoin mainnet
+netcode                      : BTC
+public pair x                : 55066263022277343669578718895168534326250603453777594175500187360389116729240
+public pair y                : 83121579216557378445487899878180864668798711284981320763518679672151497189239
+ x as hex                    : 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+ y as hex                    : b7c52588d95c3b9aa25b0403f1eef75702e84bb7597aabe663b82f6f04ef2777
+y parity                     : odd
+key pair as sec              : 0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+ uncompressed                : 0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798\
+                                 b7c52588d95c3b9aa25b0403f1eef75702e84bb7597aabe663b82f6f04ef2777
+hash160                      : adde4c73c7b9cee17da6c7b3e2b2eea1a0dcbe67
+ uncompressed                : bec08011c9e76dcc42e739a2d7752c2e3ac86e6e
+Bitcoin address              : 1GrLCmVQXoyJXaPJQdqssNqwxvha1eUo2E
+Bitcoin address uncompressed : 1JPbzbsAx1HyaDQoLMapWGoqf9pD5uha5m
+Bitcoin segwit address       : bc1q4h0ycu78h88wzldxc7e79vhw5xsde0n8jk4wl5
+p2sh segwit                  : 38Kw57SDszoUEikRwJNBpypPSdpbAhToeD
+ corresponding p2sh script   : 0014adde4c73c7b9cee17da6c7b3e2b2eea1a0dcbe67
