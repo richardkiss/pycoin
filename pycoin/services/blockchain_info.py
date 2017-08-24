@@ -4,14 +4,20 @@ import warnings
 
 from .agent import request, urlencode, urlopen
 
-from pycoin.serialize import b2h, h2b
-from pycoin.tx.Spendable import Spendable
+from pycoin.serialize import b2h, h2b, b2h_rev
+from pycoin.tx.Tx import Spendable, Tx
 
 
 class BlockchainInfoProvider(object):
     def __init__(self, netcode):
         if netcode != 'BTC':
             raise ValueError("BlockchainInfo only supports mainnet")
+
+    def tx_for_tx_hash(self, tx_hash):
+        "Get a Tx by its hash."
+        URL = "https://blockchain.info/rawtx/%s?format=hex" % b2h_rev(tx_hash)
+        tx = Tx.from_hex(urlopen(URL).read().decode("utf8"))
+        return tx
 
     def payments_for_address(self, bitcoin_address):
         "return an array of (TX ids, net_payment)"

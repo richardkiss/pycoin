@@ -64,8 +64,7 @@ class ServicesTest(unittest.TestCase):
         pass
 
     def test_BlockchainInfo(self):
-        # self.check_provider_tx_for_tx_hash(BlockchainInfo, ["BTC"])
-        pass
+        self.check_provider_tx_for_tx_hash(BlockchainInfoProvider, ["BTC"])
 
     def test_BlockCypherProvider(self):
         # self.check_provider_tx_for_tx_hash(BlockCypherProvider, ["BTC", "XTN"])
