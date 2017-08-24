@@ -200,6 +200,11 @@ class Tx(object):
     def has_witness_data(self):
         return any(len(tx_in.witness) > 0 for tx_in in self.txs_in)
 
+    def txid(self):
+        if not self.has_witness_data():
+            return self.hash()
+        return double_sha256(self.as_bin(include_witness_data=False))
+
     def hash(self, hash_type=None):
         """Return the hash for this Tx object."""
         s = io.BytesIO()
@@ -445,11 +450,13 @@ class Tx(object):
         return len(self.txs_in) == 1 and self.txs_in[0].is_coinbase()
 
     def __str__(self):
-        return "Tx [%s]" % self.id()
+        type_str = 'WTx' if self.has_witness_data() else 'Tx'
+        return "%s [%s]" % (type_str, self.txid())
 
     def __repr__(self):
-        return "Tx [%s] (v:%d) [%s] [%s]" % (
-            self.id(), self.version, ", ".join(str(t) for t in self.txs_in),
+        type_str = 'WTx' if self.has_witness_data() else 'Tx'
+        return "%s [%s] (v:%d) [%s] [%s]" % (
+            type_str, self.txid(), self.version, ", ".join(str(t) for t in self.txs_in),
             ", ".join(str(t) for t in self.txs_out))
 
     def _check_tx_inout_count(self):
