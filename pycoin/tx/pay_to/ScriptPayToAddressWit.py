@@ -1,4 +1,4 @@
-from pycoin.intbytes import byte2int
+from pycoin.intbytes import byte2int, iterbytes
 
 from ..script import tools
 
@@ -88,7 +88,7 @@ class ScriptPayToAddressWit(ScriptType):
 
             bech32_hrp = bech32_hrp_for_netcode(netcode)
             if bech32_hrp:
-                return segwit_addr.encode(bech32_hrp, self.version, self.hash160)
+                return segwit_addr.encode(bech32_hrp, self.version, iterbytes(self.hash160))
             return None
         return dict(type="pay to witness public key hash", address="DEPRECATED call address_f instead",
                     address_f=address_f, hash160=self.hash160, script=self._script)

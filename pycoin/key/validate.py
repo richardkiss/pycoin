@@ -65,7 +65,7 @@ def netcode_and_type_for_text(text, netcodes=None):
     try:
         hrp, data = bech32_decode(text)
         decoded = convertbits(data[1:], 5, 8, False)
-        script = bin_script([int2byte(byte2int(data)), b''.join(int2byte(d) for d in decoded)])
+        script = bin_script([int2byte(data[0]), b''.join(int2byte(d) for d in decoded)])
         l = bech32_prefixes().get(hrp, [])
         if netcodes is None:
             netcodes = network_codes()
