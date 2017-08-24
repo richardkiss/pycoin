@@ -74,6 +74,7 @@ class ServicesTest(unittest.TestCase):
     def test_BlockExplorerProvider(self):
         self.check_provider_tx_for_tx_hash(BlockExplorerProvider, ["BTC"])
 
+    @unittest.skip("this provider is not working at the moment")
     def test_BlockIOProvider(self):
         self.check_provider_tx_for_tx_hash(BlockrioProvider, ["BTC", "XTN"])
 
