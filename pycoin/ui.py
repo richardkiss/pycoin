@@ -2,12 +2,17 @@ import hashlib
 
 from pycoin import encoding
 
+from pycoin.contrib import segwit_addr
+from pycoin.intbytes import iterbytes
 from pycoin.key.validate import netcode_and_type_for_text
-from pycoin.networks import pay_to_script_prefix_for_netcode, pay_to_script_wit_prefix_for_netcode
+from pycoin.networks import (
+    bech32_hrp_for_netcode, pay_to_script_prefix_for_netcode
+)
 from pycoin.networks.default import get_current_netcode
+
 from pycoin.tx.pay_to import (
     ScriptPayToAddress, ScriptPayToScript,
-    ScriptPayToAddressWit, ScriptPayToScriptWit
+    ScriptPayToAddressWit, ScriptPayToScriptWit, script_obj_from_script
 )
 
 
@@ -21,6 +26,8 @@ def script_obj_from_address(address, netcodes=None):
         return ScriptPayToAddressWit(version=data[:1], hash160=data[2:])
     if key_type == 'pay_to_script_wit':
         return ScriptPayToScriptWit(version=data[:1], hash256=data[2:])
+    if key_type == 'segwit':
+        return script_obj_from_script(data)
     raise ValueError("bad text")
 
 
@@ -33,11 +40,14 @@ def address_for_pay_to_script(script, netcode=None):
     if netcode is None:
         netcode = get_current_netcode()
     address_prefix = pay_to_script_prefix_for_netcode(netcode)
-    return encoding.hash160_sec_to_bitcoin_address(encoding.hash160(script), address_prefix=address_prefix)
+    if address_prefix:
+        return encoding.hash160_sec_to_bitcoin_address(encoding.hash160(script), address_prefix=address_prefix)
+    return None
 
 
 def address_for_pay_to_script_wit(script, netcode=None):
     if netcode is None:
         netcode = get_current_netcode()
-    address_prefix = pay_to_script_wit_prefix_for_netcode(netcode)
-    return encoding.b2a_hashed_base58(address_prefix + b'\0\0' + hashlib.sha256(script).digest())
+    bech32_hrp = bech32_hrp_for_netcode(netcode)
+    address = segwit_addr.encode(bech32_hrp, 0, iterbytes(hashlib.sha256(script).digest()))
+    return address

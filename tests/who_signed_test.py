@@ -19,7 +19,7 @@ from pycoin.tx.script import tools
 from pycoin.ui import address_for_pay_to_script, standard_tx_out_script, script_obj_from_address
 
 
-class ScriptTypesTest(unittest.TestCase):
+class WhoSignedTest(unittest.TestCase):
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]

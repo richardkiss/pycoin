@@ -1,4 +1,4 @@
-ku.py --override-network XTN -s 0/0-2 ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaymFLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
+ku --override-network XTN -s 0/0-2 ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaymFLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
 
 input                        : ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaym\
                                  FLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
@@ -24,7 +24,9 @@ hash160                      : e4ca25713330031e60b3268973bad0c31754ddd0
  uncompressed                : 24d12d50fd9102bcf3464e7561573984955d5f9d
 Bitcoin address              : n2NgXADFpST7cjjUVKi17hboVKo19MLgj9
 Bitcoin address uncompressed : misdCqKMLVDyEhp8L8m8vpzyRPQD71GFpH
-Bitcoin segwit address       : QWzJbPXGDk47fkP5Fnhs9gWz5f8gs3ZLE4qz
+Bitcoin segwit address       : tb1qun9z2ufnxqp3uc9ny6yh8wkscvt4fhwskqr0sd
+p2sh segwit                  : 2NCZmE164J6kMuRdcN4u6gGJu8zrrQ7jwWQ
+ corresponding p2sh script   : 0014e4ca25713330031e60b3268973bad0c31754ddd0
 
 input                        : ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaym\
                                  FLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
@@ -50,7 +52,9 @@ hash160                      : 6b568a729476bd697b8291196b3dcbe18369c776
  uncompressed                : d16e7dd3170087df8fb921b7fea06c6cda0ad461
 Bitcoin address              : mqJWGYKbis64H6kkpZhPUTYGfWGerSwWNY
 Bitcoin address uncompressed : mzcKtELU8fFtHzGt6V3kuKUY1ndbbKg6bk
-Bitcoin segwit address       : QWz7XDGeL5xYJh3SH53794sk28JsLhGNf3yb
+Bitcoin segwit address       : tb1qddtg5u55w67kj7uzjyvkk0wtuxpkn3mkj29d6r
+p2sh segwit                  : 2NCKwJ1NULgHp1VBdEQX7LcQ6a1vKfHXcjU
+ corresponding p2sh script   : 00146b568a729476bd697b8291196b3dcbe18369c776
 
 input                        : ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaym\
                                  FLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
@@ -76,4 +80,6 @@ hash160                      : aa5f479146571894485b9e5919da2ab40805851d
  uncompressed                : 87eeac353b9bc19400eb9aa258a409d3b5473107
 Bitcoin address              : mw3oJoeemFSWPRaB8n4Ffm4BwYGdtqCt65
 Bitcoin address uncompressed : msuhSDitAvGfgywcWnE4qzRzgYm5imBe2v
-Bitcoin segwit address       : QWzDGWJuf8zvf99m6VMKVw53Y3auLgQ8bvke
+Bitcoin segwit address       : tb1q4f050y2x2uvfgjzmnev3nk32ksyqtpgafxycew
+p2sh segwit                  : 2Mz25WNw4piPacBgoct2nZZKTkfzd3B3TTk
+ corresponding p2sh script   : 0014aa5f479146571894485b9e5919da2ab40805851d

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
 
@@ -204,7 +203,7 @@ class Tx(object):
     def hash(self, hash_type=None):
         """Return the hash for this Tx object."""
         s = io.BytesIO()
-        self.stream(s)
+        self.stream(s, include_witness_data=False)
         if hash_type is not None:
             stream_struct("L", s, hash_type)
         return double_sha256(s.getvalue())
@@ -378,10 +377,10 @@ class Tx(object):
             hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
             p2sh_lookup = kwargs.get("p2sh_lookup")
             if p2sh_lookup is None:
-                raise ValueError("p2sh_lookup not set")
+                raise SolvingError("p2sh_lookup not set")
             if hash160 not in p2sh_lookup:
-                raise ValueError("hash160=%s not found in p2sh_lookup" %
-                                 b2h(hash160))
+                raise SolvingError("hash160=%s not found in p2sh_lookup" %
+                                   b2h(hash160))
 
             script_to_hash = p2sh_lookup[hash160]
         else:

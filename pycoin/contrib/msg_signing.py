@@ -10,7 +10,7 @@ from ..serialize.bitcoin_streamer import stream_bc_string
 from ..ecdsa import ellipticcurve, numbertheory, generator_secp256k1
 
 from ..networks import address_prefix_for_netcode, network_name_for_netcode
-from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256
+from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256, EncodingError
 from ..key import Key
 
 # According to brainwallet, this is "inputs.io" format, but it seems practical
@@ -37,7 +37,7 @@ def parse_sections(msg_in):
         # trim any junk in front
         _, body = msg_in.split('SIGNED MESSAGE-----\n', 1)
     except:
-        raise ValueError("expecting text SIGNED MESSSAGE somewhere")
+        raise EncodingError("expecting text SIGNED MESSSAGE somewhere")
 
     try:
         # - sometimes middle sep is BEGIN BITCOIN SIGNATURE, other times just BEGIN SIGNATURE
@@ -45,7 +45,7 @@ def parse_sections(msg_in):
         parts = re.split('\n-----BEGIN [A-Z ]*SIGNATURE-----\n', body)
         msg, hdr = ''.join(parts[:-1]), parts[-1]
     except:
-        raise ValueError("expected BEGIN SIGNATURE line", body)
+        raise EncodingError("expected BEGIN SIGNATURE line", body)
 
     if dos_nl:
         msg = msg.replace('\n', '\r\n')
@@ -70,7 +70,7 @@ def parse_signed_message(msg_in):
     hdr = list(filter(None, [i.strip() for i in hdr.split('\n')]))
 
     if '-----END' not in hdr[-1]:
-        raise ValueError("expecting END on last line")
+        raise EncodingError("expecting END on last line")
 
     sig = hdr[-2]
     addr = None
@@ -95,7 +95,7 @@ def parse_signed_message(msg_in):
         break
 
     if not addr or addr == sig:
-        raise ValueError("Could not find address")
+        raise EncodingError("Could not find address")
 
     return msg, addr, sig
 
@@ -149,33 +149,23 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
         net_name=network_name_for_netcode(netcode).upper())
 
 
-def verify_message(key_or_address, signature, message=None, msg_hash=None, netcode=None):
+def pair_for_message(signature, message=None, msg_hash=None, netcode=None):
     """
-    Take a signature, encoded in Base64, and verify it against a
-    key object (which implies the public key),
-    or a specific base58-encoded pubkey hash.
+    Take a signature, encoded in Base64, and return the pair it was signed by.
+    May raise EncodingError (from _decode_signature)
     """
 
-    if isinstance(key_or_address, Key):
-        # they gave us a private key or a public key already loaded.
-        key = key_or_address
-    else:
-        key = Key.from_text(key_or_address)
-
-    netcode = netcode or key.netcode()
-
-    try:
-        # Decode base64 and a bitmask in first byte.
-        is_compressed, recid, r, s = _decode_signature(signature)
-    except ValueError:
-        return False
+    # Decode base64 and a bitmask in first byte.
+    is_compressed, recid, r, s = _decode_signature(signature)
 
     # Calculate hash of message used in signature
     mhash = hash_for_signing(message, netcode) if message is not None else msg_hash
 
     # Calculate the specific public key used to sign this message.
-    pair = _extract_public_pair(generator_secp256k1, recid, r, s, mhash)
+    return _extract_public_pair(generator_secp256k1, recid, r, s, mhash), is_compressed
 
+
+def pair_matches_key(pair, key, is_compressed):
     # Check signing public pair is the one expected for the signature. It must be an
     # exact match for this key's public pair... or else we are looking at a validly
     # signed message, but signed by some other key.
@@ -188,9 +178,28 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
         # Key() constructed from a hash of pubkey doesn't know the exact public pair, so
         # must compare hashed addresses instead.
         addr = key.address()
-        prefix = address_prefix_for_netcode(netcode)
+        prefix = address_prefix_for_netcode(key._netcode)
         ta = public_pair_to_bitcoin_address(pair, compressed=is_compressed, address_prefix=prefix)
         return ta == addr
+
+
+def verify_message(key_or_address, signature, message=None, msg_hash=None, netcode=None):
+    """
+    Take a signature, encoded in Base64, and verify it against a
+    key object (which implies the public key),
+    or a specific base58-encoded pubkey hash.
+    """
+    if isinstance(key_or_address, Key):
+        # they gave us a private key or a public key already loaded.
+        key = key_or_address
+    else:
+        key = Key.from_text(key_or_address)
+
+    try:
+        pair, is_compressed = pair_for_message(signature, message, msg_hash, key.netcode())
+    except EncodingError:
+        return False
+    return pair_matches_key(pair, key, is_compressed)
 
 
 def msg_magic_for_netcode(netcode):
@@ -222,7 +231,7 @@ def _decode_signature(signature):
 
     sig = a2b_base64(signature)
     if len(sig) != 65:
-        raise ValueError("Wrong length, expected 65")
+        raise EncodingError("Wrong length, expected 65")
 
     # split into the parts.
     first = ord(sig[0:1])           # py3 accomidation
@@ -231,7 +240,7 @@ def _decode_signature(signature):
 
     # first byte encodes a bits we need to know about the point used in signature
     if not (27 <= first < 35):
-        raise ValueError("First byte out of range")
+        raise EncodingError("First byte out of range")
 
     # NOTE: The first byte encodes the "recovery id", or "recid" which is a 3-bit values
     # which selects compressed/not-compressed and one of 4 possible public pairs.

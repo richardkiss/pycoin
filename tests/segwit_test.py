@@ -236,7 +236,7 @@ class SegwitTest(unittest.TestCase):
         # p2wpkh
         from pycoin.ui import script_obj_from_address
         from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
-        address = 'p2xtZoXeX5X8BP8JfFhQK2nD3emtjch7UeFm'
+        address = 'bc1qqyykvamqq62n64t8gw09uw0cdgxjwwlw7mypam'
         s = script_obj_from_address(address)
         self.assertIsInstance(s, ScriptPayToAddressWit)
         self.assertEqual(address, s.address())
