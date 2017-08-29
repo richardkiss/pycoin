@@ -357,7 +357,7 @@ def _my_sign(generator, secret_exponent, val, _k=None):
     G = generator
     n = G.order()
 
-    k = _k or deterministic_make_k(n, secret_exponent, val)
+    k = _k or deterministic_make_k(n, secret_exponent, val, trust_no_one=False)
     p1 = k * G
     r = p1.x()
     if r == 0:
