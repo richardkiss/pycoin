@@ -203,7 +203,7 @@ class Tx(object):
     def hash(self, hash_type=None):
         """Return the hash for this Tx object."""
         s = io.BytesIO()
-        self.stream(s)
+        self.stream(s, include_witness_data=False)
         if hash_type is not None:
             stream_struct("L", s, hash_type)
         return double_sha256(s.getvalue())
@@ -380,7 +380,7 @@ class Tx(object):
                 raise SolvingError("p2sh_lookup not set")
             if hash160 not in p2sh_lookup:
                 raise SolvingError("hash160=%s not found in p2sh_lookup" %
-                                 b2h(hash160))
+                                   b2h(hash160))
 
             script_to_hash = p2sh_lookup[hash160]
         else:

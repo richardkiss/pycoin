@@ -1,4 +1,4 @@
-ku -n DASH -j -w P:foo -s 5-10
+ku -n DASH -j P:foo -s 5-10
 {
    "DASH_address": "XjmXpxhPFPWtZY3ecgTncGcQEFvLgc7SCM",
    "DASH_address_uncompressed": "Xj1wgXtk6XzAAMVtY6cBUMTfG6VwUiyj9H",

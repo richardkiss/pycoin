@@ -32,9 +32,13 @@ class TxTest(ToolTest):
 
     def test_cache_tx(self):
         the_dir = self.set_cache_dir()
-        tx_id = "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098"
-        self.launch_tool("tx -C %s" % tx_id, env=dict(PYCOIN_CACHE_DIR=the_dir))
-        self.assertTrue(os.path.exists(os.path.join(the_dir, "txs", "%s_tx.bin" % tx_id)))
+        tx = Tx.from_hex(
+            "01000000010000000000000000000000000000000000000000000000000000000000000000"
+            "ffffffff0704ffff001d0104ffffffff0100f2052a0100000043410496b538e853519c726a"
+            "2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781"
+            "e62294721166bf621e73a82cbf2342c858eeac00000000")
+        self.launch_tool("tx -C %s --db %s" % (tx.id(), tx.as_hex()), env=dict(PYCOIN_CACHE_DIR=the_dir))
+        self.assertTrue(os.path.exists(os.path.join(the_dir, "txs", "%s_tx.bin" % tx.id())))
 
     def test_pay_to_script_file(self):
         the_dir = self.set_cache_dir()

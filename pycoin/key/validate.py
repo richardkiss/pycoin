@@ -1,8 +1,11 @@
 
 import binascii
 from .. import encoding
-from ..networks.registry import network_codes, network_prefixes
+from ..intbytes import byte2int, int2byte
+from ..networks.registry import network_codes, network_prefixes, bech32_prefixes
 from ..serialize import h2b
+from ..contrib.segwit_addr import bech32_decode, convertbits
+from pycoin.tx.script.tools import bin_script
 
 DEFAULT_ADDRESS_TYPES = ["address", "pay_to_script"]
 
@@ -19,9 +22,6 @@ def netcode_and_type_lookup_for_data(data):
     d = {}
     for length in sizes:
         for netcode, the_type in prefixes.get(data[:length], []):
-            if the_type.endswith('_wit'):
-                if data[length+1:length+2] != b'\0':
-                    continue
             d[netcode] = (the_type, length)
     return d
 
@@ -62,8 +62,21 @@ def netcode_and_type_for_text(text, netcodes=None):
     except (binascii.Error, TypeError):
         pass
 
+    try:
+        hrp, data = bech32_decode(text)
+        decoded = convertbits(data[1:], 5, 8, False)
+        script = bin_script([int2byte(data[0]), b''.join(int2byte(d) for d in decoded)])
+        l = bech32_prefixes().get(hrp, [])
+        if netcodes is None:
+            netcodes = network_codes()
+        for netcode in netcodes:
+            if netcode in l:
+                return netcode, "segwit", script
+    except (TypeError, KeyError):
+        pass
+
     data = encoding.a2b_hashed_base58(text)
-    netcode, the_type, length = netcode_and_type_for_data(data)
+    netcode, the_type, length = netcode_and_type_for_data(data, netcodes=netcodes)
     return netcode, the_type, data[length:]
 
 
@@ -71,8 +84,7 @@ def _check_against(text, expected_type, allowable_netcodes):
     if allowable_netcodes is None:
         allowable_netcodes = network_codes()
     try:
-        data = encoding.a2b_hashed_base58(text)
-        netcode, the_type, length = netcode_and_type_for_data(data, netcodes=allowable_netcodes)
+        netcode, the_type, data = netcode_and_type_for_text(text, netcodes=allowable_netcodes)
         if the_type in expected_type and netcode in allowable_netcodes:
             return netcode
     except encoding.EncodingError:

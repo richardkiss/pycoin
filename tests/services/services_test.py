@@ -19,7 +19,8 @@ BLOCK_1_HASH = h2b_rev("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf
 tx_id_for_net = {
     "BTC": ["b958e4a3ccd5bc8fe0ff6fafd635199313e347b88a8102040c05dd123f32a4f3",
             "d1ef46055a84fd02ee82580d691064780def18614d98646371c3448ca20019ac",
-            "69916297f7adde13457b8244e2d704966097e9519ec8fd6f2e7af8c2a60f70f2"],
+            "69916297f7adde13457b8244e2d704966097e9519ec8fd6f2e7af8c2a60f70f2",
+            "c586389e5e4b3acb9d6c8be1c19ae8ab2795397633176f5a6442a261bbdefc3a"],
     "XTN": ["4586e67ee5adcdbc97ed3d2a026ee8703df2ed3553854c186c216e90cd761b69"],
     "DOGE": ["ed7df4e7506ac8447b6983c8ad79da1af86cddda0ff012f7db83e664f61ef6cf"],
     "XDT": ["19dd5c3423e606b5b5dd30b070688bdf9af27fa736e8f3aeb2b68d92a50e67ef"],
@@ -64,8 +65,7 @@ class ServicesTest(unittest.TestCase):
         pass
 
     def test_BlockchainInfo(self):
-        # self.check_provider_tx_for_tx_hash(BlockchainInfo, ["BTC"])
-        pass
+        self.check_provider_tx_for_tx_hash(BlockchainInfoProvider, ["BTC"])
 
     def test_BlockCypherProvider(self):
         # self.check_provider_tx_for_tx_hash(BlockCypherProvider, ["BTC", "XTN"])
@@ -74,6 +74,7 @@ class ServicesTest(unittest.TestCase):
     def test_BlockExplorerProvider(self):
         self.check_provider_tx_for_tx_hash(BlockExplorerProvider, ["BTC"])
 
+    @unittest.skip("this provider is not working at the moment")
     def test_BlockIOProvider(self):
         self.check_provider_tx_for_tx_hash(BlockrioProvider, ["BTC", "XTN"])
 

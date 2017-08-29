@@ -61,6 +61,8 @@ def validate_bitcoind(tx, tx_db, bitcoind_url):
 def dump_header(tx):
     tx_bin = stream_to_bytes(tx.stream)
     print("Version: %2d  tx hash %s  %d bytes" % (tx.version, tx.id(), len(tx_bin)))
+    if tx.has_witness_data():
+        print("      segwit tx hash %s" % tx.w_id())
     print("TxIn count: %d; TxOut count: %d" % (len(tx.txs_in), len(tx.txs_out)))
     if tx.lock_time == 0:
         meaning = "valid anytime"
@@ -511,7 +513,8 @@ def parse_context(args, parser):
 
     for arg in args.argument:
 
-        if is_address_valid(arg, allowable_netcodes=[args.network]):
+        if is_address_valid(arg, allowable_netcodes=[args.network], allowable_types=[
+                "address", "pay_to_script", "segwit"]):
             payables.append((arg, 0))
             continue
 
