@@ -6,9 +6,15 @@ from .rfc6979 import deterministic_generate_k
 
 class Generator(Curve, Point):
     def __new__(self, p, a, b, basis, order):
+        # since Generator extends tuple (via Point), we need to override __new__
         return tuple.__new__(self, basis)
 
     def __init__(self, p, a, b, basis, order):
+        """
+        Set up a group with generator basis for the curve y^2 = x^3 + x*a + b (mod p).
+        The order is the order of the group (it's generally predetermined for a given curve;
+        how it's calculated is complicated).
+        """
         Curve.__init__(self, p, a, b, order)
         Point.__init__(self, basis[0], basis[1], self)
         self._powers = []
@@ -20,9 +26,11 @@ class Generator(Curve, Point):
         self._mod_sqrt_power = (p + 1) // 4
 
     def modular_sqrt(self, a):
+        "Return n where n * n == a (mod p). If no such n exists, an arbitrary value will be returned."
         return pow(a, self._mod_sqrt_power, self._p)
 
     def inverse(self, a):
+        "Return n such that a * n == 1 (mod p)."
         return self.inverse_mod(a, self._order)
 
     def y_values_for_x(self, x):
@@ -30,7 +38,7 @@ class Generator(Curve, Point):
         Return (y0, y1) where for each y in (y0, y1) (x, y) is a point and y0 is even.
 
         To get a y value with particular parity, use something like
-        ```y_values_for_x(x)[boolean_is_y_supposed_to_be_odd]```
+        ```y_values_for_x(x)[1 if is_y_supposed_to_be_odd else 0]```
         """
         p = self._p
         alpha = (pow(x, 3, p) + self._a * x + self._b) % p
@@ -43,6 +51,11 @@ class Generator(Curve, Point):
         return (y1, y0)
 
     def possible_public_pairs_for_signature(self, value, signature, y_parity=None):
+        """
+        yield a list of possible points (public keys) that generated the signature for the given
+        value. If y_parity is not None, only one value will be returned.
+        BRAIN DAMAGE: switch y_parity with recid??
+        """
         r, s = signature
 
         try:
@@ -62,6 +75,13 @@ class Generator(Curve, Point):
         return [s_over_r * self.Point(r, y) + minus_E_over_r for y in y_vals]
 
     def sign_with_recid(self, secret_exponent, val, gen_k=None):
+        """
+        Sign val with the given secret_exponent.
+        If gen_k is set, it will be called with (n, secret_exponent, val), and an unguessable
+        K value should be returned. Otherwise, the default K value, which follows rfc6979 will be used.
+        Returns a tuple of r, s, recid (where recid) is "recovery id", a number from 0-3 used to eliminate
+        ambiguity about which public key signed the value.
+        """
         if gen_k is None:
             gen_k = deterministic_generate_k
         n = self._order
@@ -94,14 +114,18 @@ class Generator(Curve, Point):
         return self.__mul__(e)
 
     def sign(self, secret_exponent, val, gen_k=None):
+        """
+        Sign val with the given secret_exponent.
+        If gen_k is set, it will be called with (n, secret_exponent, val), and an unguessable
+        K value should be returned. Otherwise, the default K value, which follows rfc6979 will be used.
+        """
         return self.sign_with_recid(secret_exponent, val, gen_k)[0:2]
 
     def verify(self, public_pair, val, sig):
         """
         Verify that signature is a valid signature of hash.
-        Return True if the signature is valid.
+        Return True if and only if the signature is valid.
         """
-
         order = self._order
         r, s = sig
         if r < 1 or r >= order or s < 1 or s >= order:

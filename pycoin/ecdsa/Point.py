@@ -17,6 +17,7 @@ class Point(tuple):
         self.check_on_curve()
 
     def check_on_curve(self):
+        """raise NoSuchPointError (which is a ValueError) if the point is not actually on the curve."""
         if not self._curve.contains_point(*self):
             raise NoSuchPointError('({},{}) is not on the curve {}'.format(self[0], self[1], self._curve))
 
@@ -41,4 +42,5 @@ class Point(tuple):
         return self.__class__(self[0], self._curve.p()-self[1], self._curve)
 
     def curve(self):
+        """The curve this point is on."""
         return self._curve
