@@ -1,4 +1,4 @@
-from .Group import Group
+from .Generator import Generator
 from .native.openssl import OpenSSLOptimizations
 from .native.secp256k1 import LibSECP256K1Optimizations
 
@@ -11,8 +11,8 @@ _Gy = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
 _r = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 
 
-class BestClass(LibSECP256K1Optimizations, OpenSSLOptimizations, Group):
+class GeneratorWithOptimizations(LibSECP256K1Optimizations, OpenSSLOptimizations, Generator):
     pass
 
 
-secp256k1_group = BestClass(_p, _a, _b, (_Gx, _Gy), _r)
+secp256k1_generator = GeneratorWithOptimizations(_p, _a, _b, (_Gx, _Gy), _r)

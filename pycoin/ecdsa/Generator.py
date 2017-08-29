@@ -4,7 +4,7 @@ from .Point import Point
 from .rfc6979 import deterministic_generate_k
 
 
-class Group(Curve, Point):
+class Generator(Curve, Point):
     def __new__(self, p, a, b, basis, order):
         return tuple.__new__(self, basis)
 

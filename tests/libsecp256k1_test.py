@@ -3,7 +3,7 @@ import unittest
 
 from ctypes import cdll, byref, c_int, c_uint, c_char_p, c_void_p, c_size_t, create_string_buffer
 
-from pycoin.ecdsa import generator_secp256k1
+from pycoin.ecdsa import secp256k1_generator
 from pycoin.ecdsa.intstream import to_bytes, from_bytes
 from pycoin.ecdsa.native.secp256k1 import libsecp256k1, SECP256K1_EC_UNCOMPRESSED
 from pycoin.ecdsa.rfc6979 import deterministic_generate_k
@@ -11,23 +11,23 @@ from pycoin.encoding import from_bytes_32, to_bytes_32
 from pycoin.intbytes import int2byte, byte2int
 from pycoin.serialize import b2h
 
-from pycoin.ecdsa.Secp256k1Group import Group, _p, _a, _b, _Gx, _Gy, _r
+from pycoin.ecdsa.Secp256k1 import Generator, _p, _a, _b, _Gx, _Gy, _r
 
-legacy_secp256k1_group = Group(_p, _a, _b, (_Gx, _Gy), _r)
+legacy_secp256k1_group = Generator(_p, _a, _b, (_Gx, _Gy), _r)
 
 
 class ECDSATestCase(unittest.TestCase):
 
     def test_multiply_by_group_generator(self):
-        self.assertEqual(1 * generator_secp256k1, (
+        self.assertEqual(1 * secp256k1_generator, (
             55066263022277343669578718895168534326250603453777594175500187360389116729240,
             32670510020758816978083085130507043184471273380659243275938904335757337482424)
         )
-        self.assertEqual(2 * generator_secp256k1, (
+        self.assertEqual(2 * secp256k1_generator, (
             89565891926547004231252920425935692360644145829622209833684329913297188986597,
             12158399299693830322967808612713398636155367887041628176798871954788371653930)
         )
-        self.assertEqual(generator_secp256k1 *
+        self.assertEqual(secp256k1_generator *
             12158399299693830322967808612713398636155367887041628176798871954788371653930, (
             73503477726599187100887421812915680925855587149907858411827017692118332824920,
             27657251006027960104028534670901169416706551781681983309292004861017889370444)
@@ -90,7 +90,7 @@ class ECDSATestCase(unittest.TestCase):
         legacy_secp256k1_group.verify((x, y), 1000, signature)
 
     def test_verify(self):
-        public_pair = generator_secp256k1 * 1
+        public_pair = secp256k1_generator * 1
         self.assertEqual(public_pair, (
             55066263022277343669578718895168534326250603453777594175500187360389116729240,
             32670510020758816978083085130507043184471273380659243275938904335757337482424)
@@ -98,7 +98,7 @@ class ECDSATestCase(unittest.TestCase):
         hash_value = 1
         sig = (46340862580836590753275244201733144181782255593078084106116359912084275628184,
                81369331955758484632176499244870227132558660296342819670803726373940306621624)
-        r = generator_secp256k1.verify(public_pair, hash_value, sig)
+        r = secp256k1_generator.verify(public_pair, hash_value, sig)
         self.assertEqual(r, True)
 
 

@@ -2,11 +2,11 @@ import hashlib
 import unittest
 
 from pycoin.ecdsa.Point import Point
-from pycoin.ecdsa.Group import Group
+from pycoin.ecdsa.Generator import Generator
 from pycoin.ecdsa.Curve import Curve
 
 
-class GroupTestCase(unittest.TestCase):
+class GeneratorTestCase(unittest.TestCase):
 
     c23 = Curve(23, 1, 1)
 
@@ -81,7 +81,7 @@ class GroupTestCase(unittest.TestCase):
         Gx = 0x188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012
         Gy = 0x07192b95ffc8da78631011ed6b24cdd573f977a11e794811
 
-        p192 = Group(p, -3, b, (Gx, Gy), r)
+        p192 = Generator(p, -3, b, (Gx, Gy), r)
 
         # Checking against some sample computations presented
         # in X9.62:

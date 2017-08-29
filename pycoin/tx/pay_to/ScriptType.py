@@ -1,6 +1,6 @@
 import collections
 
-from pycoin.ecdsa import generator_secp256k1
+from pycoin.ecdsa import secp256k1_generator
 
 from ..script import der, tools
 
@@ -9,7 +9,7 @@ from pycoin.intbytes import int2byte
 
 
 def generate_default_placeholder_signature():
-    order = generator_secp256k1.order()
+    order = secp256k1_generator.order()
     r, s = order - 1, order // 2
     return der.sigencode_der(r, s) + int2byte(1)
 
@@ -83,8 +83,8 @@ class ScriptType(object):
     def _create_script_signature(
             self, secret_exponent, signature_for_hash_type_f, signature_type, script):
         sign_value = signature_for_hash_type_f(signature_type, script)
-        order = generator_secp256k1.order()
-        r, s = generator_secp256k1.sign(secret_exponent, sign_value)
+        order = secp256k1_generator.order()
+        r, s = secp256k1_generator.sign(secret_exponent, sign_value)
         if s + s > order:
             s = order - s
         return der.sigencode_der(r, s) + int2byte(signature_type)

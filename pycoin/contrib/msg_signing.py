@@ -4,7 +4,7 @@ import re
 from binascii import b2a_base64, a2b_base64
 
 from ..serialize.bitcoin_streamer import stream_bc_string
-from ..ecdsa import generator_secp256k1
+from ..ecdsa import secp256k1_generator
 
 from ..networks import address_prefix_for_netcode, network_name_for_netcode
 from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256, EncodingError
@@ -112,7 +112,7 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
     mhash = hash_for_signing(message, netcode) if message else msg_hash
 
     # Use a deterministic K so our signatures are deterministic.
-    r, s, recid = generator_secp256k1.sign_with_recid(secret_exponent, mhash)
+    r, s, recid = secp256k1_generator.sign_with_recid(secret_exponent, mhash)
 
     is_compressed = not key._use_uncompressed(use_uncompressed)
     assert recid in (0, 1, 2, 3)
@@ -155,10 +155,10 @@ def pair_for_message(signature, message=None, msg_hash=None, netcode=None):
 
     # Calculate the specific public key used to sign this message.
     y_parity = recid & 1
-    q = generator_secp256k1.possible_public_pairs_for_signature(msg_hash, (r, s), y_parity=y_parity)[0]
+    q = secp256k1_generator.possible_public_pairs_for_signature(msg_hash, (r, s), y_parity=y_parity)[0]
     if recid > 1:
-        order = generator_secp256k1.order()
-        q = generator_secp256k1.Point(q[0] + order, q[1])
+        order = secp256k1_generator.order()
+        q = secp256k1_generator.Point(q[0] + order, q[1])
     return q, is_compressed
 
 

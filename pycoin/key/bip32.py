@@ -44,14 +44,14 @@ import hmac
 import logging
 import struct
 
-from ..ecdsa import generator_secp256k1
+from ..ecdsa import secp256k1_generator
 
 from ..encoding import public_pair_to_sec, from_bytes_32, to_bytes_32
 
 logger = logging.getLogger(__name__)
 
-INFINITY = generator_secp256k1.infinity()
-ORDER = generator_secp256k1.order()
+INFINITY = secp256k1_generator.infinity()
+ORDER = secp256k1_generator.order()
 
 _SUBKEY_VALIDATION_LOG_ERR_FMT = """
 BUY A LOTTO TICKET RIGHT NOW! (And consider giving up your wallet to
@@ -100,7 +100,7 @@ def subkey_secret_exponent_chain_code_pair(
         data = b'\0' + to_bytes_32(secret_exponent) + i_as_bytes
     else:
         if public_pair is None:
-            public_pair = secret_exponent * generator_secp256k1
+            public_pair = secret_exponent * secp256k1_generator
         sec = public_pair_to_sec(public_pair, compressed=True)
         data = sec + i_as_bytes
 
@@ -142,7 +142,7 @@ def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
         raise DerivationError('I_L >= {}'.format(ORDER))
 
-    the_point = I_left_as_exponent * generator_secp256k1 + generator_secp256k1.Point(*public_pair)
+    the_point = I_left_as_exponent * secp256k1_generator + secp256k1_generator.Point(*public_pair)
     if the_point == INFINITY:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
         raise DerivationError('K_{} == {}'.format(i, the_point))

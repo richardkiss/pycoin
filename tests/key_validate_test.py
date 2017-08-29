@@ -2,7 +2,7 @@
 
 import unittest
 
-from pycoin.ecdsa import generator_secp256k1
+from pycoin.ecdsa import secp256k1_generator
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node
@@ -89,7 +89,7 @@ class KeyUtilsTest(unittest.TestCase):
     def test_key_limits(self):
         nc = 'BTC'
         cc = b'000102030405060708090a0b0c0d0e0f'
-        order = generator_secp256k1.order()
+        order = secp256k1_generator.order()
 
         for k in -1, 0, order, order + 1:
             self.assertRaises(InvalidSecretExponentError, Key, secret_exponent=k)
@@ -101,7 +101,7 @@ class KeyUtilsTest(unittest.TestCase):
 
 
     def test_points(self):
-        secp256k1_curve = generator_secp256k1.curve()
+        secp256k1_curve = secp256k1_generator.curve()
         # From <https://crypto.stackexchange.com/questions/784/are-there-any-secp256k1-ecdsa-test-examples-available>
         test_points = []
         k = 1
