@@ -60,7 +60,7 @@ class TxOut(object):
             tools.disassemble(self.script)
         )
 
-    def address(self, netcode=None):
+    def address(self, netcode):
         # attempt to return the destination address, or None on failure
         return script_obj_from_script(self.script).address(netcode=netcode)
 

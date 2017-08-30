@@ -41,6 +41,7 @@ class TxTest(ToolTest):
         self.assertTrue(os.path.exists(os.path.join(the_dir, "txs", "%s_tx.bin" % tx.id())))
 
     def test_pay_to_script_file(self):
+        nc = "BTC"
         the_dir = self.set_cache_dir()
         p2sh_file = tempfile.NamedTemporaryFile()
         p2sh_file.write(
@@ -63,7 +64,7 @@ class TxTest(ToolTest):
             "1976a914751e76e8199196d454941c45d1b3a323f1433bd688ac0000000000f9"
             "02950000000017a91415fc0754e73eb85d1cbce08786fadb7320ecb8dc8700f9"
             "02950000000017a914594f349df0bac3084ffea8a477bba5f03dcd450787")
-        wifs = ' '.join(Key(_).wif() for _ in (1, 2, 3))
+        wifs = ' '.join(Key(_).wif(netcode=nc) for _ in (1, 2, 3))
         signed = tempfile.mktemp(suffix=".hex")
         self.launch_tool("tx -a -P %s --db %s %s %s -o %s" % (
             p2sh_file.name, tx_source_hex, tx_to_sign, wifs, signed), env=dict(PYCOIN_CACHE_DIR=the_dir))

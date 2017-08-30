@@ -42,22 +42,23 @@ def create_parser():
     return parser
 
 
-def get_message_hash(args):
+def get_message_hash(args, netcode):
     message = args.message
     if message is None:
         message = args.input.read()
-    return hash_for_signing(message)
+    return hash_for_signing(message, netcode)
 
 
 def msg_sign(args, parser):
-    message_hash = get_message_hash(args)
-    key, network = parse_key(args.WIF)
-    sig = sign_message(key, msg_hash=message_hash, netcode=args.network or network)
+    key, netcode = parse_key(args.WIF)
+    netcode = args.network or netcode
+    message_hash = get_message_hash(args, netcode)
+    sig = sign_message(key, msg_hash=message_hash, netcode=netcode)
     print(sig)
 
 
 def msg_verify(args, parser):
-    message_hash = get_message_hash(args)
+    message_hash = get_message_hash(args, netcode=args.network)
     try:
         pair, is_compressed = pair_for_message(args.signature, msg_hash=message_hash, netcode=args.network)
     except encoding.EncodingError:

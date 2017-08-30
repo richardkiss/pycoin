@@ -22,19 +22,20 @@ from pycoin.ui import address_for_pay_to_script, standard_tx_out_script, script_
 class WhoSignedTest(unittest.TestCase):
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
+        nc = "BTC"
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
-        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
+        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address(netcode=nc)])
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_signature_count(), 1)
         hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys)
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
-        self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0)), sorted(((key.address(), SIGHASH_ALL) for key in keys[:M])))
+        self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0)), sorted(((key.address(netcode=nc), SIGHASH_ALL) for key in keys[:M])))
 
     def test_create_multisig_1_of_2(self):
         unsigned_id = "dd40f601e801ad87701b04851a4a6852d6b625e481d0fc9c3302faf613a4fc88"
@@ -47,6 +48,7 @@ class WhoSignedTest(unittest.TestCase):
         self.multisig_M_of_N(2, 3, unsigned_id, signed_id)
 
     def test_multisig_one_at_a_time(self):
+        nc = "BTC"
         M = 3
         N = 3
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
@@ -54,7 +56,7 @@ class WhoSignedTest(unittest.TestCase):
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
-        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
+        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address(netcode=nc)])
         ids = ["403e5bfc59e097bb197bf77a692d158dd3a4f7affb4a1fa41072dafe7bec7058",
                "5931d9995e83721243dca24772d7012afcd4378996a8b953c458175f15a544db",
                "9bb4421088190bbbb5b42a9eaa9baed7ec7574a407c25f71992ba56ca43d9c44",
@@ -65,15 +67,16 @@ class WhoSignedTest(unittest.TestCase):
             hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[i-1:i])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
-            self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0)), sorted(((key.address(), SIGHASH_ALL) for key in keys[:i])))
+            self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0)), sorted(((key.address(netcode=nc), SIGHASH_ALL) for key in keys[:i])))
         self.assertEqual(tx2.bad_signature_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):
+        nc = "BTC"
         M, N = 3, 3
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
-        address = address_for_pay_to_script(underlying_script)
+        address = address_for_pay_to_script(underlying_script, netcode=nc)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = standard_tx_out_script(address)
         tx_out = TxOut(1000000, script)

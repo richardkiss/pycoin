@@ -26,54 +26,58 @@ def const_f(v):
 class ScriptTypesTest(unittest.TestCase):
 
     def test_script_type_pay_to_address(self):
+        nc = "BTC"
         for se in range(1, 100):
             key = Key(secret_exponent=se)
             for b in [True, False]:
-                addr = key.address(use_uncompressed=b)
+                addr = key.address(use_uncompressed=b, netcode=nc)
                 st = script_obj_from_address(addr)
-                self.assertEqual(st.address(), addr)
+                self.assertEqual(st.address(netcode=nc), addr)
                 sc = st.script()
                 st = script_obj_from_script(sc)
-                self.assertEqual(st.address(), addr)
+                self.assertEqual(st.address(netcode=nc), addr)
 
     def test_solve_pay_to_address(self):
+        nc = "BTC"
         for se in range(1, 10):
             key = Key(secret_exponent=se)
             for b in [True, False]:
-                addr = key.address(use_uncompressed=b)
+                addr = key.address(use_uncompressed=b, netcode=nc)
                 st = script_obj_from_address(addr)
-                self.assertEqual(st.address(), addr)
+                self.assertEqual(st.address(netcode=nc), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
                 solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
-                self.assertEqual(st.address(), addr)
+                self.assertEqual(st.address(netcode=nc), addr)
 
     def test_script_type_pay_to_public_pair(self):
+        nc = "BTC"
         for se in range(1, 100):
             key = Key(secret_exponent=se)
             for b in [True, False]:
                 st = ScriptPayToPublicKey.from_key(key, use_uncompressed=b)
-                addr = key.address(use_uncompressed=b)
-                self.assertEqual(st.address(), addr)
+                addr = key.address(use_uncompressed=b, netcode=nc)
+                self.assertEqual(st.address(netcode=nc), addr)
                 sc = st.script()
                 st = script_obj_from_script(sc)
-                self.assertEqual(st.address(), addr)
+                self.assertEqual(st.address(netcode=nc), addr)
 
     def test_solve_pay_to_public_pair(self):
+        nc = "BTC"
         for se in range(1, 10):
             key = Key(secret_exponent=se)
             for b in [True, False]:
-                addr = key.address(use_uncompressed=b)
+                addr = key.address(use_uncompressed=b, netcode=nc)
                 st = ScriptPayToPublicKey.from_key(key, use_uncompressed=b)
-                self.assertEqual(st.address(), addr)
+                self.assertEqual(st.address(netcode=nc), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
                 solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
-                self.assertEqual(st.address(), addr)
+                self.assertEqual(st.address(netcode=nc), addr)
 
     def test_sign(self):
         sv = 33143560198659167577410026742586567991638126035902913554051654024377193788946
@@ -103,12 +107,13 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertEqual(s.script(), the_script)
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
+        nc = "BTC"
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
-        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
+        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address(netcode=nc)])
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_signature_count(), 1)
         hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys)
@@ -127,6 +132,7 @@ class ScriptTypesTest(unittest.TestCase):
         self.multisig_M_of_N(2, 3, unsigned_id, signed_id)
 
     def test_multisig_one_at_a_time(self):
+        nc = "BTC"
         M = 3
         N = 3
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
@@ -134,7 +140,7 @@ class ScriptTypesTest(unittest.TestCase):
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
-        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
+        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address(netcode=nc)])
         ids = ["403e5bfc59e097bb197bf77a692d158dd3a4f7affb4a1fa41072dafe7bec7058",
                "5931d9995e83721243dca24772d7012afcd4378996a8b953c458175f15a544db",
                "9bb4421088190bbbb5b42a9eaa9baed7ec7574a407c25f71992ba56ca43d9c44",
@@ -164,11 +170,12 @@ class ScriptTypesTest(unittest.TestCase):
             self.assertEqual(tx.bad_signature_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):
+        nc = "BTC"
         M, N = 3, 3
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
-        address = address_for_pay_to_script(underlying_script)
+        address = address_for_pay_to_script(underlying_script, netcode=nc)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = standard_tx_out_script(address)
         tx_out = TxOut(1000000, script)
@@ -217,9 +224,9 @@ class ScriptTypesTest(unittest.TestCase):
     def test_issue_225(self):
         script = tools.compile("OP_RETURN 'foobar'")
         tx_out = TxOut(1, script)
-        address = tx_out.bitcoin_address(netcode="XTN")
+        address = tx_out.address(netcode="XTN")
         self.assertEqual(address, "(nulldata 666f6f626172)")
-        address = tx_out.bitcoin_address(netcode="BTC")
+        address = tx_out.address(netcode="BTC")
         self.assertEqual(address, "(nulldata 666f6f626172)")
 
 

@@ -25,7 +25,7 @@ FAKE_HASHES = [hashlib.sha256(struct.pack("Q", idx)).digest() for idx in range(1
 class SpendTest(unittest.TestCase):
 
     def test_simple_spend(self):
-
+        nc = "BTC"
         FEE = 10000
 
         # create a fake Spendable
@@ -51,7 +51,7 @@ class SpendTest(unittest.TestCase):
             self.assertEqual(tx.fee(), FEE)
             self.assertEqual(tx.id(), EXPECTED_IDS[count-1])
             for idx in range(1, count+1):
-                self.assertEqual(tx.txs_out[idx-1].bitcoin_address(), BITCOIN_ADDRESSES[idx])
+                self.assertEqual(tx.txs_out[idx-1].address(netcode=nc), BITCOIN_ADDRESSES[idx])
             # TODO: add check that s + s < generator for each signature
             for i in range(count):
                 extra = (1 if i < ((COIN_VALUE - FEE) % count) else 0)

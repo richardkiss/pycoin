@@ -47,7 +47,6 @@ import struct
 from ..encoding import a2b_hashed_base58, b2a_hashed_base58, from_bytes_32, to_bytes_32
 from ..encoding import sec_to_public_pair, public_pair_to_hash160_sec, EncodingError
 from ..networks import prv32_prefix_for_netcode, pub32_prefix_for_netcode
-from ..networks.default import get_current_netcode
 from .validate import netcode_and_type_for_data
 from .Key import Key
 from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
@@ -135,9 +134,8 @@ class BIP32Node(Key):
     def child_index(self):
         return self._child_index
 
-    def serialize(self, netcode=None, as_private=None):
+    def serialize(self, netcode, as_private=None):
         """Yield a 78-byte binary blob corresponding to this node."""
-        netcode = netcode or get_current_netcode()
         if as_private is None:
             as_private = self.secret_exponent() is not None
         if self.secret_exponent() is None and as_private:
@@ -159,7 +157,7 @@ class BIP32Node(Key):
     def fingerprint(self):
         return public_pair_to_hash160_sec(self.public_pair(), compressed=True)[:4]
 
-    def hwif(self, netcode=None, as_private=False):
+    def hwif(self, netcode, as_private=False):
         """Yield a 111-byte string corresponding to this node."""
         return b2a_hashed_base58(self.serialize(as_private=as_private, netcode=netcode))
 

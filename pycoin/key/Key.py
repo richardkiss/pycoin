@@ -5,7 +5,6 @@ from pycoin.encoding import (
     sec_to_public_pair, secret_exponent_to_wif
 )
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
-from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
 from pycoin.tx.script.der import sigencode_der, sigdecode_der
 
@@ -88,12 +87,12 @@ class Key(object):
         """
         return self._secret_exponent
 
-    def wif(self, netcode=None, use_uncompressed=None):
+    def wif(self, netcode, use_uncompressed=None):
         """
         Return the WIF representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
-        wif_prefix = wif_prefix_for_netcode(netcode or get_current_netcode())
+        wif_prefix = wif_prefix_for_netcode(netcode)
         secret_exponent = self.secret_exponent()
         if secret_exponent is None:
             return None
@@ -147,12 +146,12 @@ class Key(object):
             self._hash160_compressed = hash160(self.sec(use_uncompressed=use_uncompressed))
         return self._hash160_compressed
 
-    def address(self, netcode=None, use_uncompressed=None):
+    def address(self, netcode, use_uncompressed=None):
         """
         Return the public address representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
-        address_prefix = address_prefix_for_netcode(netcode or get_current_netcode())
+        address_prefix = address_prefix_for_netcode(netcode)
         hash160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash160:
             return hash160_sec_to_bitcoin_address(hash160, address_prefix=address_prefix)
@@ -160,11 +159,10 @@ class Key(object):
 
     bitcoin_address = address
 
-    def as_text(self, netcode=None):
+    def as_text(self, netcode):
         """
         Return a textual representation of this key.
         """
-        netcode = netcode or get_current_netcode()
         if self.secret_exponent():
             return self.wif(netcode=netcode)
         sec_hex = self.sec_as_hex()

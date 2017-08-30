@@ -67,6 +67,7 @@ def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
 class SighashSingleTest(unittest.TestCase):
 
     def test_sighash_single(self):
+        nc = "BTC"
         k0 = Key(secret_exponent=PRIV_KEYS[0], is_compressed=True)
         k1 = Key(secret_exponent=PRIV_KEYS[1], is_compressed=True)
         k2 = Key(secret_exponent=PRIV_KEYS[2], is_compressed=True)
@@ -89,9 +90,9 @@ class SighashSingleTest(unittest.TestCase):
             TxIn(coinbase_tx.hash(), 2),
         ]
         txs_out = [
-            TxOut(900000000, standard_tx_out_script(k3.address())),
-            TxOut(800000000, standard_tx_out_script(k4.address())),
-            TxOut(800000000, standard_tx_out_script(k5.address())),
+            TxOut(900000000, standard_tx_out_script(k3.address(netcode=nc))),
+            TxOut(800000000, standard_tx_out_script(k4.address(netcode=nc))),
+            TxOut(800000000, standard_tx_out_script(k5.address(netcode=nc))),
         ]
         tx = Tx(1, txs_in, txs_out)
         tx.set_unspents(coinbase_tx.txs_out)

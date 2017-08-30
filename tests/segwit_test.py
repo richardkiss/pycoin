@@ -55,12 +55,13 @@ class SegwitTest(unittest.TestCase):
         return tx_u, tx_s
 
     def check_tx_can_be_signed(self, tx_u, tx_s, private_keys=[], p2sh_values=[]):
+        nc = "BTC"
         tx_u_prime = self.unsigned_copy(tx_s)
         tx_u_hex = tx_u.as_hex()
         tx_s_hex = tx_s.as_hex()
         tx_u_prime.set_unspents(tx_s.unspents)
         tx_u_prime.sign(
-            hash160_lookup=LazySecretExponentDB([Key(pk).wif() for pk in private_keys], {}),
+            hash160_lookup=LazySecretExponentDB([Key(pk).wif(netcode=nc) for pk in private_keys], {}),
             p2sh_lookup=build_p2sh_lookup([h2b(x) for x in p2sh_values])
         )
         self.check_signed(tx_u_prime)
@@ -248,6 +249,7 @@ class SegwitTest(unittest.TestCase):
         from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
         from pycoin.tx.pay_to.ScriptPayToScriptWit import ScriptPayToScriptWit
         from pycoin.ui import address_for_pay_to_script_wit, script_obj_from_address
+        nc = "BTC"
         key1 = Key(1)
         coin_value = 5000000
         script = ScriptPayToAddressWit(b'\0', key1.hash160()).script()
@@ -255,18 +257,18 @@ class SegwitTest(unittest.TestCase):
         tx_out_index = 0
         spendable = Spendable(coin_value, script, tx_hash, tx_out_index)
         key2 = Key(2)
-        tx = create_tx([spendable], [(key2.address(), coin_value)])
+        tx = create_tx([spendable], [(key2.address(netcode=nc), coin_value)])
         self.check_unsigned(tx)
-        sign_tx(tx, [key1.wif()])
+        sign_tx(tx, [key1.wif(netcode=nc)])
         self.check_signed(tx)
         self.assertEqual(len(tx.txs_in[0].witness), 2)
 
         s1 = ScriptPayToAddress(key1.hash160()).script()
-        address = address_for_pay_to_script_wit(s1)
+        address = address_for_pay_to_script_wit(s1, netcode=nc)
         spendable.script = script_obj_from_address(address).script()
-        tx = create_tx([spendable], [(key2.address(), coin_value)])
+        tx = create_tx([spendable], [(key2.address(netcode=nc), coin_value)])
         self.check_unsigned(tx)
-        sign_tx(tx, [key1.wif()], p2sh_lookup=build_p2sh_lookup([s1]))
+        sign_tx(tx, [key1.wif(netcode=nc)], p2sh_lookup=build_p2sh_lookup([s1]))
         self.check_signed(tx)
 
     def test_issue_224(self):

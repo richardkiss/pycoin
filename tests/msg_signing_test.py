@@ -15,6 +15,7 @@ def test_against_myself():
     from pycoin.encoding import bitcoin_address_to_hash160_sec_with_prefix
     from pycoin.encoding import wif_to_tuple_of_secret_exponent_compressed
 
+    nc = "BTC"
     for wif, right_addr in [
                     ('L4gXBvYrXHo59HLeyem94D9yLpRkURCHmCwQtPuWW9m6o1X8p8sp',
                      '1LsPb3D1o1Z7CzEt1kv5QVxErfqzXxaZXv'),
@@ -24,14 +25,14 @@ def test_against_myself():
         se, comp = wif_to_tuple_of_secret_exponent_compressed(wif)
 
         k = Key(secret_exponent=se, is_compressed=comp)
-        assert k.address() == right_addr
+        assert k.address(netcode=nc) == right_addr
 
         vk = Key(public_pair=k.public_pair(), is_compressed=comp)
-        assert vk.address() == right_addr
+        assert vk.address(netcode=nc) == right_addr
 
         h160, pubpre = bitcoin_address_to_hash160_sec_with_prefix(right_addr)
         vk2 = Key(hash160=h160)
-        assert vk2.address() == right_addr
+        assert vk2.address(netcode=nc) == right_addr
 
         for i in range(1, 30, 10):
             msg = 'test message %s' % ('A'*i)
@@ -48,10 +49,10 @@ def test_against_myself():
 
             assert s == sig2, s
 
-            ok = verify_message(k, sig2, msg)
+            ok = verify_message(k, sig2, msg, netcode=nc)
             assert ok
 
-            ok = verify_message(k, sig2.encode('ascii'), msg)
+            ok = verify_message(k, sig2.encode('ascii'), msg, netcode=nc)
             assert ok
 
 def test_msg_parse():

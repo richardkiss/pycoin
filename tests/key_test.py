@@ -20,7 +20,7 @@ class KeyTest(unittest.TestCase):
         self.assertTrue(h160_key.verify(h, sig))
 
     def test_translation(self):
-        netcode = "BTC"
+        nc = "BTC"
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
 
             secret_exponent = int(exp_hex, 16)
@@ -42,11 +42,11 @@ class KeyTest(unittest.TestCase):
                 self.assertEqual(key.public_copy().secret_exponent(), None)
                 v = repr(key)
                 if key._prefer_uncompressed:
-                    self.assertEqual(key.wif(), wif)
+                    self.assertEqual(key.wif(netcode=nc), wif)
                 else:
-                    self.assertEqual(key.wif(), c_wif)
-                self.assertEqual(key.wif(use_uncompressed=True), wif)
-                self.assertEqual(key.wif(use_uncompressed=False), c_wif)
+                    self.assertEqual(key.wif(netcode=nc), c_wif)
+                self.assertEqual(key.wif(use_uncompressed=True, netcode=nc), wif)
+                self.assertEqual(key.wif(use_uncompressed=False, netcode=nc), c_wif)
 
             for key in keys_wif + keys_sec:
                 if key._prefer_uncompressed:
@@ -56,22 +56,22 @@ class KeyTest(unittest.TestCase):
                 self.assertEqual(key.sec(use_uncompressed=True), sec)
                 self.assertEqual(key.sec(use_uncompressed=False), c_sec)
                 if key._prefer_uncompressed:
-                    self.assertEqual(key.address(), address_b58)
+                    self.assertEqual(key.address(netcode=nc), address_b58)
                 else:
-                    self.assertEqual(key.address(), c_address_b58)
-                self.assertEqual(key.address(use_uncompressed=False), c_address_b58)
-                self.assertEqual(key.address(use_uncompressed=True), address_b58)
+                    self.assertEqual(key.address(netcode=nc), c_address_b58)
+                self.assertEqual(key.address(use_uncompressed=False, netcode=nc), c_address_b58)
+                self.assertEqual(key.address(use_uncompressed=True, netcode=nc), address_b58)
 
             key_pub = key_from_text(address_b58)[0]
             key_pub_c = key_from_text(c_address_b58)[0]
 
-            self.assertEqual(key_pub.address(netcode=netcode), address_b58)
-            self.assertEqual(key_pub.address(use_uncompressed=True, netcode=netcode), address_b58)
-            self.assertEqual(key_pub.address(use_uncompressed=False, netcode=netcode), None)
+            self.assertEqual(key_pub.address(netcode=nc), address_b58)
+            self.assertEqual(key_pub.address(use_uncompressed=True, netcode=nc), address_b58)
+            self.assertEqual(key_pub.address(use_uncompressed=False, netcode=nc), None)
 
-            self.assertEqual(key_pub_c.address(), c_address_b58)
-            self.assertEqual(key_pub_c.address(use_uncompressed=True, netcode=netcode), c_address_b58)
-            self.assertEqual(key_pub_c.address(use_uncompressed=False, netcode=netcode), None)
+            self.assertEqual(key_pub_c.address(netcode=nc), c_address_b58)
+            self.assertEqual(key_pub_c.address(use_uncompressed=True, netcode=nc), c_address_b58)
+            self.assertEqual(key_pub_c.address(use_uncompressed=False, netcode=nc), None)
 
 
         do_test("1111111111111111111111111111111111111111111111111111111111111111",
