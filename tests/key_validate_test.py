@@ -5,15 +5,15 @@ import unittest
 from pycoin.ecdsa import generator_secp256k1
 from pycoin.ecdsa.ellipticcurve import Point, NoSuchPointError
 from pycoin.encoding import hash160_sec_to_bitcoin_address
-from pycoin.key import Key
+from pycoin.key.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
-from pycoin.key.Key import InvalidPublicPairError, InvalidSecretExponentError
+from pycoin.key.Key import Key, InvalidPublicPairError, InvalidSecretExponentError
 from pycoin.key.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 from pycoin.networks import pay_to_script_prefix_for_netcode, network_codes
 
 
 def change_prefix(address, new_prefix):
-    return hash160_sec_to_bitcoin_address(Key.from_text(address).hash160(), address_prefix=new_prefix)
+    return hash160_sec_to_bitcoin_address(key_from_text(address)[0].hash160(), address_prefix=new_prefix)
 
 
 PAY_TO_HASH_ADDRESSES = ["1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", "1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm",
@@ -42,7 +42,6 @@ class KeyUtilsTest(unittest.TestCase):
             self.assertEqual(is_address_valid(address, allowable_types=["pay_to_script"]), "BTC")
             self.assertEqual(is_address_valid(address, allowable_types=["address"]), None)
 
-
     def test_is_wif_valid(self):
         WIFS = ["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn",
                 "5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAnchuDf",
@@ -57,13 +56,12 @@ class KeyUtilsTest(unittest.TestCase):
         NETWORK_NAMES = network_codes()
         for netcode in NETWORK_NAMES:
             for se in range(1, 10):
-                key = Key(secret_exponent=se, netcode=netcode)
+                key = Key(secret_exponent=se)
                 for tv in [True, False]:
-                    wif = key.wif(use_uncompressed=tv)
+                    wif = key.wif(use_uncompressed=tv, netcode=netcode)
                     self.assertEqual(is_wif_valid(wif, allowable_netcodes=[netcode]), netcode)
                     a = wif[:-1] + chr(ord(wif[-1])+1)
                     self.assertEqual(is_wif_valid(a, allowable_netcodes=[netcode]), None)
-
 
     def test_is_public_private_bip32_valid(self):
         NETWORK_NAMES = network_codes()
@@ -72,14 +70,14 @@ class KeyUtilsTest(unittest.TestCase):
         # not all networks support BIP32 yet
         for netcode in "BTC XTN DOGE".split():
             for wk in WALLET_KEYS:
-                wallet = BIP32Node.from_master_secret(wk.encode("utf8"), netcode=netcode)
-                text = wallet.wallet_key(as_private=True)
+                wallet = BIP32Node.from_master_secret(wk.encode("utf8"))
+                text = wallet.hwif(as_private=True, netcode=netcode)
                 self.assertEqual(is_private_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), netcode)
                 self.assertEqual(is_public_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), None)
                 a = text[:-1] + chr(ord(text[-1])+1)
                 self.assertEqual(is_private_bip32_valid(a, allowable_netcodes=NETWORK_NAMES), None)
                 self.assertEqual(is_public_bip32_valid(a, allowable_netcodes=NETWORK_NAMES), None)
-                text = wallet.wallet_key(as_private=False)
+                text = wallet.hwif(as_private=False, netcode=netcode)
                 self.assertEqual(is_private_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), None)
                 self.assertEqual(is_public_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), netcode)
                 a = text[:-1] + chr(ord(text[-1])+1)
@@ -88,17 +86,16 @@ class KeyUtilsTest(unittest.TestCase):
 
 
     def test_key_limits(self):
-        nc = 'BTC'
         cc = b'000102030405060708090a0b0c0d0e0f'
         order = generator_secp256k1.order()
 
         for k in -1, 0, order, order + 1:
             self.assertRaises(InvalidSecretExponentError, Key, secret_exponent=k)
-            self.assertRaises(InvalidSecretExponentError, BIP32Node, nc, cc, secret_exponent=k)
+            self.assertRaises(InvalidSecretExponentError, BIP32Node, cc, secret_exponent=k)
 
         for i in range(1, 512):
             Key(secret_exponent=i)
-            BIP32Node(nc, cc, secret_exponent=i)
+            BIP32Node(cc, secret_exponent=i)
 
 
     def test_points(self):
@@ -317,17 +314,19 @@ class KeyUtilsTest(unittest.TestCase):
         self.assertRaises(NoSuchPointError, Point, secp256k1_curve, x, y)
         self.assertRaises(InvalidPublicPairError, Key, public_pair=(0, 0))
 
-
     def test_repr(self):
-        key = Key(secret_exponent=273, netcode='XTN')
+        key = Key(secret_exponent=273)
+        netcode = "XTN"
 
-        address = key.address()
-        pub_k = Key.from_text(address)
-        self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
+        address = key.address(netcode=netcode)
+        pub_k, nc = key_from_text(address)
+        self.assertEqual(netcode, nc)
+        self.assertEqual(repr(pub_k),  '<H160:12a28d1175d5473d6b7b9e6c00bdbecf51105b69>')
 
-        wif = key.wif()
-        priv_k = Key.from_text(wif)
-        self.assertEqual(repr(priv_k), 'private_for <0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
+        wif = key.wif(netcode=netcode)
+        priv_k, nc = key_from_text(wif)
+        self.assertEqual(netcode, nc)
+        self.assertEqual(repr(priv_k), '<private_for 0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
 
 
 if __name__ == '__main__':

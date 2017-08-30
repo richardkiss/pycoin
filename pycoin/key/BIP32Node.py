@@ -47,6 +47,7 @@ import struct
 from ..encoding import a2b_hashed_base58, b2a_hashed_base58, from_bytes_32, to_bytes_32
 from ..encoding import sec_to_public_pair, public_pair_to_hash160_sec, EncodingError
 from ..networks import prv32_prefix_for_netcode, pub32_prefix_for_netcode
+from ..networks.default import get_current_netcode
 from .validate import netcode_and_type_for_data
 from .Key import Key
 from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
@@ -62,10 +63,10 @@ class BIP32Node(Key):
     https://en.bitcoin.it/wiki/BIP_0032
     """
     @classmethod
-    def from_master_secret(class_, master_secret, netcode='BTC'):
+    def from_master_secret(class_, master_secret):
         """Generate a Wallet from a master password."""
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
-        return class_(netcode=netcode, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
+        return class_(chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
 
     @classmethod
     def from_hwif(class_, b58_str, allow_subkey_suffix=True):
@@ -81,7 +82,7 @@ class BIP32Node(Key):
         is_private = (key_type == 'prv32')
         parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
 
-        d = dict(netcode=netcode, chain_code=data[13:45], depth=ord(data[4:5]),
+        d = dict(chain_code=data[13:45], depth=ord(data[4:5]),
                  parent_fingerprint=parent_fingerprint, child_index=child_index)
 
         if is_private:
@@ -95,7 +96,7 @@ class BIP32Node(Key):
 
     from_wallet_key = from_hwif
 
-    def __init__(self, netcode, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
+    def __init__(self, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
                  child_index=0, secret_exponent=None, public_pair=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
 
@@ -104,7 +105,7 @@ class BIP32Node(Key):
 
         super(BIP32Node, self).__init__(
             secret_exponent=secret_exponent, public_pair=public_pair, prefer_uncompressed=False,
-            is_compressed=True, is_pay_to_script=False, netcode=netcode)
+            is_compressed=True, is_pay_to_script=False)
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)
@@ -113,7 +114,6 @@ class BIP32Node(Key):
             raise TypeError("chain code must be bytes")
         if len(chain_code) != 32:
             raise ValueError("chain code wrong length")
-        self._netcode = netcode
         self._chain_code = chain_code
         self._depth = depth
         if len(parent_fingerprint) != 4:
@@ -135,8 +135,9 @@ class BIP32Node(Key):
     def child_index(self):
         return self._child_index
 
-    def serialize(self, as_private=None):
+    def serialize(self, netcode=None, as_private=None):
         """Yield a 78-byte binary blob corresponding to this node."""
+        netcode = netcode or get_current_netcode()
         if as_private is None:
             as_private = self.secret_exponent() is not None
         if self.secret_exponent() is None and as_private:
@@ -144,9 +145,9 @@ class BIP32Node(Key):
 
         ba = bytearray()
         if as_private:
-            ba.extend(prv32_prefix_for_netcode(self._netcode))
+            ba.extend(prv32_prefix_for_netcode(netcode))
         else:
-            ba.extend(pub32_prefix_for_netcode(self._netcode))
+            ba.extend(pub32_prefix_for_netcode(netcode))
         ba.extend([self._depth])
         ba.extend(self._parent_fingerprint + struct.pack(">L", self._child_index) + self._chain_code)
         if as_private:
@@ -158,16 +159,16 @@ class BIP32Node(Key):
     def fingerprint(self):
         return public_pair_to_hash160_sec(self.public_pair(), compressed=True)[:4]
 
-    def hwif(self, as_private=False):
+    def hwif(self, netcode=None, as_private=False):
         """Yield a 111-byte string corresponding to this node."""
-        return b2a_hashed_base58(self.serialize(as_private=as_private))
+        return b2a_hashed_base58(self.serialize(as_private=as_private, netcode=netcode))
 
     as_text = hwif
     wallet_key = hwif
 
     def public_copy(self):
         """Yield the corresponding public node for this node."""
-        return self.__class__(netcode=self._netcode, chain_code=self._chain_code,
+        return self.__class__(chain_code=self._chain_code,
                               depth=self._depth, parent_fingerprint=self._parent_fingerprint,
                               child_index=self._child_index, public_pair=self.public_pair())
 
@@ -180,8 +181,7 @@ class BIP32Node(Key):
         if is_hardened:
             i |= 0x80000000
 
-        d = dict(netcode=self._netcode, depth=self._depth+1,
-                 parent_fingerprint=self.fingerprint(), child_index=i)
+        d = dict(depth=self._depth+1, parent_fingerprint=self.fingerprint(), child_index=i)
 
         if self.secret_exponent() is None:
             if is_hardened:

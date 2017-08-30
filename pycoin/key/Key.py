@@ -1,9 +1,9 @@
 from pycoin import ecdsa
-from pycoin.encoding import EncodingError, a2b_hashed_base58, \
-    from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
-    is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
+from pycoin.encoding import (
+    from_bytes_32, hash160, hash160_sec_to_bitcoin_address,
+    is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec,
     sec_to_public_pair, secret_exponent_to_wif
-from pycoin.key.validate import netcode_and_type_for_data
+)
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
@@ -20,7 +20,7 @@ class InvalidSecretExponentError(ValueError):
 
 class Key(object):
     def __init__(self, secret_exponent=None, public_pair=None, hash160=None,
-                 prefer_uncompressed=None, is_compressed=None, is_pay_to_script=False, netcode=None):
+                 prefer_uncompressed=None, is_compressed=None, is_pay_to_script=False):
         """
         secret_exponent:
             a long representing the secret exponent
@@ -37,17 +37,12 @@ class Key(object):
         is_pay_to_script:
             whether or not this key is for a pay-to-script style transaction
 
-        netcode:
-            the code for the network (as defined in pycoin.networks)
-
         Include at most one of secret_exponent, public_pair or hash160.
         prefer_uncompressed, is_compressed (booleans) are optional.
         """
 
         if is_compressed is None:
             is_compressed = False if hash160 else True
-        if netcode is None:
-            netcode = get_current_netcode()
         if [secret_exponent, public_pair, hash160].count(None) != 2:
             raise ValueError("exactly one of secret_exponent, public_pair, hash160 must be passed.")
         if prefer_uncompressed is None:
@@ -62,7 +57,6 @@ class Key(object):
                 self._hash160_compressed = hash160
             else:
                 self._hash160_uncompressed = hash160
-        self._netcode = netcode
 
         if self._public_pair is None and self._secret_exponent is not None:
             if self._secret_exponent < 1 \
@@ -78,40 +72,12 @@ class Key(object):
             raise InvalidPublicPairError()
 
     @classmethod
-    def from_text(class_, text, is_compressed=False):
-        """
-        This function will accept a BIP0032 wallet string, a WIF, or a bitcoin address.
-
-        The "is_compressed" parameter is ignored unless a public address is passed in.
-        """
-
-        data = a2b_hashed_base58(text)
-        netcode, key_type, length = netcode_and_type_for_data(data)
-        data = data[1:]
-
-        if key_type in ("pub32", "prv32"):
-            # TODO: fix this... it doesn't belong here
-            from pycoin.key.BIP32Node import BIP32Node
-            return BIP32Node.from_wallet_key(text)
-
-        if key_type == 'wif':
-            is_compressed = (len(data) > 32)
-            if is_compressed:
-                data = data[:-1]
-            return Key(
-                secret_exponent=from_bytes_32(data),
-                prefer_uncompressed=not is_compressed, netcode=netcode)
-        if key_type == 'address':
-            return Key(hash160=data, is_compressed=is_compressed, netcode=netcode)
-        raise EncodingError("unknown text: %s" % text)
-
-    @classmethod
-    def from_sec(class_, sec, netcode=None):
+    def from_sec(class_, sec):
         """
         Create a key from an sec bytestream (which is an encoding of a public pair).
         """
         public_pair = sec_to_public_pair(sec)
-        return class_(public_pair=public_pair, is_compressed=is_sec_compressed(sec), netcode=netcode)
+        return class_(public_pair=public_pair, is_compressed=is_sec_compressed(sec))
 
     def is_private(self):
         return self.secret_exponent() is not None
@@ -122,12 +88,12 @@ class Key(object):
         """
         return self._secret_exponent
 
-    def wif(self, use_uncompressed=None):
+    def wif(self, netcode=None, use_uncompressed=None):
         """
         Return the WIF representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
-        wif_prefix = wif_prefix_for_netcode(self._netcode)
+        wif_prefix = wif_prefix_for_netcode(netcode or get_current_netcode())
         secret_exponent = self.secret_exponent()
         if secret_exponent is None:
             return None
@@ -140,12 +106,6 @@ class Key(object):
         Return a pair of integers representing the public key (or None).
         """
         return self._public_pair
-
-    def netcode(self):
-        """
-        Return the netcode
-        """
-        return self._netcode
 
     def sec(self, use_uncompressed=None):
         """
@@ -187,12 +147,12 @@ class Key(object):
             self._hash160_compressed = hash160(self.sec(use_uncompressed=use_uncompressed))
         return self._hash160_compressed
 
-    def address(self, use_uncompressed=None):
+    def address(self, netcode=None, use_uncompressed=None):
         """
         Return the public address representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
-        address_prefix = address_prefix_for_netcode(self._netcode)
+        address_prefix = address_prefix_for_netcode(netcode or get_current_netcode())
         hash160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash160:
             return hash160_sec_to_bitcoin_address(hash160, address_prefix=address_prefix)
@@ -200,23 +160,24 @@ class Key(object):
 
     bitcoin_address = address
 
-    def as_text(self):
+    def as_text(self, netcode=None):
         """
         Return a textual representation of this key.
         """
+        netcode = netcode or get_current_netcode()
         if self.secret_exponent():
-            return self.wif()
+            return self.wif(netcode=netcode)
         sec_hex = self.sec_as_hex()
         if sec_hex:
             return sec_hex
-        return self.address()
+        return self.address(netcode=netcode)
 
     def public_copy(self):
         if self.secret_exponent() is None:
             return self
 
         return Key(public_pair=self.public_pair(), prefer_uncompressed=self._prefer_uncompressed,
-                   is_compressed=(self._hash160_compressed is not None), netcode=self._netcode)
+                   is_compressed=(self._hash160_compressed is not None))
 
     def subkey(self, path_to_subkey):
         """
@@ -276,7 +237,6 @@ class Key(object):
         return False
 
     def __repr__(self):
-        r = self.public_copy().as_text()
         if self.is_private():
-            return "private_for <%s>" % r
-        return "<%s>" % r
+            return "<private_for %s>" % b2h(self.sec())
+        return "<H160:%s>" % b2h(self.hash160())

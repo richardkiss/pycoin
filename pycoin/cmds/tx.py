@@ -14,7 +14,7 @@ import sys
 
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding import hash160
-from pycoin.key import Key
+from pycoin.key.key_from_text import key_from_text
 from pycoin.key.validate import is_address_valid
 from pycoin.networks import address_prefix_for_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev, stream_to_bytes
@@ -361,14 +361,13 @@ def parse_private_key_file(args, key_list):
 
             def make_key(x):
                 try:
-                    return Key.from_text(x)
+                    return key_from_text(x, key_types="prv32 wif".split())
                 except Exception:
                     return None
 
-            keys = [make_key(x) for x in possible_keys]
-            for key in keys:
-                if key:
-                    key_list.append((k.wif() for k in key.subkeys("")))
+            key_netcode_list = [k for k in (make_key(x) for x in possible_keys) if k]
+            for key, netcode in key_netcode_list:
+                key_list.append((k.wif(netcode=netcode) for k in key.subkeys("")))
 
             # if len(keys) == 1 and key.hierarchical_wallet() is None:
             #    # we have exactly 1 WIF. Let's look for an address
@@ -474,12 +473,11 @@ def parse_parts(arg, spendables, payables, network):
 
 def key_found(arg, payables, key_iters):
     try:
-        key = Key.from_text(arg)
-        # TODO: check network
-        if key.wif() is None:
-            payables.append((key.address(), 0))
+        key, netcode = key_from_text(arg, key_types="address pub32 prv32 wif".split())
+        if key.secret_exponent() is None:
+            payables.append((key.address(netcode=netcode), 0))
             return True
-        key_iters.append(iter([key.wif()]))
+        key_iters.append(iter([key.wif(netcode=netcode)]))
         return True
     except Exception:
         pass
@@ -624,12 +622,6 @@ def generate_tx(txs, spendables, payables, args):
 
 
 def print_output(tx, include_unspents, output_file, show_unspents, network, verbose_signature, disassemble, trace, pdb):
-    if len(tx.txs_in) == 0:
-        print("warning: transaction has no inputs", file=sys.stderr)
-
-    if len(tx.txs_out) == 0:
-        print("warning: transaction has no outputs", file=sys.stderr)
-
     tx_as_hex = tx.as_hex(include_unspents=include_unspents)
 
     if output_file:
@@ -717,6 +709,12 @@ def tx(args, parser):
     is_fully_signed = do_signing(tx, key_iters, p2sh_lookup)
 
     include_unspents = not is_fully_signed
+
+    if len(tx.txs_in) == 0:
+        print("warning: transaction has no inputs", file=sys.stderr)
+
+    if len(tx.txs_out) == 0:
+        print("warning: transaction has no outputs", file=sys.stderr)
 
     print_output(tx, include_unspents, args.output_file, args.show_unspents, args.network,
                  args.verbose_signature, args.disassemble, args.trace, args.pdb)

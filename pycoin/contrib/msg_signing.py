@@ -12,6 +12,7 @@ from ..ecdsa import ellipticcurve, numbertheory, generator_secp256k1
 from ..networks import address_prefix_for_netcode, network_name_for_netcode
 from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256, EncodingError
 from ..key import Key
+from ..key.key_from_text import key_from_text
 
 # According to brainwallet, this is "inputs.io" format, but it seems practical
 # and is deployed in the wild. Core bitcoin doesn't offer a message wrapper like this.
@@ -100,7 +101,7 @@ def parse_signed_message(msg_in):
     return msg, addr, sig
 
 
-def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_hash=None):
+def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_hash=None, netcode="BTC"):
     """
     Return a signature, encoded in Base64, which can be verified by anyone using the
     public key.
@@ -110,7 +111,6 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
         raise TypeError("Private key is required to sign a message")
 
     addr = key.address()
-    netcode = key.netcode()
 
     mhash = hash_for_signing(message, netcode) if message else msg_hash
 
@@ -165,7 +165,7 @@ def pair_for_message(signature, message=None, msg_hash=None, netcode=None):
     return _extract_public_pair(generator_secp256k1, recid, r, s, mhash), is_compressed
 
 
-def pair_matches_key(pair, key, is_compressed):
+def pair_matches_key(pair, key, is_compressed, netcode):
     # Check signing public pair is the one expected for the signature. It must be an
     # exact match for this key's public pair... or else we are looking at a validly
     # signed message, but signed by some other key.
@@ -177,13 +177,13 @@ def pair_matches_key(pair, key, is_compressed):
     else:
         # Key() constructed from a hash of pubkey doesn't know the exact public pair, so
         # must compare hashed addresses instead.
-        addr = key.address()
-        prefix = address_prefix_for_netcode(key._netcode)
+        addr = key.address(netcode=netcode)
+        prefix = address_prefix_for_netcode(netcode)
         ta = public_pair_to_bitcoin_address(pair, compressed=is_compressed, address_prefix=prefix)
         return ta == addr
 
 
-def verify_message(key_or_address, signature, message=None, msg_hash=None, netcode=None):
+def verify_message(key_or_address, signature, message=None, msg_hash=None, netcode="BTC"):
     """
     Take a signature, encoded in Base64, and verify it against a
     key object (which implies the public key),
@@ -193,13 +193,13 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
         # they gave us a private key or a public key already loaded.
         key = key_or_address
     else:
-        key = Key.from_text(key_or_address)
+        key, netcode = key_from_text(key_or_address)
 
     try:
-        pair, is_compressed = pair_for_message(signature, message, msg_hash, key.netcode())
+        pair, is_compressed = pair_for_message(signature, message, msg_hash, netcode)
     except EncodingError:
         return False
-    return pair_matches_key(pair, key, is_compressed)
+    return pair_matches_key(pair, key, is_compressed, netcode)
 
 
 def msg_magic_for_netcode(netcode):

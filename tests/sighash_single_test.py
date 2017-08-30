@@ -66,22 +66,13 @@ def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
 #=========================================================================
 class SighashSingleTest(unittest.TestCase):
 
-    #=====================================================================
-    def test_sighash_single_mainnet(self):
-        self._test_sighash_single('BTC')
-
-    #=====================================================================
-    def test_sighash_single_testnet3(self):
-        self._test_sighash_single('XTN')
-
-    #=====================================================================
-    def _test_sighash_single(self, netcode):
-        k0 = Key(secret_exponent=PRIV_KEYS[0], is_compressed=True, netcode=netcode)
-        k1 = Key(secret_exponent=PRIV_KEYS[1], is_compressed=True, netcode=netcode)
-        k2 = Key(secret_exponent=PRIV_KEYS[2], is_compressed=True, netcode=netcode)
-        k3 = Key(secret_exponent=PRIV_KEYS[3], is_compressed=True, netcode=netcode)
-        k4 = Key(secret_exponent=PRIV_KEYS[4], is_compressed=True, netcode=netcode)
-        k5 = Key(secret_exponent=PRIV_KEYS[5], is_compressed=True, netcode=netcode)
+    def test_sighash_single(self):
+        k0 = Key(secret_exponent=PRIV_KEYS[0], is_compressed=True)
+        k1 = Key(secret_exponent=PRIV_KEYS[1], is_compressed=True)
+        k2 = Key(secret_exponent=PRIV_KEYS[2], is_compressed=True)
+        k3 = Key(secret_exponent=PRIV_KEYS[3], is_compressed=True)
+        k4 = Key(secret_exponent=PRIV_KEYS[4], is_compressed=True)
+        k5 = Key(secret_exponent=PRIV_KEYS[5], is_compressed=True)
 
         # Fake a coinbase transaction
         coinbase_tx = Tx.coinbase_tx(k0.sec(), 500000000)

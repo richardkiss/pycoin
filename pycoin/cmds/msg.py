@@ -8,7 +8,7 @@ import sys
 from pycoin import encoding
 from pycoin.contrib.msg_signing import sign_message, pair_for_message, hash_for_signing
 from pycoin.networks import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
-from .ku import parse_key, prefix_transforms_for_network
+from .ku import parse_key
 
 
 def add_read_msg_arguments(parser, operation):
@@ -51,8 +51,8 @@ def get_message_hash(args):
 
 def msg_sign(args, parser):
     message_hash = get_message_hash(args)
-    key = parse_key(args.WIF, prefix_transforms_for_network(args.network), args.network)
-    sig = sign_message(key, msg_hash=message_hash)
+    key, network = parse_key(args.WIF)
+    sig = sign_message(key, msg_hash=message_hash, netcode=args.network or network)
     print(sig)
 
 
