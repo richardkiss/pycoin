@@ -157,8 +157,6 @@ class Key(object):
             return hash160_sec_to_bitcoin_address(hash160, address_prefix=address_prefix)
         return None
 
-    bitcoin_address = address
-
     def as_text(self, netcode):
         """
         Return a textual representation of this key.

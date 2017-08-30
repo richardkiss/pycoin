@@ -64,8 +64,6 @@ class TxOut(object):
         # attempt to return the destination address, or None on failure
         return script_obj_from_script(self.script).address(netcode=netcode)
 
-    bitcoin_address = address
-
     def hash160(self):
         # attempt to return the destination hash160, or None on failure
         info = script_obj_from_script(self.script).info()

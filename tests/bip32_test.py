@@ -11,7 +11,7 @@ class Bip0032TestCase(unittest.TestCase):
         nc = "BTC"
         master = BIP32Node.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"))
         self.assertEqual(master.hwif(as_private=True, netcode=nc), "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi")
-        self.assertEqual(master.bitcoin_address(netcode=nc), "15mKKb2eos1hWa6tisdPwwDC1a5J1y9nma")
+        self.assertEqual(master.address(netcode=nc), "15mKKb2eos1hWa6tisdPwwDC1a5J1y9nma")
         self.assertEqual(master.wif(netcode=nc), "L52XzL2cMkHxqxBXRyEpnPQZGUs3uKiL3R11XbAdHigRzDozKZeW")
 
         self.assertEqual(master.hwif(netcode=nc), "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8")
@@ -109,7 +109,7 @@ class Bip0032TestCase(unittest.TestCase):
         # WARNING: these values have not been verified independently. TODO: do so
         master = BIP32Node.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"))
         self.assertEqual(master.hwif(as_private=True, netcode='XTN'), "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5khqjWaWSFhN3YcCUUdiKH6isR4Pwy3U5y5egddBr16m")
-        self.assertEqual(master.bitcoin_address(netcode='XTN'), "mkHGce7dctSxHgaWSSbmmrRWsZfzz7MxMk")
+        self.assertEqual(master.address(netcode='XTN'), "mkHGce7dctSxHgaWSSbmmrRWsZfzz7MxMk")
         self.assertEqual(master.wif(netcode='XTN'), "cVPXTF2TnozE1PenpP3x9huctiATZmp27T9Ue1d8nqLSExoPwfN5")
 
     def test_streams(self):
@@ -138,7 +138,7 @@ class Bip0032TestCase(unittest.TestCase):
                 self.assertEqual(k.hwif(netcode=nc), k2.hwif(netcode=nc))
                 self.assertEqual(k.hwif(netcode=nc), k3.hwif(netcode=nc))
                 self.assertEqual(k.hwif(netcode=nc), k4.hwif(netcode=nc))
-                print("   %s %s" % (k.bitcoin_address(netcode=nc), k.wif(netcode=nc)))
+                print("   %s %s" % (k.address(netcode=nc), k.wif(netcode=nc)))
 
     def test_public_subkey(self):
         my_prv = BIP32Node.from_master_secret(b"foo")

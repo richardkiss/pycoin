@@ -109,7 +109,7 @@ def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, dis
             tx_out = tx.unspents[idx]
             sig_result = " sig ok" if tx.is_signature_ok(idx, traceback_f=traceback_f) else " BAD SIG"
             suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
-            address = tx_out.bitcoin_address(netcode=netcode)
+            address = tx_out.address(netcode=netcode)
         t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
                                           tx_in.previous_index, suffix)
         print(t.rstrip())
@@ -183,7 +183,7 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.txs_out):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
-        address = tx_out.bitcoin_address(netcode=netcode) or "(unknown)"
+        address = tx_out.address(netcode=netcode) or "(unknown)"
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
         if disassembly_level > 0:
             for (pre_annotations, pc, opcode, instruction, post_annotations) in \
