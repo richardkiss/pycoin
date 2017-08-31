@@ -330,10 +330,9 @@ def replace_with_gpg_pipe(args, f):
     gpg_args = ["gpg", "-d"]
     if args.gpg_argument:
         gpg_args.extend(args.gpg_argument.split())
-        gpg_args.append(f.name)
-        popen = subprocess.Popen(gpg_args, stdout=subprocess.PIPE)
-        f = popen.stdout
-    return f
+    gpg_args.append(f.name)
+    popen = subprocess.Popen(gpg_args, stdout=subprocess.PIPE)
+    return popen.stdout
 
 
 def parse_private_key_file(args, key_list):
