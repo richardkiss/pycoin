@@ -47,4 +47,6 @@ class ConditionalStack(object):
             raise ScriptError("missing ENDIF", errno.UNBALANCED_CONDITIONAL)
 
     def __repr__(self):
-        return "[IfStack true:%d/false:%d]" % (self.true_count, self.false_count)
+        if self.true_count or self.false_count:
+            return "[IfStack true:%d/false:%d]" % (self.true_count, self.false_count)
+        return "[]"

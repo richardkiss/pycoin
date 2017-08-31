@@ -173,6 +173,7 @@ def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
 
     sign_tx(wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
+    secret_exponent_db = secret_exponent_db or {}
     sign(tx, LazySecretExponentDB(wifs, secret_exponent_db, netcode), **kwargs)
 
 
