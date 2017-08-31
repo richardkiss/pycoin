@@ -28,6 +28,9 @@ THE SOFTWARE.
 import io
 import warnings
 
+from pycoin.coins.bitcoin.Solver import BitcoinSolver as Solver
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker as SolutionChecker
+
 from ..convention import SATOSHI_PER_COIN
 from ..encoding import double_sha256
 from ..serialize import b2h, b2h_rev, h2b, h2b_rev
@@ -52,6 +55,8 @@ class Tx(object):
     TxIn = TxIn
     TxOut = TxOut
     Spendable = Spendable
+    Solver = Solver
+    SolutionChecker = SolutionChecker
 
     MAX_MONEY = MAX_MONEY
     MAX_TX_SIZE = MAX_BLOCK_SIZE
@@ -343,13 +348,18 @@ class Tx(object):
             unspents.append(tx_out)
         self.set_unspents(unspents)
 
-    def is_signature_ok(self, tx_in_idx, flags=None, traceback_f=None):  # BRAIN DAMAGE
-        from ..coins.bitcoin.SolutionChecker import is_signature_ok
-        return is_signature_ok(self, tx_in_idx, flags=flags, traceback_f=traceback_f)
+    def check_solution(self, tx_in_idx, flags=None, traceback_f=None):
+        sc = self.SolutionChecker(self)
+        tx_context = sc.tx_context_for_idx(tx_in_idx)
+        sc.check_solution(tx_context, flags, traceback_f=traceback_f)
 
-    def bad_signature_count(self, flags=None):  # BRAIN DAMAGE
-        from ..coins.bitcoin.SolutionChecker import bad_signature_count
-        return bad_signature_count(self, flags=flags)
+    def is_signature_ok(self, tx_in_idx, flags=None, traceback_f=None):
+        sc = self.SolutionChecker(self)
+        return sc.is_signature_ok(tx_in_idx, flags=flags, traceback_f=traceback_f)
+
+    def bad_signature_count(self, flags=None):
+        sc = self.SolutionChecker(self)
+        return sum(0 if sc.is_signature_ok(idx, flags=flags) else 1 for idx in range(len(self.txs_in)))
 
     def total_in(self):
         if self.is_coinbase():

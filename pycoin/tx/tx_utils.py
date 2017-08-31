@@ -1,5 +1,4 @@
 
-from ..coins.bitcoin.Solver import sign
 from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
 
@@ -173,7 +172,8 @@ def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
     sign_tx(wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
     secret_exponent_db = secret_exponent_db or {}
-    sign(tx, LazySecretExponentDB(wifs, secret_exponent_db, netcode), **kwargs)
+    solver = tx.Solver(tx)
+    solver.sign(LazySecretExponentDB(wifs, secret_exponent_db, netcode), **kwargs)
 
 
 def create_signed_tx(spendables, payables, wifs=[], fee="standard",

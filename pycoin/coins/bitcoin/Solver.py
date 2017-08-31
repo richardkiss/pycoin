@@ -3,9 +3,8 @@ from ...serialize import b2h
 from ...tx.exceptions import SolvingError
 from ...tx.script import ScriptError
 
-from .SolutionChecker import BitcoinSolutionChecker, is_signature_ok
+from .SolutionChecker import BitcoinSolutionChecker
 from .ScriptTools import BitcoinScriptTools
-from .VM import BitcoinVM
 
 from ...tx.script.flags import SIGHASH_ALL
 
@@ -39,7 +38,6 @@ class DynamicStack(list):
 
 class Solver(object):
     SolutionChecker = BitcoinSolutionChecker
-    VM = BitcoinVM
     ScriptTools = BitcoinScriptTools
 
     def __init__(self, tx):
@@ -218,7 +216,7 @@ class Solver(object):
             hash_type = SIGHASH_ALL
         self.tx.check_unspents()
         for idx in sorted(tx_in_idx_set):
-            if is_signature_ok(self.tx, idx):
+            if self.tx.is_signature_ok(idx):
                 continue
             tx_context = checker.tx_context_for_idx(idx)
             try:
@@ -246,11 +244,4 @@ class Solver(object):
 
 class BitcoinSolver(Solver):
     SolutionChecker = BitcoinSolutionChecker
-    VM = BitcoinVM
     ScriptTools = BitcoinScriptTools
-
-
-def sign(tx, hash160_lookup, solver=BitcoinSolver, **kwargs):
-    solver = solver(tx)
-    solver.sign(hash160_lookup, **kwargs)
-    return tx

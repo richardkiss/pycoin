@@ -5,11 +5,10 @@ from pycoin.encoding import public_pair_to_bitcoin_address, sec_to_public_pair, 
 
 from pycoin.serialize import b2h
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
-from pycoin.coins.bitcoin.SolutionChecker import check_solution
 
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script.checksigops import parse_signature_blob
-from pycoin.tx.script.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY
+from pycoin.tx.script.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, SIGHASH_FORKID
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxIn import TxIn
 
@@ -23,7 +22,8 @@ ADDRESS_PREFIX = b'\0'  # BRAIN DAMAGE
 
 def sighash_type_to_string(sighash_type):
     anyonecanpay = sighash_type & SIGHASH_ANYONECANPAY
-    sighash_type &= ~SIGHASH_ANYONECANPAY
+    forkid = sighash_type & SIGHASH_FORKID
+    sighash_type &= ~SIGHASH_ANYONECANPAY & ~SIGHASH_FORKID
     if sighash_type == SIGHASH_ALL:
         sighash_str = 'SIGHASH_ALL'
     elif sighash_type == SIGHASH_NONE:
@@ -34,6 +34,8 @@ def sighash_type_to_string(sighash_type):
         sighash_str = 'SIGHASH_UNKNOWN'
     if anyonecanpay:
         sighash_str += ' | SIGHASH_ANYONECANPAY'
+    if forkid:
+        sighash_str += ' | SIGHASH_FORKID'
     return sighash_str
 
 
@@ -110,7 +112,7 @@ def annotate_scripts(tx, tx_in_idx):
         return
 
     try:
-        check_solution(tx, tx_in_idx, traceback_f=traceback_f)
+        tx.check_solution(tx_in_idx, traceback_f=traceback_f)
     except ScriptError:
         pass
 
@@ -126,7 +128,7 @@ def annotate_scripts(tx, tx_in_idx):
         r.append((a0, vmc.pc, opcode, instruction_for_opcode(opcode, data), data_annotations[data]))
 
     try:
-        check_solution(tx, tx_in_idx, traceback_f=traceback_f)
+        tx.check_solution(tx_in_idx, traceback_f=traceback_f)
     except ScriptError:
         pass
 
