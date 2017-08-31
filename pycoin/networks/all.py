@@ -5,6 +5,9 @@ from .legacy_networks import NETWORKS
 from pycoin.tx.Tx import Tx as BitcoinTx
 from pycoin.block import Block as BitcoinBlock
 
+from pycoin.coins.bcash import Block as BCashBlock
+from pycoin.coins.bcash import Tx as BCashTx
+
 from ..serialize import h2b
 
 BUILT_IN_NETWORKS = [
@@ -49,7 +52,20 @@ BUILT_IN_NETWORKS = [
         h2b('0436ef7d'), h2b('0436f6e1'),
         tx=BitcoinTx, block=BitcoinBlock,
         bech32_hrp='tl'
-    )
+    ),
+
+    # BCH bcash mainnet : xprv/xpub
+    Network(
+        'BCH', "Bcash", "mainnet",
+        b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E"),
+        BCashTx, BCashBlock,
+        h2b('F9BEB4D9'), 8333, [
+            "seed.bitcoinabc.org", "seed-abc.bitcoinforks.org",
+            "btccash-seeder.bitcoinunlimited.info", "seed.bitprim.org",
+        ]
+    ),
+
+
 
 ]
 

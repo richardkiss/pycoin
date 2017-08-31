@@ -5,7 +5,6 @@ from ..convention import tx_fee
 
 from .Spendable import Spendable
 from .Tx import Tx
-from .TxOut import TxOut
 from .pay_to import build_hash160_lookup
 from ..networks import wif_prefix_for_netcode
 from ..ui import standard_tx_out_script
@@ -41,7 +40,7 @@ class LazySecretExponentDB(object):
         return None
 
 
-def create_tx(spendables, payables, fee="standard", lock_time=0, version=1):
+def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, tx_class=Tx):
     """
     This function provides the easiest way to create an unsigned transaction.
 
@@ -100,9 +99,9 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1):
             bitcoin_address = payable
             coin_value = 0
         script = standard_tx_out_script(bitcoin_address)
-        txs_out.append(TxOut(coin_value, script))
+        txs_out.append(tx_class.TxOut(coin_value, script))
 
-    tx = Tx(version=version, txs_in=txs_in, txs_out=txs_out, lock_time=lock_time)
+    tx = tx_class(version=version, txs_in=txs_in, txs_out=txs_out, lock_time=lock_time)
     tx.set_unspents(spendables)
 
     distribute_from_split_pool(tx, fee)
@@ -179,7 +178,7 @@ def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
 
 def create_signed_tx(spendables, payables, wifs=[], fee="standard",
                      lock_time=0, version=1, secret_exponent_db={},
-                     netcode='BTC', **kwargs):
+                     netcode='BTC', tx_class=Tx, **kwargs):
     """
     This function provides an easy way to create and sign a transaction.
 
@@ -206,7 +205,7 @@ def create_signed_tx(spendables, payables, wifs=[], fee="standard",
     take a while to confirm, possibly never).
     """
 
-    tx = create_tx(spendables, payables, fee=fee, lock_time=lock_time, version=version)
+    tx = create_tx(spendables, payables, fee=fee, lock_time=lock_time, version=version, tx_class=tx_class)
     sign_tx(tx, wifs=wifs, secret_exponent_db=secret_exponent_db,
             netcode=netcode, **kwargs)
     for idx, tx_out in enumerate(tx.txs_in):

@@ -19,6 +19,7 @@ from pycoin.encoding import hash160
 from pycoin.key import Key
 from pycoin.key.validate import is_address_valid
 from pycoin.networks import address_prefix_for_netcode
+from pycoin.networks.registry import network_for_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev, stream_to_bytes
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
@@ -28,7 +29,6 @@ from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
 from pycoin.tx.script.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
-from pycoin.tx.Tx import Spendable, Tx, TxOut
 from pycoin.ui import standard_tx_out_script
 
 DEFAULT_VERSION = 1
@@ -93,7 +93,8 @@ def make_trace_script(do_trace, use_pdb):
     return trace_script
 
 
-def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level):
+def dump_inputs(tx, netcode, verbose_signature, traceback_f, disassembly_level):
+    address_prefix = address_prefix_for_netcode(netcode)
     for idx, tx_in in enumerate(tx.txs_in):
         if tx.is_coinbase():
             print("%4d: COINBASE  %12.5f mBTC" % (idx, satoshi_to_mbtc(tx.total_in())))
@@ -101,12 +102,12 @@ def dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, dis
         suffix = ""
         if tx.missing_unspent(idx):
             tx_out = None
-            address = tx_in.bitcoin_address(address_prefix=address_prefix)
+            address = tx_in.address(address_prefix=address_prefix)
         else:
             tx_out = tx.unspents[idx]
             sig_result = " sig ok" if tx.is_signature_ok(idx, traceback_f=traceback_f) else " BAD SIG"
             suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
-            address = tx_out.bitcoin_address(netcode=netcode)
+            address = tx_out.address(netcode=netcode)
         t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
                                           tx_in.previous_index, suffix)
         print(t.rstrip())
@@ -163,13 +164,12 @@ def dump_footer(tx, missing_unspents):
 
 
 def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
-    address_prefix = address_prefix_for_netcode(netcode)
     missing_unspents = tx.missing_unspents()
     traceback_f = make_trace_script(do_trace, use_pdb)
 
     dump_header(tx)
 
-    dump_inputs(tx, netcode, verbose_signature, address_prefix, traceback_f, disassembly_level)
+    dump_inputs(tx, netcode, verbose_signature, traceback_f, disassembly_level)
 
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.tx_outs_as_spendable()):
@@ -288,7 +288,7 @@ def create_parser():
     parser.add_argument('-C', "--cache", help='force the resultant transaction into the transaction cache.'
                         ' Mostly for testing.', action='store_true'),
 
-    parser.add_argument("--db", type=Tx.from_hex, help='force the transaction expressed by the given hex '
+    parser.add_argument("--db", help='force the transaction expressed by the given hex '
                         'into a RAM-based transaction cache. Mostly for testing.', action="append"),
 
     parser.add_argument('-u', "--show-unspents", action='store_true',
@@ -368,7 +368,7 @@ def parse_private_key_file(args, key_list):
 TX_ID_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
-def parse_tx(arg, parser, tx_db, network):
+def parse_tx(tx_class, arg, parser, tx_db, network):
     # hex transaction id
     tx = None
 
@@ -382,7 +382,7 @@ def parse_tx(arg, parser, tx_db, network):
 
     # hex transaction data
     try:
-        return Tx.from_hex(arg), tx_db
+        return tx_class.from_hex(arg), tx_db
     except Exception:
         pass
 
@@ -391,7 +391,7 @@ def parse_tx(arg, parser, tx_db, network):
             with open(arg, "rb") as f:
                 if f.name.endswith("hex"):
                     f = io.BytesIO(codecs.getreader("hex_codec")(f).read())
-                tx = Tx.parse(f)
+                tx = tx_class.parse(f)
                 tx.parse_unspents(f)
         except Exception:
             pass
@@ -444,12 +444,12 @@ def create_tx_db(network):
     return tx_db
 
 
-def parse_parts(arg, spendables, payables, network):
+def parse_parts(tx_class, arg, spendables, payables, network):
     parts = arg.split("/")
     if len(parts) == 4:
         # spendable
         try:
-            spendables.append(Spendable.from_text(arg))
+            spendables.append(tx_class.Spendable.from_text(arg))
             return True
         except Exception:
             pass
@@ -478,11 +478,17 @@ def key_found(arg, payables, key_iters):
 
 
 def parse_context(args, parser):
+    tx_class = network_for_netcode(args.network).tx
+
     # we create the tx_db lazily
     tx_db = None
 
     if args.db:
-        the_ram_tx_db = dict((tx.hash(), tx) for tx in args.db)
+        try:
+            txs = [tx_class.from_hex(tx_hex) for tx_hex in args.db]
+        except Exception:
+            parser.error("can't parse ")
+        the_ram_tx_db = dict((tx.hash(), tx) for tx in txs)
         if tx_db is None:
             tx_db = create_tx_db(args.network)
         tx_db.lookup_methods.append(the_ram_tx_db.get)
@@ -511,12 +517,12 @@ def parse_context(args, parser):
         if key_found(arg, payables, key_iters):
             continue
 
-        tx, tx_db = parse_tx(arg, parser, tx_db, args.network)
+        tx, tx_db = parse_tx(tx_class, arg, parser, tx_db, args.network)
         if tx:
             txs.append(tx)
             continue
 
-        if parse_parts(arg, spendables, payables, args.network):
+        if parse_parts(tx_class, arg, spendables, payables, args.network):
             continue
 
         parser.error("can't parse %s" % arg)
@@ -528,10 +534,10 @@ def parse_context(args, parser):
         for address in args.fetch_spendables:
             spendables.extend(spendables_for_address(address, args.network))
 
-    return (txs, spendables, payables, key_iters, tx_db, warning_spendables)
+    return (tx_class, txs, spendables, payables, key_iters, tx_db, warning_spendables)
 
 
-def merge_txs(txs, spendables, payables):
+def merge_txs(tx_class, txs, spendables, payables):
 
     txs_in = []
     txs_out = []
@@ -553,7 +559,7 @@ def merge_txs(txs, spendables, payables):
         unspents.append(spendable)
     for address, coin_value in payables:
         script = standard_tx_out_script(address)
-        txs_out.append(TxOut(coin_value, script))
+        txs_out.append(tx_class.TxOut(coin_value, script))
 
     return txs_in, txs_out, unspents
 
@@ -596,14 +602,14 @@ def wif_iter(iters):
                 break
 
 
-def generate_tx(txs, spendables, payables, args):
-    txs_in, txs_out, unspents = merge_txs(txs, spendables, payables)
+def generate_tx(tx_class, txs, spendables, payables, args):
+    txs_in, txs_out, unspents = merge_txs(tx_class, txs, spendables, payables)
     lock_time, version = calculate_lock_time_and_version(args, txs)
     if len(unspents) == len(txs_in):
         unspents = remove_indices(unspents, args.remove_tx_in)
     txs_in = remove_indices(txs_in, args.remove_tx_in)
     txs_out = remove_indices(txs_out, args.remove_tx_out)
-    tx = Tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
+    tx = tx_class(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
     fee = args.fee
     try:
         if len(payables) > 0:
@@ -690,8 +696,7 @@ def validate_against_bitcoind(tx, tx_db, network, bitcoind_url):
 
 
 def tx(args, parser):
-
-    (txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
+    (tx_class, txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
 
     for tx in txs:
         if tx.missing_unspents() and (args.augment or tx_db):
@@ -702,7 +707,7 @@ def tx(args, parser):
     # build p2sh_lookup
     p2sh_lookup = build_p2sh_lookup(args)
 
-    tx = generate_tx(txs, spendables, payables, args)
+    tx = generate_tx(tx_class, txs, spendables, payables, args)
 
     is_fully_signed = do_signing(tx, key_iters, p2sh_lookup)
 

@@ -24,19 +24,3 @@ class BCashSolutionChecker(BitcoinSolutionChecker):
             raise ScriptError()
 
         return self.signature_for_hash_type_segwit(tx_out_script, unsigned_txs_out_idx, hash_type)
-
-
-def check_solution(tx, tx_in_idx, flags=None, traceback_f=None, solution_checker=BCashSolutionChecker):
-    sc = solution_checker(tx)
-    tx_context = sc.tx_context_for_idx(tx_in_idx)
-    sc.check_solution(tx_context, flags, traceback_f=traceback_f)
-
-
-def is_signature_ok(tx, tx_in_idx, flags=None, solution_checker=BCashSolutionChecker, **kwargs):
-    sc = solution_checker(tx)
-    return sc.is_signature_ok(tx_in_idx, **kwargs)
-
-
-def bad_signature_count(tx, flags=None, solution_checker=BCashSolutionChecker, **kwargs):
-    sc = solution_checker(tx)
-    return sum(0 if sc.is_signature_ok(idx, **kwargs) else 1 for idx in range(len(tx.txs_in)))
