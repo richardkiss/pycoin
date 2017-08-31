@@ -147,7 +147,7 @@ def distribute_from_split_pool(tx, fee):
     return zero_count
 
 
-def sign_tx(tx, wifs=[], secret_exponent_db={}, netcode='BTC', **kwargs):
+def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
     """
     This function provides an convenience method to sign a transaction.
 

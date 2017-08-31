@@ -1,0 +1,3 @@
+# a test of msg verify
+msg verify -m 'this is a test message' H663gW3HVbbgdqPQ1q/fJhMM9UcywKUHAYcSShKvflr/EI4WPn1ePw6jnw2RlNKtPQYuecQM9OLRZczkgjyZozg= 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+signature ok

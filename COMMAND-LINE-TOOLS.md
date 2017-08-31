@@ -331,9 +331,9 @@ We can see the transactions have been cached.
     1e133f7de73ac7d074e2746a3d6717dfc99ecaa8e9f9fade2cb8b0b20a5e0441_tx.bin
     49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a_tx.bin
 
-Now, let's create a new transaction with some Satoshi coinbase coins. In block #1, we see a coinbase transaction to 12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX. Let's use fetch_unspent to find all coins in this address.
+Now, let's create a new transaction with some Satoshi coinbase coins. In block #1, we see a coinbase transaction to 12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX. Let's use tx -i to find all coins in this address.
 
-    $ fetch_unspent 12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX
+    $ tx -i 12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX
     a3a6f902a51a2cbebede144e48a88c05e608c2cce28024041a5b9874013a1e2a/0/76a914119b098e2e980a229e139a9ed01a469e518e6f2688ac/333000
     cea36d008badf5c7866894b191d3239de9582d89b6b452b596f1f1b76347f8cb/31/76a914119b098e2e980a229e139a9ed01a469e518e6f2688ac/10000
     065ef6b1463f552f675622a5d1fd2c08d6324b4402049f68e767a719e2049e8d/86/76a914119b098e2e980a229e139a9ed01a469e518e6f2688ac/10000

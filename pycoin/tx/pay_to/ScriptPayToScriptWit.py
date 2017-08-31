@@ -6,6 +6,8 @@ from ...serialize import b2h
 
 from .ScriptType import ScriptTools, ScriptType, VM
 
+from pycoin.contrib import segwit_addr
+
 
 class ScriptPayToScriptWit(ScriptType):
     def __init__(self, version, hash256):
@@ -60,12 +62,18 @@ class ScriptPayToScriptWit(ScriptType):
             self._script = ScriptTools.compile(script_text)
         return self._script
 
-    def address(self, netcode=None):
-        return "0x%s" % b2h(self.script())
+    def info(self, netcode=None):
+        def address_f(netcode=netcode):
+            from pycoin.networks import bech32_hrp_for_netcode
+            from pycoin.networks.default import get_current_netcode
+            if netcode is None:
+                netcode = get_current_netcode()
 
-    def info(self):
-        return dict(type="pay to script (segwit)", address_f=self.address,
-                    hash160=self.hash160, script=self._script)
+            bech32_hrp = bech32_hrp_for_netcode(netcode)
+            address = segwit_addr.encode(bech32_hrp, self.version, self.hash256)
+            return address
+        return dict(type="pay to witness script hash", address="DEPRECATED call address_f instead",
+                    address_f=address_f, hash256=self.hash256, script=self._script)
 
     def __repr__(self):
         return "<Script: pay to %s (segwit)>" % self.address()

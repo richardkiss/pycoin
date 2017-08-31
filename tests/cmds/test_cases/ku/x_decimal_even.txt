@@ -1,0 +1,22 @@
+# x, even where x is decimal
+ku 55066263022277343669578718895168534326250603453777594175500187360389116729240,even
+
+input                        : 550662630222773436695787188951685343262506034537775941755001873603\
+                                 89116729240,even
+network                      : Bitcoin mainnet
+netcode                      : BTC
+public pair x                : 55066263022277343669578718895168534326250603453777594175500187360389116729240
+public pair y                : 32670510020758816978083085130507043184471273380659243275938904335757337482424
+ x as hex                    : 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+ y as hex                    : 483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
+y parity                     : even
+key pair as sec              : 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+ uncompressed                : 0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798\
+                                 483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
+hash160                      : 751e76e8199196d454941c45d1b3a323f1433bd6
+ uncompressed                : 91b24bf9f5288532960ac687abb035127b1d28a5
+Bitcoin address              : 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+Bitcoin address uncompressed : 1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm
+Bitcoin segwit address       : bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
+p2sh segwit                  : 3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
+ corresponding p2sh script   : 0014751e76e8199196d454941c45d1b3a323f1433bd6
