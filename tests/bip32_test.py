@@ -124,15 +124,15 @@ class Bip0032TestCase(unittest.TestCase):
             pm = pm1.subkey(i=i)
             self.assertEqual(m.hwif(netcode=nc), pm.hwif(netcode=nc))
             self.assertEqual(m.address(netcode=nc), pm.address(netcode=nc))
-            m2 = BIP32Node.from_hwif(m.hwif(as_private=True, netcode=nc))
+            m2 = key_from_text(m.hwif(as_private=True, netcode=nc))[0]
             m3 = m2.public_copy()
             self.assertEqual(m.hwif(as_private=True, netcode=nc), m2.hwif(as_private=True, netcode=nc))
             self.assertEqual(m.hwif(netcode=nc), m3.hwif(netcode=nc))
             print(m.hwif(as_private=True, netcode=nc))
             for j in range(2):
                 k = m.subkey(i=j)
-                k2 = BIP32Node.from_hwif(k.hwif(as_private=True, netcode=nc))
-                k3 = BIP32Node.from_hwif(k.hwif(netcode=nc))
+                k2 = key_from_text(k.hwif(as_private=True, netcode=nc))[0]
+                k3 = key_from_text(k.hwif(netcode=nc))[0]
                 k4 = k.public_copy()
                 self.assertEqual(k.hwif(as_private=True, netcode=nc), k2.hwif(as_private=True, netcode=nc))
                 self.assertEqual(k.hwif(netcode=nc), k2.hwif(netcode=nc))
