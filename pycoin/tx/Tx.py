@@ -361,6 +361,11 @@ class Tx(object):
         sc = self.SolutionChecker(self)
         return sum(0 if sc.is_signature_ok(idx, flags=flags) else 1 for idx in range(len(self.txs_in)))
 
+    def sign(self, *args, **kwargs):
+        solver = self.Solver(self)
+        solver.sign(*args, **kwargs)
+        return self
+
     def total_in(self):
         if self.is_coinbase():
             return self.txs_out[0].coin_value

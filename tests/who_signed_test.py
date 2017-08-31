@@ -4,7 +4,6 @@ import io
 import copy
 import unittest
 from pycoin.cmds.tx import DEFAULT_VERSION
-from pycoin.coins.bitcoin.Solver import sign
 from pycoin.contrib import who_signed
 from pycoin.key import Key
 from pycoin.serialize import h2b
@@ -32,7 +31,7 @@ class WhoSignedTest(unittest.TestCase):
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_signature_count(), 1)
         hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:M])
-        sign(tx2, hash160_lookup=hash160_lookup)
+        tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
         self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0)), sorted(((key.address(), SIGHASH_ALL) for key in keys[:M])))
@@ -64,7 +63,7 @@ class WhoSignedTest(unittest.TestCase):
             self.assertEqual(tx2.bad_signature_count(), 1)
             self.assertEqual(tx2.id(), ids[i-1])
             hash160_lookup = build_hash160_lookup([keys[i-1].secret_exponent()])
-            sign(tx2, hash160_lookup=hash160_lookup)
+            tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
             self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0)), sorted(((key.address(), SIGHASH_ALL) for key in keys[:i])))
         self.assertEqual(tx2.bad_signature_count(), 0)
@@ -82,7 +81,7 @@ class WhoSignedTest(unittest.TestCase):
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])
         hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:N])
         p2sh_lookup = build_p2sh_lookup([underlying_script])
-        sign(tx2, hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
+        tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_signature_count(), 0)
         self.assertRaises(who_signed.NoAddressesForScriptTypeError, who_signed.who_signed_tx, tx2, 0)
 

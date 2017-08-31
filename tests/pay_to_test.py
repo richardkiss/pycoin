@@ -4,7 +4,6 @@ import io
 import copy
 import unittest
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.Solver import sign
 from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.key import Key
 from pycoin.serialize import h2b
@@ -113,7 +112,7 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_signature_count(), 1)
         hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:M])
-        sign(tx2, hash160_lookup=hash160_lookup)
+        tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
 
@@ -144,7 +143,7 @@ class ScriptTypesTest(unittest.TestCase):
             self.assertEqual(tx2.bad_signature_count(), 1)
             self.assertEqual(tx2.id(), ids[i-1])
             hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[i-1:i])
-            sign(tx2, hash160_lookup=hash160_lookup)
+            tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
         self.assertEqual(tx2.bad_signature_count(), 0)
 
@@ -161,7 +160,7 @@ class ScriptTypesTest(unittest.TestCase):
             tx = copy.deepcopy(tx__prototype)
             for key in ordered_keys:
                 self.assertEqual(tx.bad_signature_count(), 1)
-                sign(tx, LazySecretExponentDB([key], {}), p2sh_lookup=build_p2sh_lookup(raw_scripts))
+                tx.sign(LazySecretExponentDB([key], {}), p2sh_lookup=build_p2sh_lookup(raw_scripts))
             self.assertEqual(tx.bad_signature_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):
@@ -177,7 +176,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])
         hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:N])
         p2sh_lookup = build_p2sh_lookup([underlying_script])
-        sign(tx2, hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
+        tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_signature_count(), 0)
 
     def test_weird_tx(self):
@@ -211,7 +210,7 @@ class ScriptTypesTest(unittest.TestCase):
         key = Key.from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx")
         hash160_lookup = build_hash160_lookup([key.secret_exponent()])
         self.assertEqual(tx.bad_signature_count(), 1)
-        sign(tx, hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
+        tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx.bad_signature_count(), 0)
         self.assertEqual(tx.id(), "9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2")
 

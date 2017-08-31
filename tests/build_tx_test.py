@@ -7,7 +7,6 @@ from pycoin.block import Block
 
 from pycoin import ecdsa
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
-from pycoin.coins.bitcoin.Solver import sign
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 from pycoin.serialize import h2b
 
@@ -142,7 +141,7 @@ class BuildTxTest(unittest.TestCase):
         unsigned_coinbase_spend_tx = standard_tx(coins_from, coins_to)
         solver = build_hash160_lookup([exponent])
 
-        coinbase_spend_tx = sign(unsigned_coinbase_spend_tx, solver)
+        coinbase_spend_tx = unsigned_coinbase_spend_tx.sign(solver)
 
         TX_DB[coinbase_spend_tx.hash()] = coinbase_spend_tx
 
@@ -160,7 +159,7 @@ class BuildTxTest(unittest.TestCase):
         coins_from = [(coinbase_spend_tx.hash(), 0, coinbase_spend_tx.txs_out[0])]
         unsigned_spend_tx = standard_tx(coins_from, [(int(50 * 1e8), bitcoin_address_3)])
         solver.update(build_hash160_lookup([exponent_2]))
-        spend_tx = sign(unsigned_spend_tx, solver)
+        spend_tx = unsigned_spend_tx.sign(solver)
 
         # now check that it validates
         self.assertEqual(spend_tx.bad_signature_count(), 0)

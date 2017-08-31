@@ -3,7 +3,6 @@ import unittest
 import os
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.SolutionChecker import check_solution
 from pycoin.serialize import h2b
 from pycoin.tx.Tx import TxIn, TxOut, Tx
 from pycoin.tx.script import ScriptError
@@ -61,11 +60,11 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
     try:
         import pdb
         pdb.set_trace()
-        check_solution(spend_tx, tx_in_idx=0, traceback_f=tbf, flags=flags)
+        spend_tx.check_solution(tx_in_idx=0, traceback_f=tbf, flags=flags)
     except Exception as ex:
         print(ex)
     try:
-        check_solution(spend_tx, tx_in_idx=0, traceback_f=tbf, flags=flags)
+        spend_tx.check_solution(tx_in_idx=0, traceback_f=tbf, flags=flags)
     except Exception as ex:
         print(ex)
         #import pdb; pdb.set_trace()
@@ -83,7 +82,7 @@ def make_script_test(script_in, script_out, flags_string, comment, expected, coi
             spend_tx = build_spending_tx(script_in_bin, credit_tx)
             spend_tx.txs_in[0].witness = script_witness_bin
             msg = ''
-            check_solution(spend_tx, tx_in_idx=0, flags=flags)
+            spend_tx.check_solution(tx_in_idx=0, flags=flags)
             r = 0
         except ScriptError as se:
             r = se.error_code()

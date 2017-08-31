@@ -43,7 +43,6 @@ from pycoin.tx.exceptions import ValidationFailureError
 from pycoin.tx.Spendable import Spendable
 from pycoin.tx.script import ScriptError
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools
-from pycoin.coins.bitcoin.SolutionChecker import check_solution
 
 DEBUG_TX_ID_LIST = []
 
@@ -125,7 +124,7 @@ def make_f(tx, flags, comments, expect_ok=True):
                 if DEBUG_TX_ID_LIST:
                     import pdb
                     pdb.set_trace()
-                check_solution(tx, tx_in_idx=tx_in_idx, flags=flags)
+                tx.check_solution(tx_in_idx=tx_in_idx, flags=flags)
             except ScriptError as se:
                 bs += 1
         if bs > 0:

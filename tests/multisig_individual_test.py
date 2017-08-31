@@ -3,8 +3,6 @@
 import itertools
 import unittest
 
-from pycoin.coins.bitcoin.Solver import sign
-from pycoin.coins.bitcoin.SolutionChecker import bad_signature_count
 from pycoin.key import Key
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.tx_utils import create_tx
@@ -22,10 +20,10 @@ class MultisigIndividualTest(unittest.TestCase):
         for partial_key_list in itertools.permutations(keys[:N], M):
             tx2 = create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
             for key in partial_key_list:
-                self.assertEqual(bad_signature_count(tx2), 1)
+                self.assertEqual(tx2.bad_signature_count(), 1)
                 hash160_lookup = build_hash160_lookup([key.secret_exponent()])
-                sign(tx2, hash160_lookup=hash160_lookup)
-            self.assertEqual(bad_signature_count(tx2), 0)
+                tx2.sign(hash160_lookup=hash160_lookup)
+            self.assertEqual(tx2.bad_signature_count(), 0)
 
     def test_multisig_one_at_a_time(self):
         for N in range(1, 4):

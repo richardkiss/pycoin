@@ -3,7 +3,6 @@ import unittest
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Solver import Solver
-from pycoin.coins.bitcoin.SolutionChecker import check_solution
 
 from pycoin.key import Key
 from pycoin.serialize import b2h
@@ -27,7 +26,7 @@ class SolverTest(unittest.TestCase):
         tx.txs_in[tx_in_idx].script = solution_script
         tx.txs_in[tx_in_idx].witness = witness_list
         if not kwargs.get("nocheck"):
-            check_solution(tx, tx_in_idx)
+            tx.check_solution(tx_in_idx)
         return solution_script, witness_list
 
     def make_test_tx(self, input_script):
@@ -110,7 +109,7 @@ class SolverTest(unittest.TestCase):
         tx_in_idx = 0
         for k in keys:
             try:
-                check_solution(tx, tx_in_idx)
+                tx.check_solution(tx_in_idx)
                 assert 0
             except ScriptError:
                 pass
@@ -120,7 +119,7 @@ class SolverTest(unittest.TestCase):
                     tx.txs_in[tx_in_idx].script) if data is not None]
             kwargs["nocheck"] = True
             solution_list, witness_list = self.do_test_solve(tx, tx_in_idx, **kwargs)
-        check_solution(tx, tx_in_idx)
+        tx.check_solution(tx_in_idx)
 
 
 if __name__ == "__main__":
