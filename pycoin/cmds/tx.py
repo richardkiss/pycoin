@@ -671,6 +671,8 @@ def cache_result(tx, tx_db, cache, network):
 
 
 def validate_tx(tx, tx_db, network):
+    if not tx.txs_out:
+        return
     if tx.missing_unspents():
         print("\n** can't validate transaction as source transactions missing", file=sys.stderr)
     else:
