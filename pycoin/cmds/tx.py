@@ -460,7 +460,7 @@ def create_tx_db(network):
 
 def parse_parts(arg, spendables, payables, network):
     parts = arg.split("/")
-    if len(parts) == 4:
+    if 4 <= len(parts) <= 7:
         # spendable
         try:
             spendables.append(Spendable.from_text(arg))
