@@ -653,12 +653,12 @@ def print_output(tx, include_unspents, output_file, show_unspents, network, verb
         print(tx_as_hex)
 
 
-def do_signing(tx, key_iters, p2sh_lookup):
+def do_signing(tx, key_iters, p2sh_lookup, netcode):
     unsigned_before = tx.bad_signature_count()
     unsigned_after = unsigned_before
     if unsigned_before > 0 and key_iters:
         print("signing...", file=sys.stderr)
-        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup)
+        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup, netcode=netcode)
 
         unsigned_after = tx.bad_signature_count()
         if unsigned_after > 0:
@@ -713,7 +713,7 @@ def tx(args, parser):
 
     tx = generate_tx(txs, spendables, payables, args)
 
-    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup)
+    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup, args.network)
 
     include_unspents = not is_fully_signed
 
