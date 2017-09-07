@@ -62,7 +62,7 @@ def parse_as_number(s):
 
 def parse_as_secret_exponent(s):
     v = parse_as_number(s)
-    if v and v < secp256k1._r:
+    if v and 0 < v < secp256k1._r:
         return v
 
 
