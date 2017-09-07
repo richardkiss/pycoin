@@ -15,6 +15,7 @@ from pycoin.key import Key
 from pycoin.key.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, network_codes
+from pycoin.networks.default import get_current_netcode
 from pycoin.ui import address_for_pay_to_script
 from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
 
@@ -225,8 +226,8 @@ def create_parser():
     parser.add_argument('-j', "--json", help='output as JSON', action='store_true')
 
     parser.add_argument('-s', "--subkey", help='subkey path (example: 0H/2/15-20)')
-    parser.add_argument('-n', "--network", help='specify network (default: BTC = Bitcoin)',
-                        default='BTC', choices=codes)
+    parser.add_argument('-n', "--network", help='specify network',
+                        default=get_current_netcode(), choices=codes)
     parser.add_argument("--override-network", help='override detected network type',
                         default=None, choices=codes)
 

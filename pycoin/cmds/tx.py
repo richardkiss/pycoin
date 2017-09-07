@@ -16,7 +16,8 @@ from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding import hash160
 from pycoin.key import Key
 from pycoin.key.validate import is_address_valid
-from pycoin.networks import address_prefix_for_netcode
+from pycoin.networks import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
+from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev, stream_to_bytes
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
@@ -249,7 +250,11 @@ def parse_fee(fee):
 
 
 def create_parser():
-    EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
+    codes = network_codes()
+    EPILOG = ('Files are binary by default unless they end with the suffix ".hex". ' +
+            'Known networks codes:\n  ' +
+            ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
+
     parser = argparse.ArgumentParser(
         description="Manipulate bitcoin (or alt coin) transactions.",
         epilog=EPILOG)
@@ -260,7 +265,7 @@ def create_parser():
     parser.add_argument('-l', "--lock-time", type=parse_locktime, help='Lock time; either a block'
                         'index, or a date/time (example: "2014-01-01T15:00:00"')
 
-    parser.add_argument('-n', "--network", default="BTC",
+    parser.add_argument('-n', "--network", default=get_current_netcode(), choices=codes,
                         help='Define network code (BTC=Bitcoin mainnet, XTN=Bitcoin testnet).')
 
     parser.add_argument('-a', "--augment", action='store_true',
