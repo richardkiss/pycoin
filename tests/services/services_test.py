@@ -7,7 +7,6 @@ from pycoin.services import providers
 from pycoin.services.blockchain_info import BlockchainInfoProvider
 from pycoin.services.blockcypher import BlockcypherProvider
 from pycoin.services.blockexplorer import BlockExplorerProvider
-from pycoin.services.blockr_io import BlockrioProvider
 from pycoin.services.chain_so import ChainSoProvider
 from pycoin.services.insight import InsightProvider
 
@@ -29,7 +28,7 @@ tx_id_for_net = {
 
 class ServicesTest(unittest.TestCase):
     def test_env(self):
-        CS = "blockchain.info blockexplorer.com blockr.io chain.so insight:https://hostname/url"
+        CS = "blockchain.info blockexplorer.com chain.so insight:https://hostname/url"
         provider_list = providers.providers_for_config_string(CS, "BTC")
         self.assertEqual(len(provider_list), len(CS.split()))
 
@@ -74,19 +73,13 @@ class ServicesTest(unittest.TestCase):
     def test_BlockExplorerProvider(self):
         self.check_provider_tx_for_tx_hash(BlockExplorerProvider, ["BTC"])
 
-    @unittest.skip("this provider is not working at the moment")
-    def test_BlockIOProvider(self):
-        self.check_provider_tx_for_tx_hash(BlockrioProvider, ["BTC", "XTN"])
-
+    @unittest.skip("this test is causing problems in travis-ci because chain_so thinks it's a DOS attack")
     def test_ChainSoProvider(self):
-        # this test is causing problems in travis-ci because chain_so thinks it's a DOS attack
-        # self.check_provider_tx_for_tx_hash(ChainSoProvider, ["BTC", "XTN", "DOGE", "XDT"])
-        pass
+        self.check_provider_tx_for_tx_hash(ChainSoProvider, ["BTC", "XTN", "DOGE", "XDT"])
 
     def test_InsightProvider(self):
-        provider = InsightProvider("http://insight.bitpay.com/")
-        self.check_provider_tx_for_tx_hash(
-            lambda x: provider, ["BTC"])
+        provider = InsightProvider("http://insight.bitpay.com/api/")
+        self.check_provider_tx_for_tx_hash(lambda x: provider, ["BTC"])
         provider.get_blockchain_tip()
         h = provider.get_blockheader(BLOCK_1_HASH)
         assert h.previous_block_hash == BLOCK_0_HASH

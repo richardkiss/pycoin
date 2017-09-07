@@ -265,7 +265,7 @@ As a Dogecoin address:
 tx
 --
 
-The command-line utility ```tx``` will display transactions in human-readable form, fetch base transactions from pycoin's transaction cache or from web services (blockchain.info, blockcypher.com, blockr.io and chain.so are currently supported), merge transactions, add or delete inputs or outputs, and sign transactions.
+The command-line utility ```tx``` will display transactions in human-readable form, fetch base transactions from pycoin's transaction cache or from web services (blockchain.info, blockcypher.com and chain.so are among those currently supported), merge transactions, add or delete inputs or outputs, and sign transactions.
 
 Some examples follow.
 

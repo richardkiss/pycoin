@@ -13,7 +13,7 @@ from pycoin.cmds import ku, msg, tx
 
 
 DEFAULT_ENV = {
-    "PYCOIN_BTC_PROVIDERS": "blockr.io blockchain.info blockexplorer.com",
+    "PYCOIN_BTC_PROVIDERS": "blockchain.info blockexplorer.com",
     "PATH": os.environ.get("PATH")
 }
 
