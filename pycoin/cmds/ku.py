@@ -63,7 +63,7 @@ def parse_as_number(s):
 
 def parse_as_secret_exponent(s):
     v = parse_as_number(s)
-    if v and v < secp256k1._r:
+    if v and 0 < v < secp256k1._r:
         return v
 
 
@@ -226,8 +226,8 @@ def create_parser():
     parser.add_argument('-j', "--json", help='output as JSON', action='store_true')
 
     parser.add_argument('-s', "--subkey", help='subkey path (example: 0H/2/15-20)')
-    parser.add_argument('-n', "--network", help='specify network (default: BTC = Bitcoin)',
-                        default='BTC', choices=codes)
+    parser.add_argument('-n', "--network", help='specify network',
+                        default=get_current_netcode(), choices=codes)
     parser.add_argument("--override-network", help='override detected network type',
                         default=None, choices=codes)
 

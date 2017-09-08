@@ -30,8 +30,7 @@ class LazySecretExponentDB(object):
         if v in self.secret_exponent_db_cache:
             return self.secret_exponent_db_cache[v]
         for wif in self.wif_iterable:
-            secret_exponent = wif_to_secret_exponent(
-                wif, allowable_wif_prefixes=wif_prefix_for_netcode(self.netcode))
+            secret_exponent = wif_to_secret_exponent(wif)
             d = build_hash160_lookup([secret_exponent])
             self.secret_exponent_db_cache.update(d)
             if v in self.secret_exponent_db_cache:
