@@ -34,6 +34,8 @@ class ECDSATestCase(unittest.TestCase):
         )
 
     def test_sign_verify_mutual_compatability(self):
+        if libsecp256k1 is None:
+            raise unittest.SkipTest("no libsecp256k1")
         ctx = libsecp256k1.ctx
         signature = create_string_buffer(64)
         sighash = to_bytes_32(1000)
@@ -58,6 +60,8 @@ class ECDSATestCase(unittest.TestCase):
         self.assertEqual(r, 0)
 
     def test_sign(self):
+        if libsecp256k1 is None:
+            raise unittest.SkipTest("no libsecp256k1")
         ctx = libsecp256k1.ctx
         sighash = to_bytes_32(1000)
         secret_key = to_bytes_32(100)
