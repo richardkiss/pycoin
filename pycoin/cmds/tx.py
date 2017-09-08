@@ -731,7 +731,8 @@ def tx(args, parser):
 
     tx_db = validate_against_bitcoind(tx, tx_db, args.network, args.bitcoind_url)
 
-    tx_db = validate_tx(tx, tx_db, args.network)
+    if not args.show_unspents:
+        tx_db = validate_tx(tx, tx_db, args.network)
 
     # print warnings
     if tx_db:
