@@ -43,7 +43,7 @@ def block(args, parser):
 def main():
     parser = create_parser()
     args = parser.parse_args()
-    tx(args, parser)
+    block(args, parser)
 
 
 if __name__ == '__main__':
