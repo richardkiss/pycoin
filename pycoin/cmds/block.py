@@ -26,17 +26,24 @@ def dump_block(block, netcode=None):
         dump_tx(tx, netcode=netcode, verbose_signature=False, disassembly_level=0, do_trace=False, use_pdb=False)
 
 
-def main():
+def create_parser():
     parser = argparse.ArgumentParser(description="Dump a block in human-readable form.")
-    parser.add_argument("block_bin", nargs="+", type=argparse.FileType('rb'),
+    parser.add_argument("block_file", nargs="+", type=argparse.FileType('rb'),
                         help='The file containing the binary block.')
+    return parser
 
-    args = parser.parse_args()
 
-    for f in args.block_bin:
+def block(args, parser):
+    for f in args.block_file:
         block = Block.parse(f)
         dump_block(block)
         print('')
+
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+    tx(args, parser)
 
 
 if __name__ == '__main__':
