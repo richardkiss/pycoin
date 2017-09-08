@@ -1,3 +1,26 @@
+Version 0.80
+------------
+
+* remove support for (now obsolete) blockr.io
+* change intbytes to use six-style names
+* add BlockchainInfoProvider.tx_for_tx_hash
+* add BECH32 segwit address support (including to ku)
+* add msg tool (to generate and verify signatures)
+* remove fetch_unspents tool (use tx -i)
+* remove cache_tx tool (use tx -C)
+* remove BlockHeader (functionality has been rolled into Block)
+
+
+Version 0.77
+------------
+
+* tx cmd will no longer use split pools unless an output is manually specified
+* more refactoring of vm classes
+* first crack at Sphinx documentation
+* fix https://github.com/richardkiss/pycoin/issues/224
+* fix https://github.com/richardkiss/pycoin/issues/225
+* fixed recipes
+
 Version 0.76
 ------------
 

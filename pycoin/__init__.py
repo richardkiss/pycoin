@@ -1,1 +1,1 @@
-from .version import version
+from .version import version  # noqa

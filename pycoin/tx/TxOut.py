@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Deal with the part of a Tx that specifies where the Bitcoin goes to.
 

@@ -34,7 +34,7 @@ from . import ScriptError
 from . import errno
 from .opcodes import OPCODE_TO_INT, INT_TO_OPCODE
 from ...intbytes import (
-    bytes_from_int, bytes_to_ints, from_bytes, int_to_bytes
+    int2byte, byte2int
 )
 
 
@@ -48,13 +48,13 @@ def get_opcode(script, pc):
         if opcode < OPCODE_TO_INT["OP_PUSHDATA1"]:
             size = opcode
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA1"]:
-            size = from_bytes(script[pc:pc+1], byteorder="little")
+            size = struct.unpack("<B", script[pc:pc+1])[0]
             pc += 1
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA2"]:
-            size = from_bytes(script[pc:pc+2], byteorder="little")
+            size = struct.unpack("<H", script[pc:pc+2])[0]
             pc += 2
         elif opcode == OPCODE_TO_INT["OP_PUSHDATA4"]:
-            size = from_bytes(script[pc:pc+4], byteorder="little")
+            size = struct.unpack("<L", script[pc:pc+4])[0]
             pc += 4
         data = script[pc:pc+size]
         if len(data) < size:
@@ -113,25 +113,25 @@ def write_push_data(data_list, f):
     # return bytes that causes the given data to be pushed onto the stack
     for t in data_list:
         if len(t) == 0:
-            f.write(bytes_from_int(OPCODE_TO_INT["OP_0"]))
+            f.write(int2byte(OPCODE_TO_INT["OP_0"]))
             continue
         if len(t) == 1:
-            v = bytes_to_ints(t)[0]
+            v = byte2int(t)
             if v <= 16:
-                f.write(bytes_from_int(OPCODE_TO_INT["OP_%d" % v]))
+                f.write(int2byte(OPCODE_TO_INT["OP_%d" % v]))
                 continue
         if len(t) <= 255:
             if len(t) > 75:
-                f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA1"]))
-            f.write(int_to_bytes(len(t)))
+                f.write(int2byte(OPCODE_TO_INT["OP_PUSHDATA1"]))
+            f.write(int2byte(len(t)))
             f.write(t)
         elif len(t) <= 65535:
-            f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA2"]))
+            f.write(int2byte(OPCODE_TO_INT["OP_PUSHDATA2"]))
             f.write(struct.pack("<H", len(t)))
             f.write(t)
         else:
             # This will never be used in practice as it makes the scripts too long.
-            f.write(bytes_from_int(OPCODE_TO_INT["OP_PUSHDATA4"]))
+            f.write(int2byte(OPCODE_TO_INT["OP_PUSHDATA4"]))
             f.write(struct.pack("<L", len(t)))
             f.write(t)
 
@@ -165,9 +165,9 @@ def compile(s):
     f = io.BytesIO()
     for t in s.split():
         if t in OPCODE_TO_INT:
-            f.write(bytes_from_int(OPCODE_TO_INT[t]))
+            f.write(int2byte(OPCODE_TO_INT[t]))
         elif ("OP_%s" % t) in OPCODE_TO_INT:
-            f.write(bytes_from_int(OPCODE_TO_INT["OP_%s" % t]))
+            f.write(int2byte(OPCODE_TO_INT["OP_%s" % t]))
         elif t.startswith("0x"):
             d = binascii.unhexlify(t[2:])
             f.write(d)

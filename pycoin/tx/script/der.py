@@ -31,8 +31,7 @@ THE SOFTWARE.
 """
 
 import binascii
-
-bytes_from_int = chr if bytes == str else lambda x: bytes([x])
+from pycoin.intbytes import int2byte
 
 
 class UnexpectedDER(Exception):
@@ -46,12 +45,12 @@ def encode_integer(r):
         h = "0" + h
     s = binascii.unhexlify(h.encode("utf8"))
     if ord(s[:1]) <= 0x7f:
-        return b"\x02" + bytes_from_int(len(s)) + s
+        return b"\x02" + int2byte(len(s)) + s
     else:
         # DER integers are two's complement, so if the first byte is
         # 0x80-0xff then we need an extra 0x00 byte to prevent it from
         # looking negative.
-        return b"\x02" + bytes_from_int(len(s)+1) + b"\x00" + s
+        return b"\x02" + int2byte(len(s)+1) + b"\x00" + s
 
 
 def encode_sequence(*encoded_pieces):
@@ -89,13 +88,13 @@ def remove_integer(string, use_broken_open_ssl_mechanism=False):
 def encode_length(l):
     assert l >= 0
     if l < 0x80:
-        return bytes_from_int(l)
+        return int2byte(l)
     s = "%x" % l
     if len(s) % 2:
         s = "0"+s
     s = binascii.unhexlify(s)
     llen = len(s)
-    return bytes_from_int(0x80 | llen) + s
+    return int2byte(0x80 | llen) + s
 
 
 def read_length(string):

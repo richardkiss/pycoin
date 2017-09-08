@@ -8,7 +8,7 @@ import os
 
 from pycoin.serialize import h2b
 
-from pycoin.tx import TxIn, TxOut, Tx
+from pycoin.tx.Tx import TxIn, TxOut, Tx
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script import errno
 from pycoin.tx.script import flags

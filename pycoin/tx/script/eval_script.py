@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 import functools
 
-from ...intbytes import byte_to_int, int_to_bytes
+from ...intbytes import byte2int, int2byte
 
 from . import errno
 from . import opcodes
@@ -51,7 +51,7 @@ def verify_minimal_data(opcode, data):
     if ld == 0 and opcode == opcodes.OP_0:
         return
     if ld == 1:
-        v = byte_to_int(data[0])
+        v = byte2int(data)
         if v == 0x81:
             if opcode == opcodes.OP_1NEGATE:
                 return
@@ -238,7 +238,7 @@ def check_sequence_verify(ss):
 
 
 def make_push_const(opcode):
-    v = int_to_bytes(opcode + 1 - opcodes.OP_1)
+    v = int2byte(opcode + 1 - opcodes.OP_1)
 
     def f(ss):
         ss.stack.append(v)

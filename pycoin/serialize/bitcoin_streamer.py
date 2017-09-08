@@ -1,6 +1,7 @@
 
 import struct
 
+from . import bytes_as_revhex
 from .streamer import Streamer
 
 
@@ -36,13 +37,14 @@ def stream_bc_string(f, v):
     stream_bc_int(f, len(v))
     f.write(v)
 
+
 STREAMER_FUNCTIONS = {
     "I": (parse_bc_int, stream_bc_int),
     "S": (parse_bc_string, stream_bc_string),
     "h": (lambda f: struct.unpack("!H", f.read(2))[0], lambda f, v: f.write(struct.pack("!H", v))),
     "L": (lambda f: struct.unpack("<L", f.read(4))[0], lambda f, v: f.write(struct.pack("<L", v))),
     "Q": (lambda f: struct.unpack("<Q", f.read(8))[0], lambda f, v: f.write(struct.pack("<Q", v))),
-    "#": (lambda f: f.read(32), lambda f, v: f.write(v[:32])),
+    "#": (lambda f: bytes_as_revhex(f.read(32)), lambda f, v: f.write(v[:32])),
     "@": (lambda f: f.read(16), lambda f, v: f.write(v[:16])),
     "b": (lambda f: struct.unpack("?", f.read(1))[0], lambda f, b: f.write(struct.pack("?", b))),
 }

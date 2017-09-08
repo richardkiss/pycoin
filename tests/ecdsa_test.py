@@ -3,8 +3,9 @@
 import hashlib
 import unittest
 
-from pycoin import intbytes
 from pycoin.ecdsa import generator_secp256k1, sign, verify, public_pair_for_secret_exponent, deterministic_generate_k
+from pycoin.ecdsa.intstream import to_bytes, from_bytes
+from pycoin.ecdsa.numbertheory import inverse_mod
 
 class ECDSATestCase(unittest.TestCase):
 
@@ -25,12 +26,22 @@ class ECDSATestCase(unittest.TestCase):
         do_test(0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd, val_list)
         do_test(0x47f7616ea6f9b923076625b4488115de1ef1187f760e65f89eb6f4f7ff04b012, val_list)
 
+    def test_inverse_mod(self):
+        prime = generator_secp256k1.curve().p()
+        order = generator_secp256k1.order()
+        for v in range(70):
+            n = int(float("1e%d" % v))
+            i = inverse_mod(n, prime)
+            assert n * i % prime == 1
+            i = inverse_mod(n, order)
+            assert n * i % order == 1
+
     def test_deterministic_generate_k_A_1(self):
         """
         The example in http://tools.ietf.org/html/rfc6979#appendix-A.1
         """
         h = hashlib.sha256(b'sample').digest()
-        val = intbytes.from_bytes(h)
+        val = from_bytes(h)
         self.assertEqual(val, 0xAF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF)
         q = 0x4000000000000000000020108A2E0CC0D99F8A5EF
         x = 0x09A4D6792295A7F730FC3F2B49CBC0F62E862272F
@@ -51,7 +62,7 @@ class ECDSATestCase(unittest.TestCase):
         q = 0xFFFFFFFFFFFFFFFFFFFFFFFF99DEF836146BC9B1B4D22831
         x = 0x6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4
         for h, v in hashes_values:
-            v_sample = intbytes.from_bytes(h(b'sample').digest())
+            v_sample = from_bytes(h(b'sample').digest())
             k = deterministic_generate_k(q, x, v_sample, h)
             self.assertEqual(k, v)
 
@@ -63,7 +74,7 @@ class ECDSATestCase(unittest.TestCase):
             (hashlib.sha512, 0x0758753A5254759C7CFBAD2E2D9B0792EEE44136C9480527),
             )
         for h, v in hashes_values:
-            v_sample = intbytes.from_bytes(h(b'test').digest())
+            v_sample = from_bytes(h(b'test').digest())
             k = deterministic_generate_k(q, x, v_sample, h)
             self.assertEqual(k, v)
 
@@ -72,12 +83,19 @@ class ECDSATestCase(unittest.TestCase):
         The example in https://tools.ietf.org/html/rfc6979#appendix-A.2.5
         """
         h = hashlib.sha256(b'sample').digest()
-        val = intbytes.from_bytes(h)
+        val = from_bytes(h)
         self.assertEqual(val, 0xAF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF)
         generator_order = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF16A2E0B8F03E13DD29455C5C2A3D
         secret_exponent = 0xF220266E1105BFE3083E03EC7A3A654651F45E37167E88600BF257C1
         k = deterministic_generate_k(generator_order, secret_exponent, val)
         self.assertEqual(k, 0xAD3029E0278F80643DE33917CE6908C70A8FF50A411F06E41DEDFCDC)
+
+    def test_endian(self):
+        from pycoin.ecdsa.intstream import from_bytes, to_bytes
+        for e in ("big", "little"):
+            assert from_bytes(to_bytes(768, 2, e), e) == 768
+            assert from_bytes(to_bytes(3, 1, e), e) == 3
+            assert from_bytes(to_bytes(66051, 3, e), e) == 66051
 
 
 if __name__ == '__main__':

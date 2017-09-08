@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 from hashlib import sha256
 
-from ...intbytes import byte_to_int
+from ...intbytes import byte2int, indexbytes
 from .flags import (
     VERIFY_P2SH, VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM
 )
@@ -47,8 +47,8 @@ def witness_program_version(script):
     l = len(script)
     if l < 4 or l > 42:
         return None
-    first_opcode = byte_to_int(script[0])
-    if byte_to_int(script[1]) + 2 != l:
+    first_opcode = byte2int(script)
+    if indexbytes(script, 1) + 2 != l:
         return None
     if first_opcode == opcodes.OP_0:
         return 0

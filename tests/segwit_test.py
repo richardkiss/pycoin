@@ -4,10 +4,10 @@ import unittest
 from pycoin.encoding import double_sha256, to_bytes_32
 from pycoin.key import Key
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
-from pycoin.tx import TxOut
 from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx.script import tools
 from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY, Tx
+from pycoin.tx.TxOut import TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 
 
@@ -236,7 +236,7 @@ class SegwitTest(unittest.TestCase):
         # p2wpkh
         from pycoin.ui import script_obj_from_address
         from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
-        address = 'p2xtZoXeX5X8BP8JfFhQK2nD3emtjch7UeFm'
+        address = 'bc1qqyykvamqq62n64t8gw09uw0cdgxjwwlw7mypam'
         s = script_obj_from_address(address)
         self.assertIsInstance(s, ScriptPayToAddressWit)
         self.assertEqual(address, s.address())
@@ -268,3 +268,11 @@ class SegwitTest(unittest.TestCase):
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()], p2sh_lookup=build_p2sh_lookup([s1]))
         self.check_signed(tx)
+
+    def test_issue_224(self):
+        RAWTX = (
+            "010000000002145fea0b000000001976a9144838d8b3588c4c7ba7c1d06f866e9b3739c"
+            "6303788ac0000000000000000346a32544553540000000a000000000000000100000000"
+            "05f5e1000000000000000000000000000bebc2000032000000000000271000000000"
+        )
+        Tx.from_hex(RAWTX)

@@ -30,8 +30,7 @@ class LazySecretExponentDB(object):
         if v in self.secret_exponent_db_cache:
             return self.secret_exponent_db_cache[v]
         for wif in self.wif_iterable:
-            secret_exponent = wif_to_secret_exponent(
-                wif, allowable_wif_prefixes=wif_prefix_for_netcode(self.netcode))
+            secret_exponent = wif_to_secret_exponent(wif)
             d = build_hash160_lookup([secret_exponent])
             self.secret_exponent_db_cache.update(d)
             if v in self.secret_exponent_db_cache:
@@ -134,7 +133,7 @@ def distribute_from_split_pool(tx, fee):
     return zero_count
 
 
-def sign_tx(tx, wifs=[], secret_exponent_db={}, netcode='BTC', **kwargs):
+def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
     """
     :param tx: a transaction
     :param wifs: the list of WIFs required to sign this transaction.
@@ -158,6 +157,7 @@ def sign_tx(tx, wifs=[], secret_exponent_db={}, netcode='BTC', **kwargs):
 
         >> sign_tx(tx, wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
+    secret_exponent_db = secret_exponent_db or {}
     tx.sign(LazySecretExponentDB(wifs, secret_exponent_db, netcode), **kwargs)
 
 

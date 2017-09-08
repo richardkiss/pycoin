@@ -6,8 +6,9 @@ import unittest
 from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.key import Key
 from pycoin.serialize import h2b
-from pycoin.tx import Tx, TxIn, TxOut, SIGHASH_ALL, tx_utils
+from pycoin.tx import tx_utils
 from pycoin.tx.Spendable import Spendable
+from pycoin.tx.Tx import Tx, TxIn, TxOut, SIGHASH_ALL
 from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata
 from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup, script_obj_from_script
@@ -211,6 +212,15 @@ class ScriptTypesTest(unittest.TestCase):
         tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx.bad_signature_count(), 0)
         self.assertEqual(tx.id(), "9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2")
+
+    def test_issue_225(self):
+        script = tools.compile("OP_RETURN 'foobar'")
+        tx_out = TxOut(1, script)
+        address = tx_out.bitcoin_address(netcode="XTN")
+        self.assertEqual(address, "(nulldata 666f6f626172)")
+        address = tx_out.bitcoin_address(netcode="BTC")
+        self.assertEqual(address, "(nulldata 666f6f626172)")
+
 
 if __name__ == "__main__":
     unittest.main()

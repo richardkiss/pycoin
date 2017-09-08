@@ -1,0 +1,85 @@
+ku --override-network XTN -s 0/0-2 ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaymFLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
+
+input                        : ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaym\
+                                 FLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
+network                      : Bitcoin testnet3
+netcode                      : XTN
+wallet key                   : tpubDBsj6y2YjBHKDTXTnw3HQ2NDCU3B4fvPj1RnTkCz5WBcVpikwEdYwKUMYkNdBA\
+                                 cepmotth75QnbeYGtNtYSmqBmqsGa81tbt9Ry4D8C1nMY
+tree depth                   : 2
+fingerprint                  : e4ca2571
+parent f'print               : eba8904f
+child index                  : 0
+chain code                   : 777e76c2e147112e433fcbda92e18cd03570327d37672ace8a9dc8f383c013fd
+private key                  : no
+public pair x                : 60945286869917018786379161077646713162572628390969189599267560986740320570290
+public pair y                : 83209805327065057573028480972753435346636307805299637273050602745524718604950
+ x as hex                    : 86bdcf59220fecccfdcfc33a354ceb15c1ded616ce1dc40634ee8ff2d72f0bb2
+ y as hex                    : b7f714b12aa17eddb43d3c1bdfbc5b010b4b0ed318e5b0c00bb682bb69f71296
+y parity                     : even
+key pair as sec              : 0286bdcf59220fecccfdcfc33a354ceb15c1ded616ce1dc40634ee8ff2d72f0bb2
+ uncompressed                : 0486bdcf59220fecccfdcfc33a354ceb15c1ded616ce1dc40634ee8ff2d72f0bb2\
+                                 b7f714b12aa17eddb43d3c1bdfbc5b010b4b0ed318e5b0c00bb682bb69f71296
+hash160                      : e4ca25713330031e60b3268973bad0c31754ddd0
+ uncompressed                : 24d12d50fd9102bcf3464e7561573984955d5f9d
+Bitcoin address              : n2NgXADFpST7cjjUVKi17hboVKo19MLgj9
+Bitcoin address uncompressed : misdCqKMLVDyEhp8L8m8vpzyRPQD71GFpH
+Bitcoin segwit address       : tb1qun9z2ufnxqp3uc9ny6yh8wkscvt4fhwskqr0sd
+p2sh segwit                  : 2NCZmE164J6kMuRdcN4u6gGJu8zrrQ7jwWQ
+ corresponding p2sh script   : 0014e4ca25713330031e60b3268973bad0c31754ddd0
+
+input                        : ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaym\
+                                 FLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
+network                      : Bitcoin testnet3
+netcode                      : XTN
+wallet key                   : tpubDBsj6y2YjBHKHGaybogNHibB2CcbWMXUJe44vs4s1vmH7jiw23n6JK9wzH2woA\
+                                 TZS8mvh2oL3fSRahBKFYGyW2BdVEAUvnqDRwcEnBoedyJ
+tree depth                   : 2
+fingerprint                  : 6b568a72
+parent f'print               : eba8904f
+child index                  : 1
+chain code                   : f650f02dfd7ec01e4dfbaca1bde4554a997c7bc89db2a1375b2c28d2cb6ac1d9
+private key                  : no
+public pair x                : 35075734265194978814103060987265174513926649627788918251270445143138640609704
+public pair y                : 40954667073427925729246202547146406549091810474077766509981209408443327597677
+ x as hex                    : 4d8c297cc36d5e05d84b15dfb3cde2be39bf2886e55a106d1e22ecdd853841a8
+ y as hex                    : 5a8b852614c5e772f5ead25726ead70b76aca3da100365e5bbc2cea2c1d64c6d
+y parity                     : odd
+key pair as sec              : 034d8c297cc36d5e05d84b15dfb3cde2be39bf2886e55a106d1e22ecdd853841a8
+ uncompressed                : 044d8c297cc36d5e05d84b15dfb3cde2be39bf2886e55a106d1e22ecdd853841a8\
+                                 5a8b852614c5e772f5ead25726ead70b76aca3da100365e5bbc2cea2c1d64c6d
+hash160                      : 6b568a729476bd697b8291196b3dcbe18369c776
+ uncompressed                : d16e7dd3170087df8fb921b7fea06c6cda0ad461
+Bitcoin address              : mqJWGYKbis64H6kkpZhPUTYGfWGerSwWNY
+Bitcoin address uncompressed : mzcKtELU8fFtHzGt6V3kuKUY1ndbbKg6bk
+Bitcoin segwit address       : tb1qddtg5u55w67kj7uzjyvkk0wtuxpkn3mkj29d6r
+p2sh segwit                  : 2NCKwJ1NULgHp1VBdEQX7LcQ6a1vKfHXcjU
+ corresponding p2sh script   : 00146b568a729476bd697b8291196b3dcbe18369c776
+
+input                        : ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaym\
+                                 FLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
+network                      : Bitcoin testnet3
+netcode                      : XTN
+wallet key                   : tpubDBsj6y2YjBHKKunUhBaY5twHX83A5Hj4nbU3TkfUCV14ZXMGbC7vULsAck7fCW\
+                                 2KTA2x3mizTLBZ9H6N7sMuVD711d4tW7Jr53MBHf8J3Dq
+tree depth                   : 2
+fingerprint                  : aa5f4791
+parent f'print               : eba8904f
+child index                  : 2
+chain code                   : ff9e1fb3d581a71ab834ae84d809ea8aebb6a653730340c4ef1def9eeb8f09fe
+private key                  : no
+public pair x                : 11607138443613445599149354945533472413052811387262021591987610296902495301690
+public pair y                : 100500606682388147492000115911064324936070596177975182041585129387298997294912
+ x as hex                    : 19a9685511be929b26213456ef4b87a4d90360632cf317c516c743a057acf03a
+ y as hex                    : de3153dc8a939b44f6f39969dabc749e3cddfd0794ad3578afdddfd094525740
+y parity                     : even
+key pair as sec              : 0219a9685511be929b26213456ef4b87a4d90360632cf317c516c743a057acf03a
+ uncompressed                : 0419a9685511be929b26213456ef4b87a4d90360632cf317c516c743a057acf03a\
+                                 de3153dc8a939b44f6f39969dabc749e3cddfd0794ad3578afdddfd094525740
+hash160                      : aa5f479146571894485b9e5919da2ab40805851d
+ uncompressed                : 87eeac353b9bc19400eb9aa258a409d3b5473107
+Bitcoin address              : mw3oJoeemFSWPRaB8n4Ffm4BwYGdtqCt65
+Bitcoin address uncompressed : msuhSDitAvGfgywcWnE4qzRzgYm5imBe2v
+Bitcoin segwit address       : tb1q4f050y2x2uvfgjzmnev3nk32ksyqtpgafxycew
+p2sh segwit                  : 2Mz25WNw4piPacBgoct2nZZKTkfzd3B3TTk
+ corresponding p2sh script   : 0014aa5f479146571894485b9e5919da2ab40805851d

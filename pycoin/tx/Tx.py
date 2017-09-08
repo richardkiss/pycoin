@@ -1,3 +1,29 @@
+"""
+Parse, stream, create, sign and verify Bitcoin transactions as Tx structures.
+
+
+The MIT License (MIT)
+
+Copyright (c) 2013 by Richard Kiss
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""
 
 import functools
 import io
@@ -10,7 +36,7 @@ from ..serialize.bitcoin_streamer import (
     parse_struct, parse_bc_int, parse_bc_string,
     stream_struct, stream_bc_string
 )
-from ..intbytes import byte_to_int, int_to_bytes
+from ..intbytes import byte2int, indexbytes, int2byte
 
 from .exceptions import BadSpendableError, ValidationFailureError
 from .TxIn import TxIn
@@ -259,7 +285,7 @@ class Tx(object):
         :return: 32 byte long binary blob corresponding to the hash
         """
         s = io.BytesIO()
-        self.stream(s)
+        self.stream(s, include_witness_data=False)
         if hash_type is not None:
             stream_struct("L", s, hash_type)
         return double_sha256(s.getvalue())
@@ -315,7 +341,7 @@ class Tx(object):
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.
-        tx_out_script = tools.delete_subscript(tx_out_script, int_to_bytes(opcodes.OP_CODESEPARATOR))
+        tx_out_script = tools.delete_subscript(tx_out_script, int2byte(opcodes.OP_CODESEPARATOR))
 
         # blank out other inputs' signatures
         txs_in = [self._tx_in_for_idx(i, tx_in, tx_out_script, unsigned_txs_out_idx)
@@ -440,16 +466,16 @@ class Tx(object):
             hash_type = self.SIGHASH_ALL
         tx_in = self.txs_in[tx_in_idx]
 
-        is_p2h = (len(tx_out_script) == 23 and byte_to_int(tx_out_script[0]) == opcodes.OP_HASH160 and
-                  byte_to_int(tx_out_script[-1]) == opcodes.OP_EQUAL)
+        is_p2h = (len(tx_out_script) == 23 and byte2int(tx_out_script) == opcodes.OP_HASH160 and
+                  indexbytes(tx_out_script, -1) == opcodes.OP_EQUAL)
         if is_p2h:
             hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
             p2sh_lookup = kwargs.get("p2sh_lookup")
             if p2sh_lookup is None:
-                raise ValueError("p2sh_lookup not set")
+                raise SolvingError("p2sh_lookup not set")
             if hash160 not in p2sh_lookup:
-                raise ValueError("hash160=%s not found in p2sh_lookup" %
-                                 b2h(hash160))
+                raise SolvingError("hash160=%s not found in p2sh_lookup" %
+                                   b2h(hash160))
 
             script_to_hash = p2sh_lookup[hash160]
         else:

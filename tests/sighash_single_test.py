@@ -7,7 +7,7 @@ from pycoin.ecdsa import (
     verify as ecdsa_verify,
 )
 from pycoin.encoding import (
-    bytes_from_int,
+    int2byte,
     to_bytes_32,
 )
 from pycoin.key import Key
@@ -16,12 +16,10 @@ from pycoin.serialize import (
     b2h_rev,
 )
 from pycoin.ui import standard_tx_out_script
-from pycoin.tx import (
+from pycoin.tx.Tx import (
     Tx,
     TxIn,
     TxOut,
-)
-from pycoin.tx.Tx import (
     SIGHASH_ALL,
     SIGHASH_ANYONECANPAY,
     SIGHASH_SINGLE,
@@ -63,7 +61,7 @@ def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
     if s + s > order:
         s = order - s
 
-    return sigencode_der(r, s) + bytes_from_int(a_sig_type)
+    return sigencode_der(r, s) + int2byte(a_sig_type)
 
 #=========================================================================
 class SighashSingleTest(unittest.TestCase):

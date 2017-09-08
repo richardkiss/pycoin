@@ -1,10 +1,12 @@
-from pycoin.intbytes import byte_to_int
+from pycoin.intbytes import byte2int
 
 from ..script import tools
 
 from ...serialize import b2h
 
 from .ScriptType import ScriptType
+
+from pycoin.contrib import segwit_addr
 
 
 class ScriptPayToScriptWit(ScriptType):
@@ -13,7 +15,7 @@ class ScriptPayToScriptWit(ScriptType):
         assert isinstance(version, bytes)
         assert len(hash256) == 32
         assert isinstance(hash256, bytes)
-        version_int = byte_to_int(version[0])
+        version_int = byte2int(version)
         assert 0 <= version_int <= 16
         self.version = version_int
         self.hash256 = hash256
@@ -39,7 +41,6 @@ class ScriptPayToScriptWit(ScriptType):
         if underlying_script is None:
             raise ValueError("underlying script cannot be determined for %s" % b2h(self.hash256))
         script_obj = script_obj_from_script(underlying_script)
-        print(script_obj)
 
         kwargs["signature_for_hash_type_f"] = kwargs["signature_for_hash_type_f"].witness
         kwargs["script_to_hash"] = underlying_script
@@ -62,12 +63,18 @@ class ScriptPayToScriptWit(ScriptType):
             self._script = tools.compile(script_text)
         return self._script
 
-    def address(self, netcode=None):
-        return "0x%s" % b2h(self.script())
+    def info(self, netcode=None):
+        def address_f(netcode=netcode):
+            from pycoin.networks import bech32_hrp_for_netcode
+            from pycoin.networks.default import get_current_netcode
+            if netcode is None:
+                netcode = get_current_netcode()
 
-    def info(self):
-        return dict(type="pay to script (segwit)", address_f=self.address,
-                    hash160=self.hash160, script=self._script)
+            bech32_hrp = bech32_hrp_for_netcode(netcode)
+            address = segwit_addr.encode(bech32_hrp, self.version, self.hash256)
+            return address
+        return dict(type="pay to witness script hash", address="DEPRECATED call address_f instead",
+                    address_f=address_f, hash256=self.hash256, script=self._script)
 
     def __repr__(self):
         return "<Script: pay to %s (segwit)>" % self.address()

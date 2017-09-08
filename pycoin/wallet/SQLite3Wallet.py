@@ -1,7 +1,7 @@
 from threading import RLock
 
 from pycoin.convention.tx_fee import TX_FEE_PER_THOUSAND_BYTES
-from pycoin.tx.tx_utils import create_tx, sign_tx
+from pycoin.tx.tx_utils import create_tx
 
 
 class SQLite3Wallet(object):
@@ -22,6 +22,23 @@ class SQLite3Wallet(object):
     def set_last_block_index(self, index):
         self.persistence.set_global("block_index", index)
 
+    def create_payables(self, address, amount, spendables, total_input_value, estimated_fee):
+        payables = [(address, amount)]
+        change_amount = total_input_value - estimated_fee - amount
+        if change_amount > 0:
+            change_address = self.keychain.get_change_address()
+            payables.append(change_address)
+
+        if self._desired_spendable_count is not None:
+            if self.persistence.unspent_spendable_count() < self._desired_spendable_count:
+                desired_change_output_count = len(spendables) + 1
+                # TODO: be a little smarter about how many change outputs to create
+                if change_amount > desired_change_output_count * self._min_extra_spendable_amount:
+                    for i in range(desired_change_output_count):
+                        change_address = self.keychain.get_change_address()
+                        payables.append(change_address)
+        return payables
+
     def create_unsigned_send_tx(self, address, amount):
         total_input_value = 0
         estimated_fee = TX_FEE_PER_THOUSAND_BYTES
@@ -40,21 +57,7 @@ class SQLite3Wallet(object):
             if total_input_value < amount + estimated_fee:
                 raise ValueError("insufficient funds: only %d available" % total_input_value)
 
-            payables = [(address, amount)]
-            change_amount = total_input_value - estimated_fee - amount
-            if change_amount > 0:
-                change_address = self.keychain.get_change_address()
-                payables.append(change_address)
-
-            if self._desired_spendable_count is not None:
-                if self.persistence.unspent_spendable_count() < self._desired_spendable_count:
-                    desired_change_output_count = len(spendables) + 1
-                    # TODO: be a little smarter about how many change outputs to create
-                    if change_amount > desired_change_output_count * self._min_extra_spendable_amount:
-                        for i in range(desired_change_output_count):
-                            change_address = self.keychain.get_change_address()
-                            payables.append(change_address)
-
+            payables = self.create_payables(address, amount)
             tx = create_tx(spendables, payables, fee=estimated_fee)
             # mark the given spendables as "unconfirmed_spent"
             for spendable in spendables:

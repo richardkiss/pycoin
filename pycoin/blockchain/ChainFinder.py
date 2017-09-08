@@ -39,7 +39,7 @@ class ChainFinder(object):
                 path.append(h)
             self.trees_from_bottom[path[0]] = path
 
-            #if len(path) <= 1:
+            # if len(path) <= 1:
             #    # this is a lone element... don't bother trying to extend
             #    continue
 
