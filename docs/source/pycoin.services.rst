@@ -46,15 +46,6 @@ Services
     :show-inheritance:
 
 
-:mod:`blockr_io` Module
-----------------------------------
-
-.. automodule:: pycoin.services.blockr_io
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 :mod:`chain_so` Module
 ----------------------------------
 

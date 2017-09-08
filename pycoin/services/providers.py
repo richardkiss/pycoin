@@ -7,7 +7,6 @@ from pycoin.networks.default import get_current_netcode
 from .bitcoind import BitcoindProvider
 from .blockexplorer import BlockExplorerProvider
 from .blockchain_info import BlockchainInfoProvider
-from .blockr_io import BlockrioProvider
 from .blockcypher import BlockcypherProvider
 from .chain_so import ChainSoProvider
 from .insight import InsightProvider
@@ -20,7 +19,7 @@ from .tx_db import TxDb
 THREAD_LOCALS = threading.local()
 
 
-# PYCOIN_BTC_PROVIDERS="blockchain.info blockexplorer.com blockr.io blockcypher.com chain.so"
+# PYCOIN_BTC_PROVIDERS="blockchain.info blockexplorer.com blockcypher.com chain.so"
 # PYCOIN_BTC_PROVIDERS="insight:http(s?)://hostname/url bitcoinrpc://user:passwd@hostname:8333"
 
 
@@ -101,7 +100,6 @@ DESCRIPTOR_CRE_INIT_TUPLES = [
     (re.compile(r"^blockchain\.info$"), lambda m, netcode: BlockchainInfoProvider(netcode)),
     (re.compile(r"^blockcypher\.com$"), lambda m, netcode: BlockcypherProvider(netcode)),
     (re.compile(r"^blockexplorer\.com$"), lambda m, netcode: BlockExplorerProvider(netcode)),
-    (re.compile(r"^blockr\.io$"), lambda m, netcode: BlockrioProvider(netcode)),
     (re.compile(r"^chain\.so$"), lambda m, netcode: ChainSoProvider(netcode)),
     (re.compile(r"^insight:(?P<url>\S*)$"), insight_init),
 ]
