@@ -18,8 +18,9 @@ from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding import hash160
 from pycoin.key import Key
 from pycoin.key.validate import is_address_valid
-from pycoin.networks import address_prefix_for_netcode
+from pycoin.networks import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
+from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev, stream_to_bytes
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
@@ -239,7 +240,11 @@ def parse_fee(fee):
 
 
 def create_parser():
-    EPILOG = 'Files are binary by default unless they end with the suffix ".hex".'
+    codes = network_codes()
+    EPILOG = ('Files are binary by default unless they end with the suffix ".hex". ' +
+            'Known networks codes:\n  ' +
+            ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
+
     parser = argparse.ArgumentParser(
         description="Manipulate bitcoin (or alt coin) transactions.",
         epilog=EPILOG)
@@ -250,7 +255,7 @@ def create_parser():
     parser.add_argument('-l', "--lock-time", type=parse_locktime, help='Lock time; either a block'
                         'index, or a date/time (example: "2014-01-01T15:00:00"')
 
-    parser.add_argument('-n', "--network", default="BTC",
+    parser.add_argument('-n', "--network", default=get_current_netcode(), choices=codes,
                         help='Define network code (BTC=Bitcoin mainnet, XTN=Bitcoin testnet).')
 
     parser.add_argument('-a', "--augment", action='store_true',
@@ -649,12 +654,12 @@ def print_output(tx, include_unspents, output_file, show_unspents, network, verb
         print(tx_as_hex)
 
 
-def do_signing(tx, key_iters, p2sh_lookup):
+def do_signing(tx, key_iters, p2sh_lookup, netcode):
     unsigned_before = tx.bad_signature_count()
     unsigned_after = unsigned_before
     if unsigned_before > 0 and key_iters:
         print("signing...", file=sys.stderr)
-        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup)
+        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup, netcode=netcode)
 
         unsigned_after = tx.bad_signature_count()
         if unsigned_after > 0:
@@ -710,7 +715,7 @@ def tx(args, parser):
 
     tx = generate_tx(tx_class, txs, spendables, payables, args)
 
-    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup)
+    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup, args.network)
 
     include_unspents = not is_fully_signed
 
@@ -721,7 +726,8 @@ def tx(args, parser):
 
     tx_db = validate_against_bitcoind(tx, tx_db, args.network, args.bitcoind_url)
 
-    tx_db = validate_tx(tx, tx_db, args.network)
+    if not args.show_unspents:
+        tx_db = validate_tx(tx, tx_db, args.network)
 
     # print warnings
     if tx_db:
