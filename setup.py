@@ -45,13 +45,15 @@ setup(
     license="http://opensource.org/licenses/MIT",
     description="Utilities for Bitcoin and altcoin addresses and transaction manipulation.",
     classifiers=[
+        'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'License :: OSI Approved :: MIT License',
         'Topic :: Internet',
-        'Topic :: Internet :: Bitcoin',
-        'Topic :: Internet :: Cryptocurrency',
+        'Topic :: Security :: Cryptography',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],)
