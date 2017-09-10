@@ -6,7 +6,16 @@ from ...tx.script.IntStreamer import IntStreamer
 from ...tx.script.ScriptStreamer import ScriptStreamer
 
 
-def make_script_streamer():
+def make_opcode_const_list():
+    return [("OP_%d" % i, IntStreamer.int_to_script_bytes(i)) for i in range(17)] + [
+            ("OP_1NEGATE", IntStreamer.int_to_script_bytes(-1))]
+
+
+def make_opcode_sized_list():
+    return [("OP_PUSH_%d" % i, i) for i in range(1, 76)]
+
+
+def make_opcode_variable_list():
     def make_variable_decoder(struct_data):
         struct_size = struct.calcsize(struct_data)
 
@@ -20,19 +29,21 @@ def make_script_streamer():
             return size, pc
         return decode_OP_PUSHDATA
 
-    OPCODE_CONST_LIST = [("OP_%d" % i, IntStreamer.int_to_script_bytes(i)) for i in range(17)] + [
-        ("OP_1NEGATE", IntStreamer.int_to_script_bytes(-1))]
-    OPCODE_SIZED_LIST = [("OP_PUSH_%d" % i, i) for i in range(1, 76)]
     OPCODE_VARIABLE_LIST = [
         ("OP_PUSHDATA1", (1 << 8)-1, lambda d: struct.pack("<B", d), make_variable_decoder("<B")),
         ("OP_PUSHDATA2", (1 << 16)-1, lambda d: struct.pack("<H", d), make_variable_decoder("<H")),
         ("OP_PUSHDATA4", (1 << 32)-1, lambda d: struct.pack("<L", d), make_variable_decoder("<L"))
     ]
+    return OPCODE_VARIABLE_LIST
 
+
+def make_script_streamer():
+    OPCODE_CONST_LIST = make_opcode_const_list()
+    OPCODE_SIZED_LIST = make_opcode_sized_list()
+    OPCODE_VARIABLE_LIST = make_opcode_variable_list()
     OPCODE_LOOKUP = dict(o for o in opcodes.OPCODE_LIST)
 
-    return ScriptStreamer(
-        OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
+    return ScriptStreamer(OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
 
 
 BitcoinScriptStreamer = make_script_streamer()

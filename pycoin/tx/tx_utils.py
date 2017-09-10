@@ -2,7 +2,6 @@
 from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
 
-from .Spendable import Spendable
 from .Tx import Tx
 from .pay_to import build_hash160_lookup
 from ..networks import wif_prefix_for_netcode
@@ -80,11 +79,11 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, tx_c
     """
 
     def _fix_spendable(s):
-        if isinstance(s, Spendable):
+        if isinstance(s, tx_class.Spendable):
             return s
         if not hasattr(s, "keys"):
-            return Spendable.from_text(s)
-        return Spendable.from_dict(s)
+            return tx_class.Spendable.from_text(s)
+        return tx_class.Spendable.from_dict(s)
 
     spendables = [_fix_spendable(s) for s in spendables]
     txs_in = [spendable.tx_in() for spendable in spendables]

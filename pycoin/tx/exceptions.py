@@ -1,10 +1,1 @@
-class ValidationFailureError(Exception):
-    pass
-
-
-class BadSpendableError(Exception):
-    pass
-
-
-class SolvingError(Exception):
-    pass
+from pycoin.coins.exceptions import ValidationFailureError, BadSpendableError, SolvingError

@@ -245,7 +245,6 @@ class SegwitTest(unittest.TestCase):
 
     def test_segwit_create_tx(self):
         from pycoin.tx.tx_utils import create_tx, sign_tx
-        from pycoin.tx.Spendable import Spendable
         from pycoin.tx.pay_to.ScriptPayToAddress import ScriptPayToAddress
         from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
         from pycoin.tx.pay_to.ScriptPayToScriptWit import ScriptPayToScriptWit
@@ -255,7 +254,7 @@ class SegwitTest(unittest.TestCase):
         script = ScriptPayToAddressWit(b'\0', key1.hash160()).script()
         tx_hash = b'\ee' * 32
         tx_out_index = 0
-        spendable = Spendable(coin_value, script, tx_hash, tx_out_index)
+        spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
         key2 = Key(2)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)

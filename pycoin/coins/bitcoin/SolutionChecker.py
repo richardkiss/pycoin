@@ -5,7 +5,7 @@ from hashlib import sha256
 from ...encoding import double_sha256, from_bytes_32
 from ...intbytes import byte2int, indexbytes
 
-from ...tx.script.BaseSolutionChecker import SolutionChecker, TxContext
+from ..SolutionChecker import SolutionChecker
 from ...tx.script.BaseVM import VMContext
 from ...tx.script import errno
 from ...tx.script import ScriptError
@@ -36,6 +36,10 @@ OP_16 = BitcoinScriptTools.int_for_opcode("OP_16")
 
 
 ZERO32 = b'\0' * 32
+
+
+class TxContext(object):
+    pass
 
 
 class BitcoinSolutionChecker(SolutionChecker):
@@ -384,15 +388,3 @@ class BitcoinSolutionChecker(SolutionChecker):
         tx_context.sequence = tx_in.sequence
         tx_context.tx_in_idx = tx_in_idx
         return tx_context
-
-    def is_signature_ok(self, tx_in_idx, flags=None, **kwargs):
-        if self.tx.txs_in[tx_in_idx].previous_hash == ZERO32:
-            return True
-        if len(self.tx.unspents) <= tx_in_idx or self.tx.unspents[tx_in_idx] is None:
-            return False
-        try:
-            tx_context = self.tx_context_for_idx(tx_in_idx)
-            self.check_solution(tx_context, flags=flags, **kwargs)
-            return True
-        except ScriptError:
-            return False

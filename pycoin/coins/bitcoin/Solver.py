@@ -1,7 +1,7 @@
 from ...serialize import b2h
 
-from ...tx.exceptions import SolvingError
-from ...tx.script import ScriptError
+from ..exceptions import SolvingError
+from ..SolutionChecker import ScriptError
 
 from .SolutionChecker import BitcoinSolutionChecker
 from .ScriptTools import BitcoinScriptTools
