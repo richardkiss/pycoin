@@ -81,10 +81,11 @@ class Curve(object):
         result = p
         while i > 1:
             result += result
-            if (e3 & i) != 0 and (e & i) == 0:
-                result = result + p
-            if (e3 & i) == 0 and (e & i) != 0:
-                result = result - p
+            if (e3 & i):
+                v = [result, result+p]
+            else:
+                v = [result-p, result]
+            result = v[0 if (e & i) else 1]
             i >>= 1
 
         return result
