@@ -1,3 +1,7 @@
+import os
+
+from .intstream import from_bytes
+
 from .Curve import Curve
 from .Point import Point
 
@@ -9,7 +13,7 @@ class Generator(Curve, Point):
         # since Generator extends tuple (via Point), we need to override __new__
         return tuple.__new__(self, basis)
 
-    def __init__(self, p, a, b, basis, order):
+    def __init__(self, p, a, b, basis, order, entropy_f=os.urandom):
         """
         Set up a group with generator basis for the curve y^2 = x^3 + x*a + b (mod p).
         The order is the order of the group (it's generally predetermined for a given curve;
@@ -24,6 +28,8 @@ class Generator(Curve, Point):
             Gp += Gp
         assert p % 4 == 3, "p % 4 must be 3 due to modular_sqrt optimization"
         self._mod_sqrt_power = (p + 1) // 4
+        self._blinding_factor = from_bytes(entropy_f(32)) % self._order
+        self._minus_blinding_factor_g = self.raw_mul(-self._blinding_factor)
 
     def modular_sqrt(self, a):
         "Return n where n * n == a (mod p). If no such n exists, an arbitrary value will be returned."
@@ -97,7 +103,7 @@ class Generator(Curve, Point):
                 return r, s, recid
             k += 1
 
-    def __mul__(self, e):
+    def raw_mul(self, e):
         """Multiply the generator by an integer."""
         e %= self._order
         P = self._infinity
@@ -108,6 +114,10 @@ class Generator(Curve, Point):
             P = a[e & 1]
             e >>= 1
         return P
+
+    def __mul__(self, e):
+        """Multiply the generator by an integer."""
+        return self.raw_mul(e + self._blinding_factor) + self._minus_blinding_factor_g
 
     def __rmul__(self, e):
         """Multiply the generator by an integer."""
