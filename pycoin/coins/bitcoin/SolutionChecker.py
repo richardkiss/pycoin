@@ -2,16 +2,15 @@ import io
 
 from hashlib import sha256
 
+from .ScriptTools import BitcoinScriptTools
+from .VM import BitcoinVM, VMContext
+
 from ...encoding import double_sha256, from_bytes_32
 from ...intbytes import byte2int, indexbytes
 
 from ..SolutionChecker import SolutionChecker
-from ...tx.script.BaseVM import VMContext
 from ...tx.script import errno
 from ...tx.script import ScriptError
-
-from .ScriptTools import BitcoinScriptTools
-from .VM import BitcoinVM
 
 from ...serialize.bitcoin_streamer import (
     stream_struct, stream_bc_string

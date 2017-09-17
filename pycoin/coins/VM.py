@@ -1,9 +1,9 @@
-from .flags import VERIFY_MINIMALDATA
+from ..tx.script import errno
+from ..tx.script.flags import VERIFY_MINIMALDATA
+from ..tx.script.ConditionalStack import ConditionalStack
+from ..tx.script.IntStreamer import IntStreamer
 
-from . import ScriptError
-from . import errno
-from .ConditionalStack import ConditionalStack
-from .IntStreamer import IntStreamer
+from .SolutionChecker import ScriptError
 
 
 class VMContext(object):

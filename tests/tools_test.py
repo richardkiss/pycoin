@@ -3,12 +3,12 @@
 import unittest
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.VM import BitcoinVM
+from pycoin.coins.bitcoin.SolutionChecker import TxContext
+from pycoin.coins.bitcoin.VM import BitcoinVM, VMContext
+
 from pycoin.serialize import h2b
 from pycoin.intbytes import int2byte
 from pycoin.tx.script.opcodes import OPCODE_LIST
-from pycoin.tx.script.BaseSolutionChecker import TxContext
-from pycoin.tx.script.BaseVM import VMContext
 from pycoin.tx.script.IntStreamer import IntStreamer
 
 bin_script = BitcoinScriptTools.compile_push_data_list
