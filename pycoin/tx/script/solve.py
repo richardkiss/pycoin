@@ -7,7 +7,7 @@ from ...serialize import b2h
 
 from pycoin import ecdsa
 from pycoin import encoding
-from pycoin.intbytes import int2byte
+from pycoin.intbytes import indexbytes, int2byte
 from pycoin.tx.exceptions import SolvingError
 from pycoin.tx.script import der
 
@@ -97,6 +97,14 @@ class LIST(object):
         return False
 
 
+def build_sec_lookup(sec_values):
+    from pycoin.encoding import hash160
+    d = {}
+    for sec in sec_values or []:
+        d[hash160(sec)] = sec
+    return d
+
+
 def hash_lookup_solver(m):
 
     def f(solved_values, **kwargs):
@@ -104,7 +112,11 @@ def hash_lookup_solver(m):
         db = kwargs.get("hash160_lookup", {})
         result = db.get(the_hash)
         if result is None:
-            raise SolvingError("can't find secret exponent for %s" % b2h(the_hash))
+            result = kwargs.get("sec_hints", {}).get(the_hash)
+            if result:
+                return {m["1"]: result}
+        if result is None:
+            raise SolvingError("can't find public pair for %s" % b2h(the_hash))
         from pycoin.key.Key import Key  ## BRAIN DAMAGE
         return {m["1"]: Key(result[0]).sec(use_uncompressed=not result[2])}
 
@@ -130,6 +142,7 @@ register_solver(constant_equality_solver)
 def signing_solver(m):
     def f(solved_values, **kwargs):
         signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
+        signature_hints = kwargs.get("signature_hints", [])
         signature_for_hash_type_f = m["signature_for_hash_type_f"]
         existing_signatures, secs_solved = _find_signatures(kwargs.get(
             "existing_script", b''), signature_for_hash_type_f, len(m["sig_list"]), m["sec_list"])
@@ -148,11 +161,21 @@ def signing_solver(m):
             if len(existing_signatures) >= len(signature_variables):
                 break
             result = db.get(encoding.hash160(sec_key))
-            if result is None:
-                continue
-            secret_exponent = result[0]
-            sig_hash = signature_for_hash_type_f(signature_type)
-            r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sig_hash)
+            if result:
+                secret_exponent = result[0]
+                sig_hash = signature_for_hash_type_f(signature_type)
+                r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sig_hash)
+            else:
+                # try existing signatures
+                for sig in signature_hints:
+                    sig_hash = signature_for_hash_type_f(indexbytes(sig, -1))
+                    public_pair = encoding.sec_to_public_pair(sec_key)
+                    sig_pair = der.sigdecode_der(sig[:-1])
+                    if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sig_hash, sig_pair):
+                        r, s = sig_pair
+                        break
+                else:
+                    continue
             if s + s > order:
                 s = order - s
             binary_signature = der.sigencode_der(r, s) + int2byte(signature_type)

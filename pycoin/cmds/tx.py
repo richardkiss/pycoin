@@ -29,6 +29,7 @@ from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
 from pycoin.tx.script.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
+from pycoin.tx.script.solve import build_sec_lookup
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.ui import standard_tx_out_script
 
@@ -315,6 +316,12 @@ def create_parser():
     parser.add_argument('-p', "--pay-to-script", metavar="pay-to-script", action="append",
                         help='a hex version of a script required for a pay-to-script'
                         'input (a bitcoin address that starts with 3)')
+
+    parser.add_argument("--signature", metavar="known-good-signature", action="append",
+                        help='a hex version of a signature that will be used if useful')
+
+    parser.add_argument("--sec", metavar="known-sec", action="append",
+                        help='a hex version of an SEC that will be used if useful')
 
     parser.add_argument('-P', "--pay-to-script-file", metavar="pay-to-script-file", nargs=1,
                         type=argparse.FileType('r'), help='a file containing hex scripts '
@@ -654,12 +661,12 @@ def print_output(tx, include_unspents, output_file, show_unspents, network, verb
         print(tx_as_hex)
 
 
-def do_signing(tx, key_iters, p2sh_lookup, netcode):
+def do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, netcode):
     unsigned_before = tx.bad_signature_count()
     unsigned_after = unsigned_before
-    if unsigned_before > 0 and key_iters:
+    if unsigned_before > 0 and (key_iters or sec_hints or signature_hints):
         print("signing...", file=sys.stderr)
-        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup, netcode=netcode)
+        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup, netcode=netcode, sec_hints=sec_hints, signature_hints=signature_hints)
 
         unsigned_after = tx.bad_signature_count()
         if unsigned_after > 0:
@@ -715,7 +722,10 @@ def tx(args, parser):
 
     tx = generate_tx(tx_class, txs, spendables, payables, args)
 
-    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup, args.network)
+    signature_hints = [h2b(sig) for sig in (args.signature or [])]
+    sec_hints = build_sec_lookup([h2b(sec) for sec in (args.sec or [])])
+
+    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, args.network)
 
     include_unspents = not is_fully_signed
 
