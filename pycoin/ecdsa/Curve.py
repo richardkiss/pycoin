@@ -114,6 +114,9 @@ class Curve(object):
             return ud + m
 
     def Point(self, x, y):
+        """
+        The point constructor for this curve
+        """
         return Point(x, y, self)
 
     def __repr__(self):

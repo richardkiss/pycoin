@@ -1,7 +1,7 @@
 import hashlib
 import itertools
 
-from pycoin.ecdsa import secp256k1_generator
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import double_sha256, from_bytes_32, to_bytes_32
 from pycoin.key import Key
 from pycoin.serialize import b2h

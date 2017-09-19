@@ -2,7 +2,7 @@
 
 import unittest
 
-from pycoin.ecdsa import secp256k1_generator
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 
 class SigningTest(unittest.TestCase):
     def test_sign(self):

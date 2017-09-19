@@ -44,7 +44,7 @@ import hmac
 import logging
 import struct
 
-from ..ecdsa import secp256k1_generator
+from ..ecdsa.secp256k1 import secp256k1_generator
 
 from ..encoding import public_pair_to_sec, from_bytes_32, to_bytes_32
 

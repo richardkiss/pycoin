@@ -2,7 +2,7 @@
 
 import unittest
 
-from pycoin.ecdsa import secp256k1_generator
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node

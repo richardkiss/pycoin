@@ -5,7 +5,7 @@ import unittest
 
 from pycoin.block import Block
 
-from pycoin.ecdsa import secp256k1_generator
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 from pycoin.serialize import h2b
 

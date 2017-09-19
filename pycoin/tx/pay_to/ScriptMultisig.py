@@ -2,7 +2,7 @@ from ..script import opcodes, tools
 from ..script.check_signature import parse_signature_blob
 from ..script.der import UnexpectedDER
 
-from ...ecdsa import secp256k1_generator
+from ...ecdsa.secp256k1 import secp256k1_generator
 from ... import encoding
 
 from ...serialize import b2h

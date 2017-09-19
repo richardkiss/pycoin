@@ -3,7 +3,7 @@
 import hashlib
 import unittest
 
-from pycoin.ecdsa import secp256k1_generator
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.ecdsa.intstream import to_bytes, from_bytes
 from pycoin.ecdsa.rfc6979 import deterministic_generate_k
 

@@ -4,7 +4,7 @@ import re
 from binascii import b2a_base64, a2b_base64
 
 from ..serialize.bitcoin_streamer import stream_bc_string
-from ..ecdsa import secp256k1_generator
+from ..ecdsa.secp256k1 import secp256k1_generator
 
 from ..networks import address_prefix_for_netcode, network_name_for_netcode
 from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256, EncodingError

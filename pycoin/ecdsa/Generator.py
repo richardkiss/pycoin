@@ -18,6 +18,7 @@ class Generator(Curve, Point):
         Set up a group with generator basis for the curve y^2 = x^3 + x*a + b (mod p).
         The order is the order of the group (it's generally predetermined for a given curve;
         how it's calculated is complicated).
+        The entropy function creates a blinding factor, to mitigate side channel attacks.
         """
         Curve.__init__(self, p, a, b, order)
         Point.__init__(self, basis[0], basis[1], self)
@@ -59,7 +60,7 @@ class Generator(Curve, Point):
     def possible_public_pairs_for_signature(self, value, signature, y_parity=None):
         """
         yield a list of possible points (public keys) that generated the signature for the given
-        value. If y_parity is not None, only one value will be returned.
+        value. If y_parity is not None, only one value will be returned; otherwise two values.
         """
         r, s = signature
 
@@ -83,7 +84,7 @@ class Generator(Curve, Point):
         """
         Sign val with the given secret_exponent.
         If gen_k is set, it will be called with (n, secret_exponent, val), and an unguessable
-        K value should be returned. Otherwise, the default K value, which follows rfc6979 will be used.
+        K value should be returned. Otherwise, the default K value, generated according to rfc6979 will be used.
         Returns a tuple of r, s, recid (where recid) is "recovery id", a number from 0-3 used to eliminate
         ambiguity about which public key signed the value.
         """
@@ -115,7 +116,7 @@ class Generator(Curve, Point):
         return P
 
     def __mul__(self, e):
-        """Multiply the generator by an integer."""
+        """Multiply the generator by an integer. Uses the blinding factor."""
         return self.raw_mul(e + self._blinding_factor) + self._minus_blinding_factor_g
 
     def __rmul__(self, e):

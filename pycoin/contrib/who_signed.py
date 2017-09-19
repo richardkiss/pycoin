@@ -1,6 +1,6 @@
 import binascii
 
-from ..ecdsa import secp256k1_generator
+from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding import public_pair_to_bitcoin_address, sec_to_public_pair
 from ..networks import address_prefix_for_netcode
 from ..serialize import b2h_rev

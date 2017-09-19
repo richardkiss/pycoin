@@ -67,13 +67,15 @@ def load_library():
 
 OpenSSL = load_library()
 
-if OpenSSL:
-    NID_secp256k1_GROUP = OpenSSL.EC_GROUP_new_by_curve_name(714)
 
 
 class Optimizations:
 
+    if OpenSSL:
+        openssl_group = OpenSSL.EC_GROUP_new_by_curve_name(714)
+
     def multiply(self, p, e):
+        "Use OpenSSL to perform point mulitiplication."
         if e == 0 or p == self._infinity:
             return self._infinity
 
@@ -82,14 +84,14 @@ class Optimizations:
         bn_n = OpenSSL.BignumType(e)
 
         ctx = OpenSSL.BN_CTX_new()
-        ec_result = OpenSSL.EC_POINT_new(NID_secp256k1_GROUP)
-        ec_point = OpenSSL.EC_POINT_new(NID_secp256k1_GROUP)
+        ec_result = OpenSSL.EC_POINT_new(self.openssl_group)
+        ec_point = OpenSSL.EC_POINT_new(self.openssl_group)
 
-        OpenSSL.EC_POINT_set_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_point, bn_x, bn_y, ctx)
+        OpenSSL.EC_POINT_set_affine_coordinates_GFp(self.openssl_group, ec_point, bn_x, bn_y, ctx)
 
-        OpenSSL.EC_POINT_mul(NID_secp256k1_GROUP, ec_result, None, ec_point, bn_n, ctx)
+        OpenSSL.EC_POINT_mul(self.openssl_group, ec_result, None, ec_point, bn_n, ctx)
 
-        OpenSSL.EC_POINT_get_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_result, bn_x, bn_y, ctx)
+        OpenSSL.EC_POINT_get_affine_coordinates_GFp(self.openssl_group, ec_result, bn_x, bn_y, ctx)
         OpenSSL.EC_POINT_free(ec_point)
         OpenSSL.EC_POINT_free(ec_result)
         OpenSSL.BN_CTX_free(ctx)

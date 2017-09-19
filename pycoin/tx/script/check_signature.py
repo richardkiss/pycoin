@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from ...ecdsa import secp256k1_generator
+from ...ecdsa.secp256k1 import secp256k1_generator
 from ...encoding import sec_to_public_pair, EncodingError
 from ...intbytes import byte2int, indexbytes, iterbytes
 

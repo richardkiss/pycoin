@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from pycoin import encoding
-from pycoin.ecdsa import secp256k1_generator
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
 from pycoin.key.key_from_text import key_from_text

@@ -1,7 +1,7 @@
 import hashlib
 
 from ... import encoding
-from ...ecdsa import secp256k1_generator
+from ...ecdsa.secp256k1 import secp256k1_generator
 
 from .ScriptPayToAddress import ScriptPayToAddress
 from .ScriptPayToAddressWit import ScriptPayToAddressWit

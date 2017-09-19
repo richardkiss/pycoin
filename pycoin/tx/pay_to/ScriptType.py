@@ -1,6 +1,6 @@
 import collections
 
-from pycoin.ecdsa import secp256k1_generator
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 
 from ..script import der, tools
 
