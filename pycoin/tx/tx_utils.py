@@ -107,6 +107,14 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1):
     return tx
 
 
+def split_with_remainder(total_amount, split_count):
+    value_each, extra_count = divmod(total_amount, split_count)
+    for _ in range(extra_count):
+        yield value_each + 1
+    for _ in range(split_count-extra_count):
+        yield value_each
+
+
 def distribute_from_split_pool(tx, fee):
     """
     This function looks at TxOut items of a transaction tx and
@@ -128,20 +136,18 @@ def distribute_from_split_pool(tx, fee):
         # 2: recommended_fee_for_tx gives estimates that are too high
         fee = tx_fee.recommended_fee_for_tx(tx)
 
-    zero_count = sum(1 for tx_out in tx.txs_out if tx_out.coin_value == 0)
+    zero_txs_out = [tx_out for tx_out in tx.txs_out if tx_out.coin_value == 0]
+    zero_count = len(zero_txs_out)
     if zero_count > 0:
         total_coin_value = sum(spendable.coin_value for spendable in tx.unspents)
         coins_allocated = sum(tx_out.coin_value for tx_out in tx.txs_out) + fee
         remaining_coins = total_coin_value - coins_allocated
         if remaining_coins < 0:
             raise ValueError("insufficient inputs for outputs")
-        value_each, extra_count = divmod(remaining_coins, zero_count)
-        if value_each < 1:
+        if remaining_coins < zero_count:
             raise ValueError("not enough to pay nonzero amounts to at least one of the unspecified outputs")
-        for tx_out in tx.txs_out:
-            if tx_out.coin_value == 0:
-                tx_out.coin_value = value_each + (1 if extra_count > 0 else 0)
-                extra_count -= 1
+        for value, tx_out in zip(split_with_remainder(remaining_coins, zero_count), zero_txs_out):
+            tx_out.coin_value = value
     return zero_count
 
 
