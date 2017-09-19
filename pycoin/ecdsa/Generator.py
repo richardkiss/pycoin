@@ -60,7 +60,6 @@ class Generator(Curve, Point):
         """
         yield a list of possible points (public keys) that generated the signature for the given
         value. If y_parity is not None, only one value will be returned.
-        BRAIN DAMAGE: switch y_parity with recid??
         """
         r, s = signature
 
