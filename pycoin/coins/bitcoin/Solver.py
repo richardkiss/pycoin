@@ -115,7 +115,7 @@ class Solver(object):
         witness_list = [solved_values.get(k) for k in w_keys]
         return solution_list, witness_list
 
-    def solve_new(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
+    def solve(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
         """
         Sign a standard transaction.
         hash160_lookup:
@@ -194,12 +194,6 @@ class Solver(object):
             existing_script=self.tx.txs_in[tx_in_idx].script, existing_witness=tx_in.witness,
             script_to_hash=script_to_hash, signature_for_hash_type_f=signature_for_hash_type_f, **kwargs)
         return solution
-
-    def solve(self, *args, **kwargs):
-        s1 = self.solve_old(*args, **kwargs)
-        s2 = self.solve_new(*args, **kwargs)
-        assert s1 == s2
-        return s1
 
     def sign(self, hash160_lookup, tx_in_idx_set=None, hash_type=None, **kwargs):
         """
