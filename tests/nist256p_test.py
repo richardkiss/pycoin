@@ -1,6 +1,6 @@
 import unittest
 
-from pycoin.ecdsa.NISTp256 import nistp256_generator
+from pycoin.ecdsa.nistp256 import nistp256_generator
 
 
 VECTORS = """
