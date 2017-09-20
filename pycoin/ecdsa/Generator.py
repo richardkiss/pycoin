@@ -80,6 +80,42 @@ class Generator(Curve, Point):
         minus_E_over_r = -(inv_r * value) * self
         return [s_over_r * self.Point(r, y) + minus_E_over_r for y in y_vals]
 
+    def raw_mul(self, e):
+        """Multiply the generator by an integer."""
+        e %= self._order
+        P = self._infinity
+        for bit in range(256):
+            # add the power of the generator every time to make it more time-deterministic
+            a = [P, P + self._powers[bit]]
+            # choose the correct result
+            P = a[e & 1]
+            e >>= 1
+        return P
+
+    def __mul__(self, e):
+        """Multiply the generator by an integer. Uses the blinding factor."""
+        return self.raw_mul(e + self._blinding_factor) + self._minus_blinding_factor_g
+
+    def __rmul__(self, e):
+        """Multiply the generator by an integer."""
+        return self.__mul__(e)
+
+    def verify(self, public_pair, val, sig):
+        """
+        Verify that signature is a valid signature of hash.
+        Return True if and only if the signature is valid.
+        """
+        order = self._order
+        r, s = sig
+        if r < 1 or r >= order or s < 1 or s >= order:
+            return False
+        s_inverse = self.inverse(s)
+        u1 = val * s_inverse
+        u2 = r * s_inverse
+        point = u1 * self + u2 * self.Point(*public_pair)
+        v = point[0] % order
+        return v == r
+
     def sign_with_recid(self, secret_exponent, val, gen_k=None):
         """
         Sign val with the given secret_exponent.
@@ -103,26 +139,6 @@ class Generator(Curve, Point):
                 return r, s, recid
             k += 1
 
-    def raw_mul(self, e):
-        """Multiply the generator by an integer."""
-        e %= self._order
-        P = self._infinity
-        for bit in range(256):
-            # add the power of the generator every time to make it more time-deterministic
-            a = [P, P + self._powers[bit]]
-            # choose the correct result
-            P = a[e & 1]
-            e >>= 1
-        return P
-
-    def __mul__(self, e):
-        """Multiply the generator by an integer. Uses the blinding factor."""
-        return self.raw_mul(e + self._blinding_factor) + self._minus_blinding_factor_g
-
-    def __rmul__(self, e):
-        """Multiply the generator by an integer."""
-        return self.__mul__(e)
-
     def sign(self, secret_exponent, val, gen_k=None):
         """
         Sign val with the given secret_exponent.
@@ -130,19 +146,3 @@ class Generator(Curve, Point):
         K value should be returned. Otherwise, the default K value, which follows rfc6979 will be used.
         """
         return self.sign_with_recid(secret_exponent, val, gen_k)[0:2]
-
-    def verify(self, public_pair, val, sig):
-        """
-        Verify that signature is a valid signature of hash.
-        Return True if and only if the signature is valid.
-        """
-        order = self._order
-        r, s = sig
-        if r < 1 or r >= order or s < 1 or s >= order:
-            return False
-        s_inverse = self.inverse(s)
-        u1 = val * s_inverse
-        u2 = r * s_inverse
-        point = u1 * self + u2 * self.Point(*public_pair)
-        v = point[0] % order
-        return v == r
