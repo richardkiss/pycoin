@@ -213,8 +213,14 @@ x = 6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296
 y = B01CBD1C01E58065711814B583F061E9D431CCA994CEA1313449BF97C840AE0A
 """
 
+
 class NIST256pTest(unittest.TestCase):
-    pass
+    def test_multiply(self):
+        for f1 in [15, 10000, 73**38]:
+            for f2 in [2, 3, 78192, 71**39]:
+                k1 = f1 * nistp256_generator
+                k2 = (f1 * f2) * nistp256_generator
+        self.assertEqual(f2 * k1, k2)
 
 
 def inject():
@@ -225,7 +231,7 @@ def inject():
             k = int(k_line[4:])
             x = int(x_line[4:], 16)
             y = int(y_line[4:], 16)
-            name_of_f = "test_%d" % k
+            name_of_f = "test_vector_%d" % k
 
             def make_test(k, x, y):
                 def the_test(self):
@@ -235,5 +241,6 @@ def inject():
             setattr(NIST256pTest, name_of_f, make_test(k, x, y))
         else:
             print("WARNING: bad vector %s" % repr(triplets))
+
 
 inject()

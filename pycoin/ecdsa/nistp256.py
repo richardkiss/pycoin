@@ -1,4 +1,6 @@
 from .Generator import Generator
+from .native.openssl import create_OpenSSLOptimizations, NID_X9_62_prime256v1
+
 
 _p = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff
 _a = 0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc
@@ -8,4 +10,8 @@ _Gy = 0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5
 _r = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
 
 
-nistp256_generator = Generator(_p, _a, _b, (_Gx, _Gy), _r)
+class GeneratorWithOptimizations(create_OpenSSLOptimizations(NID_X9_62_prime256v1), Generator):
+    pass
+
+
+nistp256_generator = GeneratorWithOptimizations(_p, _a, _b, (_Gx, _Gy), _r)
