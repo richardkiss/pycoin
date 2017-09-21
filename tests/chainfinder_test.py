@@ -170,13 +170,13 @@ def test_longest_chain_endpoint():
 
     items = ITEMS + [B201, B202, B203, B204]
     load_items(cf, items)
-    #assert cf.difficulty(0, node_weight_f) == 10
-    #assert cf.difficulty(1, node_weight_f) == 20
-    #assert cf.difficulty(2, node_weight_f) == 30
-    #assert cf.difficulty(3, node_weight_f) == 40
-    #assert cf.difficulty(4, node_weight_f) == 50
-    #assert cf.difficulty(201, node_weight_f) == 140
-    #assert cf.difficulty(202, node_weight_f) == 150
+    # assert cf.difficulty(0, node_weight_f) == 10
+    # assert cf.difficulty(1, node_weight_f) == 20
+    # assert cf.difficulty(2, node_weight_f) == 30
+    # assert cf.difficulty(3, node_weight_f) == 40
+    # assert cf.difficulty(4, node_weight_f) == 50
+    # assert cf.difficulty(201, node_weight_f) == 140
+    # assert cf.difficulty(202, node_weight_f) == 150
 
 
 def test_find_ancestral_path():

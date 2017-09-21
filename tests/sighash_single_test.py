@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import unittest
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import (
@@ -27,15 +25,15 @@ from pycoin.tx.script.der import (
 from pycoin.tx.script.tools import compile as pycoin_compile
 
 PRIV_KEYS = (
-      2330949616242593315303241053456316633827293588958882755297900732239663851861,
-      4437411780076344925846479906614060621668407514498402815534040340772719979673,
-     14311886404724799688521454580288220586308410691395501373612453626821267193196,
-     16404731722033649474165521611800542240555275746052963990137782680023514762282,
-     92715304942310420502826004911529506622922082818576946681102234225452853924813,
+    2330949616242593315303241053456316633827293588958882755297900732239663851861,
+    4437411780076344925846479906614060621668407514498402815534040340772719979673,
+    14311886404724799688521454580288220586308410691395501373612453626821267193196,
+    16404731722033649474165521611800542240555275746052963990137782680023514762282,
+    92715304942310420502826004911529506622922082818576946681102234225452853924813,
     103235678552410630318322729483874198805317322052500844759252733409163632402845,
 )
 
-#=========================================================================
+
 def sigcheck(a_key, a_hash_for_sig, a_sig):
     """
     Returns True if a_key was used to generate a_sig from a_hash_for_sig;
@@ -43,9 +41,8 @@ def sigcheck(a_key, a_hash_for_sig, a_sig):
     """
     r, s = sigdecode_der(a_sig)
 
-    return secp256k1_generator.verify(a_key.public_pair(), a_hash_for_sig, ( r, s ))
+    return secp256k1_generator.verify(a_key.public_pair(), a_hash_for_sig, (r, s))
 
-#=========================================================================
 def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
     """
     Signs a_hash_for_sig with a_key and returns a DER-encoded signature
@@ -59,18 +56,15 @@ def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
 
     return sigencode_der(r, s) + int2byte(a_sig_type)
 
-#=========================================================================
+
 class SighashSingleTest(unittest.TestCase):
 
-    #=====================================================================
     def test_sighash_single_mainnet(self):
         self._test_sighash_single('BTC')
 
-    #=====================================================================
     def test_sighash_single_testnet3(self):
         self._test_sighash_single('XTN')
 
-    #=====================================================================
     def _test_sighash_single(self, netcode):
         k0 = Key(secret_exponent=PRIV_KEYS[0], is_compressed=True, netcode=netcode)
         k1 = Key(secret_exponent=PRIV_KEYS[1], is_compressed=True, netcode=netcode)
@@ -85,7 +79,7 @@ class SighashSingleTest(unittest.TestCase):
         coinbase_tx.txs_out.append(TxOut(1000000000, pycoin_compile('%s OP_CHECKSIG' % b2h(k2.sec()))))
 
         self.assertEqual('2acbe1006f7168bad538b477f7844e53de3a31ffddfcfc4c6625276dd714155a',
-                b2h_rev(coinbase_tx.hash()))
+                         b2h_rev(coinbase_tx.hash()))
 
         # Make the test transaction
         txs_in = [
@@ -160,6 +154,7 @@ class SighashSingleTest(unittest.TestCase):
 
         tx.txs_in[2].script = pycoin_compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(2))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import hashlib
 import unittest
 
@@ -83,14 +81,14 @@ class ECDSATestCase(unittest.TestCase):
             for v in val_list:
                 signature = secp256k1_generator.sign(secret_exponent, v)
                 r = secp256k1_generator.verify(public_point, v, signature)
-                assert r == True
+                assert r is True
                 r = secp256k1_generator.verify(public_point, v, (signature[0], secp256k1_generator.order() - signature[1]))
-                assert r == True
+                assert r is True
                 signature = signature[0],signature[1]+1
                 r = secp256k1_generator.verify(public_point, v, signature)
-                assert r == False
+                assert r is False
 
-        val_list = [100,20000,30000000,400000000000,50000000000000000,60000000000000000000000]
+        val_list = [100, 20000, 30000000, 400000000000, 50000000000000000, 60000000000000000000000]
 
         do_test(0x1111111111111111111111111111111111111111111111111111111111111111, val_list)
         do_test(0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd, val_list)
@@ -171,7 +169,6 @@ class ECDSATestCase(unittest.TestCase):
         self.assertEqual(k, 0xAD3029E0278F80643DE33917CE6908C70A8FF50A411F06E41DEDFCDC)
 
     def test_endian(self):
-        from pycoin.ecdsa.intstream import from_bytes, to_bytes
         for e in ("big", "little"):
             assert from_bytes(to_bytes(768, 2, e), e) == 768
             assert from_bytes(to_bytes(3, 1, e), e) == 3
@@ -180,4 +177,3 @@ class ECDSATestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

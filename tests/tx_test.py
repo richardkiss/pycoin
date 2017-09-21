@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import binascii
 import unittest
 
@@ -7,12 +5,14 @@ from pycoin.serialize import b2h, h2b_rev
 from pycoin.tx.Tx import Tx
 
 TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX = (
-    "0100000001a8f57056b016d7d243fc0fc2a73f9146e7e4c7766ec6033b5ac4cb89c"
-    "64e19d0000000008a4730440220251acb534ba1b8a269260ad3fa80e075cd150d3ff"
-    "ba76ad20cd2e8178dee98b702202284f9c7eae3adfcf0857a901cd34f0ea338d5744caab88afad5797be643f7b7"
-    "014104af8385da9dc85aa153f16341a4015bc95e7ff57876b9bde40bd8450a5723a05c1c89ff2d85230d2e62c0c"
-    "7690b8272cf85868a0a0fc02f99a5b793f22d5c7092ffffffff02bb5b0700000000001976a9145b78716d137e386ae2"
-    "befc4296d938372559f37888acdd3c71000000000017a914c6572ee1c85a1b9ce1921753871bda0b5ce889ac8700000000")
+    "0100000001a8f57056b016d7d243fc0fc2a73f9146e7e4c7766ec6033b5ac4cb89c64e"
+    "19d0000000008a4730440220251acb534ba1b8a269260ad3fa80e075cd150d3ffba76a"
+    "d20cd2e8178dee98b702202284f9c7eae3adfcf0857a901cd34f0ea338d5744caab88a"
+    "fad5797be643f7b7014104af8385da9dc85aa153f16341a4015bc95e7ff57876b9bde4"
+    "0bd8450a5723a05c1c89ff2d85230d2e62c0c7690b8272cf85868a0a0fc02f99a5b793"
+    "f22d5c7092ffffffff02bb5b0700000000001976a9145b78716d137e386ae2befc4296"
+    "d938372559f37888acdd3c71000000000017a914c6572ee1c85a1b9ce1921753871bda"
+    "0b5ce889ac8700000000")
 
 
 class TxTest(unittest.TestCase):
@@ -155,7 +155,7 @@ class TxTest(unittest.TestCase):
                 "AAAAGXapFDIKbLrYWAn/2ZTB7ToisbIaZ5DoiKzL5TUPAAAAABepFNsSg3N8"
                 "2T68HrEpjWRKeEbFWm2WhwAAAAA="
             ),
-            (# 837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba
+            (  # 837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba
                 "AQAAAAGsp/O0VlTCMOCIalf7mIwwRO9ej385cm0wXGHV6BiQPAAAAAD9XQEAS"
                 "DBFAiABh6+Sjp0VXEsaycHJEYFTI5q6dndPd118H5w+EG/zPAIhAIgisPZY7e"
                 "wiJ00LauneEOvy2gaxu9qrpOUOsHjznj14AUcwRAIgeV8PT1lBp3rgMuy54zd"
@@ -167,9 +167,9 @@ class TxTest(unittest.TestCase):
                 "XhX6b61u2/sedU41+hx4RMQfMioYY9RiE1Ou/////wFAQg8AAAAAABl2qRSuV"
                 "rTbE1VNMhxALbOWEYeu0bvtW4isAAAAAA=="
             ),
-            (# 3c9018e8d5615c306d72397f8f5eef44308c98fb576a88e030c25456b4f3a7ac
-             # input of
-             # 837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba
+            (  # 3c9018e8d5615c306d72397f8f5eef44308c98fb576a88e030c25456b4f3a7ac
+               # input of
+               # 837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba
                 "AQAAAAGJYyhI+ZcikVcnxcddqNstvxlDQqBCmCj2b/iPqyr31gAAAACLSDBFA"
                 "iEAq7yKc/4gVEgL2j8ygdotDFHihBORq9TAn0+QiiA0wY0CIFvJ5NaOr7kY8+"
                 "lmIzhkekQZwN4aZQq4mD8dIW4qMdjjAUEEb1XXre/2ARx+rClP5UDFeDC+gOk"
