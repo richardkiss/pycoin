@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import hashlib
 import struct
 import unittest
@@ -58,8 +56,6 @@ class SpendTest(unittest.TestCase):
                 self.assertEqual(tx.txs_out[i].coin_value, (COIN_VALUE - FEE)//count + extra)
 
     def test_confirm_input(self):
-        FEE = 10000
-
         # create a fake Spendable
         COIN_VALUE = 100000000
         spendables = [Spendable(COIN_VALUE, standard_tx_out_script(BITCOIN_ADDRESSES[0]), FAKE_HASHES[1], 0)]
@@ -79,10 +75,7 @@ class SpendTest(unittest.TestCase):
         tx_2 = create_signed_tx([s.as_text() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
         tx_2.validate_unspents(tx_db)
 
-
     def test_confirm_input_raises(self):
-        FEE = 10000
-
         # create a fake Spendable
         COIN_VALUE = 100000000
         spendables = [Spendable(COIN_VALUE, standard_tx_out_script(BITCOIN_ADDRESSES[0]), FAKE_HASHES[1], 0)]

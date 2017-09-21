@@ -66,9 +66,9 @@ class ServicesTest(unittest.TestCase):
     def test_BlockchainInfo(self):
         self.check_provider_tx_for_tx_hash(BlockchainInfoProvider, ["BTC"])
 
+    @unittest.skip("this test is not working for some reason")
     def test_BlockCypherProvider(self):
-        # self.check_provider_tx_for_tx_hash(BlockCypherProvider, ["BTC", "XTN"])
-        pass
+        self.check_provider_tx_for_tx_hash(BlockcypherProvider, ["BTC", "XTN"])
 
     def test_BlockExplorerProvider(self):
         self.check_provider_tx_for_tx_hash(BlockExplorerProvider, ["BTC"])

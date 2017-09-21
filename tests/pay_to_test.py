@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import io
 import copy
 import unittest
@@ -44,7 +42,7 @@ class ScriptTypesTest(unittest.TestCase):
                 self.assertEqual(st.address(), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
-                solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
+                st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
                 self.assertEqual(st.address(), addr)
@@ -69,7 +67,7 @@ class ScriptTypesTest(unittest.TestCase):
                 self.assertEqual(st.address(), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
-                solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
+                st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
                 self.assertEqual(st.address(), addr)
@@ -80,19 +78,50 @@ class ScriptTypesTest(unittest.TestCase):
         st = script_obj_from_script(tx_out_script)
         hl = build_hash160_lookup([1])
         solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
-        self.assertEqual(solution, b'G0D\x02 ^=\xf5\xb5[\xe6!@\x04,"\x0b\x1f\xdf\x10\\\xc8Q\x13\xafV*!\\\x1f\xc5\xb5\xc5"\xd1\xb3\xd3\x02 8\xc9YK\x15o\xae\xd7\xf3|0\x07z\xff\xbfj\xcfB\xbf\x17\xb1\xe69\xa1\xfc\xc6\xc5\x1ag\xab\xa2\x16\x01A\x04y\xbef~\xf9\xdc\xbb\xacU\xa0b\x95\xce\x87\x0b\x07\x02\x9b\xfc\xdb-\xce(\xd9Y\xf2\x81[\x16\xf8\x17\x98H:\xdaw&\xa3\xc4e]\xa4\xfb\xfc\x0e\x11\x08\xa8\xfd\x17\xb4H\xa6\x85T\x19\x9cG\xd0\x8f\xfb\x10\xd4\xb8')
+        self.assertEqual(
+            solution, h2b(
+                "47304402205e3df5b55be62140042c220b1fdf105cc85113af562a215c1fc5b5c522d1"
+                "b3d3022038c9594b156faed7f37c30077affbf6acf42bf17b1e639a1fcc6c51a67aba2"
+                "1601410479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817"
+                "98483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"))
 
     def test_validate_multisig(self):
         # this is a transaction in the block chain
         # the unspents are included too, so it can be validated
-        f = io.BytesIO(h2b("01000000025718fb915fb8b3a802bb699ddf04dd91261ef6715f5f2820a2b1b9b7e38b4f27000000004a004830450221008c2107ed4e026ab4319a591e8d9ec37719cdea053951c660566e3a3399428af502202ecd823d5f74a77cc2159d8af2d3ea5d36a702fef9a7edaaf562aef22ac35da401ffffffff038f52231b994efb980382e4d804efeadaee13cfe01abe0d969038ccb45ec17000000000490047304402200487cd787fde9b337ab87f9fe54b9fd46d5d1692aa58e97147a4fe757f6f944202203cbcfb9c0fc4e3c453938bbea9e5ae64030cf7a97fafaf460ea2cb54ed5651b501ffffffff0100093d00000000001976a9144dc39248253538b93d3a0eb122d16882b998145888ac0000000002000000000000004751210351efb6e91a31221652105d032a2508275f374cea63939ad72f1b1e02f477da782100f2b7816db49d55d24df7bdffdbc1e203b424e8cd39f5651ab938e5e4a193569e52ae404b4c00000000004751210351efb6e91a31221652105d032a2508275f374cea63939ad72f1b1e02f477da7821004f0331742bbc917ba2056a3b8a857ea47ec088dd10475ea311302112c9d24a7152ae"))
+        f = io.BytesIO(h2b(
+            "01000000025718fb915fb8b3a802bb699ddf04dd91261ef6715f5f2820a2b1b9b7e38b"
+            "4f27000000004a004830450221008c2107ed4e026ab4319a591e8d9ec37719cdea0539"
+            "51c660566e3a3399428af502202ecd823d5f74a77cc2159d8af2d3ea5d36a702fef9a7"
+            "edaaf562aef22ac35da401ffffffff038f52231b994efb980382e4d804efeadaee13cf"
+            "e01abe0d969038ccb45ec17000000000490047304402200487cd787fde9b337ab87f9f"
+            "e54b9fd46d5d1692aa58e97147a4fe757f6f944202203cbcfb9c0fc4e3c453938bbea9"
+            "e5ae64030cf7a97fafaf460ea2cb54ed5651b501ffffffff0100093d00000000001976"
+            "a9144dc39248253538b93d3a0eb122d16882b998145888ac0000000002000000000000"
+            "004751210351efb6e91a31221652105d032a2508275f374cea63939ad72f1b1e02f477"
+            "da782100f2b7816db49d55d24df7bdffdbc1e203b424e8cd39f5651ab938e5e4a19356"
+            "9e52ae404b4c00000000004751210351efb6e91a31221652105d032a2508275f374cea"
+            "63939ad72f1b1e02f477da7821004f0331742bbc917ba2056a3b8a857ea47ec088dd10"
+            "475ea311302112c9d24a7152ae"))
         tx = Tx.parse(f)
         tx.parse_unspents(f)
         self.assertEqual(tx.id(), "70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a")
         self.assertEqual(tx.bad_signature_count(), 0)
 
     def test_recognize_multisig(self):
-        h = '010000000139c92b102879eb95f14e7344e4dd7d481e1238b1bfb1fa0f735068d2927b231400000000910047304402208fc06d216ebb4b6a3a3e0f906e1512c372fa8a9c2a92505d04e9b451ea7acd0c0220764303bb7e514ddd77855949d941c934e9cbda8e3c3827bfdb5777477e73885b014730440220569ec6d2e81625dd18c73920e0079cdb4c1d67d3d7616759eb0c18cf566b3d3402201c60318f0a62e3ba85ca0f158d4dfe63c0779269eb6765b6fc939fc51e7a8ea901ffffffff0140787d01000000001976a914641ad5051edd97029a003fe9efb29359fcee409d88ac0000000040787d0100000000c952410496ec45f878b62c46c4be8e336dff7cc58df9b502178cc240eb3d31b1266f69f5767071aa3e017d1b82a0bb28dab5e27d4d8e9725b3e68ed5f8a2d45c730621e34104cc71eb30d653c0c3163990c47b976f3fb3f37cccdcbedb169a1dfef58bbfbfaff7d8a473e7e2e6d317b87bafe8bde97e3cf8f065dec022b51d11fcdd0d348ac4410461cbdcc5409fb4b4d42b51d33381354d80e550078cb532a34bfa2fcfdeb7d76519aecc62770f5b0e4ef8551946d8a540911abe3e7854a26f39f58b25c15342af53ae'
+        h = (
+            "010000000139c92b102879eb95f14e7344e4dd7d481e1238b1bfb1fa0f735068d2927b"
+            "231400000000910047304402208fc06d216ebb4b6a3a3e0f906e1512c372fa8a9c2a92"
+            "505d04e9b451ea7acd0c0220764303bb7e514ddd77855949d941c934e9cbda8e3c3827"
+            "bfdb5777477e73885b014730440220569ec6d2e81625dd18c73920e0079cdb4c1d67d3"
+            "d7616759eb0c18cf566b3d3402201c60318f0a62e3ba85ca0f158d4dfe63c0779269eb"
+            "6765b6fc939fc51e7a8ea901ffffffff0140787d01000000001976a914641ad5051edd"
+            "97029a003fe9efb29359fcee409d88ac0000000040787d0100000000c952410496ec45"
+            "f878b62c46c4be8e336dff7cc58df9b502178cc240eb3d31b1266f69f5767071aa3e01"
+            "7d1b82a0bb28dab5e27d4d8e9725b3e68ed5f8a2d45c730621e34104cc71eb30d653c0"
+            "c3163990c47b976f3fb3f37cccdcbedb169a1dfef58bbfbfaff7d8a473e7e2e6d317b8"
+            "7bafe8bde97e3cf8f065dec022b51d11fcdd0d348ac4410461cbdcc5409fb4b4d42b51"
+            "d33381354d80e550078cb532a34bfa2fcfdeb7d76519aecc62770f5b0e4ef8551946d8"
+            "a540911abe3e7854a26f39f58b25c15342af53ae")
         f = io.BytesIO(h2b(h))
         tx = Tx.parse(f)
         tx.parse_unspents(f)
@@ -147,14 +176,21 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertEqual(tx2.bad_signature_count(), 0)
 
     def test_p2sh_multisig_sequential_signing(self):
-        raw_scripts = [h2b('52210234abcffd2e80ad01c2ec0276ad02682808169c6fafdd25ebfb60703df272b4612102e5baaafff8094e4d77ce8b009d5ebc3de9110085ebd3d96e50cc7ce70faf1752210316ee25e80eb6e6fc734d9c86fa580cbb9c4bfd94a19f0373a22353ececd4db6853ae')]
-        txs_in = [TxIn(previous_hash=h2b('43c95d14724437bccc102ccf86aba1ac02415524fd1aefa787db886bba52a10c'), previous_index=0)]
+        raw_scripts = [h2b(
+            "52210234abcffd2e80ad01c2ec0276ad02682808169c6fafdd25ebfb60703df272b461"
+            "2102e5baaafff8094e4d77ce8b009d5ebc3de9110085ebd3d96e50cc7ce70faf175221"
+            "0316ee25e80eb6e6fc734d9c86fa580cbb9c4bfd94a19f0373a22353ececd4db6853ae")]
+        txs_in = [TxIn(previous_hash=h2b('43c95d14724437bccc102ccf86aba1ac02415524fd1aefa787db886bba52a10c'),
+                       previous_index=0)]
         txs_out = [TxOut(10000, standard_tx_out_script('3KeGeLFmsbmbVdeMLrWp7WYKcA3tdsB4AR'))]
         spendable = {'script_hex': 'a914c4ed4de526461e3efbb79c8b688a6f9282c0464687', 'does_seem_spent': 0,
-                     'block_index_spent': 0, 'tx_hash_hex': '0ca152ba6b88db87a7ef1afd24554102aca1ab86cf2c10ccbc374472145dc943',
-                     'coin_value': 10000, 'block_index_available': 0, 'tx_out_index': 0}
-        tx__prototype = Tx(version=DEFAULT_VERSION, txs_in=txs_in, txs_out=txs_out, unspents=[Spendable.from_dict(spendable)])
-        key_1, key_2 = 'Kz6pytJCigYHeMsGLmfHQPJhN5og2wpeSVrU43xWwgHLCAvpsprh', 'Kz7NHgX7MBySA3RSKj9GexUSN6NepEDoPNugSPr5absRDoKgn2dT'
+                     'block_index_spent': 0, 'coin_value': 10000, 'block_index_available': 0, 'tx_out_index': 0,
+                     'tx_hash_hex': '0ca152ba6b88db87a7ef1afd24554102aca1ab86cf2c10ccbc374472145dc943'}
+
+        tx__prototype = Tx(version=DEFAULT_VERSION, txs_in=txs_in, txs_out=txs_out,
+                           unspents=[Spendable.from_dict(spendable)])
+        key_1 = 'Kz6pytJCigYHeMsGLmfHQPJhN5og2wpeSVrU43xWwgHLCAvpsprh'
+        key_2 = 'Kz7NHgX7MBySA3RSKj9GexUSN6NepEDoPNugSPr5absRDoKgn2dT'
         for ordered_keys in [(key_1, key_2), (key_2, key_1)]:
             tx = copy.deepcopy(tx__prototype)
             for key in ordered_keys:
@@ -194,15 +230,26 @@ class ScriptTypesTest(unittest.TestCase):
             nd2 = ScriptNulldata.from_script(sample_script)
             self.assertEqual(nd.nulldata, nd2.nulldata)
             out = TxOut(1, nd.script())
-            tx = Tx(0, [], [out])  # ensure we can create a tx
-            self.assertEqual(nd.script(), tools.compile(tools.disassemble(nd.script())))  # convert between asm and back to ensure no bugs with compilation
+            # ensure we can create a tx
+            Tx(0, [], [out])
+            # convert between asm and back to ensure no bugs with compilation
+            self.assertEqual(nd.script(), tools.compile(tools.disassemble(nd.script())))
 
     def test_sign_bitcoind_partially_signed_2_of_2(self):
         # Finish signing a 2 of 2 transaction, that already has one signature signed by bitcoind
-        # This tx can be found on testnet3 blockchain, txid: 9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2
-        raw_script = "522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c16885116552102b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452ae"
+        # This tx can be found on testnet3 blockchain
+        # txid: 9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2
+        raw_script = ("522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c168851165521"
+                      "02b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452ae")
         p2sh_lookup = build_p2sh_lookup([h2b(raw_script)])
-        partially_signed_raw_tx = "010000000196238f11a5fd3ceef4efd5a186a7e6b9217d900418e72aca917cd6a6e634e74100000000910047304402201b41b471d9dd93cf97eed7cfc39a5767a546f6bfbf3e0c91ff9ad23ab9770f1f02205ce565666271d055be1f25a7e52e34cbf659f6c70770ff59bd783a6fcd1be3dd0147522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c16885116552102b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452aeffffffff01a0bb0d00000000001976a9143b3beefd6f7802fa8706983a76a51467bfa36f8b88ac00000000"
+        partially_signed_raw_tx = (
+            "010000000196238f11a5fd3ceef4efd5a186a7e6b9217d900418e72aca917cd6a6e634"
+            "e74100000000910047304402201b41b471d9dd93cf97eed7cfc39a5767a546f6bfbf3e"
+            "0c91ff9ad23ab9770f1f02205ce565666271d055be1f25a7e52e34cbf659f6c70770ff"
+            "59bd783a6fcd1be3dd0147522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e4"
+            "2cb29fde059c16885116552102b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff5"
+            "0511830328c1b479986452aeffffffff01a0bb0d00000000001976a9143b3beefd6f78"
+            "02fa8706983a76a51467bfa36f8b88ac00000000")
         tx = Tx.from_hex(partially_signed_raw_tx)
         tx_out = TxOut(1000000, h2b("a914a10dfa21ee8c33b028b92562f6fe04e60563d3c087"))
         tx.set_unspents([tx_out])

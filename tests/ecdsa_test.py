@@ -1,11 +1,10 @@
-#!/usr/bin/env python
-
 import hashlib
 import unittest
 
 from pycoin.ecdsa import generator_secp256k1, sign, verify, public_pair_for_secret_exponent, deterministic_generate_k
-from pycoin.ecdsa.intstream import to_bytes, from_bytes
+from pycoin.ecdsa.intstream import from_bytes
 from pycoin.ecdsa.numbertheory import inverse_mod
+
 
 class ECDSATestCase(unittest.TestCase):
 
@@ -15,12 +14,12 @@ class ECDSATestCase(unittest.TestCase):
             for v in val_list:
                 signature = sign(generator_secp256k1, secret_exponent, v)
                 r = verify(generator_secp256k1, public_point, v, signature)
-                assert r == True
-                signature = signature[0],signature[1]+1
+                assert r is True
+                signature = (signature[0], signature[1]+1)
                 r = verify(generator_secp256k1, public_point, v, signature)
-                assert r == False
+                assert r is False
 
-        val_list = [100,20000,30000000,400000000000,50000000000000000,60000000000000000000000]
+        val_list = [100, 20000, 30000000, 400000000000, 50000000000000000, 60000000000000000000000]
 
         do_test(0x1111111111111111111111111111111111111111111111111111111111111111, val_list)
         do_test(0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd, val_list)
@@ -100,4 +99,3 @@ class ECDSATestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

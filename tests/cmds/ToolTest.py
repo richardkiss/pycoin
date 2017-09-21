@@ -19,12 +19,11 @@ DEFAULT_ENV = {
 
 
 TOOL_LOOKUP = {
-    "tx" : (tx.create_parser(), tx.tx),
-    "ku" : (ku.create_parser(), ku.ku),
-    "msg" : (msg.create_parser(), msg.msg),
-    "block" : (block.create_parser(), block.block)
+    "tx": (tx.create_parser(), tx.tx),
+    "ku": (ku.create_parser(), ku.ku),
+    "msg": (msg.create_parser(), msg.msg),
+    "block": (block.create_parser(), block.block)
 }
-
 
 
 class ToolTest(unittest.TestCase):
