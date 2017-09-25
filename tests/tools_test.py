@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import unittest
 
 from pycoin.serialize import h2b
@@ -47,10 +45,11 @@ class ToolsTest(unittest.TestCase):
             b2 = compile(s1)
             self.assertEqual(s, s1)
             self.assertEqual(b1, b2)
+
         def build_hex(size, a, b):
             "build some random-looking hex"
             return "[%s]" % "".join("%02x" % (((i+a)*b) & 0xff) for i in range(size))
-        scripts = []
+
         check("[ff]")
         check("[ff03]")
         check("[ff030102]")
@@ -71,17 +70,19 @@ class ToolsTest(unittest.TestCase):
     def test_tx_7e0114e93f903892b4dff5526a8cab674b2825fd715c4a95f852a1aed634a0f6(self):
         # this tx is from testnet. We add an extra "OP_0" to the end
         # we need to check that the script is being disassembled correctly
-        script = h2b("0047304402201f994ca49451bc764fd090f31adb2fa4381b91f967dc05a6f538d4d1baaa83cd022"
-                     "06ef3ad06de7890bc4130b4f57401412ca94897ea19b646f794a4472375351c1f0147304402201f"
-                     "994ca49451bc764fd090f31adb2fa4381b91f967dc05a6f538d4d1baaa83cd02204655e9eccac41"
-                     "2407dfc3e5753a0f2ac605e41c7eb91630dc67137f2d8081c3a014d0b0152410479be667ef9dcbb"
-                     "ac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e110"
-                     "8a8fd17b448a68554199c47d08ffb10d4b84104c6047f9441ed7d6d3045406e95c07cd85c778e4b"
-                     "8cef3ca7abac09b95c709ee51ae168fea63dc339a3c58419466ceaeef7f632653266d0e1236431a"
-                     "950cfe52a4104f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f938"
-                     "8f7b0f632de8140fe337e62a37f3566500a99934c2231b6cb9fd7584b8e6724104e493dbf1c10d8"
-                     "0f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351ed993ea0d455b75642e2098ea5"
-                     "1448d967ae33bfbdfe40cfe97bdc4773992254ae00")
+        script = h2b(
+            "0047304402201f994ca49451bc764fd090f31adb2fa4381b91f967dc05a6f538d4d1ba"
+            "aa83cd02206ef3ad06de7890bc4130b4f57401412ca94897ea19b646f794a447237535"
+            "1c1f0147304402201f994ca49451bc764fd090f31adb2fa4381b91f967dc05a6f538d4"
+            "d1baaa83cd02204655e9eccac412407dfc3e5753a0f2ac605e41c7eb91630dc67137f2"
+            "d8081c3a014d0b0152410479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d9"
+            "59f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d0"
+            "8ffb10d4b84104c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b9"
+            "5c709ee51ae168fea63dc339a3c58419466ceaeef7f632653266d0e1236431a950cfe5"
+            "2a4104f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9"
+            "388f7b0f632de8140fe337e62a37f3566500a99934c2231b6cb9fd7584b8e6724104e4"
+            "93dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351ed993e"
+            "a0d455b75642e2098ea51448d967ae33bfbdfe40cfe97bdc4773992254ae00")
 
         d1 = disassemble(script).split()
         self.assertEqual(len(d1), 5)

@@ -1,9 +1,7 @@
 import unittest
 
-from pycoin.encoding import to_bytes_32
 from pycoin.key import Key
 from pycoin.key.electrum import ElectrumWallet
-from pycoin.serialize import h2b
 
 MPK = 1
 
