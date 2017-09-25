@@ -30,6 +30,7 @@ def longest_locked_block_chain(self):
 
 parent_for_0 = "motherless"
 
+
 def test_basic():
     BC = BlockChain(parent_for_0)
     ITEMS = [FakeBlock(i) for i in range(100)]
@@ -57,7 +58,7 @@ def test_basic():
     assert BC.index_for_hash(-1) is None
 
     ops = BC.add_headers(ITEMS[:7])
-    assert ops == [("add", ITEMS[i], i) for i in range(5,7)]
+    assert ops == [("add", ITEMS[i], i) for i in range(5, 7)]
     assert BC.parent_hash == parent_for_0
     assert longest_block_chain(BC) == list(range(7))
     assert BC.length() == 7
@@ -84,7 +85,7 @@ def test_basic():
     assert BC.index_for_hash(-1) is None
 
     ops = BC.add_headers(ITEMS[7:10])
-    assert ops == [("add", ITEMS[i], i) for i in range(7,14)]
+    assert ops == [("add", ITEMS[i], i) for i in range(7, 14)]
     assert longest_block_chain(BC) == list(range(14))
     assert set(BC.chain_finder.missing_parents()) == {parent_for_0}
     assert BC.parent_hash == parent_for_0
@@ -110,7 +111,7 @@ def test_basic():
     assert BC.index_for_hash(-1) is None
 
     ops = BC.add_headers(ITEMS[14:90])
-    assert ops == [("add", ITEMS[i], i) for i in range(14,100)]
+    assert ops == [("add", ITEMS[i], i) for i in range(14, 100)]
     assert longest_block_chain(BC) == list(range(100))
     assert set(BC.chain_finder.missing_parents()) == {parent_for_0}
     assert BC.parent_hash == parent_for_0
@@ -128,11 +129,10 @@ def test_fork():
     # 0 <= 1 <= ... <= 5 <= 6
     # 3 <= 301 <= 302 <= 303 <= 304 <= 305
 
-    #parent_for_0 = "motherless"
+    # parent_for_0 = "motherless"
     BC = BlockChain(parent_for_0)
     ITEMS = dict((i, FakeBlock(i)) for i in range(7))
     ITEMS[0] = FakeBlock(0, parent_for_0)
-    
 
     ITEMS.update(dict((i, FakeBlock(i)) for i in range(301, 306)))
     ITEMS[301] = FakeBlock(301, 3)
@@ -152,13 +152,14 @@ def test_fork():
 
     # we should see a change
     expected = [("remove", ITEMS[i], i) for i in range(6, 3, -1)]
-    expected += [("add", ITEMS[i], i+4-301) for i in range(301,306)]
+    expected += [("add", ITEMS[i], i+4-301) for i in range(301, 306)]
     assert ops == expected
     assert set(BC.chain_finder.missing_parents()) == set([parent_for_0])
 
 
 def test_callback():
     R = []
+
     def the_callback(blockchain, ops):
         R.extend(ops)
 
@@ -175,14 +176,14 @@ def test_callback():
     ITEMS[301] = FakeBlock(301, 3)
 
     # send them all except 302
-    ops = BC.add_headers((ITEMS[i] for i in ITEMS.keys() if i != 302))
+    BC.add_headers((ITEMS[i] for i in ITEMS.keys() if i != 302))
 
     # now send 302
-    ops = BC.add_headers([ITEMS[302]])
+    BC.add_headers([ITEMS[302]])
 
     expected = [("add", ITEMS[i], i) for i in range(7)]
     expected += [("remove", ITEMS[i], i) for i in range(6, 3, -1)]
-    expected += [("add", ITEMS[i], i+4-301) for i in range(301,306)]
+    expected += [("add", ITEMS[i], i+4-301) for i in range(301, 306)]
 
     assert R == expected
 

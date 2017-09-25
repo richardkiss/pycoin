@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import unittest
 
 from pycoin.ecdsa import generator_secp256k1
@@ -16,9 +14,10 @@ def change_prefix(address, new_prefix):
     return hash160_sec_to_bitcoin_address(key_from_text(address)[0].hash160(), address_prefix=new_prefix)
 
 
-PAY_TO_HASH_ADDRESSES = ["1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", "1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm",
-                        "1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP", "1LagHJk2FyCV2VzrNHVqg3gYG4TSYwDV4m",
-                        "1CUNEBjYrCn2y1SdiUMohaKUi4wpP326Lb", "1NZUP3JAc9JkmbvmoTv7nVgZGtyJjirKV1"]
+PAY_TO_HASH_ADDRESSES = [
+    "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", "1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm",
+    "1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP", "1LagHJk2FyCV2VzrNHVqg3gYG4TSYwDV4m",
+    "1CUNEBjYrCn2y1SdiUMohaKUi4wpP326Lb", "1NZUP3JAc9JkmbvmoTv7nVgZGtyJjirKV1"]
 
 PAY_TO_SCRIPT_PREFIX = pay_to_script_prefix_for_netcode("BTC")
 
@@ -84,7 +83,6 @@ class KeyUtilsTest(unittest.TestCase):
                 self.assertEqual(is_private_bip32_valid(a, allowable_netcodes=NETWORK_NAMES), None)
                 self.assertEqual(is_public_bip32_valid(a, allowable_netcodes=NETWORK_NAMES), None)
 
-
     def test_key_limits(self):
         cc = b'000102030405060708090a0b0c0d0e0f'
         order = generator_secp256k1.order()
@@ -96,7 +94,6 @@ class KeyUtilsTest(unittest.TestCase):
         for i in range(1, 512):
             Key(secret_exponent=i)
             BIP32Node(cc, secret_exponent=i)
-
 
     def test_points(self):
         secp256k1_curve = generator_secp256k1.curve()
@@ -326,7 +323,9 @@ class KeyUtilsTest(unittest.TestCase):
         wif = key.wif(netcode=netcode)
         priv_k, nc = key_from_text(wif)
         self.assertEqual(netcode, nc)
-        self.assertEqual(repr(priv_k), '<private_for 0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
+        self.assertEqual(
+            repr(priv_k),
+            '<private_for 0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
 
 
 if __name__ == '__main__':

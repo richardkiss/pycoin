@@ -104,7 +104,7 @@ def modular_sqrt(a, p):
     while True:
         t = b
         m = 0
-        for m in xrange(r):
+        for m in range(r):
             if t == 1:
                 break
             t = pow(t, 2, p)

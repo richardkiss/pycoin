@@ -1,23 +1,18 @@
-#!/usr/bin/env python
-
 import json
 import unittest
 import os
-#import sys
-#import tempfile
 
 from pycoin.serialize import h2b
-
 from pycoin.tx.Tx import TxIn, TxOut, Tx
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script import errno
 from pycoin.tx.script import flags
 from pycoin.tx.script.tools import compile, disassemble
-from pycoin.tx.script.vm import eval_script
 from pycoin.tx.script.vm import check_script
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
+
 
 class TestTx(unittest.TestCase):
     pass
@@ -30,10 +25,12 @@ def parse_flags(flag_string):
             v |= getattr(flags, "VERIFY_%s" % f)
     return v
 
+
 def build_credit_tx(script_out_bin, coin_value=0):
     txs_in = [TxIn(b'\0'*32, 4294967295, b'\0\0', sequence=4294967295)]
     txs_out = [TxOut(coin_value, script_out_bin)]
     return Tx(1, txs_in, txs_out)
+
 
 def build_spending_tx(script_in_bin, credit_tx):
     txs_in = [TxIn(credit_tx.hash(), 0, script_in_bin, sequence=4294967295)]
@@ -52,7 +49,7 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
     print(comment)
     print(disassemble(compile(script_in)))
     print(disassemble(compile(script_out)))
-    from pycoin.serialize import b2h
+
     def tbf(*args):
         pc, opcode, data, stack, altstack, is_signature, is_condition = args
         from pycoin.tx.script.tools import disassemble_for_opcode_data
@@ -71,7 +68,8 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
         check_solution(spend_tx, tx_in_idx=0, traceback_f=tbf, flags=flags)
     except Exception as ex:
         print(ex)
-        import pdb; pdb.set_trace()
+        import pdb
+        pdb.set_trace()
 
 
 def check_solution(self, tx_in_idx, flags, traceback_f=None):
@@ -85,8 +83,6 @@ def check_solution(self, tx_in_idx, flags, traceback_f=None):
     witness_signature_for_hash_type.skip_delete = True
 
     signature_for_hash_type_f.witness = witness_signature_for_hash_type
-
-    tx_version = self.version
 
     # code that should be in TxIn
     def tx_in_check_script(self, tx_out_script, signature_for_hash_type_f, lock_time, expected_hash_type=None,
@@ -106,6 +102,7 @@ def make_script_test(script_in, script_out, flags_string, comment, expected, coi
     script_out_bin = compile(script_out)
     script_witness_bin = [h2b(w) for w in script_witness]
     flags = parse_flags(flags_string)
+
     def f(self):
         try:
             credit_tx = build_credit_tx(script_out_bin, coin_value)
@@ -126,11 +123,13 @@ def make_script_test(script_in, script_out, flags_string, comment, expected, coi
         self.assertEqual(r, expect_error)
     return f
 
+
 def items_from_json(path):
     with open(path, "r") as f:
         for i in json.load(f):
             if len(i) >= 4:
                 yield i
+
 
 def inject():
     for idx, args in enumerate(items_from_json(SCRIPT_TESTS_JSON)):
@@ -141,7 +140,9 @@ def inject():
         (script_in, script_out, flags, expected) = args[:4]
         comments = '/'.join(args[4:])
         name_of_f = "test_scripts_%03d" % idx
-        setattr(TestTx, name_of_f, make_script_test(script_in, script_out, flags, comments, expected, coin_value, script_witness))
+        setattr(TestTx, name_of_f,
+                make_script_test(script_in, script_out, flags, comments, expected, coin_value, script_witness))
         print("adding %s" % name_of_f)
+
 
 inject()
