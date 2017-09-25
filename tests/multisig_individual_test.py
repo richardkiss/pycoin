@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import itertools
 import unittest
 
@@ -29,6 +27,7 @@ class MultisigIndividualTest(unittest.TestCase):
         for N in range(1, 4):
             for M in range(1, N+1):
                 self.multisig_M_of_N_individually(M, N)
+
 
 if __name__ == "__main__":
     unittest.main()
