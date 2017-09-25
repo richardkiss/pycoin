@@ -1,6 +1,5 @@
 import unittest
 import os
-import sys
 import tempfile
 
 from pycoin.cmds import tx
@@ -57,7 +56,8 @@ class TxTest(ToolTest):
             "0ffffffff0200f902950000000017a91415fc0754e73eb85d1cbce08786fadb7320ecb8dc8700f90295"
             "0000000017a914594f349df0bac3084ffea8a477bba5f03dcd45078700000000")
         self.launch_tool("tx -C %s" % tx_source_hex)
-        tx_to_sign = ( "01000000020a316ea8980ef9ba02f4e6637c88229bf059f39b06238d48d06a8e"
+        tx_to_sign = (
+            "01000000020a316ea8980ef9ba02f4e6637c88229bf059f39b06238d48d06a8e"
             "f672aea2bb0000000000ffffffff0a316ea8980ef9ba02f4e6637c88229bf059"
             "f39b06238d48d06a8ef672aea2bb0100000000ffffffff01f0ca052a01000000"
             "1976a914751e76e8199196d454941c45d1b3a323f1433bd688ac0000000000f9"
@@ -80,7 +80,12 @@ class TxTest(ToolTest):
         gpg_wif.write(WIF_1_GPG)
         gpg_wif.flush()
         output_file = tempfile.NamedTemporaryFile(suffix=".hex")
-        self.launch_tool(args=["tx", "5564224b6c01dbc2bfad89bfd8038bc2f4ca6c55eb660511d7151d71e4b94b6d/0/210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac/5000000000", "1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T", "-f", gpg_wif.name, "-g", "--batch --passphrase=foo", "-o", output_file.name])
+        self.launch_tool(
+            args=["tx",
+                  "5564224b6c01dbc2bfad89bfd8038bc2f4ca6c55eb660511d7151d71e4b94b6d/0/"
+                  "210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac/5000000000",
+                  "1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T", "-f", gpg_wif.name, "-g", "--batch --passphrase=foo",
+                  "-o", output_file.name])
         d = open(output_file.name).read()
         tx = Tx.from_hex(d)
         self.assertEqual(tx.id(), "c52b0c66cff6147b99acb29389343f6eae68c29faf2186fa8c1613d615b217e8")

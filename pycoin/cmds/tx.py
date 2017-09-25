@@ -242,8 +242,8 @@ def parse_fee(fee):
 def create_parser():
     codes = network_codes()
     EPILOG = ('Files are binary by default unless they end with the suffix ".hex". ' +
-            'Known networks codes:\n  ' +
-            ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
+              'Known networks codes:\n  ' +
+              ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
 
     parser = argparse.ArgumentParser(
         description="Manipulate bitcoin (or alt coin) transactions.",
