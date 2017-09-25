@@ -1,7 +1,5 @@
 import unittest
 import os
-import subprocess
-import sys
 import tempfile
 
 from .ToolTest import ToolTest
@@ -75,11 +73,13 @@ def inject():
         setattr(CmdlineTest, name_of_f, make_f(i, o, comments, path))
         print("adding %s" % name_of_f)
 
+
 inject()
 
 
 def main():
     unittest.main()
+
 
 if __name__ == "__main__":
     main()

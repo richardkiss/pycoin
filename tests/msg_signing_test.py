@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import unittest
 
 from pycoin.contrib.msg_signing import parse_signed_message, verify_message
@@ -54,11 +52,11 @@ def test_against_myself():
             ok = verify_message(k, sig2.encode('ascii'), msg)
             assert ok
 
+
 def test_msg_parse():
     """
         Test against real-world signatures found in the wild.
     """
-
 
     # Output from brainwallet in "multibit" mode.
     multibit = '''

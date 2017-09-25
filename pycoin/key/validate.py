@@ -1,7 +1,7 @@
 
 import binascii
 from .. import encoding
-from ..intbytes import byte2int, int2byte
+from ..intbytes import int2byte
 from ..networks.registry import network_codes, network_prefixes, bech32_prefixes
 from ..serialize import h2b
 from ..contrib.segwit_addr import bech32_decode, convertbits
