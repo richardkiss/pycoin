@@ -1,10 +1,7 @@
 """
-VM Stack data structure
-
-
 The MIT License (MIT)
 
-Copyright (c) 2017 by Richard Kiss
+Copyright (c) 2013 by Richard Kiss
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,19 +22,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from . import errno
-from . import ScriptError
 
+class TxOut(object):
+    """
+    The output part of a Tx that specifies where funds go.
+    """
 
-class Stack(list):
-    def pop(self, *args, **kwargs):
-        try:
-            return super(Stack, self).pop(*args, **kwargs)
-        except IndexError:
-            raise ScriptError("pop from empty stack", errno.INVALID_STACK_OPERATION)
+    @classmethod
+    def parse(class_, f):
+        raise NotImplemented()
 
-    def __getitem__(self, *args, **kwargs):
-        try:
-            return super(Stack, self).__getitem__(*args, **kwargs)
-        except IndexError:
-            raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)
+    def __init__(self, *args, **kwargs):
+        raise NotImplemented()
+
+    def stream(self, f):
+        raise NotImplemented()
+
+    def __str__(self):
+        raise NotImplemented()

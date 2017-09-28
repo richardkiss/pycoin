@@ -1,18 +1,17 @@
-from ..script import tools
 
 from ... import encoding
 from ...serialize import b2h
 
 from ..exceptions import SolvingError
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptTools, ScriptType
 
 
 class ScriptPayToPublicKey(ScriptType):
     """
     This is generally used in coinbase transactions only.
     """
-    TEMPLATE = tools.compile("'PUBKEY' OP_CHECKSIG")
+    TEMPLATE = ScriptTools.compile("'PUBKEY' OP_CHECKSIG")
 
     def __init__(self, sec):
         self.sec = sec
@@ -41,7 +40,7 @@ class ScriptPayToPublicKey(ScriptType):
             # create the script
             STANDARD_SCRIPT_OUT = "%s OP_CHECKSIG"
             script_text = STANDARD_SCRIPT_OUT % b2h(self.sec)
-            self._script = tools.compile(script_text)
+            self._script = ScriptTools.compile(script_text)
         return self._script
 
     def solve(self, **kwargs):
@@ -69,7 +68,7 @@ class ScriptPayToPublicKey(ScriptType):
 
         secret_exponent, public_pair, compressed = result
 
-        solution = tools.bin_script([self._create_script_signature(
+        solution = ScriptTools.compile_push_data_list([self._create_script_signature(
             secret_exponent, signature_for_hash_type_f, signature_type, script_to_hash)])
         return solution
 

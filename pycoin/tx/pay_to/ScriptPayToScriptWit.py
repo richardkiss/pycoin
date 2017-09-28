@@ -1,10 +1,10 @@
 from pycoin.intbytes import byte2int
 
-from ..script import tools
+from pycoin.coins.VM import VMContext
 
 from ...serialize import b2h
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptTools, ScriptType, VM
 
 from pycoin.contrib import segwit_addr
 
@@ -44,14 +44,13 @@ class ScriptPayToScriptWit(ScriptType):
 
         kwargs["signature_for_hash_type_f"] = kwargs["signature_for_hash_type_f"].witness
         kwargs["script_to_hash"] = underlying_script
-        kwargs["existing_script"] = tools.bin_script(kwargs["existing_witness"])
+        kwargs["existing_script"] = ScriptTools.compile_push_data_list(kwargs["existing_witness"])
         underlying_solution = script_obj.solve(**kwargs)
         # we need to unwrap the solution
-        solution = []
-        pc = 0
-        while pc < len(underlying_solution):
-            opcode, data, pc = tools.get_opcode(underlying_solution, pc)
-            solution.append(data)
+        vm = VM()
+        vm_context = VMContext(
+            underlying_solution, tx_context=None, signature_for_hash_type_f=(lambda *args, **kwargs: 0), flags=0)
+        solution = vm.eval_script(vm_context)
         solution.append(underlying_script)
         return (b"", solution)
 
@@ -60,7 +59,7 @@ class ScriptPayToScriptWit(ScriptType):
             # create the script
             STANDARD_SCRIPT_OUT = "OP_0 %s"
             script_text = STANDARD_SCRIPT_OUT % b2h(self.hash256)
-            self._script = tools.compile(script_text)
+            self._script = ScriptTools.compile(script_text)
         return self._script
 
     def info(self, netcode=None):

@@ -1,20 +1,18 @@
 from pycoin.intbytes import byte2int, iterbytes
 
-from ..script import tools
-
 from ... import encoding
 
 from ...serialize import b2h
 
 from ..exceptions import SolvingError
 
-from .ScriptType import ScriptType
+from .ScriptType import ScriptType, ScriptTools
 
 from pycoin.contrib import segwit_addr
 
 
 class ScriptPayToAddressWit(ScriptType):
-    TEMPLATE = tools.compile("OP_0 'PUBKEYHASH'")
+    TEMPLATE = ScriptTools.compile("OP_0 'PUBKEYHASH'")
 
     def __init__(self, version, hash160):
         assert len(version) == 1
@@ -43,7 +41,7 @@ class ScriptPayToAddressWit(ScriptType):
             # create the script
             STANDARD_SCRIPT_OUT = "OP_%d %s"
             script_text = STANDARD_SCRIPT_OUT % (self.version, b2h(self.hash160))
-            self._script = tools.compile(script_text)
+            self._script = ScriptTools.compile(script_text)
         return self._script
 
     def solve(self, **kwargs):
@@ -64,7 +62,7 @@ class ScriptPayToAddressWit(ScriptType):
         if result is None:
             raise SolvingError("can't find secret exponent for %s" % self.address())
         # we got it
-        script_to_hash = tools.compile(
+        script_to_hash = ScriptTools.compile(
             "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(self.hash160))
 
         signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f").witness

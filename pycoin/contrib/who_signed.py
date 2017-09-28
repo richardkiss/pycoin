@@ -1,5 +1,7 @@
 import binascii
 
+from ..coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer  # BRAIN DAMAGE
+from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker  # BRAIN DAMAGE
 from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding import public_pair_to_bitcoin_address, sec_to_public_pair
 from ..networks import address_prefix_for_netcode
@@ -8,9 +10,8 @@ from ..serialize import b2h_rev
 from pycoin.tx.pay_to import (
     script_obj_from_script, ScriptMultisig, ScriptPayToAddress, ScriptPayToPublicKey
 )
-from pycoin.tx.script.check_signature import parse_signature_blob
+from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.der import UnexpectedDER
-from pycoin.tx.script.tools import get_opcode
 
 
 class NoAddressesForScriptTypeError(Exception):
@@ -43,7 +44,7 @@ def who_signed_tx(tx, tx_in_idx, netcode='BTC'):
     script = tx_in.script
     pc = 0
     while pc < len(script):
-        opcode, data, pc = get_opcode(script, pc)
+        opcode, data, pc = BitcoinScriptStreamer.get_opcode(script, pc)
         if data is None:
             continue
         try:
@@ -51,7 +52,7 @@ def who_signed_tx(tx, tx_in_idx, netcode='BTC'):
         except (ValueError, TypeError, binascii.Error, UnexpectedDER):
             continue
 
-        sig_hash = tx.signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
+        sig_hash = BitcoinSolutionChecker(tx).signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
 
         for sec_key in script_obj.sec_keys:
             public_pair = sec_to_public_pair(sec_key)

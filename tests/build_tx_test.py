@@ -4,10 +4,12 @@ import unittest
 from pycoin.block import Block
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 from pycoin.serialize import h2b
 
-from pycoin.tx.Tx import Tx, SIGHASH_ALL
+from pycoin.tx.Tx import Tx
+from pycoin.tx.script.flags import SIGHASH_ALL
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.pay_to import build_hash160_lookup
@@ -86,7 +88,8 @@ class BuildTxTest(unittest.TestCase):
 
         tx_out_script_to_check = the_coinbase_tx.txs_out[0].script
         idx = 0
-        actual_hash = unsigned_coinbase_spend_tx.signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
+        solution_checker = BitcoinSolutionChecker(unsigned_coinbase_spend_tx)
+        actual_hash = solution_checker.signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
         self.assertEqual(actual_hash, 29819170155392455064899446505816569230970401928540834591675173488544269166940)
 
     def test_standard_tx_out(self):
@@ -142,9 +145,6 @@ class BuildTxTest(unittest.TestCase):
         solver = build_hash160_lookup([exponent])
 
         coinbase_spend_tx = unsigned_coinbase_spend_tx.sign(solver)
-
-        # now check that it validates
-        self.assertEqual(coinbase_spend_tx.bad_signature_count(), 0)
 
         TX_DB[coinbase_spend_tx.hash()] = coinbase_spend_tx
 

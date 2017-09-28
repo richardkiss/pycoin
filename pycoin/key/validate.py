@@ -4,8 +4,8 @@ from .. import encoding
 from ..intbytes import int2byte
 from ..networks.registry import network_codes, network_prefixes, bech32_prefixes
 from ..serialize import h2b
+from ..coins.bitcoin.ScriptTools import BitcoinScriptTools, IntStreamer
 from ..contrib.segwit_addr import bech32_decode, convertbits
-from pycoin.tx.script.tools import bin_script
 
 DEFAULT_ADDRESS_TYPES = ["address", "pay_to_script"]
 
@@ -65,7 +65,9 @@ def netcode_and_type_for_text(text, netcodes=None):
     try:
         hrp, data = bech32_decode(text)
         decoded = convertbits(data[1:], 5, 8, False)
-        script = bin_script([int2byte(data[0]), b''.join(int2byte(d) for d in decoded)])
+        decoded_data = b''.join(int2byte(d) for d in decoded)
+        script = BitcoinScriptTools.compile_push_data_list([
+            IntStreamer.int_to_script_bytes(data[0]), decoded_data])
         l = bech32_prefixes().get(hrp, [])
         if netcodes is None:
             netcodes = network_codes()

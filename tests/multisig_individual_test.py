@@ -1,5 +1,6 @@
 import itertools
 import unittest
+
 from pycoin.key import Key
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.tx_utils import create_tx

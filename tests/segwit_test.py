@@ -1,11 +1,13 @@
 import unittest
 
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.encoding import double_sha256, to_bytes_32
 from pycoin.key import Key
 from pycoin.serialize import b2h, b2h_rev, h2b
 from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup
-from pycoin.tx.script import tools
-from pycoin.tx.Tx import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY, Tx
+from pycoin.tx.script.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
+from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 
@@ -58,10 +60,8 @@ class SegwitTest(unittest.TestCase):
         tx_u_prime = self.unsigned_copy(tx_s)
         tx_s_hex = tx_s.as_hex()
         tx_u_prime.set_unspents(tx_s.unspents)
-        tx_u_prime.sign(
-            hash160_lookup=LazySecretExponentDB([Key(pk).wif() for pk in private_keys], {}),
-            p2sh_lookup=build_p2sh_lookup([h2b(x) for x in p2sh_values])
-        )
+        tx_u_prime.sign(hash160_lookup=LazySecretExponentDB([Key(pk).wif() for pk in private_keys], {}),
+                        p2sh_lookup=build_p2sh_lookup([h2b(x) for x in p2sh_values]))
         self.check_signed(tx_u_prime)
         tx_hex = tx_u_prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)
@@ -96,16 +96,18 @@ class SegwitTest(unittest.TestCase):
             17
         )
 
-        self.assertEqual(b2h(tx_s1.hash_prevouts(SIGHASH_ALL)),
+        sc = BitcoinSolutionChecker(tx_s1)
+        self.assertEqual(b2h(sc.hash_prevouts(SIGHASH_ALL)),
                          "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
-        self.assertEqual(b2h(tx_s1.hash_sequence(SIGHASH_ALL)),
+        self.assertEqual(b2h(sc.hash_sequence(SIGHASH_ALL)),
                          "52b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3b")
-        self.assertEqual(b2h(tx_s1.hash_outputs(SIGHASH_ALL, 0)),
+        self.assertEqual(b2h(sc.hash_outputs(SIGHASH_ALL, 0)),
                          "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
 
-        script = tools.compile("OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(tx_s1.unspents[1].script[2:]))
+        script = BitcoinScriptTools.compile(
+            "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(tx_s1.unspents[1].script[2:]))
         self.assertEqual(
-            b2h(tx_s1.segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
+            b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
             "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd"
             "3752b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3bef51"
             "e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000019"
@@ -113,7 +115,7 @@ class SegwitTest(unittest.TestCase):
             "ffff863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e511"
             "00000001000000")
 
-        self.assertEqual(b2h(to_bytes_32(tx_s1.signature_for_hash_type_segwit(script, 1, 1))),
+        self.assertEqual(b2h(to_bytes_32(sc.signature_for_hash_type_segwit(script, 1, 1))),
                          "c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670")
         self.check_tx_can_be_signed(tx_u1, tx_s1, [
             0xbbc27228ddcb9209d7fd6f36b02f7dfa6252af40bb2f1cbc7a557da8027ff866,
@@ -259,17 +261,18 @@ class SegwitTest(unittest.TestCase):
         tx_hex = tx_u5prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)
 
-        self.assertEqual(b2h(tx_s5.hash_prevouts(SIGHASH_ALL)),
+        sc = BitcoinSolutionChecker(tx_s5)
+        self.assertEqual(b2h(sc.hash_prevouts(SIGHASH_ALL)),
                          "74afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aaa0")
-        self.assertEqual(b2h(tx_s5.hash_sequence(SIGHASH_ALL)),
+        self.assertEqual(b2h(sc.hash_sequence(SIGHASH_ALL)),
                          "3bb13029ce7b1f559ef5e747fcac439f1455a2ec7c5f09b72290795e70665044")
-        self.assertEqual(b2h(tx_s5.hash_outputs(SIGHASH_ALL, 0)),
+        self.assertEqual(b2h(sc.hash_outputs(SIGHASH_ALL, 0)),
                          "bc4d309071414bed932f98832b27b4d76dad7e6c1346f487a8fdbb8eb90307cc")
-        self.assertEqual(b2h(tx_s5.hash_outputs(SIGHASH_SINGLE, 0)),
+        self.assertEqual(b2h(sc.hash_outputs(SIGHASH_SINGLE, 0)),
                          "9efe0c13a6b16c14a41b04ebe6a63f419bdacb2f8705b494a43063ca3cd4f708")
         script = tx_s5.txs_in[0].witness[-1]
         self.assertEqual(
-            b2h(tx_s5.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_ALL)),
+            b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_ALL)),
             "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aa"
             "a03bb13029ce7b1f559ef5e747fcac439f1455a2ec7c5f09b72290795e706650443664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -283,7 +286,7 @@ class SegwitTest(unittest.TestCase):
             "bb8eb90307cc0000000001000000")
 
         self.assertEqual(
-            b2h(tx_s5.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_NONE)),
+            b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_NONE)),
             "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aa"
             "a000000000000000000000000000000000000000000000000000000000000000003664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -297,7 +300,7 @@ class SegwitTest(unittest.TestCase):
             "0000000000000000000002000000")
 
         self.assertEqual(
-            b2h(tx_s5.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE)),
+            b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE)),
             "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aa"
             "a000000000000000000000000000000000000000000000000000000000000000003664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -311,7 +314,7 @@ class SegwitTest(unittest.TestCase):
             "63ca3cd4f7080000000003000000")
 
         self.assertEqual(
-            b2h(tx_s5.segwit_signature_preimage(
+            b2h(sc.segwit_signature_preimage(
                 script=script, tx_in_idx=0, hash_type=SIGHASH_ALL | SIGHASH_ANYONECANPAY)),
             "0100000000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000003664"
@@ -326,7 +329,7 @@ class SegwitTest(unittest.TestCase):
             "bb8eb90307cc0000000081000000")
 
         self.assertEqual(
-            b2h(tx_s5.segwit_signature_preimage(
+            b2h(sc.segwit_signature_preimage(
                 script=script, tx_in_idx=0, hash_type=SIGHASH_NONE | SIGHASH_ANYONECANPAY)),
             "0100000000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000003664"
@@ -341,7 +344,7 @@ class SegwitTest(unittest.TestCase):
             "0000000000000000000082000000")
 
         self.assertEqual(
-            b2h(tx_s5.segwit_signature_preimage(
+            b2h(sc.segwit_signature_preimage(
                 script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE | SIGHASH_ANYONECANPAY)),
             "0100000000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000003664"
@@ -442,7 +445,6 @@ class SegwitTest(unittest.TestCase):
 
     def test_segwit_create_tx(self):
         from pycoin.tx.tx_utils import create_tx, sign_tx
-        from pycoin.tx.Spendable import Spendable
         from pycoin.tx.pay_to.ScriptPayToAddress import ScriptPayToAddress
         from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
         from pycoin.ui import address_for_pay_to_script_wit, script_obj_from_address
@@ -451,7 +453,7 @@ class SegwitTest(unittest.TestCase):
         script = ScriptPayToAddressWit(b'\0', key1.hash160()).script()
         tx_hash = b'\ee' * 32
         tx_out_index = 0
-        spendable = Spendable(coin_value, script, tx_hash, tx_out_index)
+        spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
         key2 = Key(2)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)

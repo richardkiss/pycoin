@@ -1,10 +1,18 @@
 import unittest
 
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.SolutionChecker import TxContext
+from pycoin.coins.bitcoin.VM import BitcoinVM, VMContext
+
 from pycoin.serialize import h2b
 from pycoin.intbytes import int2byte
-from pycoin.tx.script.tools import bin_script, compile, disassemble, int_to_script_bytes, int_from_script_bytes
-from pycoin.tx.script.opcodes import INT_TO_OPCODE, OPCODE_LIST
-from pycoin.tx.script.vm import eval_script
+from pycoin.tx.script.opcodes import OPCODE_LIST
+from pycoin.tx.script.IntStreamer import IntStreamer
+
+bin_script = BitcoinScriptTools.compile_push_data_list
+compile = BitcoinScriptTools.compile
+disassemble = BitcoinScriptTools.disassemble
+int_to_script_bytes = BitcoinScriptTools.intStreamer.int_to_script_bytes
 
 
 class ToolsTest(unittest.TestCase):
@@ -13,8 +21,16 @@ class ToolsTest(unittest.TestCase):
 
         def test_bytes(as_bytes):
             script = bin_script([as_bytes])
-            stack = []
-            eval_script(script, None, lock_time=0, stack=stack, disallow_long_scripts=False)
+            # this is a pretty horrible hack to test the vm with long scripts. But it works
+            vm = BitcoinVM()
+            tx_context = TxContext()
+            tx_context.signature_for_hash_type_f = None
+            tx_context.flags = 0
+            tx_context.traceback_f = None
+            vm_context = VMContext(script, tx_context, tx_context.signature_for_hash_type_f, flags=0)
+            vm_context.MAX_SCRIPT_LENGTH = int(1e9)
+            vm_context.MAX_BLOB_LENGTH = int(1e9)
+            stack = vm.eval_script(vm_context)
             assert len(stack) == 1
             assert stack[0] == as_bytes
 
@@ -57,7 +73,7 @@ class ToolsTest(unittest.TestCase):
         long_hex_260 = build_hex(260, 13, 93)
         long_hex_270 = build_hex(270, 11, 47)
         check("%s %s" % (long_hex_260, long_hex_270))
-        s = set(INT_TO_OPCODE.values())
+        s = set(x[-1] for x in OPCODE_LIST)
         for opcode, code in OPCODE_LIST:
             # skip reassigned NOPs
             if opcode not in s:
@@ -90,14 +106,14 @@ class ToolsTest(unittest.TestCase):
 
     def test_int_to_from_script_bytes(self):
         for i in range(-127, 127):
-            self.assertEqual(int_from_script_bytes(int_to_script_bytes(i)), i)
+            self.assertEqual(IntStreamer.int_from_script_bytes(IntStreamer.int_to_script_bytes(i)), i)
         for i in range(-1024, 1024, 16):
-            self.assertEqual(int_from_script_bytes(int_to_script_bytes(i)), i)
+            self.assertEqual(IntStreamer.int_from_script_bytes(IntStreamer.int_to_script_bytes(i)), i)
         for i in range(-1024*1024, 1024*1024, 10000):
-            self.assertEqual(int_from_script_bytes(int_to_script_bytes(i)), i)
-        self.assertEqual(int_to_script_bytes(1), b"\1")
-        self.assertEqual(int_to_script_bytes(127), b"\x7f")
-        self.assertEqual(int_to_script_bytes(128), b"\x80\x00")
+            self.assertEqual(IntStreamer.int_from_script_bytes(IntStreamer.int_to_script_bytes(i)), i)
+        self.assertEqual(IntStreamer.int_to_script_bytes(1), b"\1")
+        self.assertEqual(IntStreamer.int_to_script_bytes(127), b"\x7f")
+        self.assertEqual(IntStreamer.int_to_script_bytes(128), b"\x80\x00")
 
 
 if __name__ == "__main__":

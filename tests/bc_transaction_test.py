@@ -36,9 +36,8 @@ from pycoin.serialize import h2b_rev
 from pycoin.tx.Tx import Tx
 from pycoin.tx.exceptions import ValidationFailureError
 from pycoin.tx.Spendable import Spendable
-from pycoin.tx.script.tools import compile
-from pycoin.tx.script import flags
-
+from pycoin.tx.script import ScriptError, flags
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools
 
 DEBUG_TX_ID_LIST = []
 
@@ -92,7 +91,7 @@ def txs_from_json(path):
                 if len(prevout) == 4:
                     coin_value = prevout[3]
                 spendable = Spendable(coin_value=coin_value,
-                                      script=compile(prevout[2]),
+                                      script=ScriptTools.compile(prevout[2]),
                                       tx_hash=h2b_rev(prevout[0]), tx_out_index=prevout[1])
                 spendable_db[(spendable.tx_hash, spendable.tx_out_index)] = spendable
             unspents = [
@@ -114,7 +113,15 @@ def make_f(tx, flag_mask, comments, expect_ok=True):
             tx.check()
         except ValidationFailureError as ex:
             why = str(ex)
-        bs = tx.bad_signature_count(flags=flag_mask)
+        bs = 0
+        for tx_in_idx in range(len(tx.txs_in)):
+            try:
+                if DEBUG_TX_ID_LIST:
+                    import pdb
+                    pdb.set_trace()
+                tx.check_solution(tx_in_idx=tx_in_idx, flags=flag_mask)
+            except ScriptError as se:
+                bs += 1
         if bs > 0:
             why = "bad sig count = %d" % bs
         if (why is not None) == expect_ok:

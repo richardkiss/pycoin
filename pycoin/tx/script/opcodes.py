@@ -140,23 +140,8 @@ OPCODE_LIST = [
   ("OP_NOP8", 183),
   ("OP_NOP9", 184),
   ("OP_NOP10", 185),
-  ("OP_NULLDATA", 252),
-  ("OP_PUBKEYHASH", 253),
-  ("OP_PUBKEY", 254),
   ("OP_INVALIDOPCODE", 255),
 ]
 
-OPCODE_TO_INT = dict(o for o in OPCODE_LIST)
-
-INT_TO_OPCODE = dict(reversed(i) for i in OPCODE_LIST)
-
-
-def populate_module():
-    """Make all the opcodes globals in this module to make it possible to
-    use constructs like opcodes.OP_PUBKEY"""
-    g = globals()
-    for opcode, val in OPCODE_LIST:
-        g[opcode] = val
-
-
-populate_module()
+for i in range(1, 76):
+    OPCODE_LIST.append(("OP_PUSH_%d" % i, i))

@@ -2,9 +2,11 @@ import unittest
 from pycoin.contrib import who_signed
 from pycoin.key import Key
 from pycoin.tx import tx_utils
-from pycoin.tx.Tx import Tx, SIGHASH_ALL
+from pycoin.tx.script.flags import SIGHASH_ALL
+from pycoin.tx.Tx import Tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
+
 from pycoin.tx.pay_to import ScriptMultisig
 from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup
 from pycoin.ui import address_for_pay_to_script, standard_tx_out_script
@@ -21,7 +23,7 @@ class WhoSignedTest(unittest.TestCase):
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_signature_count(), 1)
-        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys)
+        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:M])
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
@@ -54,7 +56,7 @@ class WhoSignedTest(unittest.TestCase):
         for i in range(1, N+1):
             self.assertEqual(tx2.bad_signature_count(), 1)
             self.assertEqual(tx2.id(), ids[i-1])
-            hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[i-1:i])
+            hash160_lookup = build_hash160_lookup([keys[i-1].secret_exponent()])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
             self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0)),
