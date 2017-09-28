@@ -54,6 +54,7 @@ MAX_BLOCK_SIZE = 1000000
 SIGHASH_ALL = 1
 SIGHASH_NONE = 2
 SIGHASH_SINGLE = 3
+SIGHASH_FORKID = 0x40
 SIGHASH_ANYONECANPAY = 0x80
 
 ZERO32 = b'\0' * 32
@@ -70,6 +71,7 @@ class Tx(object):
     SIGHASH_ALL = SIGHASH_ALL
     SIGHASH_NONE = SIGHASH_NONE
     SIGHASH_SINGLE = SIGHASH_SINGLE
+    SIGHASH_FORKID = SIGHASH_FORKID
     SIGHASH_ANYONECANPAY = SIGHASH_ANYONECANPAY
 
     ALLOW_SEGWIT = True
@@ -245,6 +247,8 @@ class Tx(object):
         hash_type: one of SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ALL,
         optionally bitwise or'ed with SIGHASH_ANYONECANPAY
         """
+        if hash_type & self.SIGHASH_FORKID:
+            return self.signature_for_hash_type_segwit(tx_out_script, unsigned_txs_out_idx, hash_type)
 
         # In case concatenating two scripts ends up with two codeseparators,
         # or an extra one at the end, this prevents all those possible incompatibilities.

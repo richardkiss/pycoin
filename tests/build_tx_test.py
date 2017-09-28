@@ -7,7 +7,7 @@ from pycoin import ecdsa
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 from pycoin.serialize import h2b
 
-from pycoin.tx.Tx import Tx, SIGHASH_ALL
+from pycoin.tx.Tx import Tx, SIGHASH_ALL, SIGHASH_FORKID
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.pay_to import build_hash160_lookup
@@ -52,7 +52,7 @@ COINBASE_PUB_KEY_FROM_80971 = h2b(
 COINBASE_BYTES_FROM_80971 = h2b("04ed66471b02c301")
 
 
-def standard_tx(coins_from, coins_to):
+def standard_tx(coins_from, coins_to, version=1):
     txs_in = []
     unspents = []
     for h, idx, tx_out in coins_from:
@@ -63,7 +63,7 @@ def standard_tx(coins_from, coins_to):
     for coin_value, bitcoin_address in coins_to:
         txs_out.append(TxOut(coin_value, standard_tx_out_script(bitcoin_address)))
 
-    version, lock_time = 1, 0
+    lock_time = 0
     tx = Tx(version, txs_in, txs_out, lock_time)
     tx.set_unspents(unspents)
     return tx
@@ -91,6 +91,27 @@ class BuildTxTest(unittest.TestCase):
         idx = 0
         actual_hash = unsigned_coinbase_spend_tx.signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
         self.assertEqual(actual_hash, 29819170155392455064899446505816569230970401928540834591675173488544269166940)
+
+    def test_sign_bitcoin_cash(self):
+        compressed = False
+        exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
+        bitcoin_address_2 = public_pair_to_bitcoin_address(
+                ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent_2),
+                compressed=compressed)
+
+        exponent = wif_to_secret_exponent("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+
+        public_key_sec = public_pair_to_sec(
+            ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent), compressed=compressed)
+
+        the_coinbase_tx = Tx.coinbase_tx(public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
+        coins_from = [(the_coinbase_tx.hash(), 0, the_coinbase_tx.txs_out[0])]
+        coins_to = [(int(50 * 1e8), bitcoin_address_2)]
+        unsigned_coinbase_spend_tx = standard_tx(coins_from, coins_to, version=2)
+        solver = build_hash160_lookup([exponent])
+        signed_coinbase_spend_tx = unsigned_coinbase_spend_tx.sign(solver, hash_type=SIGHASH_FORKID)
+        
+        self.assertEqual(signed_coinbase_spend_tx.id(), '06a635975e91ef507acf7f971a43863326ee29fcb7bb4d886681b9447a366326')
 
     def test_standard_tx_out(self):
         coin_value = 10
