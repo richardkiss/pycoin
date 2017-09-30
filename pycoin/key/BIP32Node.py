@@ -90,7 +90,7 @@ class BIP32Node(Key):
                 raise EncodingError("private key encoded wrong")
             d["secret_exponent"] = from_bytes_32(data[46:])
         else:
-            d["public_pair"] = sec_to_public_pair(data[45:])
+            d["public_pair"] = sec_to_public_pair(data[45:], generator)
 
         return class_(**d)
 

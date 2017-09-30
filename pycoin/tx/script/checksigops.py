@@ -139,7 +139,7 @@ def checksig(vm, sig_pair, signature_type, pair_blob, blobs_to_delete,
         if byte2int(pair_blob) not in (2, 3) or len(pair_blob) != 33:
             raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
     try:
-        public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
+        public_pair = sec_to_public_pair(pair_blob, secp256k1_generator, strict=verify_strict)
     except (ValueError, EncodingError):
         return False
 

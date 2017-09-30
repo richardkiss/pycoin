@@ -107,11 +107,11 @@ class Key(object):
         raise EncodingError("unknown text: %s" % text)
 
     @classmethod
-    def from_sec(class_, sec, netcode=None):
+    def from_sec(class_, sec, generator, netcode=None):
         """
         Create a key from an sec bytestream (which is an encoding of a public pair).
         """
-        public_pair = sec_to_public_pair(sec)
+        public_pair = sec_to_public_pair(sec, generator)
         return class_(public_pair=public_pair, is_compressed=is_sec_compressed(sec), netcode=netcode)
 
     def is_private(self):

@@ -79,7 +79,7 @@ class ScriptMultisig(ScriptType):
                 sig_pair, signature_type = parse_signature_blob(data)
                 seen += 1
                 for idx, sec_key in enumerate(self.sec_keys):
-                    public_pair = encoding.sec_to_public_pair(sec_key)
+                    public_pair = encoding.sec_to_public_pair(sec_key, secp256k1_generator)
                     sign_value = signature_for_hash_type_f(signature_type, script_to_hash)
                     v = secp256k1_generator.verify(public_pair, sign_value, sig_pair)
                     if v:

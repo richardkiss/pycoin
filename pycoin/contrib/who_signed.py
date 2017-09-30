@@ -55,7 +55,7 @@ def who_signed_tx(tx, tx_in_idx, netcode='BTC'):
         sig_hash = BitcoinSolutionChecker(tx).signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
 
         for sec_key in script_obj.sec_keys:
-            public_pair = sec_to_public_pair(sec_key)
+            public_pair = sec_to_public_pair(sec_key, secp256k1_generator)
 
             if secp256k1_generator.verify(public_pair, sig_hash, sig_pair):
                 addr_pfx = address_prefix_for_netcode(netcode)

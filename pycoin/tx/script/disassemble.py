@@ -47,7 +47,7 @@ def instruction_for_opcode(opcode, data):
 
 def annotate_pubkey(blob, da):
     l = da[blob]
-    pair = sec_to_public_pair(blob)
+    pair = sec_to_public_pair(blob, secp256k1_generator)
     is_compressed = is_sec_compressed(blob)
     l.append("SEC for %scompressed %s" % (
                 "" if is_compressed else "un", public_pair_to_bitcoin_address(

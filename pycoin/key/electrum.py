@@ -1,12 +1,9 @@
 import hashlib
 import itertools
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import double_sha256, from_bytes_32, to_bytes_32
 from pycoin.key import Key
 from pycoin.serialize import b2h
-
-ORDER = secp256k1_generator.order()
 
 
 def initial_key_to_master_key(initial_key):
@@ -69,12 +66,12 @@ class ElectrumWallet(Key):
         if self.master_private_key():
             return Key(
                 generator=self._generator,
-                secret_exponent=((self.master_private_key() + offset) % ORDER),
+                secret_exponent=((self.master_private_key() + offset) % self._generator.order()),
                 prefer_uncompressed=True
             )
-        p1 = offset * secp256k1_generator
+        p1 = offset * self._generator
         x, y = self.public_pair()
-        p2 = secp256k1_generator.Point(x, y)
+        p2 = self._generator.Point(x, y)
         p = p1 + p2
         return Key(public_pair=p, prefer_uncompressed=True)
 

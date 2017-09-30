@@ -296,7 +296,7 @@ def parse_key(item, PREFIX_TRANSFORMS, network):
         return Key(secret_exponent=secret_exponent, generator=secp256k1_generator, netcode=network)
 
     if SEC_RE.match(item):
-        return Key.from_sec(h2b(item))
+        return Key.from_sec(h2b(item), secp256k1_generator)
 
     public_pair = parse_as_public_pair(item)
     if public_pair:

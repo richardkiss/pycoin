@@ -30,8 +30,8 @@ class KeyTest(unittest.TestCase):
                 Key.from_text(c_wif, generator=secp256k1_generator),
             ]
 
-            key_sec = Key.from_sec(sec)
-            key_sec_c = Key.from_sec(c_sec)
+            key_sec = Key.from_sec(sec, secp256k1_generator)
+            key_sec_c = Key.from_sec(c_sec, secp256k1_generator)
             keys_sec = [key_sec, key_sec_c]
 
             for key in keys_wif:
