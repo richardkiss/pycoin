@@ -260,8 +260,8 @@ def prefix_transforms_for_network(network):
         raise RuntimeError("can't create BIP32 key")
 
     return (
-        ("P:", lambda s: BIP32Node.from_master_secret(s.encode("utf8"), netcode=network)),
-        ("H:", lambda s: BIP32Node.from_master_secret(h2b(s), netcode=network)),
+        ("P:", lambda s: BIP32Node.from_master_secret(secp256k1_generator, s.encode("utf8"), netcode=network)),
+        ("H:", lambda s: BIP32Node.from_master_secret(secp256k1_generator, h2b(s), netcode=network)),
         ("E:", lambda s: key_from_text(s, generator=secp256k1_generator)),
         ("create", _create_bip32),
     )

@@ -69,7 +69,7 @@ class KeyUtilsTest(unittest.TestCase):
         # not all networks support BIP32 yet
         for netcode in "BTC XTN DOGE".split():
             for wk in WALLET_KEYS:
-                wallet = BIP32Node.from_master_secret(wk.encode("utf8"), netcode=netcode)
+                wallet = BIP32Node.from_master_secret(secp256k1_generator, wk.encode("utf8"), netcode=netcode)
                 text = wallet.wallet_key(as_private=True)
                 self.assertEqual(is_private_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), netcode)
                 self.assertEqual(is_public_bip32_valid(text, allowable_netcodes=NETWORK_NAMES), None)
@@ -90,11 +90,11 @@ class KeyUtilsTest(unittest.TestCase):
 
         for k in -1, 0, order, order + 1:
             self.assertRaises(InvalidSecretExponentError, Key, secret_exponent=k, generator=secp256k1_generator)
-            self.assertRaises(InvalidSecretExponentError, BIP32Node, nc, cc, secret_exponent=k)
+            self.assertRaises(InvalidSecretExponentError, BIP32Node, secp256k1_generator, nc, cc, secret_exponent=k)
 
         for i in range(1, 512):
             Key(secret_exponent=i, generator=secp256k1_generator)
-            BIP32Node(nc, cc, secret_exponent=i)
+            BIP32Node(secp256k1_generator, nc, cc, secret_exponent=i)
 
     def test_points(self):
         # From <https://crypto.stackexchange.com/questions/784/are-there-any-secp256k1-ecdsa-test-examples-available>

@@ -44,7 +44,6 @@ import hmac
 import itertools
 import struct
 
-from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding import a2b_hashed_base58, b2a_hashed_base58, from_bytes_32, to_bytes_32
 from ..encoding import sec_to_public_pair, public_pair_to_hash160_sec, EncodingError
 from ..networks import prv32_prefix_for_netcode, pub32_prefix_for_netcode
@@ -63,13 +62,14 @@ class BIP32Node(Key):
     https://en.bitcoin.it/wiki/BIP_0032
     """
     @classmethod
-    def from_master_secret(class_, master_secret, netcode='BTC'):
+    def from_master_secret(class_, generator, master_secret, netcode='BTC'):
         """Generate a Wallet from a master password."""
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
-        return class_(netcode=netcode, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
+        return class_(generator=generator, netcode=netcode, chain_code=I64[32:],
+                      secret_exponent=from_bytes_32(I64[:32]))
 
     @classmethod
-    def from_hwif(class_, b58_str, allow_subkey_suffix=True):
+    def from_hwif(class_, generator, b58_str, allow_subkey_suffix=True):
         """Generate a Wallet from a base58 string in a standard way."""
         # TODO: support subkey suffixes
 
@@ -82,7 +82,7 @@ class BIP32Node(Key):
         is_private = (key_type == 'prv32')
         parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
 
-        d = dict(netcode=netcode, chain_code=data[13:45], depth=ord(data[4:5]),
+        d = dict(generator=generator, netcode=netcode, chain_code=data[13:45], depth=ord(data[4:5]),
                  parent_fingerprint=parent_fingerprint, child_index=child_index)
 
         if is_private:
@@ -96,7 +96,7 @@ class BIP32Node(Key):
 
     from_wallet_key = from_hwif
 
-    def __init__(self, netcode, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
+    def __init__(self, generator, netcode, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
                  child_index=0, secret_exponent=None, public_pair=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
 
@@ -104,8 +104,8 @@ class BIP32Node(Key):
             raise ValueError("must include exactly one of public_pair and secret_exponent")
 
         super(BIP32Node, self).__init__(
-            secret_exponent=secret_exponent, public_pair=public_pair, prefer_uncompressed=False,
-            is_compressed=True, is_pay_to_script=False, generator=secp256k1_generator, netcode=netcode)
+            secret_exponent=secret_exponent, generator=generator, public_pair=public_pair,
+            prefer_uncompressed=False, is_compressed=True, is_pay_to_script=False, netcode=netcode)
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)
@@ -168,7 +168,7 @@ class BIP32Node(Key):
 
     def public_copy(self):
         """Yield the corresponding public node for this node."""
-        return self.__class__(netcode=self._netcode, chain_code=self._chain_code,
+        return self.__class__(generator=self._generator, netcode=self._netcode, chain_code=self._chain_code,
                               depth=self._depth, parent_fingerprint=self._parent_fingerprint,
                               child_index=self._child_index, public_pair=self.public_pair())
 
@@ -188,11 +188,12 @@ class BIP32Node(Key):
             if is_hardened:
                 raise PublicPrivateMismatchError("can't derive a private key from a public key")
             d["public_pair"], chain_code = subkey_public_pair_chain_code_pair(
-                self.public_pair(), self._chain_code, i)
+                self._generator, self.public_pair(), self._chain_code, i)
         else:
             d["secret_exponent"], chain_code = subkey_secret_exponent_chain_code_pair(
-                self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
+                self._generator, self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
         d["chain_code"] = chain_code
+        d["generator"] = self._generator
         key = self.__class__(**d)
         if not as_private:
             key = key.public_copy()

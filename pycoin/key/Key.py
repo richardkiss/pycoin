@@ -93,7 +93,7 @@ class Key(object):
         if key_type in ("pub32", "prv32"):
             # TODO: fix this... it doesn't belong here
             from pycoin.key.BIP32Node import BIP32Node
-            return BIP32Node.from_wallet_key(text)
+            return BIP32Node.from_wallet_key(generator, text)
 
         if key_type == 'wif':
             is_compressed = (len(data) > 32)

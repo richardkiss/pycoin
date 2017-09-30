@@ -356,7 +356,7 @@ def parse_private_key_file(args, key_list):
 
             def make_key(x):
                 try:
-                    return Key.from_text(x)
+                    return Key.from_text(x, generator=secp256k1_generator)
                 except Exception:
                     return None
 
