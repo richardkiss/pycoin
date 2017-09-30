@@ -46,6 +46,7 @@ def sigcheck(a_key, a_hash_for_sig, a_sig):
 
     return secp256k1_generator.verify(a_key.public_pair(), a_hash_for_sig, (r, s))
 
+
 def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
     """
     Signs a_hash_for_sig with a_key and returns a DER-encoded signature
@@ -69,12 +70,12 @@ class SighashSingleTest(unittest.TestCase):
         self._test_sighash_single('XTN')
 
     def _test_sighash_single(self, netcode):
-        k0 = Key(secret_exponent=PRIV_KEYS[0], is_compressed=True, netcode=netcode)
-        k1 = Key(secret_exponent=PRIV_KEYS[1], is_compressed=True, netcode=netcode)
-        k2 = Key(secret_exponent=PRIV_KEYS[2], is_compressed=True, netcode=netcode)
-        k3 = Key(secret_exponent=PRIV_KEYS[3], is_compressed=True, netcode=netcode)
-        k4 = Key(secret_exponent=PRIV_KEYS[4], is_compressed=True, netcode=netcode)
-        k5 = Key(secret_exponent=PRIV_KEYS[5], is_compressed=True, netcode=netcode)
+        k0 = Key(secret_exponent=PRIV_KEYS[0], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
+        k1 = Key(secret_exponent=PRIV_KEYS[1], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
+        k2 = Key(secret_exponent=PRIV_KEYS[2], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
+        k3 = Key(secret_exponent=PRIV_KEYS[3], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
+        k4 = Key(secret_exponent=PRIV_KEYS[4], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
+        k5 = Key(secret_exponent=PRIV_KEYS[5], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
 
         # Fake a coinbase transaction
         coinbase_tx = Tx.coinbase_tx(k0.sec(), 500000000)

@@ -10,7 +10,8 @@ from pycoin.networks import pay_to_script_prefix_for_netcode, network_codes
 
 
 def change_prefix(address, new_prefix):
-    return hash160_sec_to_bitcoin_address(Key.from_text(address).hash160(), address_prefix=new_prefix)
+    return hash160_sec_to_bitcoin_address(
+        Key.from_text(address, generator=secp256k1_generator).hash160(), address_prefix=new_prefix)
 
 
 PAY_TO_HASH_ADDRESSES = [
@@ -54,7 +55,7 @@ class KeyUtilsTest(unittest.TestCase):
         NETWORK_NAMES = network_codes()
         for netcode in NETWORK_NAMES:
             for se in range(1, 10):
-                key = Key(secret_exponent=se, netcode=netcode)
+                key = Key(secret_exponent=se, generator=secp256k1_generator, netcode=netcode)
                 for tv in [True, False]:
                     wif = key.wif(use_uncompressed=tv)
                     self.assertEqual(is_wif_valid(wif, allowable_netcodes=[netcode]), netcode)
@@ -88,15 +89,14 @@ class KeyUtilsTest(unittest.TestCase):
         order = secp256k1_generator.order()
 
         for k in -1, 0, order, order + 1:
-            self.assertRaises(InvalidSecretExponentError, Key, secret_exponent=k)
+            self.assertRaises(InvalidSecretExponentError, Key, secret_exponent=k, generator=secp256k1_generator)
             self.assertRaises(InvalidSecretExponentError, BIP32Node, nc, cc, secret_exponent=k)
 
         for i in range(1, 512):
-            Key(secret_exponent=i)
+            Key(secret_exponent=i, generator=secp256k1_generator)
             BIP32Node(nc, cc, secret_exponent=i)
 
     def test_points(self):
-        secp256k1_curve = secp256k1_generator.curve()
         # From <https://crypto.stackexchange.com/questions/784/are-there-any-secp256k1-ecdsa-test-examples-available>
         test_points = []
         k = 1
@@ -301,23 +301,23 @@ class KeyUtilsTest(unittest.TestCase):
         test_points.append((k, x, y))
 
         for k, x, y in test_points:
-            self.assertTrue(secp256k1_curve.contains_point(x, y))
+            self.assertTrue(secp256k1_generator.contains_point(x, y))
             K = Key(public_pair=(x, y))
-            k = Key(secret_exponent=k)
+            k = Key(secret_exponent=k, generator=secp256k1_generator)
             self.assertEqual(K.public_pair(), k.public_pair())
 
-        self.assertRaises(ValueError, lambda: secp256k1_curve.Point(0, 0))
-        self.assertRaises(InvalidPublicPairError, Key, public_pair=(0, 0))
+        self.assertRaises(ValueError, lambda: secp256k1_generator.Point(0, 0))
+        self.assertRaises(InvalidPublicPairError, Key, public_pair=(0, 0), generator=secp256k1_generator)
 
     def test_repr(self):
-        key = Key(secret_exponent=273, netcode='XTN')
+        key = Key(secret_exponent=273, netcode='XTN', generator=secp256k1_generator)
 
         address = key.address()
         pub_k = Key.from_text(address)
         self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
 
         wif = key.wif()
-        priv_k = Key.from_text(wif)
+        priv_k = Key.from_text(wif, generator=secp256k1_generator)
         self.assertEqual(
             repr(priv_k),
             'private_for <0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')

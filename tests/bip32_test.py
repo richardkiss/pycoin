@@ -1,4 +1,5 @@
 import unittest
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
 
@@ -240,7 +241,7 @@ class Bip0032TestCase(unittest.TestCase):
     def test_repr(self):
         from pycoin.key import Key
         netcode = 'XTN'
-        key = Key(secret_exponent=273, netcode=netcode)
+        key = Key(secret_exponent=273, netcode=netcode, generator=secp256k1_generator)
         wallet = BIP32Node.from_master_secret(bytes(key.wif().encode('ascii')), netcode)
 
         address = wallet.address()
@@ -248,7 +249,7 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertEqual(repr(pub_k),  '<myb5gZNXePNf2E2ksrjnHRFCwyuvt7oEay>')
 
         wif = wallet.wif()
-        priv_k = wallet.from_text(wif)
+        priv_k = wallet.from_text(wif, generator=secp256k1_generator)
         self.assertEqual(repr(priv_k),
                          'private_for <03ad094b1dc9fdce5d3648ca359b4e210a89d049532fdd39d9ccdd8ca393ac82f4>')
 

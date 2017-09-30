@@ -22,11 +22,12 @@ def initial_key_to_master_key(initial_key):
 
 
 class ElectrumWallet(Key):
-    def __init__(self, initial_key=None, master_private_key=None, master_public_key=None, netcode='BTC'):
+    def __init__(self, generator, initial_key=None, master_private_key=None, master_public_key=None, netcode='BTC'):
         if [initial_key, master_private_key, master_public_key].count(None) != 2:
             raise ValueError(
                 "exactly one of initial_key, master_private_key, master_public_key must be non-None")
         self._initial_key = initial_key
+        self._generator = generator
         self._netcode = netcode
 
         if initial_key is not None:
@@ -34,7 +35,7 @@ class ElectrumWallet(Key):
         pp = None
         if master_public_key:
             pp = tuple(from_bytes_32(master_public_key[idx:idx+32]) for idx in (0, 32))
-        super(ElectrumWallet, self).__init__(secret_exponent=master_private_key, public_pair=pp)
+        super(ElectrumWallet, self).__init__(generator=generator, secret_exponent=master_private_key, public_pair=pp)
         self._master_public_key = None
 
     def secret_exponent(self):
@@ -67,6 +68,7 @@ class ElectrumWallet(Key):
         offset = from_bytes_32(double_sha256(b))
         if self.master_private_key():
             return Key(
+                generator=self._generator,
                 secret_exponent=((self.master_private_key() + offset) % ORDER),
                 prefer_uncompressed=True
             )

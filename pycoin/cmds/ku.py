@@ -262,7 +262,7 @@ def prefix_transforms_for_network(network):
     return (
         ("P:", lambda s: BIP32Node.from_master_secret(s.encode("utf8"), netcode=network)),
         ("H:", lambda s: BIP32Node.from_master_secret(h2b(s), netcode=network)),
-        ("E:", lambda s: key_from_text(s)),
+        ("E:", lambda s: key_from_text(s, generator=secp256k1_generator)),
         ("create", _create_bip32),
     )
 
@@ -276,7 +276,7 @@ def parse_prefixes(item, PREFIX_TRANSFORMS):
                 pass
 
     try:
-        return Key.from_text(item)
+        return Key.from_text(item, generator=secp256k1_generator)
     except encoding.EncodingError:
         pass
     return None
@@ -293,7 +293,7 @@ def parse_key(item, PREFIX_TRANSFORMS, network):
 
     secret_exponent = parse_as_secret_exponent(item)
     if secret_exponent:
-        return Key(secret_exponent=secret_exponent, netcode=network)
+        return Key(secret_exponent=secret_exponent, generator=secp256k1_generator, netcode=network)
 
     if SEC_RE.match(item):
         return Key.from_sec(h2b(item))

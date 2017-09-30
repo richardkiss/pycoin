@@ -106,7 +106,7 @@ def hash_lookup_solver(m):
         if result is None:
             raise SolvingError("can't find secret exponent for %s" % b2h(the_hash))
         from pycoin.key.Key import Key  ## BRAIN DAMAGE
-        return {m["1"]: Key(result[0]).sec(use_uncompressed=not result[2])}
+        return {m["1"]: Key(result[0], generator=secp256k1_generator).sec(use_uncompressed=not result[2])}
 
     return (f, [m["1"]], ())
 

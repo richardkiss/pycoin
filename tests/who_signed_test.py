@@ -1,5 +1,6 @@
 import unittest
 from pycoin.contrib import who_signed
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
 from pycoin.tx import tx_utils
 from pycoin.tx.script.flags import SIGHASH_ALL
@@ -15,7 +16,7 @@ from pycoin.ui import address_for_pay_to_script, standard_tx_out_script
 class WhoSignedTest(unittest.TestCase):
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
@@ -43,7 +44,7 @@ class WhoSignedTest(unittest.TestCase):
     def test_multisig_one_at_a_time(self):
         M = 3
         N = 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
@@ -65,7 +66,7 @@ class WhoSignedTest(unittest.TestCase):
 
     def test_sign_pay_to_script_multisig(self):
         M, N = 3, 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         address = address_for_pay_to_script(underlying_script)

@@ -1,5 +1,6 @@
 import unittest
 
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
 from pycoin.serialize import h2b
 
@@ -7,14 +8,14 @@ from pycoin.serialize import h2b
 class KeyTest(unittest.TestCase):
 
     def test_sign_verify(self):
-        private_key = Key(secret_exponent=1)
+        private_key = Key(secret_exponent=1, generator=secp256k1_generator)
         h = b"\x00" * 32
         sig = private_key.sign(h)
         self.assertTrue(private_key.verify(h, sig))
         public_key = private_key.public_copy()
-        self.assertTrue(public_key.verify(h, sig))
+        self.assertTrue(public_key.verify(h, sig, generator=secp256k1_generator))
         h160_key = Key(hash160=private_key.hash160())
-        self.assertTrue(h160_key.verify(h, sig))
+        self.assertTrue(h160_key.verify(h, sig, generator=secp256k1_generator))
 
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
@@ -24,9 +25,9 @@ class KeyTest(unittest.TestCase):
             c_sec = h2b(c_public_pair_sec)
 
             keys_wif = [
-                Key(secret_exponent=secret_exponent),
-                Key.from_text(wif),
-                Key.from_text(c_wif),
+                Key(secret_exponent=secret_exponent, generator=secp256k1_generator),
+                Key.from_text(wif, generator=secp256k1_generator),
+                Key.from_text(c_wif, generator=secp256k1_generator),
             ]
 
             key_sec = Key.from_sec(sec)

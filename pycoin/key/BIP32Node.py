@@ -44,6 +44,7 @@ import hmac
 import itertools
 import struct
 
+from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding import a2b_hashed_base58, b2a_hashed_base58, from_bytes_32, to_bytes_32
 from ..encoding import sec_to_public_pair, public_pair_to_hash160_sec, EncodingError
 from ..networks import prv32_prefix_for_netcode, pub32_prefix_for_netcode
@@ -104,7 +105,7 @@ class BIP32Node(Key):
 
         super(BIP32Node, self).__init__(
             secret_exponent=secret_exponent, public_pair=public_pair, prefer_uncompressed=False,
-            is_compressed=True, is_pay_to_script=False, netcode=netcode)
+            is_compressed=True, is_pay_to_script=False, generator=secp256k1_generator, netcode=netcode)
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)

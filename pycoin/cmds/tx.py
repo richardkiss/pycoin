@@ -15,6 +15,7 @@ import sys
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.convention import tx_fee, satoshi_to_mbtc
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import hash160
 from pycoin.key import Key
 from pycoin.key.validate import is_address_valid
@@ -468,7 +469,7 @@ def parse_parts(tx_class, arg, spendables, payables, network):
 
 def key_found(arg, payables, key_iters):
     try:
-        key = Key.from_text(arg)
+        key = Key.from_text(arg, generator=secp256k1_generator)
         # TODO: check network
         if key.wif() is None:
             payables.append((key.address(), 0))

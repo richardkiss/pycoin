@@ -3,6 +3,7 @@ import copy
 import unittest
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.cmds.tx import DEFAULT_VERSION
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
 from pycoin.serialize import h2b
 from pycoin.tx import tx_utils
@@ -25,7 +26,7 @@ class ScriptTypesTest(unittest.TestCase):
 
     def test_script_type_pay_to_address(self):
         for se in range(1, 100):
-            key = Key(secret_exponent=se)
+            key = Key(secret_exponent=se, generator=secp256k1_generator)
             for b in [True, False]:
                 addr = key.address(use_uncompressed=b)
                 st = script_obj_from_address(addr)
@@ -36,7 +37,7 @@ class ScriptTypesTest(unittest.TestCase):
 
     def test_solve_pay_to_address(self):
         for se in range(1, 10):
-            key = Key(secret_exponent=se)
+            key = Key(secret_exponent=se, generator=secp256k1_generator)
             for b in [True, False]:
                 addr = key.address(use_uncompressed=b)
                 st = script_obj_from_address(addr)
@@ -50,7 +51,7 @@ class ScriptTypesTest(unittest.TestCase):
 
     def test_script_type_pay_to_public_pair(self):
         for se in range(1, 100):
-            key = Key(secret_exponent=se)
+            key = Key(secret_exponent=se, generator=secp256k1_generator)
             for b in [True, False]:
                 st = ScriptPayToPublicKey.from_key(key, use_uncompressed=b)
                 addr = key.address(use_uncompressed=b)
@@ -61,7 +62,7 @@ class ScriptTypesTest(unittest.TestCase):
 
     def test_solve_pay_to_public_pair(self):
         for se in range(1, 10):
-            key = Key(secret_exponent=se)
+            key = Key(secret_exponent=se, generator=secp256k1_generator)
             for b in [True, False]:
                 addr = key.address(use_uncompressed=b)
                 st = ScriptPayToPublicKey.from_key(key, use_uncompressed=b)
@@ -132,7 +133,7 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertEqual(s.script(), the_script)
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
@@ -158,7 +159,7 @@ class ScriptTypesTest(unittest.TestCase):
     def test_multisig_one_at_a_time(self):
         M = 3
         N = 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
@@ -201,7 +202,7 @@ class ScriptTypesTest(unittest.TestCase):
 
     def test_sign_pay_to_script_multisig(self):
         M, N = 3, 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         address = address_for_pay_to_script(underlying_script)
@@ -254,7 +255,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx = Tx.from_hex(partially_signed_raw_tx)
         tx_out = TxOut(1000000, h2b("a914a10dfa21ee8c33b028b92562f6fe04e60563d3c087"))
         tx.set_unspents([tx_out])
-        key = Key.from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx")
+        key = Key.from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx", generator=secp256k1_generator)
         hash160_lookup = build_hash160_lookup([key.secret_exponent()])
         self.assertEqual(tx.bad_signature_count(), 1)
         tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
