@@ -136,7 +136,7 @@ def annotate_scripts(tx, tx_in_idx):
 
 
 def annotate_spendable(spendable):
-    txs_in = [TxIn(b'\0' * 32, 0)]
+    txs_in = [TxIn(b'1' * 32, 0)]
     fake_spend_tx = Tx(1, txs_in, [])
     fake_spend_tx.set_unspents([spendable])
     return annotate_scripts(fake_spend_tx, 0)

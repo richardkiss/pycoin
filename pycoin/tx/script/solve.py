@@ -141,7 +141,8 @@ def signing_solver(m):
 
         db = kwargs.get("hash160_lookup", {})
         order = ecdsa.generator_secp256k1.order()
-        for signature_order, sec_key in enumerate(sec_keys):
+        # we reverse this enumeration to make the behaviour look like the old signer. BRAIN DAMAGE
+        for signature_order, sec_key in reversed(list(enumerate(sec_keys))):
             sec_key = solved_values.get(sec_key, sec_key)
             if sec_key in secs_solved:
                 continue

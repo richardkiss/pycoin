@@ -55,9 +55,10 @@ class ScriptTools(object):
 
     def disassemble_for_opcode_data(self, opcode, data):
         # TODO: check data for int or string representation
-        if data is not None and len(data) > 0:
+        opcode_str = self.int_to_opcode.get(opcode, "???")
+        if data is not None and len(data) > 0 and opcode_str.startswith("OP_PUSH"):
             return "[%s]" % binascii.hexlify(data).decode("utf8")
-        return self.int_to_opcode.get(opcode, "???")
+        return opcode_str
 
     def get_opcodes(self, script, verify_minimal_data=False, pc=0):
         """
