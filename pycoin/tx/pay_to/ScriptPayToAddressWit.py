@@ -69,7 +69,7 @@ class ScriptPayToAddressWit(ScriptType):
         signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f").witness
         signature_type = kwargs.get("signature_type")
 
-        secret_exponent, public_pair, compressed = result
+        secret_exponent, public_pair, compressed, generator = result
 
         binary_signature = self._create_script_signature(
             secret_exponent, generator, signature_for_hash_type_f, signature_type, script_to_hash)

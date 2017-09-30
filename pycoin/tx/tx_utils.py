@@ -1,4 +1,6 @@
 
+from pycoin.ecdsa.secp256k1 import secp256k1_generator # BRAIN DAMAGE
+
 from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
 
@@ -18,9 +20,10 @@ class LazySecretExponentDB(object):
     and caches the results to optimize for the case of a large number
     of secret exponents.
     """
-    def __init__(self, wif_iterable, secret_exponent_db_cache, netcode='BTC'):
+    def __init__(self, wif_iterable, secret_exponent_db_cache, generators, netcode='BTC'):
         self.wif_iterable = iter(wif_iterable)
         self.secret_exponent_db_cache = secret_exponent_db_cache
+        self._generators = generators
         self.netcode = netcode
 
     def get(self, v):
@@ -28,7 +31,7 @@ class LazySecretExponentDB(object):
             return self.secret_exponent_db_cache[v]
         for wif in self.wif_iterable:
             secret_exponent = wif_to_secret_exponent(wif)
-            d = build_hash160_lookup([secret_exponent])
+            d = build_hash160_lookup([secret_exponent], self._generators)
             self.secret_exponent_db_cache.update(d)
             if v in self.secret_exponent_db_cache:
                 return self.secret_exponent_db_cache[v]
@@ -176,7 +179,7 @@ def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
     """
     secret_exponent_db = secret_exponent_db or {}
     solver = tx.Solver(tx)
-    solver.sign(LazySecretExponentDB(wifs, secret_exponent_db, netcode), **kwargs)
+    solver.sign(LazySecretExponentDB(wifs, secret_exponent_db, [secp256k1_generator], netcode), **kwargs)
 
 
 def create_signed_tx(spendables, payables, wifs=[], fee="standard",

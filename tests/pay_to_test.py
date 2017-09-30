@@ -42,7 +42,7 @@ class ScriptTypesTest(unittest.TestCase):
                 addr = key.address(use_uncompressed=b)
                 st = script_obj_from_address(addr)
                 self.assertEqual(st.address(), addr)
-                hl = build_hash160_lookup([se])
+                hl = build_hash160_lookup([se], [secp256k1_generator])
                 sv = 100
                 st.solve(generator=secp256k1_generator, hash160_lookup=hl,
                          signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
@@ -68,7 +68,7 @@ class ScriptTypesTest(unittest.TestCase):
                 addr = key.address(use_uncompressed=b)
                 st = ScriptPayToPublicKey.from_key(key, use_uncompressed=b)
                 self.assertEqual(st.address(), addr)
-                hl = build_hash160_lookup([se])
+                hl = build_hash160_lookup([se], [secp256k1_generator])
                 sv = 100
                 st.solve(generator=secp256k1_generator, hash160_lookup=hl,
                          signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
@@ -80,7 +80,7 @@ class ScriptTypesTest(unittest.TestCase):
         sv = 33143560198659167577410026742586567991638126035902913554051654024377193788946
         tx_out_script = b'v\xa9\x14\x91\xb2K\xf9\xf5(\x852\x96\n\xc6\x87\xab\xb05\x12{\x1d(\xa5\x88\xac'
         st = script_obj_from_script(tx_out_script)
-        hl = build_hash160_lookup([1])
+        hl = build_hash160_lookup([1], [secp256k1_generator])
         solution = st.solve(generator=secp256k1_generator, hash160_lookup=hl,
                             signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
         self.assertEqual(
@@ -144,7 +144,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_signature_count(), 1)
-        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:M])
+        hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:M]), [secp256k1_generator])
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
@@ -175,7 +175,7 @@ class ScriptTypesTest(unittest.TestCase):
         for i in range(1, N+1):
             self.assertEqual(tx2.bad_signature_count(), 1)
             self.assertEqual(tx2.id(), ids[i-1])
-            hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[i-1:i])
+            hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[i-1:i]), [secp256k1_generator])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
         self.assertEqual(tx2.bad_signature_count(), 0)
@@ -200,7 +200,7 @@ class ScriptTypesTest(unittest.TestCase):
             tx = copy.deepcopy(tx__prototype)
             for key in ordered_keys:
                 self.assertEqual(tx.bad_signature_count(), 1)
-                tx.sign(LazySecretExponentDB([key], {}), p2sh_lookup=build_p2sh_lookup(raw_scripts))
+                tx.sign(LazySecretExponentDB([key], {}, [secp256k1_generator]), p2sh_lookup=build_p2sh_lookup(raw_scripts))
             self.assertEqual(tx.bad_signature_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):
@@ -214,7 +214,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])
-        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:N])
+        hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:N]), [secp256k1_generator])
         p2sh_lookup = build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_signature_count(), 0)
@@ -259,7 +259,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx_out = TxOut(1000000, h2b("a914a10dfa21ee8c33b028b92562f6fe04e60563d3c087"))
         tx.set_unspents([tx_out])
         key = Key.from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx", generator=secp256k1_generator)
-        hash160_lookup = build_hash160_lookup([key.secret_exponent()])
+        hash160_lookup = build_hash160_lookup([key.secret_exponent()], [secp256k1_generator])
         self.assertEqual(tx.bad_signature_count(), 1)
         tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx.bad_signature_count(), 0)

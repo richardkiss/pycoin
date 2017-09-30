@@ -133,7 +133,7 @@ class ScriptMultisig(ScriptType):
             result = db.get(hash160)
             if result is None:
                 continue
-            secret_exponent, public_pair, compressed = result
+            secret_exponent, public_pair, compressed, generator = result
             binary_signature = self._create_script_signature(
                 secret_exponent, generator, signature_for_hash_type_f, signature_type, script_to_hash)
             existing_signatures.append((signature_order, binary_signature))

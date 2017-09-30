@@ -63,7 +63,7 @@ class SegwitTest(unittest.TestCase):
         tx_u_prime.set_unspents(tx_s.unspents)
         key_list = [Key(pk, generator=secp256k1_generator).wif() for pk in private_keys]
         p2sh_lookup = build_p2sh_lookup([h2b(x) for x in p2sh_values])
-        tx_u_prime.sign(hash160_lookup=LazySecretExponentDB(key_list, {}), p2sh_lookup=p2sh_lookup)
+        tx_u_prime.sign(hash160_lookup=LazySecretExponentDB(key_list, {}, [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
         self.check_signed(tx_u_prime)
         tx_hex = tx_u_prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)
@@ -257,7 +257,8 @@ class SegwitTest(unittest.TestCase):
             (0xfe9a95c19eef81dde2b95c1284ef39be497d128e2aa46916fb02d552485e0323, SIGHASH_ANYONECANPAY | SIGHASH_NONE),
             (0x428a7aee9f0c2af0cd19af3cf1c78149951ea528726989b2e83e4778d2c3f890, SIGHASH_ANYONECANPAY | SIGHASH_SINGLE),
         ]:
-            tx_u5prime.sign(hash_type=sighash_type, hash160_lookup=build_hash160_lookup([se]), p2sh_lookup=p2sh_lookup)
+            tx_u5prime.sign(hash_type=sighash_type, hash160_lookup=build_hash160_lookup(
+                [se], [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
 
         self.check_signed(tx_u5prime)
         tx_hex = tx_u5prime.as_hex()

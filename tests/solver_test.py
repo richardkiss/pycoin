@@ -44,7 +44,7 @@ class SolverTest(unittest.TestCase):
         keys = [Key(i, generator=secp256k1_generator) for i in range(1, 20)]
         tx = self.make_test_tx(incoming_script)
         tx_in_idx = 0
-        kwargs["hash160_lookup"] = build_hash160_lookup(k.secret_exponent() for k in keys)
+        kwargs["hash160_lookup"] = build_hash160_lookup((k.secret_exponent() for k in keys), [secp256k1_generator])
         kwargs["generator"] = secp256k1_generator
         self.do_test_solve(tx, tx_in_idx, **kwargs)
 
@@ -115,7 +115,7 @@ class SolverTest(unittest.TestCase):
                 assert 0
             except ScriptError:
                 pass
-            kwargs = {"hash160_lookup": build_hash160_lookup([k.secret_exponent()])}
+            kwargs = {"hash160_lookup": build_hash160_lookup([k.secret_exponent()], [secp256k1_generator])}
             kwargs["existing_script"] = [
                 data for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(
                     tx.txs_in[tx_in_idx].script) if data is not None]

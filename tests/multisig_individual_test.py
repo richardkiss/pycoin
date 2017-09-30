@@ -20,7 +20,7 @@ class MultisigIndividualTest(unittest.TestCase):
             tx2 = create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
             for key in partial_key_list:
                 self.assertEqual(tx2.bad_signature_count(), 1)
-                hash160_lookup = build_hash160_lookup([key.secret_exponent()])
+                hash160_lookup = build_hash160_lookup([key.secret_exponent()], [secp256k1_generator])
                 tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.bad_signature_count(), 0)
 
