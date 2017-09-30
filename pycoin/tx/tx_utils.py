@@ -1,6 +1,4 @@
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator # BRAIN DAMAGE
-
 from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
 
@@ -179,7 +177,7 @@ def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
     """
     secret_exponent_db = secret_exponent_db or {}
     solver = tx.Solver(tx)
-    solver.sign(LazySecretExponentDB(wifs, secret_exponent_db, [secp256k1_generator], netcode), **kwargs)
+    solver.sign(LazySecretExponentDB(wifs, secret_exponent_db, tx.SolutionChecker.generators, netcode), **kwargs)
 
 
 def create_signed_tx(spendables, payables, wifs=[], fee="standard",
