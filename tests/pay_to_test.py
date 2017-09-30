@@ -44,7 +44,8 @@ class ScriptTypesTest(unittest.TestCase):
                 self.assertEqual(st.address(), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
-                st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
+                st.solve(generator=secp256k1_generator, hash160_lookup=hl,
+                         signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
                 self.assertEqual(st.address(), addr)
@@ -69,7 +70,8 @@ class ScriptTypesTest(unittest.TestCase):
                 self.assertEqual(st.address(), addr)
                 hl = build_hash160_lookup([se])
                 sv = 100
-                st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
+                st.solve(generator=secp256k1_generator, hash160_lookup=hl,
+                         signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
                 st = script_obj_from_script(sc)
                 self.assertEqual(st.address(), addr)
@@ -79,7 +81,8 @@ class ScriptTypesTest(unittest.TestCase):
         tx_out_script = b'v\xa9\x14\x91\xb2K\xf9\xf5(\x852\x96\n\xc6\x87\xab\xb05\x12{\x1d(\xa5\x88\xac'
         st = script_obj_from_script(tx_out_script)
         hl = build_hash160_lookup([1])
-        solution = st.solve(hash160_lookup=hl, signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
+        solution = st.solve(generator=secp256k1_generator, hash160_lookup=hl,
+                            signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
         self.assertEqual(
             solution, h2b(
                 "47304402205e3df5b55be62140042c220b1fdf105cc85113af562a215c1fc5b5c522d1"

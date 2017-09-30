@@ -64,6 +64,7 @@ class ScriptPayToAddressWit(ScriptType):
         # we got it
         script_to_hash = ScriptTools.compile(
             "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(self.hash160))
+        generator = kwargs.get("generator")
 
         signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f").witness
         signature_type = kwargs.get("signature_type")
@@ -71,7 +72,7 @@ class ScriptPayToAddressWit(ScriptType):
         secret_exponent, public_pair, compressed = result
 
         binary_signature = self._create_script_signature(
-            secret_exponent, signature_for_hash_type_f, signature_type, script_to_hash)
+            secret_exponent, generator, signature_for_hash_type_f, signature_type, script_to_hash)
         binary_public_pair_sec = encoding.public_pair_to_sec(public_pair, compressed=compressed)
 
         solution = [binary_signature, binary_public_pair_sec]

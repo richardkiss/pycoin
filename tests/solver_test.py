@@ -45,6 +45,7 @@ class SolverTest(unittest.TestCase):
         tx = self.make_test_tx(incoming_script)
         tx_in_idx = 0
         kwargs["hash160_lookup"] = build_hash160_lookup(k.secret_exponent() for k in keys)
+        kwargs["generator"] = secp256k1_generator
         self.do_test_solve(tx, tx_in_idx, **kwargs)
 
     def test_p2pkh(self):
@@ -119,6 +120,7 @@ class SolverTest(unittest.TestCase):
                 data for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(
                     tx.txs_in[tx_in_idx].script) if data is not None]
             kwargs["nocheck"] = True
+            kwargs["generator"] = secp256k1_generator
             solution_list, witness_list = self.do_test_solve(tx, tx_in_idx, **kwargs)
         tx.check_solution(tx_in_idx)
 
