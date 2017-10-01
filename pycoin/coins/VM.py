@@ -1,3 +1,5 @@
+
+from ..ecdsa.secp256k1 import secp256k1_generator
 from ..tx.script import errno
 from ..tx.script.flags import VERIFY_MINIMALDATA
 from ..tx.script.ConditionalStack import ConditionalStack
@@ -69,6 +71,10 @@ class VMContext(object):
     @classmethod
     def bool_to_script_bytes(class_, v):
         return class_.VM_TRUE if v else class_.VM_FALSE
+
+    @classmethod
+    def generator_for_signature_type(class_, signature_type):
+        return secp256k1_generator
 
 
 class VM(object):
