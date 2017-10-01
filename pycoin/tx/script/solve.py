@@ -25,7 +25,7 @@ def register_solver(solver_f):
     SOLUTIONS_BY_CONSTRAINT.append(solver_f)
 
 
-def _find_signatures(script_blobs, generator, signature_for_hash_type_f, max_sigs, sec_keys):
+def _find_signatures(script_blobs, generator_for_signature_type_f, signature_for_hash_type_f, max_sigs, sec_keys):
     signatures = []
     secs_solved = set()
     seen = 0
@@ -34,6 +34,7 @@ def _find_signatures(script_blobs, generator, signature_for_hash_type_f, max_sig
             break
         try:
             sig_pair, signature_type = parse_signature_blob(data)
+            generator = generator_for_signature_type_f(signature_type)
             seen += 1
             for idx, sec_key in enumerate(sec_keys):
                 public_pair = encoding.sec_to_public_pair(sec_key, generator)
@@ -99,14 +100,13 @@ class LIST(object):
 def hash_lookup_solver(m):
 
     def f(solved_values, **kwargs):
-        generator = kwargs.get("generator")
         the_hash = m["the_hash"]
         db = kwargs.get("hash160_lookup", {})
         result = db.get(the_hash)
         if result is None:
             raise SolvingError("can't find secret exponent for %s" % b2h(the_hash))
         from pycoin.key.Key import Key  ## BRAIN DAMAGE
-        return {m["1"]: Key(result[0], generator=generator).sec(use_uncompressed=not result[2])}
+        return {m["1"]: Key(result[0], generator=result[3]).sec(use_uncompressed=not result[2])}
 
     return (f, [m["1"]], ())
 
@@ -129,11 +129,13 @@ register_solver(constant_equality_solver)
 
 def signing_solver(m):
     def f(solved_values, **kwargs):
-        generator = kwargs.get("generator")
         signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
+        generator_for_signature_type_f = kwargs["generator_for_signature_type_f"]
         signature_for_hash_type_f = m["signature_for_hash_type_f"]
-        existing_signatures, secs_solved = _find_signatures(kwargs.get(
-            "existing_script", b''), generator, signature_for_hash_type_f, len(m["sig_list"]), m["sec_list"])
+        existing_script = kwargs.get("existing_script", b'')
+        existing_signatures, secs_solved = _find_signatures(
+            existing_script, generator_for_signature_type_f, signature_for_hash_type_f,
+            len(m["sig_list"]), m["sec_list"])
 
         sec_keys = m["sec_list"]
         signature_variables = m["sig_list"]
@@ -141,7 +143,6 @@ def signing_solver(m):
         signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
 
         db = kwargs.get("hash160_lookup", {})
-        order = generator.order()
         # we reverse this enumeration to make the behaviour look like the old signer. BRAIN DAMAGE
         for signature_order, sec_key in reversed(list(enumerate(sec_keys))):
             sec_key = solved_values.get(sec_key, sec_key)
@@ -154,6 +155,8 @@ def signing_solver(m):
                 continue
             secret_exponent = result[0]
             sig_hash = signature_for_hash_type_f(signature_type)
+            generator = result[3]
+            order = generator.order()
             r, s = generator.sign(secret_exponent, sig_hash)
             if s + s > order:
                 s = order - s

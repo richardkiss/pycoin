@@ -196,8 +196,8 @@ class Solver(object):
         return solution
 
     def solve(self, *args, **kwargs):
-        from pycoin.ecdsa.secp256k1 import secp256k1_generator
-        kwargs["generator"] = secp256k1_generator
+        # BRAIN DAMAGE
+        kwargs["generator_for_signature_type_f"] = self.SolutionChecker.VM.generator_for_signature_type
         s1 = self.solve_old(*args, **kwargs)
         s2 = self.solve_new(*args, **kwargs)
         assert s1 == s2

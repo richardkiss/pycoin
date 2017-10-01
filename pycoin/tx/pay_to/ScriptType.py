@@ -2,6 +2,7 @@ import collections
 
 from ...coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE
 from ...coins.bitcoin.VM import BitcoinVM as VM  # BRAIN DAMAGE
+from ...serialize import h2b
 from ..script import der
 
 
@@ -9,9 +10,9 @@ from pycoin.intbytes import int2byte
 
 
 def generate_default_placeholder_signature(generator):
-    order = generator.order()
-    r, s = order - 1, order // 2
-    return der.sigencode_der(r, s) + int2byte(1)
+    return h2b(
+        "3045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207"
+        "fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001")
 
 
 class ScriptType(object):

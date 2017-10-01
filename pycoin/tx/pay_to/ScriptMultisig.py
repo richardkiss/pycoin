@@ -65,7 +65,7 @@ class ScriptMultisig(ScriptType):
             self._script = ScriptTools.compile(script_source)
         return self._script
 
-    def _find_signatures(self, script, generator, signature_for_hash_type_f, script_to_hash):
+    def _find_signatures(self, script, generator_for_signature_type_f, signature_for_hash_type_f, script_to_hash):
         signatures = []
         secs_solved = set()
         pc = 0
@@ -76,6 +76,7 @@ class ScriptMultisig(ScriptType):
             opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
             try:
                 sig_pair, signature_type = parse_signature_blob(data)
+                generator = generator_for_signature_type_f(signature_type)
                 seen += 1
                 for idx, sec_key in enumerate(self.sec_keys):
                     public_pair = encoding.sec_to_public_pair(sec_key, generator)
@@ -113,16 +114,16 @@ class ScriptMultisig(ScriptType):
         signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f")
         signature_type = kwargs.get("signature_type")
         script_to_hash = kwargs.get("script_to_hash")
-        generator = kwargs.get("generator")
+        generator_for_signature_type_f = kwargs.get("generator_for_signature_type_f")
 
-        signature_placeholder = kwargs.get("signature_placeholder", generate_default_placeholder_signature(generator))
+        signature_placeholder = kwargs.get("signature_placeholder", generate_default_placeholder_signature(None))
 
         secs_solved = set()
         existing_signatures = []
         existing_script = kwargs.get("existing_script")
         if existing_script:
             existing_signatures, secs_solved = self._find_signatures(
-                existing_script, generator, signature_for_hash_type_f, script_to_hash)
+                existing_script, generator_for_signature_type_f, signature_for_hash_type_f, script_to_hash)
 
         for signature_order, sec_key in enumerate(self.sec_keys):
             if sec_key in secs_solved:

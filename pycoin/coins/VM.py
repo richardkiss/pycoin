@@ -73,6 +73,7 @@ class VMContext(object):
         return class_.VM_TRUE if v else class_.VM_FALSE
 
     @classmethod
+    # BRAIN DAMAGE
     def generator_for_signature_type(class_, signature_type):
         return secp256k1_generator
 
@@ -137,3 +138,7 @@ class VM(object):
     def post_script_check(class_, vmc):
         vmc.conditional_stack.check_final_state()
         class_.check_stack_size(vmc)
+
+    @classmethod
+    def generator_for_signature_type(class_, signature_type):
+        return secp256k1_generator
