@@ -3,8 +3,7 @@ import struct
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi import errno, opcodes
 from pycoin.satoshi.IntStreamer import IntStreamer
-
-from pycoin.tx.script.ScriptStreamer import ScriptStreamer
+from pycoin.vm.ScriptStreamer import ScriptStreamer
 
 
 def make_opcode_const_list():

@@ -1,7 +1,7 @@
 
-from ...intbytes import indexbytes, int2byte
+from ..intbytes import indexbytes, int2byte
 
-from . import ScriptError
+from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi import errno
 
 

@@ -1,6 +1,6 @@
 
+from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi import errno
-from . import ScriptError
 
 
 class ConditionalStack(object):

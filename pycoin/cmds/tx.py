@@ -29,9 +29,9 @@ from pycoin.services.providers import message_about_tx_cache_env, \
 from pycoin.tx.exceptions import BadSpendableError
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
-from pycoin.tx.script.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.ui import standard_tx_out_script
+from pycoin.vm.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
 
 DEFAULT_VERSION = 1
 DEFAULT_LOCK_TIME = 0

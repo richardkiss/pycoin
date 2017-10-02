@@ -2,8 +2,8 @@
 from ..ecdsa.secp256k1 import secp256k1_generator
 from pycoin.satoshi import errno
 from pycoin.satoshi.flags import VERIFY_MINIMALDATA
-from ..tx.script.ConditionalStack import ConditionalStack
 from pycoin.satoshi.IntStreamer import IntStreamer
+from pycoin.vm.ConditionalStack import ConditionalStack
 
 from .SolutionChecker import ScriptError
 
