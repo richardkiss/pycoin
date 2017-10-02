@@ -63,7 +63,8 @@ class SegwitTest(unittest.TestCase):
         tx_u_prime.set_unspents(tx_s.unspents)
         key_list = [Key(pk, generator=secp256k1_generator).wif() for pk in private_keys]
         p2sh_lookup = build_p2sh_lookup([h2b(x) for x in p2sh_values])
-        tx_u_prime.sign(hash160_lookup=LazySecretExponentDB(key_list, {}, [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
+        tx_u_prime.sign(
+            hash160_lookup=LazySecretExponentDB(key_list, {}, [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
         self.check_signed(tx_u_prime)
         tx_hex = tx_u_prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)

@@ -200,7 +200,8 @@ class ScriptTypesTest(unittest.TestCase):
             tx = copy.deepcopy(tx__prototype)
             for key in ordered_keys:
                 self.assertEqual(tx.bad_signature_count(), 1)
-                tx.sign(LazySecretExponentDB([key], {}, [secp256k1_generator]), p2sh_lookup=build_p2sh_lookup(raw_scripts))
+                p2sh_lookup = build_p2sh_lookup(raw_scripts)
+                tx.sign(LazySecretExponentDB([key], {}, [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
             self.assertEqual(tx.bad_signature_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):

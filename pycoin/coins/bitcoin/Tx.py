@@ -36,7 +36,7 @@ from .SolutionChecker import BitcoinSolutionChecker as SolutionChecker
 
 from ...convention import SATOSHI_PER_COIN
 from ...encoding import double_sha256
-from ...serialize import b2h, b2h_rev, h2b, h2b_rev
+from ...serialize import b2h, b2h_rev, h2b_rev
 from ...serialize.bitcoin_streamer import (
     parse_struct, parse_bc_int, parse_bc_string,
     stream_struct, stream_bc_string

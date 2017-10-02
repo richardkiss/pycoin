@@ -5,7 +5,7 @@ from ...tx.script import errno, opcodes, ScriptError
 
 from .ScriptStreamer import BitcoinScriptStreamer
 
-from ..VM import VM, VMContext
+from ..VM import VM
 
 
 def _make_bad_instruction(v):
