@@ -14,4 +14,4 @@ class GeneratorWithOptimizations(create_OpenSSLOptimizations(NID_X9_62_prime256v
     pass
 
 
-nistp256_generator = GeneratorWithOptimizations(_p, _a, _b, (_Gx, _Gy), _r)
+secp256r1_generator = GeneratorWithOptimizations(_p, _a, _b, (_Gx, _Gy), _r)

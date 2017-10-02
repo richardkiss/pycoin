@@ -1,6 +1,6 @@
 import unittest
 
-from pycoin.ecdsa.nistp256 import nistp256_generator
+from pycoin.ecdsa.secp256r1 import secp256r1_generator
 
 
 VECTORS = """
@@ -214,12 +214,12 @@ y = B01CBD1C01E58065711814B583F061E9D431CCA994CEA1313449BF97C840AE0A
 """
 
 
-class NIST256pTest(unittest.TestCase):
+class Secp256r1Test(unittest.TestCase):
     def test_multiply(self):
         for f1 in [15, 10000, 73**38]:
             for f2 in [2, 3, 78192, 71**39]:
-                k1 = f1 * nistp256_generator
-                k2 = (f1 * f2) * nistp256_generator
+                k1 = f1 * secp256r1_generator
+                k2 = (f1 * f2) * secp256r1_generator
         self.assertEqual(f2 * k1, k2)
 
 
@@ -235,10 +235,10 @@ def inject():
 
             def make_test(k, x, y):
                 def the_test(self):
-                    self.assertEqual(k * nistp256_generator, (x, y))
+                    self.assertEqual(k * secp256r1_generator, (x, y))
                 return the_test
 
-            setattr(NIST256pTest, name_of_f, make_test(k, x, y))
+            setattr(Secp256r1Test, name_of_f, make_test(k, x, y))
         else:
             print("WARNING: bad vector %s" % repr(triplets))
 
