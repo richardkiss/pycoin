@@ -244,8 +244,10 @@ def sec_to_public_pair(sec, strict=True):
             return (x, y)
     elif len(sec) == 33:
         if not strict or (sec0 in (b'\2', b'\3')):
-            from .ecdsa import public_pair_for_x, generator_secp256k1
-            return public_pair_for_x(generator_secp256k1, x, is_even=(sec0 == b'\2'))
+            from .ecdsa.secp256k1 import secp256k1_generator
+            is_y_odd = (sec0 != b'\2')
+            y = secp256k1_generator.y_values_for_x(x)[is_y_odd]
+            return secp256k1_generator.Point(x, y)
     raise EncodingError("bad sec encoding for public key")
 
 

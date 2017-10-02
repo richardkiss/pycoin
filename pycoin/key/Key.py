@@ -1,4 +1,4 @@
-from pycoin import ecdsa
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import EncodingError, a2b_hashed_base58, \
     from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
     is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
@@ -66,15 +66,14 @@ class Key(object):
 
         if self._public_pair is None and self._secret_exponent is not None:
             if self._secret_exponent < 1 \
-                    or self._secret_exponent >= ecdsa.generator_secp256k1.order():
+                    or self._secret_exponent >= secp256k1_generator.order():
                 raise InvalidSecretExponentError()
-            public_pair = ecdsa.public_pair_for_secret_exponent(
-                ecdsa.generator_secp256k1, self._secret_exponent)
+            public_pair = self._secret_exponent * secp256k1_generator
             self._public_pair = public_pair
 
         if self._public_pair is not None \
                 and (None in self._public_pair or
-                     not ecdsa.is_public_pair_valid(ecdsa.generator_secp256k1, self._public_pair)):
+                     not secp256k1_generator.contains_point(*self._public_pair)):
             raise InvalidPublicPairError()
 
     @classmethod
@@ -239,8 +238,7 @@ class Key(object):
         if not self.is_private():
             raise RuntimeError("Key must be private to be able to sign")
         val = from_bytes_32(h)
-        r, s = ecdsa.sign(ecdsa.generator_secp256k1, self.secret_exponent(),
-                          val)
+        r, s = secp256k1_generator.sign(self.secret_exponent(), val)
         return sigencode_der(r, s)
 
     def verify(self, h, sig):
@@ -253,8 +251,7 @@ class Key(object):
         if self.public_pair() is None:
             # find the pubkey from the signature and see if it matches
             # our key
-            possible_pubkeys = ecdsa.possible_public_pairs_for_signature(
-                ecdsa.generator_secp256k1, val, rs)
+            possible_pubkeys = secp256k1_generator.possible_public_pairs_for_signature(val, rs)
             hash160 = self.hash160()
             for candidate in possible_pubkeys:
                 if hash160 == public_pair_to_hash160_sec(candidate, True):
@@ -266,7 +263,7 @@ class Key(object):
             else:
                 # signature is using a pubkey that's not this key
                 return False
-        return ecdsa.verify(ecdsa.generator_secp256k1, pubkey, val, rs)
+        return secp256k1_generator.verify(pubkey, val, rs)
 
     def _use_uncompressed(self, use_uncompressed=None):
         if use_uncompressed:

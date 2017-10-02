@@ -7,13 +7,13 @@ import struct
 
 from ..intstream import to_bytes
 
-ULONG_FACTOR = 1 << (8 * ctypes.sizeof(ctypes.c_ulong))
-
 
 def bignum_type_for_library(library):
+    ULONG_FACTOR = 1 << (8 * ctypes.sizeof(ctypes.c_ulong))
+
     class BignumType(ctypes.Structure):
         """
-        The structure that's manipulated by the bn library.
+        The structure that's manipulated by bn, the bignum library.
         struct bignum_st {
             BN_ULONG *d;    /* Pointer to an array of 'BN_BITS2' bit chunks. */
             int top;    /* Index of last used d +1. */
@@ -33,6 +33,7 @@ def bignum_type_for_library(library):
         ]
 
         def __init__(self, n=0):
+            "Create a BignumType from an int"
             negative = (n < 0)
             if negative:
                 n = -n
@@ -42,9 +43,11 @@ def bignum_type_for_library(library):
             library.BN_mpi2bn(the_bytes, the_len + 5, self)
 
         def __del__(self):
+            "Release memory used by native library"
             library.BN_clear_free(self)
 
         def __int__(self):
+            "cast to int"
             return self.as_int()
 
         def to_int(self):

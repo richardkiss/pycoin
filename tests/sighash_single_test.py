@@ -1,9 +1,5 @@
 import unittest
-from pycoin.ecdsa import (
-    generator_secp256k1,
-    sign as ecdsa_sign,
-    verify as ecdsa_verify,
-)
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import (
     int2byte,
     to_bytes_32,
@@ -45,16 +41,15 @@ def sigcheck(a_key, a_hash_for_sig, a_sig):
     """
     r, s = sigdecode_der(a_sig)
 
-    return ecdsa_verify(generator_secp256k1, a_key.public_pair(), a_hash_for_sig, (r, s))
-
+    return secp256k1_generator.verify(a_key.public_pair(), a_hash_for_sig, (r, s))
 
 def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
     """
     Signs a_hash_for_sig with a_key and returns a DER-encoded signature
     with a_sig_type appended.
     """
-    order = generator_secp256k1.order()
-    r, s = ecdsa_sign(generator_secp256k1, a_key.secret_exponent(), a_hash_for_sig)
+    order = secp256k1_generator.order()
+    r, s = secp256k1_generator.sign(a_key.secret_exponent(), a_hash_for_sig)
 
     if s + s > order:
         s = order - s

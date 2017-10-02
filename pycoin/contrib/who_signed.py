@@ -1,6 +1,6 @@
 import binascii
 
-from ..ecdsa import generator_secp256k1, verify as ecdsa_verify
+from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding import public_pair_to_bitcoin_address, sec_to_public_pair
 from ..networks import address_prefix_for_netcode
 from ..serialize import b2h_rev
@@ -56,7 +56,7 @@ def who_signed_tx(tx, tx_in_idx, netcode='BTC'):
         for sec_key in script_obj.sec_keys:
             public_pair = sec_to_public_pair(sec_key)
 
-            if ecdsa_verify(generator_secp256k1, public_pair, sig_hash, sig_pair):
+            if secp256k1_generator.verify(public_pair, sig_hash, sig_pair):
                 addr_pfx = address_prefix_for_netcode(netcode)
                 addr = public_pair_to_bitcoin_address(public_pair, address_prefix=addr_pfx)
                 signed_by.append((addr, sig_type))

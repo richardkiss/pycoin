@@ -1,13 +1,10 @@
-import hashlib
-import hmac
 import io
-import os
 import re
 
 from binascii import b2a_base64, a2b_base64
 
 from ..serialize.bitcoin_streamer import stream_bc_string
-from ..ecdsa import ellipticcurve, numbertheory, generator_secp256k1
+from ..ecdsa.secp256k1 import secp256k1_generator
 
 from ..networks import address_prefix_for_netcode, network_name_for_netcode
 from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256, EncodingError
@@ -115,15 +112,10 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
     mhash = hash_for_signing(message, netcode) if message else msg_hash
 
     # Use a deterministic K so our signatures are deterministic.
-    try:
-        r, s, y_odd = _my_sign(generator_secp256k1, secret_exponent, mhash)
-    except RuntimeError:
-        # .. except if extremely unlucky
-        k = from_bytes_32(os.urandom(32))
-        r, s, y_odd = _my_sign(generator_secp256k1, secret_exponent, mhash, _k=k)
+    r, s, recid = secp256k1_generator.sign_with_recid(secret_exponent, mhash)
 
     is_compressed = not key._use_uncompressed(use_uncompressed)
-    assert y_odd in (0, 1)
+    assert recid in (0, 1, 2, 3)
 
     # See http://bitcoin.stackexchange.com/questions/14263
     # for discussion of the proprietary format used for the signature
@@ -134,7 +126,7 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
     #                  0x1D = second key with even y, 0x1E = second key with odd y,
     #                  add 0x04 for compressed keys.
 
-    first = 27 + y_odd + (4 if is_compressed else 0)
+    first = 27 + recid + (4 if is_compressed else 0)
     sig = b2a_base64(bytearray([first]) + to_bytes_32(r) + to_bytes_32(s)).strip()
 
     if not isinstance(sig, str):
@@ -159,10 +151,15 @@ def pair_for_message(signature, message=None, msg_hash=None, netcode=None):
     is_compressed, recid, r, s = _decode_signature(signature)
 
     # Calculate hash of message used in signature
-    mhash = hash_for_signing(message, netcode) if message is not None else msg_hash
+    msg_hash = hash_for_signing(message, netcode) if message is not None else msg_hash
 
     # Calculate the specific public key used to sign this message.
-    return _extract_public_pair(generator_secp256k1, recid, r, s, mhash), is_compressed
+    y_parity = recid & 1
+    q = secp256k1_generator.possible_public_pairs_for_signature(msg_hash, (r, s), y_parity=y_parity)[0]
+    if recid > 1:
+        order = secp256k1_generator.order()
+        q = secp256k1_generator.Point(q[0] + order, q[1])
+    return q, is_compressed
 
 
 def pair_matches_key(pair, key, is_compressed):
@@ -251,40 +248,6 @@ def _decode_signature(signature):
     return is_compressed, (first & 0x3), r, s
 
 
-def _extract_public_pair(generator, recid, r, s, value):
-    """
-    Using the already-decoded parameters of the bitcoin signature,
-    return the specific public key pair used to sign this message.
-    Caller must verify this pubkey is what was expected.
-    """
-    assert 0 <= recid < 4, recid
-
-    G = generator
-    n = G.order()
-
-    curve = G.curve()
-    order = G.order()
-    p = curve.p()
-
-    x = r + (n * (recid // 2))
-
-    alpha = (pow(x, 3, p) + curve.a() * x + curve.b()) % p
-    beta = numbertheory.modular_sqrt(alpha, p)
-    inv_r = numbertheory.inverse_mod(r, order)
-
-    y = beta if ((beta - recid) % 2 == 0) else (p - beta)
-
-    minus_e = -value % order
-
-    R = ellipticcurve.Point(curve, x, y, order)
-    Q = inv_r * (s * R + minus_e * G)
-    public_pair = (Q.x(), Q.y())
-
-    # check that this is the RIGHT public key? No. Leave that for the caller.
-
-    return public_pair
-
-
 def hash_for_signing(msg, netcode='BTC'):
     """
     Return a hash of msg, according to odd bitcoin method: double SHA256 over a bitcoin
@@ -298,73 +261,3 @@ def hash_for_signing(msg, netcode='BTC'):
 
     # return as a number, since it's an input to signing algos like that anyway
     return from_bytes_32(double_sha256(fd.getvalue()))
-
-
-def deterministic_make_k(generator_order, secret_exponent, val,
-                         hash_f=hashlib.sha256, trust_no_one=True):
-    """
-    Generate K value BUT NOT according to https://tools.ietf.org/html/rfc6979
-
-    ecsda.deterministic_generate_k() was more general than it needs to be,
-    and I felt the hand of NSA in the wholly constants, so I simplified and
-    changed the salt.
-    """
-    n = generator_order
-    assert hash_f().digest_size == 32
-
-    # code below has been specialized for SHA256 / bitcoin usage
-    assert n.bit_length() == 256
-    hash_size = 32
-
-    if trust_no_one:
-        v = b"Edward Snowden rocks the world!!"
-        k = b"Qwest CEO Joseph Nacchio is free"
-    else:
-        v = b'\x01' * hash_size
-        k = b'\x00' * hash_size
-
-    priv = to_bytes_32(secret_exponent)
-
-    if val > n:
-        val -= n
-
-    h1 = to_bytes_32(val)
-    k = hmac.new(k, v + b'\x00' + priv + h1, hash_f).digest()
-    v = hmac.new(k, v, hash_f).digest()
-    k = hmac.new(k, v + b'\x01' + priv + h1, hash_f).digest()
-    v = hmac.new(k, v, hash_f).digest()
-
-    while 1:
-        t = hmac.new(k, v, hash_f).digest()
-
-        k1 = from_bytes_32(t)
-
-        if k1 >= 1 and k1 < n:
-            return k1
-
-        k = hmac.new(k, v + b'\x00', hash_f).digest()
-        v = hmac.new(k, v, hash_f).digest()
-
-
-def _my_sign(generator, secret_exponent, val, _k=None):
-    """
-        Return a signature for the provided hash (val), using the provided
-        random nonce, _k or generate a deterministic K as needed.
-
-        May raise RuntimeError, in which case retrying with a new
-        random value k is in order.
-    """
-    G = generator
-    n = G.order()
-
-    k = _k or deterministic_make_k(n, secret_exponent, val, trust_no_one=False)
-    p1 = k * G
-    r = p1.x()
-    if r == 0:
-        raise RuntimeError("amazingly unlucky random number r")
-    s = (numbertheory.inverse_mod(k, n) *
-         (val + (secret_exponent * r) % n)) % n
-    if s == 0:
-        raise RuntimeError("amazingly unlucky random number s")
-
-    return (r, s, p1.y() % 2)

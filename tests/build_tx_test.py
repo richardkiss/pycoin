@@ -3,7 +3,7 @@ import unittest
 
 from pycoin.block import Block
 
-from pycoin import ecdsa
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 from pycoin.serialize import h2b
 
@@ -74,13 +74,10 @@ class BuildTxTest(unittest.TestCase):
     def test_signature_hash(self):
         compressed = False
         exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
-        bitcoin_address_2 = public_pair_to_bitcoin_address(
-                ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent_2),
-                compressed=compressed)
+        bitcoin_address_2 = public_pair_to_bitcoin_address(exponent_2 * secp256k1_generator, compressed=compressed)
         exponent = wif_to_secret_exponent("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
 
-        public_key_sec = public_pair_to_sec(
-            ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent), compressed=compressed)
+        public_key_sec = public_pair_to_sec(exponent * secp256k1_generator, compressed=compressed)
 
         the_coinbase_tx = Tx.coinbase_tx(public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
         coins_from = [(the_coinbase_tx.hash(), 0, the_coinbase_tx.txs_out[0])]
@@ -125,8 +122,7 @@ class BuildTxTest(unittest.TestCase):
         exponent = wif_to_secret_exponent("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
         compressed = False
 
-        public_key_sec = public_pair_to_sec(
-            ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent), compressed=compressed)
+        public_key_sec = public_pair_to_sec(exponent * secp256k1_generator, compressed=compressed)
 
         the_coinbase_tx = Tx.coinbase_tx(public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
         TX_DB[the_coinbase_tx.hash()] = the_coinbase_tx
@@ -136,9 +132,7 @@ class BuildTxTest(unittest.TestCase):
         compressed = False
 
         exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
-        bitcoin_address_2 = public_pair_to_bitcoin_address(
-                ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent_2),
-                compressed=compressed)
+        bitcoin_address_2 = public_pair_to_bitcoin_address(exponent_2 * secp256k1_generator, compressed=compressed)
 
         self.assertEqual("12WivmEn8AUth6x6U8HuJuXHaJzDw3gHNZ", bitcoin_address_2)
 
@@ -159,9 +153,7 @@ class BuildTxTest(unittest.TestCase):
         compressed = True
 
         exponent_3 = int("f8d39b8ecd0e1b6fee5a340519f239097569d7a403a50bb14fb2f04eff8db0ff", 16)
-        bitcoin_address_3 = public_pair_to_bitcoin_address(
-                ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, exponent_3),
-                compressed=compressed)
+        bitcoin_address_3 = public_pair_to_bitcoin_address(exponent_3 * secp256k1_generator, compressed=compressed)
 
         self.assertEqual("13zzEHPCH2WUZJzANymow3ZrxcZ8iFBrY5", bitcoin_address_3)
 
