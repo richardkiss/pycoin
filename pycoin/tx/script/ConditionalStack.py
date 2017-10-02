@@ -1,5 +1,5 @@
 
-from . import errno
+from pycoin.satoshi import errno
 from . import ScriptError
 
 

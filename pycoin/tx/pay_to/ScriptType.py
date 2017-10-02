@@ -3,7 +3,7 @@ import collections
 from ...coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE
 from ...coins.bitcoin.VM import BitcoinVM as VM  # BRAIN DAMAGE
 from ...serialize import h2b
-from ..script import der
+from pycoin.satoshi import der
 
 
 from pycoin.intbytes import int2byte

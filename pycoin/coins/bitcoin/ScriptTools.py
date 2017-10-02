@@ -1,6 +1,6 @@
-from ...tx.script import opcodes
+from pycoin.satoshi import opcodes
 
-from ...tx.script.IntStreamer import IntStreamer
+from pycoin.satoshi.IntStreamer import IntStreamer
 from ...tx.script.ScriptTools import ScriptTools
 
 from .ScriptStreamer import BitcoinScriptStreamer

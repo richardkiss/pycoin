@@ -7,9 +7,9 @@ from pycoin.encoding import (
 from pycoin.serialize import b2h
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
 
+from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, SIGHASH_FORKID
+from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.tx.script import ScriptError
-from pycoin.tx.script.checksigops import parse_signature_blob
-from pycoin.tx.script.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, SIGHASH_FORKID
 
 
 for _ in "EQUAL HASH160 CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():

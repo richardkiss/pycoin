@@ -21,6 +21,7 @@ setup(
         "pycoin.key",
         "pycoin.message",
         "pycoin.networks",
+        "pycoin.satoshi",
         "pycoin.serialize",
         "pycoin.services",
         "pycoin.tx",

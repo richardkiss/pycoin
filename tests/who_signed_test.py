@@ -2,8 +2,8 @@ import unittest
 from pycoin.contrib import who_signed
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
+from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.tx import tx_utils
-from pycoin.tx.script.flags import SIGHASH_ALL
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut

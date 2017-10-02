@@ -2,7 +2,7 @@
 from ...intbytes import indexbytes, int2byte
 
 from . import ScriptError
-from . import errno
+from pycoin.satoshi import errno
 
 
 def make_const_handler(data):

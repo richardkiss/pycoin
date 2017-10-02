@@ -6,7 +6,7 @@ from ..SolutionChecker import ScriptError
 from .SolutionChecker import BitcoinSolutionChecker
 from .ScriptTools import BitcoinScriptTools
 
-from ...tx.script.flags import SIGHASH_ALL
+from pycoin.satoshi.flags import SIGHASH_ALL
 
 from pycoin.tx.pay_to.ScriptType import generate_default_placeholder_signature
 from pycoin.tx.script.constraints import Atom, Operator, make_traceback_f

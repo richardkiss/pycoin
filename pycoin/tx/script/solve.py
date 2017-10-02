@@ -2,13 +2,13 @@
 
 import pdb
 
-from ..script.checksigops import parse_signature_blob
+from pycoin.satoshi.checksigops import parse_signature_blob
 from ...serialize import b2h
 
 from pycoin import encoding
 from pycoin.intbytes import int2byte
 from pycoin.tx.exceptions import SolvingError
-from pycoin.tx.script import der
+from pycoin.satoshi import der
 
 from .constraints import Atom, Operator
 

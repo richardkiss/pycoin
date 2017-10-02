@@ -9,7 +9,7 @@ from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, 
 from pycoin.serialize import h2b
 
 from pycoin.tx.Tx import Tx
-from pycoin.tx.script.flags import SIGHASH_ALL
+from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.pay_to import build_hash160_lookup

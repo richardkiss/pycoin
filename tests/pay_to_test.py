@@ -5,10 +5,10 @@ from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
+from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.serialize import h2b
 from pycoin.tx import tx_utils
 from pycoin.tx.Spendable import Spendable
-from pycoin.tx.script.flags import SIGHASH_ALL
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata

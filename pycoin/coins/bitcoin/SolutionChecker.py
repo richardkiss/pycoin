@@ -9,14 +9,14 @@ from ...encoding import double_sha256, from_bytes_32
 from ...intbytes import byte2int, indexbytes
 
 from ..SolutionChecker import SolutionChecker
-from ...tx.script import errno
+from pycoin.satoshi import errno
 from ...tx.script import ScriptError
 
 from ...serialize.bitcoin_streamer import (
     stream_struct, stream_bc_string
 )
 
-from ...tx.script.flags import (
+from pycoin.satoshi.flags import (
     SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
     VERIFY_P2SH, VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM,
     VERIFY_SIGPUSHONLY, VERIFY_CLEANSTACK,

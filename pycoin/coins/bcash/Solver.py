@@ -1,5 +1,5 @@
 from ..bitcoin.Solver import BitcoinSolver
-from ...tx.script.flags import SIGHASH_FORKID
+from pycoin.satoshi.flags import SIGHASH_FORKID
 
 from .SolutionChecker import BCashSolutionChecker
 

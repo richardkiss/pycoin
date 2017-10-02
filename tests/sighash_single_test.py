@@ -17,12 +17,12 @@ from pycoin.tx.Tx import (
     TxIn,
     TxOut
 )
-from pycoin.tx.script.flags import (
+from pycoin.satoshi.flags import (
     SIGHASH_ALL,
     SIGHASH_ANYONECANPAY,
     SIGHASH_SINGLE,
 )
-from pycoin.tx.script.der import (
+from pycoin.satoshi.der import (
     sigdecode_der,
     sigencode_der,
 )

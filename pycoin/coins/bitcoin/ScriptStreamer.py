@@ -1,9 +1,10 @@
 import struct
 
-from ...tx.script import errno, opcodes, ScriptError
+from pycoin.coins.SolutionChecker import ScriptError
+from pycoin.satoshi import errno, opcodes
+from pycoin.satoshi.IntStreamer import IntStreamer
 
-from ...tx.script.IntStreamer import IntStreamer
-from ...tx.script.ScriptStreamer import ScriptStreamer
+from pycoin.tx.script.ScriptStreamer import ScriptStreamer
 
 
 def make_opcode_const_list():

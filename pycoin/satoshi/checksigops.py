@@ -26,8 +26,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from ...encoding import sec_to_public_pair, EncodingError
-from ...intbytes import byte2int, indexbytes, iterbytes
+from ..encoding import sec_to_public_pair, EncodingError
+from ..intbytes import byte2int, indexbytes, iterbytes
 
 from . import der
 from . import ScriptError

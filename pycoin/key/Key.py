@@ -6,7 +6,7 @@ from pycoin.key.validate import netcode_and_type_for_data
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
-from pycoin.tx.script.der import sigencode_der, sigdecode_der
+from pycoin.satoshi.der import sigencode_der, sigdecode_der
 
 
 class InvalidPublicPairError(ValueError):

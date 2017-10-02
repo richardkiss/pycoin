@@ -1,5 +1,5 @@
-from ..script.checksigops import parse_signature_blob
-from ..script.der import UnexpectedDER
+from pycoin.satoshi.checksigops import parse_signature_blob
+from pycoin.satoshi.der import UnexpectedDER
 
 from ... import encoding
 
