@@ -5,7 +5,8 @@ from .Point import Point
 
 
 def _leftmost_bit(x):
-    # this is closer to constant time than bit-twiddling hacks
+    # this is closer to constant time than bit-twiddling hacks like those in
+    # https://graphics.stanford.edu/~seander/bithacks.html
     assert x > 0
     result = 1
     while result <= x:
