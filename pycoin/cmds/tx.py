@@ -15,6 +15,7 @@ import sys
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.convention import tx_fee, satoshi_to_mbtc
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import hash160
 from pycoin.key import Key
 from pycoin.key.validate import is_address_valid
@@ -179,7 +180,8 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
         address = tx_out.bitcoin_address(netcode=netcode) or "(unknown)"
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
         if disassembly_level > 0:
-            for (pre_annotations, pc, opcode, instruction, post_annotations) in annotate_spendable(tx_out):
+            for (pre_annotations, pc, opcode, instruction, post_annotations) in annotate_spendable(
+                    tx.__class__, tx_out):
                 for l in pre_annotations:
                     print("           %s" % l)
                 if 1:
@@ -362,7 +364,7 @@ def parse_private_key_file(args, key_list):
 
             def make_key(x):
                 try:
-                    return Key.from_text(x)
+                    return Key.from_text(x, generator=secp256k1_generator)
                 except Exception:
                     return None
 
@@ -475,7 +477,7 @@ def parse_parts(tx_class, arg, spendables, payables, network):
 
 def key_found(arg, payables, key_iters):
     try:
-        key = Key.from_text(arg)
+        key = Key.from_text(arg, generator=secp256k1_generator)
         # TODO: check network
         if key.wif() is None:
             payables.append((key.address(), 0))

@@ -41,6 +41,7 @@ else:
     def bit_length(self):
         # Make this library compatible with python < 2.7
         # https://docs.python.org/3.5/library/stdtypes.html#int.bit_length
+        # compared to "while n>0: bl +=1 ; n >>= 1", this is much faster in both python2 and pypy
         s = bin(self)  # binary representation:  bin(-37) --> '-0b100101'
         s = s.lstrip('-0b')  # remove leading zeros and minus sign
         return len(s)  # len('100101') --> 6
@@ -51,12 +52,13 @@ def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashl
     Generate K value according to https://tools.ietf.org/html/rfc6979
     """
     n = generator_order
-    order_size = (bit_length(n) + 7) // 8
+    bln = bit_length(n)
+    order_size = (bln + 7) // 8
     hash_size = hash_f().digest_size
     v = b'\x01' * hash_size
     k = b'\x00' * hash_size
     priv = intstream.to_bytes(secret_exponent, length=order_size)
-    shift = 8 * hash_size - bit_length(n)
+    shift = 8 * hash_size - bln
     if shift > 0:
         val >>= shift
     if val > n:
@@ -76,7 +78,7 @@ def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashl
 
         k1 = intstream.from_bytes(bytes(t))
 
-        k1 >>= (len(t)*8 - bit_length(n))
+        k1 >>= (len(t)*8 - bln)
         if k1 >= 1 and k1 < n:
             return k1
 

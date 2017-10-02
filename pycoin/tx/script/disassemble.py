@@ -1,7 +1,8 @@
 import collections
 
-from pycoin.ecdsa import generator_secp256k1, possible_public_pairs_for_signature
-from pycoin.encoding import public_pair_to_bitcoin_address, sec_to_public_pair, is_sec_compressed
+from pycoin.encoding import (
+    hash160, hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address, sec_to_public_pair, is_sec_compressed
+)
 
 from pycoin.serialize import b2h
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
@@ -9,8 +10,6 @@ from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
 from pycoin.tx.script import ScriptError
 from pycoin.tx.script.checksigops import parse_signature_blob
 from pycoin.tx.script.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, SIGHASH_FORKID
-from pycoin.tx.Tx import Tx
-from pycoin.tx.TxIn import TxIn
 
 
 for _ in "EQUAL HASH160 CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():
@@ -47,11 +46,9 @@ def instruction_for_opcode(opcode, data):
 
 def annotate_pubkey(blob, da):
     l = da[blob]
-    pair = sec_to_public_pair(blob)
     is_compressed = is_sec_compressed(blob)
-    l.append("SEC for %scompressed %s" % (
-                "" if is_compressed else "un", public_pair_to_bitcoin_address(
-                    pair, compressed=is_compressed, address_prefix=ADDRESS_PREFIX)))
+    address = hash160_sec_to_bitcoin_address(hash160(blob))
+    l.append("SEC for %scompressed %s" % ("" if is_compressed else "un", address))
 
 
 def annotate_signature(blob, da, vmc):
@@ -63,7 +60,8 @@ def annotate_signature(blob, da, vmc):
     l.append("z: {0:#066x}".format(sig_hash))
     l.append("signature type %s" % sighash_type_to_string(sig_type))
     addresses = []
-    pairs = possible_public_pairs_for_signature(generator_secp256k1, sig_hash, sig_pair)
+    generator = vmc.generator_for_signature_type(sig_type)
+    pairs = generator.possible_public_pairs_for_signature(sig_hash, sig_pair)
     for pair in pairs:
         for comp in (True, False):
             address = public_pair_to_bitcoin_address(pair, compressed=comp, address_prefix=ADDRESS_PREFIX)
@@ -135,8 +133,8 @@ def annotate_scripts(tx, tx_in_idx):
     return r
 
 
-def annotate_spendable(spendable):
-    txs_in = [TxIn(b'\0' * 32, 0)]
-    fake_spend_tx = Tx(1, txs_in, [])
+def annotate_spendable(tx_class, spendable):
+    txs_in = [tx_class.TxIn(b'1' * 32, 0)]
+    fake_spend_tx = tx_class(1, txs_in, [])
     fake_spend_tx.set_unspents([spendable])
     return annotate_scripts(fake_spend_tx, 0)

@@ -1,14 +1,13 @@
 from ..script.checksigops import parse_signature_blob
 from ..script.der import UnexpectedDER
 
-from ... import ecdsa
 from ... import encoding
 
 from ...serialize import b2h
 
 from ..exceptions import SolvingError
 
-from .ScriptType import ScriptTools, ScriptType, VM, DEFAULT_PLACEHOLDER_SIGNATURE
+from .ScriptType import ScriptTools, ScriptType, VM, generate_default_placeholder_signature
 
 
 # see BIP11 https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki
@@ -66,7 +65,7 @@ class ScriptMultisig(ScriptType):
             self._script = ScriptTools.compile(script_source)
         return self._script
 
-    def _find_signatures(self, script, signature_for_hash_type_f, script_to_hash):
+    def _find_signatures(self, script, generator_for_signature_type_f, signature_for_hash_type_f, script_to_hash):
         signatures = []
         secs_solved = set()
         pc = 0
@@ -77,11 +76,12 @@ class ScriptMultisig(ScriptType):
             opcode, data, pc = VM.ScriptStreamer.get_opcode(script, pc)
             try:
                 sig_pair, signature_type = parse_signature_blob(data)
+                generator = generator_for_signature_type_f(signature_type)
                 seen += 1
                 for idx, sec_key in enumerate(self.sec_keys):
-                    public_pair = encoding.sec_to_public_pair(sec_key)
+                    public_pair = encoding.sec_to_public_pair(sec_key, generator)
                     sign_value = signature_for_hash_type_f(signature_type, script_to_hash)
-                    v = ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sign_value, sig_pair)
+                    v = generator.verify(public_pair, sign_value, sig_pair)
                     if v:
                         signatures.append((idx, data))
                         secs_solved.add(sec_key)
@@ -104,7 +104,7 @@ class ScriptMultisig(ScriptType):
             usually SIGHASH_ALL (1)
         signature_placeholder:
             The signature left in place when we don't have enough keys.
-            Defaults to DEFAULT_PLACEHOLDER_SIGNATURE. Might want OP_0 instead.
+            Defaults to generate_default_placeholder_signature. Might want OP_0 instead.
         """
         # we need a hash160 => secret_exponent lookup
         db = kwargs.get("hash160_lookup")
@@ -114,15 +114,16 @@ class ScriptMultisig(ScriptType):
         signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f")
         signature_type = kwargs.get("signature_type")
         script_to_hash = kwargs.get("script_to_hash")
+        generator_for_signature_type_f = kwargs.get("generator_for_signature_type_f")
 
-        signature_placeholder = kwargs.get("signature_placeholder", DEFAULT_PLACEHOLDER_SIGNATURE)
+        signature_placeholder = kwargs.get("signature_placeholder", generate_default_placeholder_signature(None))
 
         secs_solved = set()
         existing_signatures = []
         existing_script = kwargs.get("existing_script")
         if existing_script:
             existing_signatures, secs_solved = self._find_signatures(
-                existing_script, signature_for_hash_type_f, script_to_hash)
+                existing_script, generator_for_signature_type_f, signature_for_hash_type_f, script_to_hash)
 
         for signature_order, sec_key in enumerate(self.sec_keys):
             if sec_key in secs_solved:
@@ -133,9 +134,9 @@ class ScriptMultisig(ScriptType):
             result = db.get(hash160)
             if result is None:
                 continue
-            secret_exponent, public_pair, compressed = result
+            secret_exponent, public_pair, compressed, generator = result
             binary_signature = self._create_script_signature(
-                secret_exponent, signature_for_hash_type_f, signature_type, script_to_hash)
+                secret_exponent, generator, signature_for_hash_type_f, signature_type, script_to_hash)
             existing_signatures.append((signature_order, binary_signature))
 
         # make sure the existing signatures are in the right order

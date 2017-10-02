@@ -26,7 +26,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from ... import ecdsa
 from ...encoding import sec_to_public_pair, EncodingError
 from ...intbytes import byte2int, indexbytes, iterbytes
 
@@ -87,10 +86,10 @@ def check_valid_signature(sig):
     _check_valid_signature_2(sig)
 
 
-def check_low_der_signature(sig_pair):
+def check_low_der_signature(sig_pair, generator):
     # IsLowDERSignature
     r, s = sig_pair
-    hi_s = ecdsa.generator_secp256k1.curve().p() - s
+    hi_s = generator.p() - s
     if hi_s < s:
         raise ScriptError("signature has high S value", errno.SIG_HIGH_S)
 
@@ -104,17 +103,25 @@ def check_defined_hashtype_signature(sig):
         raise ScriptError("bad hash type after signature", errno.SIG_HASHTYPE)
 
 
-def parse_signature_blob(sig_blob, flags=0):
+def parse_signature_blob(sig_blob):
+    if len(sig_blob) == 0:
+        raise ValueError("empty sig_blob")
+    sig_pair = der.sigdecode_der(sig_blob[:-1], use_broken_open_ssl_mechanism=True)
+    signature_type = ord(sig_blob[-1:])
+    return sig_pair, signature_type
+
+
+def parse_and_check_signature_blob(sig_blob, flags, vm):
     if len(sig_blob) == 0:
         raise ValueError("empty sig_blob")
     if flags & (VERIFY_DERSIG | VERIFY_LOW_S | VERIFY_STRICTENC):
         check_valid_signature(sig_blob)
     if flags & VERIFY_STRICTENC:
         check_defined_hashtype_signature(sig_blob)
-    sig_pair = der.sigdecode_der(sig_blob[:-1], use_broken_open_ssl_mechanism=True)
-    signature_type = ord(sig_blob[-1:])
+    sig_pair, signature_type = parse_signature_blob(sig_blob)
     if flags & VERIFY_LOW_S:
-        check_low_der_signature(sig_pair)
+        generator = vm.generator_for_signature_type(signature_type)
+        check_low_der_signature(sig_pair, generator)
     return sig_pair, signature_type
 
 
@@ -133,23 +140,24 @@ def check_public_key_encoding(blob):
 
 def checksig(vm, sig_pair, signature_type, pair_blob, blobs_to_delete,
              sighash_cache, verify_witness_pubkeytype, verify_strict):
+    generator = vm.generator_for_signature_type(signature_type)
     if verify_strict:
         check_public_key_encoding(pair_blob)
     if verify_witness_pubkeytype:
         if byte2int(pair_blob) not in (2, 3) or len(pair_blob) != 33:
             raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
     try:
-        public_pair = sec_to_public_pair(pair_blob, strict=verify_strict)
-    except EncodingError:
+        public_pair = sec_to_public_pair(pair_blob, generator, strict=verify_strict)
+    except (ValueError, EncodingError):
         return False
 
     if signature_type not in sighash_cache:
         sighash_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, blobs_to_delete, vm)
 
     try:
-        if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sighash_cache[signature_type], sig_pair):
+        if generator.verify(public_pair, sighash_cache[signature_type], sig_pair):
             return True
-    except ecdsa.NoSuchPointError:
+    except ValueError:
         pass
     return False
 
@@ -165,7 +173,7 @@ def checksigs(vm, sig_blobs, public_pair_blobs):
     while len(sig_blobs_remaining) > 0:
         sig_blob = sig_blobs_remaining.pop()
         try:
-            sig_pair, signature_type = parse_signature_blob(sig_blob, flags)
+            sig_pair, signature_type = parse_and_check_signature_blob(sig_blob, flags, vm)
         except (der.UnexpectedDER, ValueError):
             public_pair_blobs = []
         while len(sig_blobs_remaining) < len(public_pair_blobs):

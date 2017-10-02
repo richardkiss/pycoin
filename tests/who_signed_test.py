@@ -1,5 +1,6 @@
 import unittest
 from pycoin.contrib import who_signed
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
 from pycoin.tx import tx_utils
 from pycoin.tx.script.flags import SIGHASH_ALL
@@ -15,7 +16,7 @@ from pycoin.ui import address_for_pay_to_script, standard_tx_out_script
 class WhoSignedTest(unittest.TestCase):
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
@@ -23,7 +24,7 @@ class WhoSignedTest(unittest.TestCase):
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_signature_count(), 1)
-        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:M])
+        hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:M]), [secp256k1_generator])
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
@@ -43,7 +44,7 @@ class WhoSignedTest(unittest.TestCase):
     def test_multisig_one_at_a_time(self):
         M = 3
         N = 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         tx_out = TxOut(1000000, script)
@@ -56,7 +57,7 @@ class WhoSignedTest(unittest.TestCase):
         for i in range(1, N+1):
             self.assertEqual(tx2.bad_signature_count(), 1)
             self.assertEqual(tx2.id(), ids[i-1])
-            hash160_lookup = build_hash160_lookup([keys[i-1].secret_exponent()])
+            hash160_lookup = build_hash160_lookup([keys[i-1].secret_exponent()], [secp256k1_generator])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
             self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0)),
@@ -65,7 +66,7 @@ class WhoSignedTest(unittest.TestCase):
 
     def test_sign_pay_to_script_multisig(self):
         M, N = 3, 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
         address = address_for_pay_to_script(underlying_script)
@@ -74,7 +75,7 @@ class WhoSignedTest(unittest.TestCase):
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])
-        hash160_lookup = build_hash160_lookup(key.secret_exponent() for key in keys[:N])
+        hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:N]), [secp256k1_generator])
         p2sh_lookup = build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_signature_count(), 0)

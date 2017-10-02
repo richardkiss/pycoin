@@ -4,7 +4,7 @@ from .validate import netcode_and_type_for_text
 from .electrum import ElectrumWallet
 
 
-def key_from_text(text, is_compressed=True):
+def key_from_text(text, generator=None, is_compressed=True):
     """
     This function will accept a BIP0032 wallet string, a WIF, or a bitcoin address.
 
@@ -25,17 +25,18 @@ def key_from_text(text, is_compressed=True):
             data = data[:-1]
         return Key(
             secret_exponent=encoding.from_bytes_32(data),
+            generator=generator,
             prefer_uncompressed=not is_compressed, netcode=netcode)
     if key_type == 'address':
         return Key(hash160=data, is_compressed=is_compressed, netcode=netcode)
 
     if key_type == 'elc_seed':
-        return ElectrumWallet(initial_key=b2h(data))
+        return ElectrumWallet(initial_key=b2h(data), generator=generator)
 
     if key_type == 'elc_prv':
-        return ElectrumWallet(master_private_key=encoding.from_bytes_32(data))
+        return ElectrumWallet(master_private_key=encoding.from_bytes_32(data), generator=generator)
 
     if key_type == 'elc_pub':
-        return ElectrumWallet(master_public_key=data)
+        return ElectrumWallet(master_public_key=data, generator=generator)
 
     raise encoding.EncodingError("unknown text: %s" % text)

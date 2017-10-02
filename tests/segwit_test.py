@@ -2,6 +2,7 @@ import unittest
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import double_sha256, to_bytes_32
 from pycoin.key import Key
 from pycoin.serialize import b2h, b2h_rev, h2b
@@ -60,8 +61,10 @@ class SegwitTest(unittest.TestCase):
         tx_u_prime = self.unsigned_copy(tx_s)
         tx_s_hex = tx_s.as_hex()
         tx_u_prime.set_unspents(tx_s.unspents)
-        tx_u_prime.sign(hash160_lookup=LazySecretExponentDB([Key(pk).wif() for pk in private_keys], {}),
-                        p2sh_lookup=build_p2sh_lookup([h2b(x) for x in p2sh_values]))
+        key_list = [Key(pk, generator=secp256k1_generator).wif() for pk in private_keys]
+        p2sh_lookup = build_p2sh_lookup([h2b(x) for x in p2sh_values])
+        tx_u_prime.sign(
+            hash160_lookup=LazySecretExponentDB(key_list, {}, [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
         self.check_signed(tx_u_prime)
         tx_hex = tx_u_prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)
@@ -255,7 +258,8 @@ class SegwitTest(unittest.TestCase):
             (0xfe9a95c19eef81dde2b95c1284ef39be497d128e2aa46916fb02d552485e0323, SIGHASH_ANYONECANPAY | SIGHASH_NONE),
             (0x428a7aee9f0c2af0cd19af3cf1c78149951ea528726989b2e83e4778d2c3f890, SIGHASH_ANYONECANPAY | SIGHASH_SINGLE),
         ]:
-            tx_u5prime.sign(hash_type=sighash_type, hash160_lookup=build_hash160_lookup([se]), p2sh_lookup=p2sh_lookup)
+            tx_u5prime.sign(hash_type=sighash_type, hash160_lookup=build_hash160_lookup(
+                [se], [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
 
         self.check_signed(tx_u5prime)
         tx_hex = tx_u5prime.as_hex()
@@ -448,13 +452,13 @@ class SegwitTest(unittest.TestCase):
         from pycoin.tx.pay_to.ScriptPayToAddress import ScriptPayToAddress
         from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
         from pycoin.ui import address_for_pay_to_script_wit, script_obj_from_address
-        key1 = Key(1)
+        key1 = Key(1, generator=secp256k1_generator)
         coin_value = 5000000
         script = ScriptPayToAddressWit(b'\0', key1.hash160()).script()
         tx_hash = b'\ee' * 32
         tx_out_index = 0
         spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
-        key2 = Key(2)
+        key2 = Key(2, generator=secp256k1_generator)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()])

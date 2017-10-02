@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from pycoin import encoding
-from pycoin.ecdsa import is_public_pair_valid, generator_secp256k1, public_pair_for_x, secp256k1
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
 from pycoin.key.key_from_text import key_from_text
@@ -63,7 +63,7 @@ def parse_as_number(s):
 
 def parse_as_secret_exponent(s):
     v = parse_as_number(s)
-    if v and 0 < v < secp256k1._r:
+    if v and 0 < v < secp256k1_generator.order():
         return v
 
 
@@ -74,10 +74,12 @@ def parse_as_public_pair(s):
             v0 = parse_as_number(s0)
             if v0:
                 if s1 in ("even", "odd"):
-                    return public_pair_for_x(generator_secp256k1, v0, is_even=(s1 == 'even'))
+                    is_y_odd = (s1 == "odd")
+                    y = secp256k1_generator.y_values_for_x(v0)[is_y_odd]
+                    return secp256k1_generator.Point(v0, y)
                 v1 = parse_as_number(s1)
                 if v1:
-                    if not is_public_pair_valid(generator_secp256k1, (v0, v1)):
+                    if not secp256k1_generator.contains_point(v0, v1):
                         sys.stderr.write("invalid (x, y) pair\n")
                         sys.exit(1)
                     return (v0, v1)
@@ -258,9 +260,9 @@ def prefix_transforms_for_network(network):
         raise RuntimeError("can't create BIP32 key")
 
     return (
-        ("P:", lambda s: BIP32Node.from_master_secret(s.encode("utf8"), netcode=network)),
-        ("H:", lambda s: BIP32Node.from_master_secret(h2b(s), netcode=network)),
-        ("E:", lambda s: key_from_text(s)),
+        ("P:", lambda s: BIP32Node.from_master_secret(secp256k1_generator, s.encode("utf8"), netcode=network)),
+        ("H:", lambda s: BIP32Node.from_master_secret(secp256k1_generator, h2b(s), netcode=network)),
+        ("E:", lambda s: key_from_text(s, generator=secp256k1_generator)),
         ("create", _create_bip32),
     )
 
@@ -274,7 +276,7 @@ def parse_prefixes(item, PREFIX_TRANSFORMS):
                 pass
 
     try:
-        return Key.from_text(item)
+        return Key.from_text(item, generator=secp256k1_generator)
     except encoding.EncodingError:
         pass
     return None
@@ -291,10 +293,10 @@ def parse_key(item, PREFIX_TRANSFORMS, network):
 
     secret_exponent = parse_as_secret_exponent(item)
     if secret_exponent:
-        return Key(secret_exponent=secret_exponent, netcode=network)
+        return Key(secret_exponent=secret_exponent, generator=secp256k1_generator, netcode=network)
 
     if SEC_RE.match(item):
-        return Key.from_sec(h2b(item))
+        return Key.from_sec(h2b(item), secp256k1_generator)
 
     public_pair = parse_as_public_pair(item)
     if public_pair:

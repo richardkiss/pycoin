@@ -53,11 +53,12 @@ class ScriptPayToAddress(ScriptType):
         signature_for_hash_type_f = kwargs.get("signature_for_hash_type_f")
         signature_type = kwargs.get("signature_type")
         script_to_hash = kwargs.get("script_to_hash")
+        generator = kwargs.get("generator")
 
-        secret_exponent, public_pair, compressed = result
+        secret_exponent, public_pair, compressed, generator = result
 
         binary_signature = self._create_script_signature(
-            secret_exponent, signature_for_hash_type_f, signature_type, script_to_hash)
+            secret_exponent, generator, signature_for_hash_type_f, signature_type, script_to_hash)
         binary_public_pair_sec = encoding.public_pair_to_sec(public_pair, compressed=compressed)
 
         solution = ScriptTools.compile_push_data_list([binary_signature, binary_public_pair_sec])

@@ -8,7 +8,7 @@ from .ScriptTools import BitcoinScriptTools
 
 from ...tx.script.flags import SIGHASH_ALL
 
-from pycoin.tx.pay_to.ScriptType import DEFAULT_PLACEHOLDER_SIGNATURE
+from pycoin.tx.pay_to.ScriptType import generate_default_placeholder_signature
 from pycoin.tx.script.constraints import Atom, Operator, make_traceback_f
 from pycoin.tx.script.solve import solutions_for_constraint
 
@@ -130,7 +130,7 @@ class Solver(object):
             hash_type = SIGHASH_ALL
         kwargs["hash160_lookup"] = hash160_lookup
         if "signature_placeholder" not in kwargs:
-            kwargs["signature_placeholder"] = DEFAULT_PLACEHOLDER_SIGNATURE
+            kwargs["signature_placeholder"] = generate_default_placeholder_signature(kwargs.get("generator"))
         if self.tx.txs_in[tx_in_idx].witness:
             kwargs["existing_script"] = self.tx.txs_in[tx_in_idx].witness
         else:
@@ -138,6 +138,7 @@ class Solver(object):
                 data for opcode, data, pc, new_pc in self.ScriptTools.get_opcodes(
                     self.tx.txs_in[tx_in_idx].script) if data is not None]
         kwargs["signature_type"] = hash_type
+        kwargs["generator_for_signature_type_f"] = self.SolutionChecker.VM.generator_for_signature_type
         constraints = self.determine_constraints(tx_in_idx, p2sh_lookup=kwargs.get("p2sh_lookup"))
         solution_list, witness_list = self.solve_for_constraints(constraints, **kwargs)
         solution_script = self.ScriptTools.compile_push_data_list(solution_list)
@@ -189,6 +190,7 @@ class Solver(object):
         signature_for_hash_type_f.witness = witness_signature_for_hash_type
 
         the_script = script_obj_from_script(tx_out_script)
+        kwargs["generator_for_signature_type_f"] = self.SolutionChecker.VM.generator_for_signature_type
         solution = the_script.solve(
             hash160_lookup=hash160_lookup, signature_type=hash_type,
             existing_script=self.tx.txs_in[tx_in_idx].script, existing_witness=tx_in.witness,

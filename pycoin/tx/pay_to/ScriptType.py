@@ -1,22 +1,18 @@
 import collections
 
-from pycoin import ecdsa
-
 from ...coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE
 from ...coins.bitcoin.VM import BitcoinVM as VM  # BRAIN DAMAGE
+from ...serialize import h2b
 from ..script import der
 
 
 from pycoin.intbytes import int2byte
 
 
-def generate_default_placeholder_signature():
-    order = ecdsa.generator_secp256k1.order()
-    r, s = order - 1, order // 2
-    return der.sigencode_der(r, s) + int2byte(1)
-
-
-DEFAULT_PLACEHOLDER_SIGNATURE = generate_default_placeholder_signature()
+def generate_default_placeholder_signature(generator):
+    return h2b(
+        "3045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207"
+        "fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001")
 
 
 class ScriptType(object):
@@ -83,10 +79,10 @@ class ScriptType(object):
         raise ValueError("script doesn't match")
 
     def _create_script_signature(
-            self, secret_exponent, signature_for_hash_type_f, signature_type, script):
+            self, secret_exponent, generator, signature_for_hash_type_f, signature_type, script):
         sign_value = signature_for_hash_type_f(signature_type, script)
-        order = ecdsa.generator_secp256k1.order()
-        r, s = ecdsa.sign(ecdsa.generator_secp256k1, secret_exponent, sign_value)
+        order = generator.order()
+        r, s = generator.sign(secret_exponent, sign_value)
         if s + s > order:
             s = order - s
         return der.sigencode_der(r, s) + int2byte(signature_type)

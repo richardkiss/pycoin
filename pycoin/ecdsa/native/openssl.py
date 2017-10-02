@@ -5,6 +5,10 @@ import platform
 from .bignum import bignum_type_for_library
 
 
+NID_X9_62_prime256v1 = 415
+NID_secp256k1 = 714
+
+
 class BignumContext(ctypes.Structure):
     pass
 
@@ -17,9 +21,6 @@ def set_api(library, api_info):
 
 
 def load_library():
-    if os.getenv("PYCOIN_NATIVE") != "openssl":
-        return None
-
     system = platform.system()
     if system == 'Windows':
         if platform.architecture()[0] == '64bit':
@@ -68,45 +69,56 @@ def load_library():
     return library
 
 
-def make_fast_mul_f(library):
-    NID_secp256k1_GROUP = library.EC_GROUP_new_by_curve_name(714)
-
-    def fast_mul(point, N):
-        bn_x = library.BignumType(point.x())
-        bn_y = library.BignumType(point.y())
-        bn_n = library.BignumType(N)
-
-        ctx = library.BN_CTX_new()
-        ec_result = library.EC_POINT_new(NID_secp256k1_GROUP)
-        ec_point = library.EC_POINT_new(NID_secp256k1_GROUP)
-
-        library.EC_POINT_set_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_point, bn_x, bn_y, ctx)
-
-        library.EC_POINT_mul(NID_secp256k1_GROUP, ec_result, None, ec_point, bn_n, ctx)
-
-        library.EC_POINT_get_affine_coordinates_GFp(NID_secp256k1_GROUP, ec_result, bn_x, bn_y, ctx)
-        library.EC_POINT_free(ec_point)
-        library.EC_POINT_free(ec_result)
-        library.BN_CTX_free(ctx)
-        return type(point)(point.curve(), bn_x.to_int(), bn_y.to_int())
-    return fast_mul
+OpenSSL = load_library()
 
 
-def make_inverse_mod_f(library):
-    def inverse_mod(a, n):
-        ctx = library.BN_CTX_new()
-        a1 = library.BignumType(a)
-        library.BN_mod_inverse(a1, a1, library.BignumType(n), ctx)
-        library.BN_CTX_free(ctx)
-        return a1.to_int()
-    return inverse_mod
 
 
-try:
-    NATIVE_LIBRARY = load_library()
-except:
-    NATIVE_LIBRARY = None
+def create_OpenSSLOptimizations(curve_id):
 
-if NATIVE_LIBRARY:
-    NATIVE_LIBRARY.fast_mul = make_fast_mul_f(NATIVE_LIBRARY)
-    NATIVE_LIBRARY.inverse_mod = make_inverse_mod_f(NATIVE_LIBRARY)
+    class noop:
+        pass
+
+    native = os.getenv("PYCOIN_NATIVE")
+    if native and native.lower() != "openssl":
+        return noop
+
+    if not OpenSSL:
+        return noop
+
+    class Optimizations:
+
+        if OpenSSL:
+            openssl_group = OpenSSL.EC_GROUP_new_by_curve_name(curve_id)
+
+        def multiply(self, p, e):
+            "Use OpenSSL to perform point mulitiplication."
+            if e == 0 or p == self._infinity:
+                return self._infinity
+
+            bn_x = OpenSSL.BignumType(p[0])
+            bn_y = OpenSSL.BignumType(p[1])
+            bn_n = OpenSSL.BignumType(e)
+
+            ctx = OpenSSL.BN_CTX_new()
+            ec_result = OpenSSL.EC_POINT_new(self.openssl_group)
+            ec_point = OpenSSL.EC_POINT_new(self.openssl_group)
+
+            OpenSSL.EC_POINT_set_affine_coordinates_GFp(self.openssl_group, ec_point, bn_x, bn_y, ctx)
+
+            OpenSSL.EC_POINT_mul(self.openssl_group, ec_result, None, ec_point, bn_n, ctx)
+
+            OpenSSL.EC_POINT_get_affine_coordinates_GFp(self.openssl_group, ec_result, bn_x, bn_y, ctx)
+            OpenSSL.EC_POINT_free(ec_point)
+            OpenSSL.EC_POINT_free(ec_result)
+            OpenSSL.BN_CTX_free(ctx)
+            return self.Point(bn_x.to_int(), bn_y.to_int())
+
+        def inverse_mod(self, a, p):
+            ctx = OpenSSL.BN_CTX_new()
+            a1 = OpenSSL.BignumType(a)
+            OpenSSL.BN_mod_inverse(a1, a1, OpenSSL.BignumType(p), ctx)
+            OpenSSL.BN_CTX_free(ctx)
+            return a1.to_int()
+
+    return Optimizations

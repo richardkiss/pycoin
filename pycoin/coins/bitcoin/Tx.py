@@ -36,7 +36,7 @@ from .SolutionChecker import BitcoinSolutionChecker as SolutionChecker
 
 from ...convention import SATOSHI_PER_COIN
 from ...encoding import double_sha256
-from ...serialize import b2h, b2h_rev, h2b, h2b_rev
+from ...serialize import b2h, b2h_rev, h2b_rev
 from ...serialize.bitcoin_streamer import (
     parse_struct, parse_bc_int, parse_bc_string,
     stream_struct, stream_bc_string
@@ -257,6 +257,11 @@ class Tx(BaseTx):
         self._check_txs_in()
         # Size limits
         self._check_size_limit()
+
+    def bad_signature_count(self, *args, **kwargs):
+        if self.is_coinbase():
+            return 0
+        return super(Tx, self).bad_signature_count(*args, **kwargs)
 
     """
     The functions below here deal with an optional additional parameter: "unspents".
