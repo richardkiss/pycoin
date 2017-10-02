@@ -2,7 +2,7 @@ import hashlib
 import struct
 import unittest
 
-from pycoin.ecdsa import generator_secp256k1, public_pair_for_secret_exponent
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import public_pair_to_bitcoin_address, secret_exponent_to_wif
 
 from pycoin.tx.exceptions import BadSpendableError
@@ -11,9 +11,7 @@ from pycoin.tx.Spendable import Spendable
 from pycoin.ui import standard_tx_out_script
 
 
-BITCOIN_ADDRESSES = [public_pair_to_bitcoin_address(
-    public_pair_for_secret_exponent(generator_secp256k1, i))
-    for i in range(1, 21)]
+BITCOIN_ADDRESSES = [public_pair_to_bitcoin_address(i * secp256k1_generator) for i in range(1, 21)]
 
 WIFS = [secret_exponent_to_wif(i) for i in range(1, 21)]
 

@@ -1,7 +1,7 @@
 import hashlib
 
-from ... import ecdsa
 from ... import encoding
+from ...ecdsa.secp256k1 import secp256k1_generator
 
 from .ScriptPayToAddress import ScriptPayToAddress
 from .ScriptPayToAddressWit import ScriptPayToAddressWit
@@ -33,7 +33,7 @@ def script_obj_from_script(script):
 def build_hash160_lookup(secret_exponents):
     d = {}
     for secret_exponent in secret_exponents:
-        public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.generator_secp256k1, secret_exponent)
+        public_pair = secret_exponent * secp256k1_generator
         for compressed in (True, False):
             hash160 = encoding.public_pair_to_hash160_sec(public_pair, compressed=compressed)
             d[hash160] = (secret_exponent, public_pair, compressed)

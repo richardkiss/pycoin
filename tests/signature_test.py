@@ -1,8 +1,6 @@
 import unittest
 
-from pycoin.ecdsa import (
-    sign, verify, public_pair_for_secret_exponent, possible_public_pairs_for_signature, generator_secp256k1
-)
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 
 
 class SigningTest(unittest.TestCase):
@@ -12,18 +10,18 @@ class SigningTest(unittest.TestCase):
         for se in PART1 + PART2:
             secret_exponent = int(se, 16)
             val = 28832970699858290
-            sig = sign(generator_secp256k1, secret_exponent, val)
+            sig = secp256k1_generator.sign(secret_exponent, val)
 
-            public_pair = public_pair_for_secret_exponent(generator_secp256k1, secret_exponent)
+            public_pair = secp256k1_generator * secret_exponent
 
-            v = verify(generator_secp256k1, public_pair, val, sig)
+            v = secp256k1_generator.verify(public_pair, val, sig)
             self.assertTrue(v)
 
             sig1 = (sig[0] + 1, sig[1])
-            v = verify(generator_secp256k1, public_pair, val, sig1)
+            v = secp256k1_generator.verify(public_pair, val, sig1)
             self.assertFalse(v)
 
-            public_pairs = possible_public_pairs_for_signature(generator_secp256k1, val, sig)
+            public_pairs = secp256k1_generator.possible_public_pairs_for_signature(val, sig)
             self.assertIn(public_pair, public_pairs)
             print(se)
 
