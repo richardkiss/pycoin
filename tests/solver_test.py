@@ -1,6 +1,7 @@
 import hashlib
 import unittest
 
+from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Solver import Solver
 
@@ -12,7 +13,6 @@ from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.pay_to import (
     ScriptMultisig, ScriptPayToPublicKey, build_hash160_lookup, build_p2sh_lookup
 )
-from pycoin.tx.script import ScriptError
 
 from pycoin.ui import address_for_pay_to_script, standard_tx_out_script
 
