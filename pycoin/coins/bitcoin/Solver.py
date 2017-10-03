@@ -9,8 +9,8 @@ from .ScriptTools import BitcoinScriptTools
 from pycoin.satoshi.flags import SIGHASH_ALL
 
 from pycoin.tx.pay_to.ScriptType import generate_default_placeholder_signature
-from pycoin.tx.script.constraints import Atom, Operator, make_traceback_f
-from pycoin.tx.script.solve import solutions_for_constraint
+from pycoin.solve.constraints import Atom, Operator, make_traceback_f
+from pycoin.solve.solve import solutions_for_constraint
 
 
 class DynamicStack(list):

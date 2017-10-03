@@ -24,9 +24,11 @@ setup(
         "pycoin.satoshi",
         "pycoin.serialize",
         "pycoin.services",
+        "pycoin.solve",
         "pycoin.tx",
         "pycoin.tx.pay_to",
         "pycoin.tx.script",
+        "pycoin.vm",
         "pycoin.wallet"
     ],
     author="Richard Kiss",

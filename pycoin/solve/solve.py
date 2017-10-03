@@ -3,7 +3,7 @@
 import pdb
 
 from pycoin.satoshi.checksigops import parse_signature_blob
-from ...serialize import b2h
+from ..serialize import b2h
 
 from pycoin import encoding
 from pycoin.intbytes import int2byte
