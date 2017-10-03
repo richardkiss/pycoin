@@ -1,7 +1,7 @@
 import collections
 
 from pycoin.encoding import (
-    hash160, hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address, sec_to_public_pair, is_sec_compressed
+    hash160, hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address, is_sec_compressed
 )
 
 from pycoin.serialize import b2h

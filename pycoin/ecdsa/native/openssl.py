@@ -72,8 +72,6 @@ def load_library():
 OpenSSL = load_library()
 
 
-
-
 def create_OpenSSLOptimizations(curve_id):
 
     class noop:
