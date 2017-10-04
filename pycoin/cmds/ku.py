@@ -12,12 +12,11 @@ from pycoin import encoding
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
-from pycoin.key.key_from_text import key_from_text
+from pycoin.ui.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, network_codes
 from pycoin.networks.default import get_current_netcode
-from pycoin.ui import address_for_pay_to_script
-from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
+from pycoin.ui.ui import address_for_pay_to_script, address_for_p2skh_wit
 
 
 SEC_RE = re.compile(r"^(0[23][0-9a-fA-F]{64})|(04[0-9a-fA-F]{128})$")
@@ -145,8 +144,8 @@ def create_hash160_output(key, add_output, output_dict):
 
     # don't print segwit addresses unless we're sure we have a compressed key
     if hash160_c:
-        p2aw_script = ScriptPayToAddressWit(b'\0', hash160_c)
-        address_segwit = p2aw_script.info()["address_f"](key._netcode)
+        p2aw_script = address_for_p2skh_wit(hash160_c, netcode=key._netcode)
+        address_segwit = address_for_pay_to_script(script_for_p2phk_wit(hash160_c), netcode=key._netcode)
         if address_segwit:
             # this network seems to support segwit
             add_output("address_segwit", address_segwit, "%s segwit address" % network_name)

@@ -18,7 +18,7 @@ from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import hash160
 from pycoin.key import Key
-from pycoin.key.validate import is_address_valid
+from pycoin.ui.validate import is_address_valid
 from pycoin.networks import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode
@@ -30,7 +30,7 @@ from pycoin.tx.exceptions import BadSpendableError
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
-from pycoin.ui import standard_tx_out_script
+from pycoin.ui.ui import standard_tx_out_script
 from pycoin.vm.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
 
 DEFAULT_VERSION = 1

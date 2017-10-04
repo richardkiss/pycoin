@@ -10,10 +10,10 @@ from pycoin.serialize import h2b
 
 from pycoin.tx.Tx import Tx
 from pycoin.satoshi.flags import SIGHASH_ALL
+from pycoin.solve.utils import build_hash160_lookup
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
-from pycoin.tx.pay_to import build_hash160_lookup
-from pycoin.ui import standard_tx_out_script
+from pycoin.ui import script_for_address
 
 
 # block 80971
@@ -63,7 +63,7 @@ def standard_tx(coins_from, coins_to):
 
     txs_out = []
     for coin_value, bitcoin_address in coins_to:
-        txs_out.append(TxOut(coin_value, standard_tx_out_script(bitcoin_address)))
+        txs_out.append(TxOut(coin_value, script_for_address(bitcoin_address)))
 
     version, lock_time = 1, 0
     tx = Tx(version, txs_in, txs_out, lock_time)

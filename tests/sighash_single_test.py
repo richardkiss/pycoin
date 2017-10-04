@@ -7,16 +7,6 @@ from pycoin.encoding import (
     to_bytes_32,
 )
 from pycoin.key import Key
-from pycoin.serialize import (
-    b2h,
-    b2h_rev,
-)
-from pycoin.ui import standard_tx_out_script
-from pycoin.tx.Tx import (
-    Tx,
-    TxIn,
-    TxOut
-)
 from pycoin.satoshi.flags import (
     SIGHASH_ALL,
     SIGHASH_ANYONECANPAY,
@@ -26,6 +16,16 @@ from pycoin.satoshi.der import (
     sigdecode_der,
     sigencode_der,
 )
+from pycoin.serialize import (
+    b2h,
+    b2h_rev,
+)
+from pycoin.tx.Tx import (
+    Tx,
+    TxIn,
+    TxOut
+)
+from pycoin.ui.ui import script_for_address
 
 PRIV_KEYS = (
     2330949616242593315303241053456316633827293588958882755297900732239663851861,
@@ -92,9 +92,9 @@ class SighashSingleTest(unittest.TestCase):
             TxIn(coinbase_tx.hash(), 2),
         ]
         txs_out = [
-            TxOut(900000000, standard_tx_out_script(k3.address())),
-            TxOut(800000000, standard_tx_out_script(k4.address())),
-            TxOut(800000000, standard_tx_out_script(k5.address())),
+            TxOut(900000000, script_for_address(k3.address(), netcodes=[netcode])),
+            TxOut(800000000, script_for_address(k4.address(), netcodes=[netcode])),
+            TxOut(800000000, script_for_address(k5.address(), netcodes=[netcode])),
         ]
         tx = Tx(1, txs_in, txs_out)
         tx.set_unspents(coinbase_tx.txs_out)

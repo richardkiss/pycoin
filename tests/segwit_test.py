@@ -6,7 +6,7 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import double_sha256, to_bytes_32
 from pycoin.key import Key
 from pycoin.serialize import b2h, b2h_rev, h2b
-from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup
+from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut
@@ -440,21 +440,18 @@ class SegwitTest(unittest.TestCase):
 
     def test_segwit_ui(self):
         # p2wpkh
-        from pycoin.ui import script_obj_from_address
-        from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
+        from pycoin.ui.ui import address_for_script, script_for_address
         address = 'bc1qqyykvamqq62n64t8gw09uw0cdgxjwwlw7mypam'
-        s = script_obj_from_address(address)
-        self.assertIsInstance(s, ScriptPayToAddressWit)
-        self.assertEqual(address, s.address())
+        s = script_for_address(address)
+        afs_address = address_for_script(s)
+        self.assertEqual(address, afs_address)
 
     def test_segwit_create_tx(self):
         from pycoin.tx.tx_utils import create_tx, sign_tx
-        from pycoin.tx.pay_to.ScriptPayToAddress import ScriptPayToAddress
-        from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
-        from pycoin.ui import address_for_pay_to_script_wit, script_obj_from_address
+        from pycoin.ui.ui import address_for_pay_to_script_wit, script_for_p2phk, script_for_p2phk_wit, script_for_address
         key1 = Key(1, generator=secp256k1_generator)
         coin_value = 5000000
-        script = ScriptPayToAddressWit(b'\0', key1.hash160()).script()
+        script = script_for_p2phk_wit(key1.hash160())
         tx_hash = b'\ee' * 32
         tx_out_index = 0
         spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
@@ -465,9 +462,9 @@ class SegwitTest(unittest.TestCase):
         self.check_signed(tx)
         self.assertEqual(len(tx.txs_in[0].witness), 2)
 
-        s1 = ScriptPayToAddress(key1.hash160()).script()
+        s1 = script_for_p2phk(key1.hash160())
         address = address_for_pay_to_script_wit(s1)
-        spendable.script = script_obj_from_address(address).script()
+        spendable.script = script_for_address(address)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()], p2sh_lookup=build_p2sh_lookup([s1]))

@@ -1,4 +1,4 @@
-from ...serialize import b2h
+from ...serialize import b2h, h2b
 
 from ..exceptions import SolvingError
 from ..SolutionChecker import ScriptError
@@ -8,9 +8,14 @@ from .ScriptTools import BitcoinScriptTools
 
 from pycoin.satoshi.flags import SIGHASH_ALL
 
-from pycoin.tx.pay_to.ScriptType import generate_default_placeholder_signature
 from pycoin.solve.constraints import Atom, Operator, make_traceback_f
 from pycoin.solve.solve import solutions_for_constraint
+
+
+def generate_default_placeholder_signature(generator):
+    return h2b(
+        "3045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207"
+        "fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001")
 
 
 class DynamicStack(list):
@@ -145,63 +150,10 @@ class Solver(object):
             return solution_script, witness_list
         return solution_script
 
-    def solve_old(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
-        """
-        Sign a standard transaction.
-        hash160_lookup:
-            An object with a get method that accepts a hash160 and returns the
-            corresponding (secret exponent, public_pair, is_compressed) tuple or
-            None if it's unknown (in which case the script will obviously not be signed).
-            A standard dictionary will do nicely here.
-        tx_in_idx:
-            the index of the tx_in we are currently signing
-        """
-        from ...tx.pay_to import script_obj_from_script, ScriptPayToScript
-
-        tx_out_script = self.tx.unspents[tx_in_idx].script
-        if hash_type is None:
-            hash_type = SIGHASH_ALL
-        tx_in = self.tx.txs_in[tx_in_idx]
-
-        is_p2h = self.solution_checker.is_pay_to_script_hash(tx_out_script)
-        if is_p2h:
-            hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
-            p2sh_lookup = kwargs.get("p2sh_lookup")
-            if p2sh_lookup is None:
-                raise ValueError("p2sh_lookup not set")
-            if hash160 not in p2sh_lookup:
-                raise ValueError("hash160=%s not found in p2sh_lookup" %
-                                 b2h(hash160))
-
-            script_to_hash = p2sh_lookup[hash160]
-        else:
-            script_to_hash = tx_out_script
-
-        # Leave out the signature from the hash, since a signature can't sign itself.
-        # The checksig op will also drop the signatures from its hash.
-        def signature_for_hash_type_f(hash_type, script):
-            return self.solution_checker.signature_hash(script, tx_in_idx, hash_type)
-
-        def witness_signature_for_hash_type(hash_type, script):
-            return self.solution_checker.signature_for_hash_type_segwit(script, tx_in_idx, hash_type)
-        witness_signature_for_hash_type.skip_delete = True
-
-        signature_for_hash_type_f.witness = witness_signature_for_hash_type
-
-        the_script = script_obj_from_script(tx_out_script)
-        solution = the_script.solve(
-            hash160_lookup=hash160_lookup, signature_type=hash_type,
-            existing_script=self.tx.txs_in[tx_in_idx].script, existing_witness=tx_in.witness,
-            script_to_hash=script_to_hash, signature_for_hash_type_f=signature_for_hash_type_f, **kwargs)
-        return solution
-
     def solve(self, *args, **kwargs):
         # BRAIN DAMAGE
         kwargs["generator_for_signature_type_f"] = self.SolutionChecker.VM.generator_for_signature_type
-        s1 = self.solve_old(*args, **kwargs)
-        s2 = self.solve_new(*args, **kwargs)
-        assert s1 == s2
-        return s1
+        return self.solve_new(*args, **kwargs)
 
     def sign(self, hash160_lookup, tx_in_idx_set=None, hash_type=None, **kwargs):
         """

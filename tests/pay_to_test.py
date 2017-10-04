@@ -11,9 +11,9 @@ from pycoin.tx import tx_utils
 from pycoin.tx.Spendable import Spendable
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
-from pycoin.tx.pay_to import ScriptMultisig, ScriptPayToPublicKey, ScriptNulldata
-from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup, script_obj_from_script
-from pycoin.ui import address_for_pay_to_script, standard_tx_out_script, script_obj_from_address
+from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
+from pycoin.ui.ui import address_for_pay_to_script, address_for_script, nulldata_for_script, script_for_address
+from pycoin.ui.ui import script_for_multisig, script_for_p2phk, script_for_p2pk, script_for_nulldata
 
 
 def const_f(v):
@@ -29,52 +29,49 @@ class ScriptTypesTest(unittest.TestCase):
             key = Key(secret_exponent=se, generator=secp256k1_generator)
             for b in [True, False]:
                 addr = key.address(use_uncompressed=b)
-                st = script_obj_from_address(addr)
-                self.assertEqual(st.address(), addr)
-                sc = st.script()
-                st = script_obj_from_script(sc)
-                self.assertEqual(st.address(), addr)
+                sc = script_for_p2phk(key.hash160(use_uncompressed=b))
+                afs_address = address_for_script(sc)
+                self.assertEqual(afs_address, addr)
 
     def test_solve_pay_to_address(self):
         for se in range(1, 10):
             key = Key(secret_exponent=se, generator=secp256k1_generator)
             for b in [True, False]:
                 addr = key.address(use_uncompressed=b)
-                st = script_obj_from_address(addr)
-                self.assertEqual(st.address(), addr)
+                sc = script_for_p2phk(key.hash160(use_uncompressed=b))
+                afs_address = address_for_script(sc)
+                self.assertEqual(afs_address, addr)
                 hl = build_hash160_lookup([se], [secp256k1_generator])
                 sv = 100
                 st.solve(generator=secp256k1_generator, hash160_lookup=hl,
                          signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
                 sc = st.script()
-                st = script_obj_from_script(sc)
-                self.assertEqual(st.address(), addr)
+                afs_address = address_for_script(sc)
+                self.assertEqual(afs_address, addr)
 
     def test_script_type_pay_to_public_pair(self):
         for se in range(1, 100):
             key = Key(secret_exponent=se, generator=secp256k1_generator)
             for b in [True, False]:
-                st = ScriptPayToPublicKey.from_key(key, use_uncompressed=b)
                 addr = key.address(use_uncompressed=b)
-                self.assertEqual(st.address(), addr)
-                sc = st.script()
-                st = script_obj_from_script(sc)
-                self.assertEqual(st.address(), addr)
+                sc = script_for_p2pk(key.sec(use_uncompressed=b))
+                afs_address = address_for_script(sc)
+                self.assertEqual(afs_address, addr)
 
     def test_solve_pay_to_public_pair(self):
         for se in range(1, 10):
             key = Key(secret_exponent=se, generator=secp256k1_generator)
             for b in [True, False]:
                 addr = key.address(use_uncompressed=b)
-                st = ScriptPayToPublicKey.from_key(key, use_uncompressed=b)
-                self.assertEqual(st.address(), addr)
+                sc = script_for_p2pk(key.sec(use_uncompressed=b))
+                afs_address = address_for_script(sc)
+                self.assertEqual(afs_address, addr)
                 hl = build_hash160_lookup([se], [secp256k1_generator])
                 sv = 100
                 st.solve(generator=secp256k1_generator, hash160_lookup=hl,
                          signature_for_hash_type_f=const_f(sv), signature_type=SIGHASH_ALL)
-                sc = st.script()
                 st = script_obj_from_script(sc)
-                self.assertEqual(st.address(), addr)
+                self.assertEqual(afs_address, addr)
 
     def test_sign(self):
         sv = 33143560198659167577410026742586567991638126035902913554051654024377193788946
@@ -138,7 +135,7 @@ class ScriptTypesTest(unittest.TestCase):
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
-        script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
+        script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
@@ -164,7 +161,7 @@ class ScriptTypesTest(unittest.TestCase):
         N = 3
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
-        script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
+        script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
@@ -187,7 +184,7 @@ class ScriptTypesTest(unittest.TestCase):
             "0316ee25e80eb6e6fc734d9c86fa580cbb9c4bfd94a19f0373a22353ececd4db6853ae")]
         txs_in = [TxIn(previous_hash=h2b('43c95d14724437bccc102ccf86aba1ac02415524fd1aefa787db886bba52a10c'),
                        previous_index=0)]
-        txs_out = [TxOut(10000, standard_tx_out_script('3KeGeLFmsbmbVdeMLrWp7WYKcA3tdsB4AR'))]
+        txs_out = [TxOut(10000, script_for_address('3KeGeLFmsbmbVdeMLrWp7WYKcA3tdsB4AR'))]
         spendable = {'script_hex': 'a914c4ed4de526461e3efbb79c8b688a6f9282c0464687', 'does_seem_spent': 0,
                      'block_index_spent': 0, 'coin_value': 10000, 'block_index_available': 0, 'tx_out_index': 0,
                      'tx_hash_hex': '0ca152ba6b88db87a7ef1afd24554102aca1ab86cf2c10ccbc374472145dc943'}
@@ -208,10 +205,10 @@ class ScriptTypesTest(unittest.TestCase):
         M, N = 3, 3
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
-        underlying_script = ScriptMultisig(m=M, sec_keys=[key.sec() for key in keys[:N]]).script()
+        underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         address = address_for_pay_to_script(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
-        script = standard_tx_out_script(address)
+        script = script_for_address(address)
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])
@@ -222,20 +219,19 @@ class ScriptTypesTest(unittest.TestCase):
 
     def test_weird_tx(self):
         # this is from tx 12a8d1d62d12307eac6e62f2f14d7e826604e53c320a154593845aa7c8e59fbf
-        st = script_obj_from_script(b'Q')
-        self.assertNotEqual(st, None)
+        afs_address = address_for_script(b'Q')
+        self.assertNotEqual(afs_address, None)
+        self.assertEqual(afs_address, "???")
 
     def test_nulldata(self):
         OP_RETURN = BitcoinScriptTools.compile("OP_RETURN")
         # note that because chr() is used samples with length > 255 will not work
         for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
             sample_script = OP_RETURN + BitcoinScriptTools.compile_push_data_list([sample])
-            nd = ScriptNulldata(sample)
-            self.assertEqual(nd.nulldata, sample)
-            self.assertEqual(nd.script(), sample_script)
-            nd2 = ScriptNulldata.from_script(sample_script)
-            self.assertEqual(nd.nulldata, nd2.nulldata)
-            out = TxOut(1, nd.script())
+            sc = script_for_nulldata(sample)
+            self.assertEqual(nulldata_for_script(sc), sample)
+            self.assertEqual(sc, sample_script)
+            out = TxOut(1, sc)
             # ensure we can create a tx
             Tx(0, [], [out])
             # convert between asm and back to ensure no bugs with compilation

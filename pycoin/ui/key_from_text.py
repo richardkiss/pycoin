@@ -1,7 +1,7 @@
 from .. import encoding
 from ..serialize import b2h
 from .validate import netcode_and_type_for_text
-from .electrum import ElectrumWallet
+from pycoin.key.electrum import ElectrumWallet
 
 
 def key_from_text(text, generator=None, is_compressed=True):

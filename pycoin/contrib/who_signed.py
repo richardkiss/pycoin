@@ -7,9 +7,6 @@ from ..encoding import public_pair_to_bitcoin_address, sec_to_public_pair
 from ..networks import address_prefix_for_netcode
 from ..serialize import b2h_rev
 
-from pycoin.tx.pay_to import (
-    script_obj_from_script, ScriptMultisig, ScriptPayToAddress, ScriptPayToPublicKey
-)
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
 

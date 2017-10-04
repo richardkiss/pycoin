@@ -3,8 +3,8 @@ from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
 
 from .Tx import Tx
-from .pay_to import build_hash160_lookup
-from ..ui import standard_tx_out_script
+from ..solve.utils import build_hash160_lookup
+from ..ui.ui import standard_tx_out_script
 
 
 class SecretExponentMissing(Exception):
