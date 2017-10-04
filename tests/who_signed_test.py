@@ -8,7 +8,7 @@ from pycoin.tx import tx_utils
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
-from pycoin.ui.ui import address_for_pay_to_script, standard_tx_out_script
+from pycoin.ui.ui import address_for_pay_to_script, standard_tx_out_script, script_for_address, script_for_multisig
 
 
 class WhoSignedTest(unittest.TestCase):
@@ -58,8 +58,6 @@ class WhoSignedTest(unittest.TestCase):
             hash160_lookup = build_hash160_lookup([keys[i-1].secret_exponent()], [secp256k1_generator])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
-            import pdb
-            pdb.set_trace()
             t1 = sorted(who_signed.who_signed_tx(tx2, 0))
             t2 = sorted(((key.address(), SIGHASH_ALL) for key in keys[:i]))
             self.assertEqual(t1, t2)
