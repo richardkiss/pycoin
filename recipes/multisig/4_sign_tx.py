@@ -4,7 +4,7 @@ import sys
 
 from pycoin.key.validate import is_wif_valid
 from pycoin.serialize import h2b
-from pycoin.tx.pay_to import build_p2sh_lookup
+from pycoin.solve.utils import build_p2sh_lookup
 from pycoin.tx.Tx import Tx
 from pycoin.tx.tx_utils import sign_tx
 

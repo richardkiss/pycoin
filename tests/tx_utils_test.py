@@ -8,7 +8,7 @@ from pycoin.encoding import public_pair_to_bitcoin_address, secret_exponent_to_w
 from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.tx_utils import create_signed_tx
 from pycoin.tx.Spendable import Spendable
-from pycoin.ui import standard_tx_out_script
+from pycoin.ui.ui import standard_tx_out_script
 
 
 BITCOIN_ADDRESSES = [public_pair_to_bitcoin_address(i * secp256k1_generator) for i in range(1, 21)]

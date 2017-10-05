@@ -1,6 +1,7 @@
 import unittest
 
 from pycoin.contrib.msg_signing import parse_signed_message, verify_message
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
 
 
@@ -22,7 +23,7 @@ def test_against_myself():
                 ]:
         se, comp = wif_to_tuple_of_secret_exponent_compressed(wif)
 
-        k = Key(secret_exponent=se, is_compressed=comp)
+        k = Key(secret_exponent=se, generator=secp256k1_generator, is_compressed=comp)
         assert k.address(netcode=nc) == right_addr
 
         vk = Key(public_pair=k.public_pair(), is_compressed=comp)

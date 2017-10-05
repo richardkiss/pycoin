@@ -1,21 +1,22 @@
 import unittest
 
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
-from pycoin.key.key_from_text import key_from_text
 from pycoin.serialize import h2b
+from pycoin.ui.key_from_text import key_from_text
 
 
 class KeyTest(unittest.TestCase):
 
     def test_sign_verify(self):
-        private_key = Key(secret_exponent=1)
+        private_key = Key(secret_exponent=1, generator=secp256k1_generator)
         h = b"\x00" * 32
         sig = private_key.sign(h)
         self.assertTrue(private_key.verify(h, sig))
         public_key = private_key.public_copy()
-        self.assertTrue(public_key.verify(h, sig))
+        self.assertTrue(public_key.verify(h, sig, generator=secp256k1_generator))
         h160_key = Key(hash160=private_key.hash160())
-        self.assertTrue(h160_key.verify(h, sig))
+        self.assertTrue(h160_key.verify(h, sig, generator=secp256k1_generator))
 
     def test_translation(self):
         nc = "BTC"
@@ -26,13 +27,13 @@ class KeyTest(unittest.TestCase):
             c_sec = h2b(c_public_pair_sec)
 
             keys_wif = [
-                Key(secret_exponent=secret_exponent),
-                key_from_text(wif)[0],
-                key_from_text(c_wif)[0],
+                Key(secret_exponent=secret_exponent, generator=secp256k1_generator),
+                key_from_text(secp256k1_generator, wif)[0],
+                key_from_text(secp256k1_generator, c_wif)[0],
             ]
 
-            key_sec = Key.from_sec(sec)
-            key_sec_c = Key.from_sec(c_sec)
+            key_sec = Key.from_sec(sec, secp256k1_generator)
+            key_sec_c = Key.from_sec(c_sec, secp256k1_generator)
             keys_sec = [key_sec, key_sec_c]
 
             for key in keys_wif:
@@ -60,8 +61,8 @@ class KeyTest(unittest.TestCase):
                 self.assertEqual(key.address(use_uncompressed=False, netcode=nc), c_address_b58)
                 self.assertEqual(key.address(use_uncompressed=True, netcode=nc), address_b58)
 
-            key_pub = key_from_text(address_b58)[0]
-            key_pub_c = key_from_text(c_address_b58)[0]
+            key_pub = key_from_text(secp256k1_generator, address_b58)[0]
+            key_pub_c = key_from_text(secp256k1_generator, c_address_b58)[0]
 
             self.assertEqual(key_pub.address(netcode=nc), address_b58)
             self.assertEqual(key_pub.address(use_uncompressed=True, netcode=nc), address_b58)

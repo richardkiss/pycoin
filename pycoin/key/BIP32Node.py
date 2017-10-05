@@ -60,12 +60,13 @@ class BIP32Node(Key):
     https://en.bitcoin.it/wiki/BIP_0032
     """
     @classmethod
-    def from_master_secret(class_, master_secret):
+    def from_master_secret(class_, generator, master_secret):
         """Generate a Wallet from a master password."""
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
-        return class_(chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
+        return class_(generator=generator, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
 
-    def __init__(self, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
+
+    def __init__(self, generator, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
                  child_index=0, secret_exponent=None, public_pair=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
 
@@ -73,8 +74,8 @@ class BIP32Node(Key):
             raise ValueError("must include exactly one of public_pair and secret_exponent")
 
         super(BIP32Node, self).__init__(
-            secret_exponent=secret_exponent, public_pair=public_pair, prefer_uncompressed=False,
-            is_compressed=True, is_pay_to_script=False)
+            secret_exponent=secret_exponent, generator=generator, public_pair=public_pair,
+            prefer_uncompressed=False, is_compressed=True, is_pay_to_script=False)
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)
@@ -135,7 +136,7 @@ class BIP32Node(Key):
 
     def public_copy(self):
         """Yield the corresponding public node for this node."""
-        return self.__class__(chain_code=self._chain_code,
+        return self.__class__(generator=self._generator, chain_code=self._chain_code,
                               depth=self._depth, parent_fingerprint=self._parent_fingerprint,
                               child_index=self._child_index, public_pair=self.public_pair())
 
@@ -154,11 +155,12 @@ class BIP32Node(Key):
             if is_hardened:
                 raise PublicPrivateMismatchError("can't derive a private key from a public key")
             d["public_pair"], chain_code = subkey_public_pair_chain_code_pair(
-                self.public_pair(), self._chain_code, i)
+                self._generator, self.public_pair(), self._chain_code, i)
         else:
             d["secret_exponent"], chain_code = subkey_secret_exponent_chain_code_pair(
-                self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
+                self._generator, self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
         d["chain_code"] = chain_code
+        d["generator"] = self._generator
         key = self.__class__(**d)
         if not as_private:
             key = key.public_copy()

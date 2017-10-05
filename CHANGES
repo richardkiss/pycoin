@@ -1,8 +1,8 @@
-
 Version xxxx
 ------------
 
 * rewrite of ecdsa package
+* change how ScriptNullData works (arbitrary data now allowed after OP_RETURN)
 
 
 Version 0.80
@@ -16,7 +16,6 @@ Version 0.80
 * remove fetch_unspents tool (use tx -i)
 * remove cache_tx tool (use tx -C)
 * remove BlockHeader (functionality has been rolled into Block)
-
 
 Version 0.77
 ------------

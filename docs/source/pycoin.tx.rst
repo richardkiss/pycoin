@@ -69,5 +69,4 @@ Subpackages
 
 .. toctree::
 
-    pycoin.tx.pay_to
     pycoin.tx.script
