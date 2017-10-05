@@ -68,7 +68,7 @@ class WhoSignedTest(unittest.TestCase):
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
-        address = address_for_pay_to_script(underlying_script)
+        address = address_for_pay_to_script(underlying_script, "BTC")
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = script_for_address(address)
         tx_out = TxOut(1000000, script)

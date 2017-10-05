@@ -2,6 +2,8 @@ from .. import encoding
 from ..serialize import b2h
 from .validate import netcode_and_type_for_text
 from pycoin.key.electrum import ElectrumWallet
+from pycoin.key.BIP32Node import BIP32Node
+from pycoin.key.Key import Key
 
 
 def key_from_text(text, generator=None, is_compressed=True):
@@ -10,9 +12,6 @@ def key_from_text(text, generator=None, is_compressed=True):
 
     The "is_compressed" parameter is ignored unless a public address is passed in.
     """
-    # TODO: fix import loop
-    from .BIP32Node import BIP32Node
-    from .Key import Key
 
     netcode, key_type, data = netcode_and_type_for_text(text)
 

@@ -13,7 +13,7 @@ from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
-from pycoin.ui import script_for_address
+from pycoin.ui.ui import script_for_address
 
 
 # block 80971

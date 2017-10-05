@@ -15,7 +15,6 @@ class NoAddressesForScriptTypeError(Exception):
     pass
 
 
-
 def sec_keys(script):
     pc = 0
     opcode, data, pc = BitcoinScriptStreamer.get_opcode(script, pc)
