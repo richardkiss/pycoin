@@ -88,7 +88,7 @@ class BitcoinSolutionChecker(SolutionChecker):
         puzzle_script = tx_context.puzzle_script
 
         if flags & VERIFY_SIGPUSHONLY:
-            self.VM.ScriptStreamer.check_script_push_only(solution_script)
+            self.check_script_push_only(solution_script)
 
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
         f1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
@@ -120,9 +120,9 @@ class BitcoinSolutionChecker(SolutionChecker):
         return stack, solution_stack
 
     def _check_p2sh(self, tx_context, solution_blob, puzzle_script, flags, traceback_f):
+        self.check_script_push_only(tx_context.solution_script)
         solution_script = self.ScriptTools.compile_push_data_list(solution_blob)
-        self.VM.ScriptStreamer.check_script_push_only(tx_context.solution_script)
-        flags = flags & ~VERIFY_P2SH
+        flags &= ~VERIFY_P2SH
         p2sh_tx_context = TxContext()
         p2sh_tx_context.puzzle_script = puzzle_script
         p2sh_tx_context.solution_script = solution_script
@@ -132,6 +132,14 @@ class BitcoinSolutionChecker(SolutionChecker):
         p2sh_tx_context.lock_time = tx_context.lock_time
         p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
         self.check_solution(p2sh_tx_context, flags=flags, traceback_f=traceback_f)
+
+    def check_script_push_only(self, script):
+        scriptStreamer = self.VM.ScriptStreamer
+        pc = 0
+        while pc < len(script):
+            opcode, data, pc = scriptStreamer.get_opcode(script, pc)
+            if opcode not in scriptStreamer.data_opcodes:
+                raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 
     def _puzzle_script_for_len20_segwit(self, witness_program):
         return V0_len20_prefix + self.ScriptTools.compile_push_data_list(

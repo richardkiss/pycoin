@@ -131,13 +131,6 @@ class ScriptStreamer(object):
 
         self.data_opcodes = frozenset(self.decoder.keys())
 
-    def check_script_push_only(self, script):
-        pc = 0
-        while pc < len(script):
-            opcode, data, pc = self.get_opcode(script, pc)
-            if opcode not in self.data_opcodes:
-                raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
-
     def get_opcode(self, script, pc, verify_minimal_data=False):
         """
         Step through the script, returning a tuple with the next opcode, the next
