@@ -26,7 +26,7 @@ setup(
         "pycoin.services",
         "pycoin.solve",
         "pycoin.tx",
-        "pycoin.tx.pay_to",
+        "pycoin.ui",
         "pycoin.vm",
         "pycoin.wallet"
     ],

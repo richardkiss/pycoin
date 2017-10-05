@@ -5,15 +5,16 @@ from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
-from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.serialize import h2b
 from pycoin.tx import tx_utils
 from pycoin.tx.Spendable import Spendable
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
-from pycoin.ui.ui import address_for_pay_to_script, address_for_script, nulldata_for_script, script_for_address
-from pycoin.ui.ui import info_from_multisig_script, script_for_multisig, script_for_p2pkh, script_for_p2pk, script_for_nulldata, script_for_nulldata_push
+from pycoin.ui.ui import (
+    address_for_pay_to_script, address_for_script, info_from_multisig_script, nulldata_for_script, script_for_address,
+    script_for_multisig, script_for_p2pkh, script_for_p2pk, script_for_nulldata, script_for_nulldata_push
+)
 
 
 def const_f(v):
@@ -71,7 +72,6 @@ class ScriptTypesTest(unittest.TestCase):
                 self.assertEqual(afs_address, addr)
 
     def test_sign(self):
-        sv = 33143560198659167577410026742586567991638126035902913554051654024377193788946
         tx_out_script = h2b("76a91491b24bf9f5288532960ac687abb035127b1d28a588ac")
         script = script_for_address("1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm")
         self.assertEqual(tx_out_script, script)
@@ -80,7 +80,6 @@ class ScriptTypesTest(unittest.TestCase):
         tx.set_unspents([tx_out])
         hl = build_hash160_lookup([1], [secp256k1_generator])
         tx.sign(hash160_lookup=hl)
-        solution = tx.txs_in[0].script
         self.assertEqual(tx.bad_signature_count(), 0)
 
     def test_validate_multisig(self):

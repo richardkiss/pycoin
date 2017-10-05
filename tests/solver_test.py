@@ -8,10 +8,9 @@ from pycoin.coins.bitcoin.Solver import Solver
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
 from pycoin.serialize import b2h
-from pycoin.solve.utils import  build_hash160_lookup, build_p2sh_lookup
+from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.ui.ui import address_for_pay_to_script, standard_tx_out_script, script_for_multisig, script_for_p2pk
-
 
 
 class SolverTest(unittest.TestCase):
@@ -98,8 +97,6 @@ class SolverTest(unittest.TestCase):
         underlying_script = script_for_multisig(2, secs)
         p2sh_script = BitcoinScriptTools.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
         script = standard_tx_out_script(address_for_pay_to_script(p2sh_script, netcode=netcode))
-        import pdb
-        #pdb.set_trace()
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script, p2sh_script]))
 
     def test_if(self):

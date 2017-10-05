@@ -8,8 +8,7 @@ import sys
 
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import b2h
-from pycoin.ui import address_for_pay_to_script
-from pycoin.tx.pay_to.ScriptMultisig import ScriptMultisig
+from pycoin.ui.ui import address_for_pay_to_script, script_for_multisig
 
 
 def main():
@@ -32,7 +31,7 @@ def main():
 
     # create the 2-of-3 multisig script
     # any 2 signatures can release the funds
-    pay_to_multisig_script = ScriptMultisig(2, public_key_sec_list).script()
+    pay_to_multisig_script = script_for_multisig(2, public_key_sec_list)
 
     # create a "2-of-3" multisig address_for_multisig
     the_address = address_for_pay_to_script(pay_to_multisig_script)

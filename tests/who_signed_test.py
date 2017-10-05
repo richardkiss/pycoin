@@ -8,7 +8,7 @@ from pycoin.tx import tx_utils
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
-from pycoin.ui.ui import address_for_pay_to_script, standard_tx_out_script, script_for_address, script_for_multisig
+from pycoin.ui.ui import address_for_pay_to_script, script_for_address, script_for_multisig
 
 
 class WhoSignedTest(unittest.TestCase):

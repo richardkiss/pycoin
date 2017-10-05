@@ -448,7 +448,9 @@ class SegwitTest(unittest.TestCase):
 
     def test_segwit_create_tx(self):
         from pycoin.tx.tx_utils import create_tx, sign_tx
-        from pycoin.ui.ui import address_for_pay_to_script_wit, script_for_p2pkh, script_for_p2pkh_wit, script_for_address
+        from pycoin.ui.ui import (
+            address_for_pay_to_script_wit, script_for_p2pkh, script_for_p2pkh_wit, script_for_address
+        )
         key1 = Key(1, generator=secp256k1_generator)
         coin_value = 5000000
         script = script_for_p2pkh_wit(key1.hash160())
