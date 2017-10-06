@@ -1,13 +1,11 @@
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import EncodingError, a2b_hashed_base58, \
     from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
     is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
     sec_to_public_pair, secret_exponent_to_wif
-from pycoin.key.validate import netcode_and_type_for_data
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
-from pycoin.tx.script.der import sigencode_der, sigdecode_der
+from pycoin.satoshi.der import sigencode_der, sigdecode_der
 
 
 class InvalidPublicPairError(ValueError):
@@ -19,8 +17,8 @@ class InvalidSecretExponentError(ValueError):
 
 
 class Key(object):
-    def __init__(self, secret_exponent=None, public_pair=None, hash160=None,
-                 prefer_uncompressed=None, is_compressed=None, is_pay_to_script=False, netcode=None):
+    def __init__(self, secret_exponent=None, generator=None, public_pair=None, hash160=None, prefer_uncompressed=None,
+                 is_compressed=None, is_pay_to_script=False, netcode=None):
         """
         secret_exponent:
             a long representing the secret exponent
@@ -50,10 +48,13 @@ class Key(object):
             netcode = get_current_netcode()
         if [secret_exponent, public_pair, hash160].count(None) != 2:
             raise ValueError("exactly one of secret_exponent, public_pair, hash160 must be passed.")
+        if secret_exponent and not generator:
+            raise ValueError("generator not specified when secret exponent specified")
         if prefer_uncompressed is None:
             prefer_uncompressed = not is_compressed
         self._prefer_uncompressed = prefer_uncompressed
         self._secret_exponent = secret_exponent
+        self._generator = generator
         self._public_pair = public_pair
         self._hash160_uncompressed = None
         self._hash160_compressed = None
@@ -66,50 +67,22 @@ class Key(object):
 
         if self._public_pair is None and self._secret_exponent is not None:
             if self._secret_exponent < 1 \
-                    or self._secret_exponent >= secp256k1_generator.order():
+                    or self._secret_exponent >= self._generator.order():
                 raise InvalidSecretExponentError()
-            public_pair = self._secret_exponent * secp256k1_generator
+            public_pair = self._secret_exponent * self._generator
             self._public_pair = public_pair
 
-        if self._public_pair is not None \
-                and (None in self._public_pair or
-                     not secp256k1_generator.contains_point(*self._public_pair)):
-            raise InvalidPublicPairError()
+        if self._public_pair is not None:
+            if (None in self._public_pair) or \
+               (self._generator and not self._generator.contains_point(*self._public_pair)):
+                raise InvalidPublicPairError()
 
     @classmethod
-    def from_text(class_, text, is_compressed=False):
-        """
-        This function will accept a BIP0032 wallet string, a WIF, or a bitcoin address.
-
-        The "is_compressed" parameter is ignored unless a public address is passed in.
-        """
-
-        data = a2b_hashed_base58(text)
-        netcode, key_type, length = netcode_and_type_for_data(data)
-        data = data[1:]
-
-        if key_type in ("pub32", "prv32"):
-            # TODO: fix this... it doesn't belong here
-            from pycoin.key.BIP32Node import BIP32Node
-            return BIP32Node.from_wallet_key(text)
-
-        if key_type == 'wif':
-            is_compressed = (len(data) > 32)
-            if is_compressed:
-                data = data[:-1]
-            return Key(
-                secret_exponent=from_bytes_32(data),
-                prefer_uncompressed=not is_compressed, netcode=netcode)
-        if key_type == 'address':
-            return Key(hash160=data, is_compressed=is_compressed, netcode=netcode)
-        raise EncodingError("unknown text: %s" % text)
-
-    @classmethod
-    def from_sec(class_, sec, netcode=None):
+    def from_sec(class_, sec, generator, netcode=None):
         """
         Create a key from an sec bytestream (which is an encoding of a public pair).
         """
-        public_pair = sec_to_public_pair(sec)
+        public_pair = sec_to_public_pair(sec, generator)
         return class_(public_pair=public_pair, is_compressed=is_sec_compressed(sec), netcode=netcode)
 
     def is_private(self):
@@ -238,20 +211,23 @@ class Key(object):
         if not self.is_private():
             raise RuntimeError("Key must be private to be able to sign")
         val = from_bytes_32(h)
-        r, s = secp256k1_generator.sign(self.secret_exponent(), val)
+        r, s = self._generator.sign(self.secret_exponent(), val)
         return sigencode_der(r, s)
 
-    def verify(self, h, sig):
+    def verify(self, h, sig, generator=None):
         """
         Return whether a signature is valid for hash h using this key.
         """
+        generator = generator or self._generator
+        if not generator:
+            raise ValueError("generator must be specified")
         val = from_bytes_32(h)
         pubkey = self.public_pair()
         rs = sigdecode_der(sig)
         if self.public_pair() is None:
             # find the pubkey from the signature and see if it matches
             # our key
-            possible_pubkeys = secp256k1_generator.possible_public_pairs_for_signature(val, rs)
+            possible_pubkeys = generator.possible_public_pairs_for_signature(val, rs)
             hash160 = self.hash160()
             for candidate in possible_pubkeys:
                 if hash160 == public_pair_to_hash160_sec(candidate, True):
@@ -263,7 +239,7 @@ class Key(object):
             else:
                 # signature is using a pubkey that's not this key
                 return False
-        return secp256k1_generator.verify(pubkey, val, rs)
+        return generator.verify(pubkey, val, rs)
 
     def _use_uncompressed(self, use_uncompressed=None):
         if use_uncompressed:

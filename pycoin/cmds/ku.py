@@ -12,12 +12,12 @@ from pycoin import encoding
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
-from pycoin.key.key_from_text import key_from_text
+from pycoin.ui.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, network_codes
 from pycoin.networks.default import get_current_netcode
-from pycoin.ui import address_for_pay_to_script
-from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
+from pycoin.ui.key_from_text import key_from_text
+from pycoin.ui.ui import address_for_pay_to_script, address_for_p2skh_wit, script_for_p2pkh_wit
 
 
 SEC_RE = re.compile(r"^(0[23][0-9a-fA-F]{64})|(04[0-9a-fA-F]{128})$")
@@ -145,15 +145,14 @@ def create_hash160_output(key, add_output, output_dict):
 
     # don't print segwit addresses unless we're sure we have a compressed key
     if hash160_c:
-        p2aw_script = ScriptPayToAddressWit(b'\0', hash160_c)
-        address_segwit = p2aw_script.info()["address_f"](key._netcode)
+        address_segwit = address_for_p2skh_wit(hash160_c, netcode=key._netcode)
         if address_segwit:
             # this network seems to support segwit
             add_output("address_segwit", address_segwit, "%s segwit address" % network_name)
             output_dict["%s_address_segwit" % key._netcode] = address_segwit
 
-            p2sh_script = p2aw_script.script()
-            p2s_address = address_for_pay_to_script(p2aw_script.script(), key._netcode)
+            p2sh_script = script_for_p2pkh_wit(hash160_c)
+            p2s_address = address_for_pay_to_script(p2sh_script, key._netcode)
             if p2s_address:
                 add_output("p2sh_segwit", p2s_address)
 
@@ -260,9 +259,9 @@ def prefix_transforms_for_network(network):
         raise RuntimeError("can't create BIP32 key")
 
     return (
-        ("P:", lambda s: BIP32Node.from_master_secret(s.encode("utf8"), netcode=network)),
-        ("H:", lambda s: BIP32Node.from_master_secret(h2b(s), netcode=network)),
-        ("E:", lambda s: key_from_text(s)),
+        ("P:", lambda s: BIP32Node.from_master_secret(secp256k1_generator, s.encode("utf8"), netcode=network)),
+        ("H:", lambda s: BIP32Node.from_master_secret(secp256k1_generator, h2b(s), netcode=network)),
+        ("E:", lambda s: key_from_text(s, generator=secp256k1_generator)),
         ("create", _create_bip32),
     )
 
@@ -276,7 +275,7 @@ def parse_prefixes(item, PREFIX_TRANSFORMS):
                 pass
 
     try:
-        return Key.from_text(item)
+        return key_from_text(item, generator=secp256k1_generator)
     except encoding.EncodingError:
         pass
     return None
@@ -293,10 +292,10 @@ def parse_key(item, PREFIX_TRANSFORMS, network):
 
     secret_exponent = parse_as_secret_exponent(item)
     if secret_exponent:
-        return Key(secret_exponent=secret_exponent, netcode=network)
+        return Key(secret_exponent=secret_exponent, generator=secp256k1_generator, netcode=network)
 
     if SEC_RE.match(item):
-        return Key.from_sec(h2b(item))
+        return Key.from_sec(h2b(item), secp256k1_generator)
 
     public_pair = parse_as_public_pair(item)
     if public_pair:

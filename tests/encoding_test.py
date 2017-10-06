@@ -1,6 +1,7 @@
 import unittest
 
 from pycoin import encoding
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.intbytes import iterbytes
 from pycoin.serialize import h2b
 
@@ -104,7 +105,7 @@ class EncodingTestCase(unittest.TestCase):
 
     def test_public_pair_to_sec(self):
         def do_test(as_public_pair, as_sec, is_compressed, as_hash160_sec, as_bitcoin_address):
-            self.assertEqual(encoding.sec_to_public_pair(as_sec), as_public_pair)
+            self.assertEqual(encoding.sec_to_public_pair(as_sec, secp256k1_generator), as_public_pair)
             self.assertEqual(encoding.public_pair_to_sec(as_public_pair, compressed=is_compressed), as_sec)
             self.assertEqual(encoding.is_sec_compressed(as_sec), is_compressed)
             self.assertEqual(encoding.public_pair_to_hash160_sec(as_public_pair, compressed=is_compressed),
@@ -176,9 +177,9 @@ class EncodingTestCase(unittest.TestCase):
     def test_sec(self):
         pair_blob = h2b("0679be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483a"
                         "da7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8")
-        encoding.sec_to_public_pair(pair_blob, strict=False)
+        encoding.sec_to_public_pair(pair_blob, secp256k1_generator, strict=False)
         try:
-            encoding.sec_to_public_pair(pair_blob, strict=True)
+            encoding.sec_to_public_pair(pair_blob, secp256k1_generator, strict=True)
             self.fail("sec_to_public_pair unexpectedly succeeded")
         except encoding.EncodingError:
             pass

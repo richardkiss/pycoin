@@ -1,12 +1,9 @@
-import hashlib
 import unittest
 
-from ctypes import cdll, byref, c_int, c_uint, c_char_p, c_void_p, c_size_t, create_string_buffer
+from ctypes import byref, c_size_t, create_string_buffer
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.ecdsa.intstream import to_bytes, from_bytes
 from pycoin.ecdsa.native.secp256k1 import libsecp256k1, SECP256K1_EC_UNCOMPRESSED
-from pycoin.ecdsa.rfc6979 import deterministic_generate_k
 from pycoin.encoding import from_bytes_32, to_bytes_32
 from pycoin.intbytes import int2byte, byte2int
 from pycoin.serialize import b2h
@@ -27,10 +24,11 @@ class ECDSATestCase(unittest.TestCase):
             89565891926547004231252920425935692360644145829622209833684329913297188986597,
             12158399299693830322967808612713398636155367887041628176798871954788371653930)
         )
-        self.assertEqual(secp256k1_generator *
-            12158399299693830322967808612713398636155367887041628176798871954788371653930, (
-            73503477726599187100887421812915680925855587149907858411827017692118332824920,
-            27657251006027960104028534670901169416706551781681983309292004861017889370444)
+        self.assertEqual(
+            secp256k1_generator *
+            12158399299693830322967808612713398636155367887041628176798871954788371653930,
+            (73503477726599187100887421812915680925855587149907858411827017692118332824920,
+             27657251006027960104028534670901169416706551781681983309292004861017889370444)
         )
 
     def test_sign_verify_mutual_compatability(self):
@@ -44,7 +42,8 @@ class ECDSATestCase(unittest.TestCase):
         public_key = create_string_buffer(64)
         r = libsecp256k1.secp256k1_ec_pubkey_create(ctx, public_key, secret_key)
         self.assertEqual(r, 1)
-        self.assertEqual(b2h(public_key),
+        self.assertEqual(
+            b2h(public_key),
             '880f50f7ceb4210289266a40b306e33ef52bb75f834c172e65175e3ce2ac3bed'
             '6e2835e3d57ae1fcd0954808be17bd97bf871f7a8a5edadcffcc8812576f7ae5'
         )
@@ -69,7 +68,8 @@ class ECDSATestCase(unittest.TestCase):
         public_key = create_string_buffer(64)
         r = libsecp256k1.secp256k1_ec_pubkey_create(ctx, public_key, secret_key)
         self.assertEqual(r, 1)
-        self.assertEqual(b2h(public_key),
+        self.assertEqual(
+            b2h(public_key),
             '880f50f7ceb4210289266a40b306e33ef52bb75f834c172e65175e3ce2ac3bed'
             '6e2835e3d57ae1fcd0954808be17bd97bf871f7a8a5edadcffcc8812576f7ae5'
         )
@@ -108,4 +108,3 @@ class ECDSATestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

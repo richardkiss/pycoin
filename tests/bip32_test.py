@@ -1,12 +1,14 @@
 import unittest
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import h2b
+from pycoin.ui.key_from_text import key_from_text
 
 
 class Bip0032TestCase(unittest.TestCase):
 
     def test_vector_1(self):
-        master = BIP32Node.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"))
+        master = BIP32Node.from_master_secret(secp256k1_generator, h2b("000102030405060708090a0b0c0d0e0f"))
         self.assertEqual(
             master.wallet_key(as_private=True),
             "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPG"
@@ -97,7 +99,7 @@ class Bip0032TestCase(unittest.TestCase):
                          pub_m0p1_1_2p_2_1000000000.wallet_key())
 
     def test_vector_2(self):
-        master = BIP32Node.from_master_secret(h2b(
+        master = BIP32Node.from_master_secret(secp256k1_generator, h2b(
             "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c99"
             "9693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542"))
         self.assertEqual(
@@ -181,7 +183,8 @@ class Bip0032TestCase(unittest.TestCase):
 
     def test_testnet(self):
         # WARNING: these values have not been verified independently. TODO: do so
-        master = BIP32Node.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"), netcode='XTN')
+        master = BIP32Node.from_master_secret(
+            secp256k1_generator, h2b("000102030405060708090a0b0c0d0e0f"), netcode='XTN')
         self.assertEqual(
             master.wallet_key(as_private=True),
             "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5kh"
@@ -190,7 +193,7 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertEqual(master.wif(), "cVPXTF2TnozE1PenpP3x9huctiATZmp27T9Ue1d8nqLSExoPwfN5")
 
     def test_streams(self):
-        m0 = BIP32Node.from_master_secret("foo bar baz".encode("utf8"))
+        m0 = BIP32Node.from_master_secret(secp256k1_generator, "foo bar baz".encode("utf8"))
         pm0 = m0.public_copy()
         self.assertEqual(m0.wallet_key(), pm0.wallet_key())
         m1 = m0.subkey()
@@ -200,15 +203,15 @@ class Bip0032TestCase(unittest.TestCase):
             pm = pm1.subkey(i=i)
             self.assertEqual(m.wallet_key(), pm.wallet_key())
             self.assertEqual(m.bitcoin_address(), pm.bitcoin_address())
-            m2 = BIP32Node.from_wallet_key(m.wallet_key(as_private=True))
+            m2 = BIP32Node.from_wallet_key(secp256k1_generator, m.wallet_key(as_private=True))
             m3 = m2.public_copy()
             self.assertEqual(m.wallet_key(as_private=True), m2.wallet_key(as_private=True))
             self.assertEqual(m.wallet_key(), m3.wallet_key())
             print(m.wallet_key(as_private=True))
             for j in range(2):
                 k = m.subkey(i=j)
-                k2 = BIP32Node.from_wallet_key(k.wallet_key(as_private=True))
-                k3 = BIP32Node.from_wallet_key(k.wallet_key())
+                k2 = BIP32Node.from_wallet_key(secp256k1_generator, k.wallet_key(as_private=True))
+                k3 = BIP32Node.from_wallet_key(secp256k1_generator, k.wallet_key())
                 k4 = k.public_copy()
                 self.assertEqual(k.wallet_key(as_private=True), k2.wallet_key(as_private=True))
                 self.assertEqual(k.wallet_key(), k2.wallet_key())
@@ -217,7 +220,7 @@ class Bip0032TestCase(unittest.TestCase):
                 print("   %s %s" % (k.bitcoin_address(), k.wif()))
 
     def test_public_subkey(self):
-        my_prv = BIP32Node.from_master_secret(b"foo")
+        my_prv = BIP32Node.from_master_secret(secp256k1_generator, b"foo")
         uag = my_prv.subkey(i=0, is_hardened=True, as_private=True)
         self.assertEqual(None, uag.subkey(i=0, as_private=False).secret_exponent())
 
@@ -240,15 +243,15 @@ class Bip0032TestCase(unittest.TestCase):
     def test_repr(self):
         from pycoin.key import Key
         netcode = 'XTN'
-        key = Key(secret_exponent=273, netcode=netcode)
-        wallet = BIP32Node.from_master_secret(bytes(key.wif().encode('ascii')), netcode)
+        key = Key(secret_exponent=273, netcode=netcode, generator=secp256k1_generator)
+        wallet = BIP32Node.from_master_secret(secp256k1_generator, bytes(key.wif().encode('ascii')), netcode)
 
         address = wallet.address()
-        pub_k = wallet.from_text(address)
+        pub_k = key_from_text(address)
         self.assertEqual(repr(pub_k),  '<myb5gZNXePNf2E2ksrjnHRFCwyuvt7oEay>')
 
         wif = wallet.wif()
-        priv_k = wallet.from_text(wif)
+        priv_k = key_from_text(wif, generator=secp256k1_generator)
         self.assertEqual(repr(priv_k),
                          'private_for <03ad094b1dc9fdce5d3648ca359b4e210a89d049532fdd39d9ccdd8ca393ac82f4>')
 
