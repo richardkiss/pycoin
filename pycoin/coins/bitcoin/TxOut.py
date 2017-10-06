@@ -62,6 +62,6 @@ class TxOut(object):
     def address(self, netcode='BTC'):
         # attempt to return the destination address, or None on failure
         from pycoin.ui.ui import address_for_script
-        return address_for_script(self.script, netcode)
+        return address_for_script(self.script)
 
     bitcoin_address = address

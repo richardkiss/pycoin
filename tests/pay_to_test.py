@@ -13,7 +13,9 @@ from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.ui import (
-    address_for_pay_to_script, address_for_script, info_from_multisig_script, nulldata_for_script, script_for_address,
+    address_for_pay_to_script, address_for_script, info_from_multisig_script, nulldata_for_script, script_for_address
+)
+from pycoin.coins.bitcoin.pay_to import (
     script_for_multisig, script_for_p2pkh, script_for_p2pk, script_for_nulldata, script_for_nulldata_push
 )
 
@@ -203,7 +205,7 @@ class ScriptTypesTest(unittest.TestCase):
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
-        address = address_for_pay_to_script(underlying_script, "BTC")
+        address = address_for_pay_to_script(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = script_for_address(address)
         tx_out = TxOut(1000000, script)
