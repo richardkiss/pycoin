@@ -29,6 +29,7 @@ def key_from_text(text, generator=None, is_compressed=None, key_types=None):
             secret_exponent=encoding.from_bytes_32(data),
             generator=generator,
             prefer_uncompressed=not is_compressed, netcode=netcode)
+
     if key_type == 'address':
         return Key(hash160=data, is_compressed=is_compressed, netcode=netcode)
 

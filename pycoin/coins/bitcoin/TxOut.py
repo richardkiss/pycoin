@@ -30,7 +30,6 @@ from ...convention import satoshi_to_mbtc
 
 from ...serialize.bitcoin_streamer import parse_struct, stream_struct
 
-from pycoin.ui.ui import address_for_script
 
 
 class TxOut(object):
@@ -62,6 +61,7 @@ class TxOut(object):
 
     def address(self, netcode='BTC'):
         # attempt to return the destination address, or None on failure
+        from pycoin.ui.ui import address_for_script
         return address_for_script(self.script, netcode)
 
     bitcoin_address = address
