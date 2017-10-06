@@ -6,12 +6,13 @@ from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.Key import InvalidPublicPairError, InvalidSecretExponentError
 from pycoin.networks import pay_to_script_prefix_for_netcode, network_codes
+from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 
 
 def change_prefix(address, new_prefix):
     return hash160_sec_to_bitcoin_address(
-        Key.from_text(address, generator=secp256k1_generator).hash160(), address_prefix=new_prefix)
+        key_from_text(address, generator=secp256k1_generator).hash160(), address_prefix=new_prefix)
 
 
 PAY_TO_HASH_ADDRESSES = [
@@ -313,11 +314,11 @@ class KeyUtilsTest(unittest.TestCase):
         key = Key(secret_exponent=273, netcode='XTN', generator=secp256k1_generator)
 
         address = key.address()
-        pub_k = Key.from_text(address)
+        pub_k = key_from_text(address)
         self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
 
         wif = key.wif()
-        priv_k = Key.from_text(wif, generator=secp256k1_generator)
+        priv_k = key_from_text(wif, generator=secp256k1_generator)
         self.assertEqual(
             repr(priv_k),
             'private_for <0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')

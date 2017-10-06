@@ -193,5 +193,6 @@ def address_for_pay_to_script(script, netcode):
 def address_for_pay_to_script_wit(script, netcode):
     from pycoin.networks import bech32_hrp_for_netcode
     bech32_hrp = bech32_hrp_for_netcode(netcode)
-    address = segwit_addr.encode(bech32_hrp, 0, iterbytes(hashlib.sha256(script).digest()))
-    return address
+    if bech32_hrp:
+        return segwit_addr.encode(bech32_hrp, 0, iterbytes(hashlib.sha256(script).digest()))
+    return None

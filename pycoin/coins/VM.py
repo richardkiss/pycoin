@@ -8,6 +8,10 @@ from pycoin.vm.ConditionalStack import ConditionalStack
 from .SolutionChecker import ScriptError
 
 
+def conditional_error_f(msg):
+    raise ScriptError(msg, errno.UNBALANCED_CONDITIONAL)
+
+
 class VMContext(object):
     MAX_SCRIPT_LENGTH = 10000
     MAX_BLOB_LENGTH = 520
@@ -26,7 +30,7 @@ class VMContext(object):
         self.tx_context = tx_context
         self.stack = initial_stack or list()
         self.altstack = list()
-        self.conditional_stack = self.ConditionalStack()
+        self.conditional_stack = self.ConditionalStack(conditional_error_f)
         self.op_count = 0
         self.begin_code_hash = 0
         self.flags = flags

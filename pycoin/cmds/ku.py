@@ -16,6 +16,7 @@ from pycoin.ui.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, network_codes
 from pycoin.networks.default import get_current_netcode
+from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.ui import address_for_pay_to_script, address_for_p2skh_wit, script_for_p2pkh_wit
 
 
@@ -274,7 +275,7 @@ def parse_prefixes(item, PREFIX_TRANSFORMS):
                 pass
 
     try:
-        return Key.from_text(item, generator=secp256k1_generator)
+        return key_from_text(item, generator=secp256k1_generator)
     except encoding.EncodingError:
         pass
     return None

@@ -30,6 +30,7 @@ from pycoin.tx.exceptions import BadSpendableError
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
+from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.ui import standard_tx_out_script
 from pycoin.vm.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
 
@@ -357,7 +358,7 @@ def parse_private_key_file(args, key_list):
 
             def make_key(x):
                 try:
-                    return Key.from_text(x, generator=secp256k1_generator)
+                    return key_from_text(x, generator=secp256k1_generator)
                 except Exception:
                     return None
 
@@ -470,7 +471,7 @@ def parse_parts(tx_class, arg, spendables, payables, network):
 
 def key_found(arg, payables, key_iters):
     try:
-        key = Key.from_text(arg, generator=secp256k1_generator)
+        key = key_from_text(arg, generator=secp256k1_generator, key_types=["address", "wif", "prv32"])
         # TODO: check network
         if key.wif() is None:
             payables.append((key.address(), 0))

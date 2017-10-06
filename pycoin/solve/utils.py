@@ -2,6 +2,7 @@ import hashlib
 
 from pycoin.encoding import hash160, public_pair_to_hash160_sec
 
+
 def build_hash160_lookup(secret_exponents, generators):
     d = {}
     for secret_exponent in secret_exponents:

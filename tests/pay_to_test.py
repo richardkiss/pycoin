@@ -11,6 +11,7 @@ from pycoin.tx.Spendable import Spendable
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
+from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.ui import (
     address_for_pay_to_script, address_for_script, info_from_multisig_script, nulldata_for_script, script_for_address,
     script_for_multisig, script_for_p2pkh, script_for_p2pk, script_for_nulldata, script_for_nulldata_push
@@ -265,7 +266,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx = Tx.from_hex(partially_signed_raw_tx)
         tx_out = TxOut(1000000, h2b("a914a10dfa21ee8c33b028b92562f6fe04e60563d3c087"))
         tx.set_unspents([tx_out])
-        key = Key.from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx", generator=secp256k1_generator)
+        key = key_from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx", generator=secp256k1_generator)
         hash160_lookup = build_hash160_lookup([key.secret_exponent()], [secp256k1_generator])
         self.assertEqual(tx.bad_signature_count(), 1)
         tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
