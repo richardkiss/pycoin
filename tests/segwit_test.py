@@ -449,7 +449,10 @@ class SegwitTest(unittest.TestCase):
     def test_segwit_create_tx(self):
         from pycoin.tx.tx_utils import create_tx, sign_tx
         from pycoin.ui.ui import (
-            address_for_pay_to_script_wit, script_for_p2pkh, script_for_p2pkh_wit, script_for_address
+            address_for_pay_to_script_wit, script_for_address
+        )
+        from pycoin.coins.bitcoin.pay_to import (
+            script_for_p2pkh, script_for_p2pkh_wit
         )
         key1 = Key(1, generator=secp256k1_generator)
         coin_value = 5000000
@@ -465,7 +468,7 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(len(tx.txs_in[0].witness), 2)
 
         s1 = script_for_p2pkh(key1.hash160())
-        address = address_for_pay_to_script_wit(s1, "BTC")
+        address = address_for_pay_to_script_wit(s1)
         spendable.script = script_for_address(address)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)

@@ -12,6 +12,6 @@ nulldata_for_script = _ui.nulldata_for_script
 address_for_pay_to_script = _ui.address_for_pay_to_script
 address_for_p2skh_wit = _ui.address_for_p2skh_wit
 #def address_for_p2sh_wit(hash256, netcode=None):
-#def address_for_pay_to_script_wit(script, netcode=None):
+address_for_pay_to_script_wit = _ui.address_for_pay_to_script_wit
 script_for_address = _ui.script_for_address
 standard_tx_out_script = _ui.standard_tx_out_script

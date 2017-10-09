@@ -92,9 +92,9 @@ class SighashSingleTest(unittest.TestCase):
             TxIn(coinbase_tx.hash(), 2),
         ]
         txs_out = [
-            TxOut(900000000, script_for_address(k3.address(), netcodes=[netcode])),
-            TxOut(800000000, script_for_address(k4.address(), netcodes=[netcode])),
-            TxOut(800000000, script_for_address(k5.address(), netcodes=[netcode])),
+            TxOut(900000000, script_for_address(k3.address())),
+            TxOut(800000000, script_for_address(k4.address())),
+            TxOut(800000000, script_for_address(k5.address())),
         ]
         tx = Tx(1, txs_in, txs_out)
         tx.set_unspents(coinbase_tx.txs_out)
