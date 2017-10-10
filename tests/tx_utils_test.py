@@ -2,14 +2,17 @@ import hashlib
 import struct
 import unittest
 
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
+
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import public_pair_to_bitcoin_address, secret_exponent_to_wif
 
 from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.tx_utils import create_signed_tx
 from pycoin.tx.Spendable import Spendable
-from pycoin.ui.ui import standard_tx_out_script
 
+
+standard_tx_out_script = BitcoinMainnet.ui.script_for_address
 
 BITCOIN_ADDRESSES = [public_pair_to_bitcoin_address(i * secp256k1_generator) for i in range(1, 21)]
 
@@ -47,7 +50,9 @@ class SpendTest(unittest.TestCase):
             self.assertEqual(tx.fee(), FEE)
             self.assertEqual(tx.id(), EXPECTED_IDS[count-1])
             for idx in range(1, count+1):
-                self.assertEqual(tx.txs_out[idx-1].bitcoin_address(), BITCOIN_ADDRESSES[idx])
+                script = tx.txs_out[idx-1].puzzle_script()
+                address = BitcoinMainnet.ui.address_for_script(script)
+                self.assertEqual(address, BITCOIN_ADDRESSES[idx])
             # TODO: add check that s + s < generator for each signature
             for i in range(count):
                 extra = (1 if i < ((COIN_VALUE - FEE) % count) else 0)

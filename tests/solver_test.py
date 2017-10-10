@@ -4,6 +4,7 @@ import unittest
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Solver import Solver
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.pay_to import script_for_multisig, script_for_p2pk
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
@@ -11,7 +12,10 @@ from pycoin.key import Key
 from pycoin.serialize import b2h
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx.Tx import Tx, TxIn, TxOut
-from pycoin.ui.ui import address_for_pay_to_script, standard_tx_out_script
+
+
+address_for_pay_to_script = BitcoinMainnet.ui.address_for_pay_to_script
+standard_tx_out_script = BitcoinMainnet.ui.script_for_address
 
 
 class SolverTest(unittest.TestCase):

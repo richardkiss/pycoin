@@ -5,6 +5,9 @@ from pycoin.block import Block
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.coins.bitcoin.UI import UI
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
+
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
 from pycoin.serialize import h2b
 
@@ -13,8 +16,8 @@ from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
-from pycoin.ui.ui import script_for_address
 
+script_for_address = BitcoinMainnet.ui.script_for_address
 
 # block 80971
 block_80971_cs = h2b('00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC')
@@ -114,7 +117,8 @@ class BuildTxTest(unittest.TestCase):
 
     def test_tx_out_bitcoin_address(self):
         tx = Tx.coinbase_tx(COINBASE_PUB_KEY_FROM_80971, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
-        self.assertEqual(tx.txs_out[0].bitcoin_address(), '1DmapcnrJNGeJB13fv9ngRFX1iRvR4zamn')
+        address = BitcoinMainnet.ui.address_for_script(tx.txs_out[0].puzzle_script())
+        self.assertEqual(address, '1DmapcnrJNGeJB13fv9ngRFX1iRvR4zamn')
 
     def test_build_spends(self):
         # first, here is the tx database

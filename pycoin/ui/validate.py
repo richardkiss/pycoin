@@ -2,7 +2,6 @@
 import binascii
 from .. import encoding
 from ..intbytes import int2byte
-from ..networks.registry import network_codes, network_prefixes, bech32_prefixes
 from ..serialize import h2b
 from ..coins.bitcoin.ScriptTools import BitcoinScriptTools, IntStreamer
 from ..contrib.segwit_addr import bech32_decode, convertbits
@@ -17,6 +16,7 @@ def netcode_and_type_lookup_for_data(data):
     where T is the key type ("wif", "address", "public_pair", "prv32", "pub32")
     and L is the length
     """
+    from ..networks.registry import network_prefixes
     prefixes = network_prefixes()
     sizes = set(len(p) for p in prefixes)
     d = {}
@@ -34,6 +34,8 @@ def netcode_and_type_for_data(data, netcodes=None):
     The netcodes are checked in order.
     May also raise EncodingError if no prefix found.
     """
+    # BRAIN DAMAGE -- imports
+    from ..networks.registry import network_codes
     d = netcode_and_type_lookup_for_data(data)
     if netcodes is None:
         netcodes = network_codes()
@@ -47,6 +49,8 @@ def netcode_and_type_for_data(data, netcodes=None):
 
 def netcode_and_type_for_text(text, netcodes=None):
     # check for "public pair"
+    # BRAIN DAMAGE -- imports
+    from ..networks.registry import network_codes, bech32_prefixes
     try:
         LENGTH_LOOKUP = {
             33: "public_pair",
@@ -83,6 +87,8 @@ def netcode_and_type_for_text(text, netcodes=None):
 
 
 def _check_against(text, expected_type, allowable_netcodes):
+    # BRAIN DAMAGE -- imports
+    from ..networks.registry import network_codes
     if allowable_netcodes is None:
         allowable_netcodes = network_codes()
     try:

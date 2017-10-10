@@ -1,6 +1,9 @@
 import unittest
+
 from pycoin.contrib import who_signed
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.coins.bitcoin.pay_to import script_for_multisig
 from pycoin.key import Key
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
@@ -8,8 +11,10 @@ from pycoin.tx import tx_utils
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
-from pycoin.ui.ui import address_for_pay_to_script, script_for_address
-from pycoin.coins.bitcoin.pay_to import script_for_multisig
+
+
+address_for_pay_to_script = BitcoinMainnet.ui.address_for_pay_to_script
+script_for_address = BitcoinMainnet.ui.script_for_address
 
 
 class WhoSignedTest(unittest.TestCase):

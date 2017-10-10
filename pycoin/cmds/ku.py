@@ -15,10 +15,9 @@ from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
 from pycoin.ui.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
-from pycoin.networks import full_network_name_for_netcode, network_name_for_netcode, network_codes
 from pycoin.networks.default import get_current_netcode
+from pycoin.networks.registry import full_network_name_for_netcode, network_name_for_netcode, network_codes, network_for_netcode
 from pycoin.ui.key_from_text import key_from_text
-from pycoin.ui.ui import address_for_pay_to_script, address_for_p2skh_wit
 
 
 SEC_RE = re.compile(r"^(0[23][0-9a-fA-F]{64})|(04[0-9a-fA-F]{128})$")
@@ -125,6 +124,7 @@ def create_public_pair_output(key, add_output):
 
 
 def create_hash160_output(key, add_output, output_dict):
+    network = network_for_netcode(key._netcode)
     network_name = network_name_for_netcode(key._netcode)
     hash160_c = key.hash160(use_uncompressed=False)
     hash160_u = key.hash160(use_uncompressed=True)
@@ -145,15 +145,15 @@ def create_hash160_output(key, add_output, output_dict):
         output_dict["%s_address_uncompressed" % key._netcode] = address
 
     # don't print segwit addresses unless we're sure we have a compressed key
-    if hash160_c:
-        address_segwit = address_for_p2skh_wit(hash160_c)
+    if hash160_c and hasattr(network, "ui") and hasattr(network.ui, "address_for_p2skh_wit"):
+        address_segwit = network.ui.address_for_p2skh_wit(hash160_c)
         if address_segwit:
             # this network seems to support segwit
             add_output("address_segwit", address_segwit, "%s segwit address" % network_name)
             output_dict["%s_address_segwit" % key._netcode] = address_segwit
 
             p2sh_script = script_for_p2pkh_wit(hash160_c)
-            p2s_address = address_for_pay_to_script(p2sh_script)
+            p2s_address = network.ui.address_for_pay_to_script(p2sh_script)
             if p2s_address:
                 add_output("p2sh_segwit", p2s_address)
 

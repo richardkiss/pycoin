@@ -1,5 +1,6 @@
 import unittest
 
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
@@ -11,6 +12,11 @@ from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGH
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
+
+
+address_for_script = BitcoinMainnet.ui.address_for_script
+address_for_pay_to_script_wit = BitcoinMainnet.ui.address_for_pay_to_script_wit
+script_for_address = BitcoinMainnet.ui.script_for_address
 
 
 class SegwitTest(unittest.TestCase):
@@ -440,7 +446,6 @@ class SegwitTest(unittest.TestCase):
 
     def test_segwit_ui(self):
         # p2wpkh
-        from pycoin.ui.ui import address_for_script, script_for_address
         address = 'bc1qqyykvamqq62n64t8gw09uw0cdgxjwwlw7mypam'
         s = script_for_address(address)
         afs_address = address_for_script(s)
@@ -448,9 +453,6 @@ class SegwitTest(unittest.TestCase):
 
     def test_segwit_create_tx(self):
         from pycoin.tx.tx_utils import create_tx, sign_tx
-        from pycoin.ui.ui import (
-            address_for_pay_to_script_wit, script_for_address
-        )
         from pycoin.coins.bitcoin.pay_to import (
             script_for_p2pkh, script_for_p2pkh_wit
         )

@@ -1,6 +1,7 @@
 import unittest
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import (
     int2byte,
@@ -25,7 +26,9 @@ from pycoin.tx.Tx import (
     TxIn,
     TxOut
 )
-from pycoin.ui.ui import script_for_address
+
+
+script_for_address = BitcoinMainnet.ui.script_for_address
 
 PRIV_KEYS = (
     2330949616242593315303241053456316633827293588958882755297900732239663851861,

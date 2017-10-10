@@ -2,38 +2,34 @@
 from .network import Network
 from .legacy_networks import NETWORKS
 
-from pycoin.tx.Tx import Tx as BitcoinTx
 from pycoin.block import Block as BitcoinBlock
+from pycoin.coins.bitcoin.Tx import Tx as BitcoinTx
+
+from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 
 from pycoin.coins.bcash.Tx import Tx as BCashTx
 
 from ..serialize import h2b
 
+
+
+# lightcoin
+
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.vm.PuzzleScripts import PuzzleScripts
+from pycoin.ui.uiclass import UI
+
+_puzzle_script = PuzzleScripts(BitcoinScriptTools)
+
+ltc_ui = UI(_puzzle_script, address_prefix=h2b("30"), pay_to_script_prefix=h2b("05"), bech32_hrp='lc')
+xlt_ui = UI(_puzzle_script, address_prefix=h2b("6f"), pay_to_script_prefix=h2b("c4"), bech32_hrp='tl')
+
+
 BUILT_IN_NETWORKS = [
 
     # BTC bitcoin mainnet : xprv/xpub
-    Network(
-        'BTC', "Bitcoin", "mainnet",
-        b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E"),
-        BitcoinTx, BitcoinBlock,
-        h2b('F9BEB4D9'), 8333, [
-            "seed.bitcoin.sipa.be", "dnsseed.bitcoin.dashjr.org",
-            "bitseed.xf2.org", "dnsseed.bluematt.me",
-        ],
-        bech32_hrp='bc'
-    ),
-
-    # BTC bitcoin testnet : tprv/tpub
-    Network(
-        "XTN", "Bitcoin", "testnet3",
-        b'\xef', b'\x6f', b'\xc4', h2b("04358394"), h2b("043587CF"),
-        BitcoinTx, BitcoinBlock,
-        h2b('0B110907'), 18333, [
-            "bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org",
-            "bluematt.me", "testnet-seed.bluematt.me"
-        ],
-        bech32_hrp='tb'
-    ),
+    BitcoinMainnet,
+    BitcoinTestnet,
 
     # LTC litecoin mainnet : Ltpv/Ltub
     Network(
@@ -41,7 +37,8 @@ BUILT_IN_NETWORKS = [
         b'\xb0', b'\x30', b'\5',
         h2b('019d9cfe'), h2b('019da462'),
         tx=BitcoinTx, block=BitcoinBlock,
-        bech32_hrp='lc'
+        bech32_hrp='lc',
+        ui=ltc_ui
     ),
 
     # LTC litecoin testnet : ttpv/ttub
@@ -50,7 +47,8 @@ BUILT_IN_NETWORKS = [
         b'\xef', b'\x6f', b'\xc4',
         h2b('0436ef7d'), h2b('0436f6e1'),
         tx=BitcoinTx, block=BitcoinBlock,
-        bech32_hrp='tl'
+        bech32_hrp='tl',
+        ui=xlt_ui
     ),
 
     # BCH bcash mainnet : xprv/xpub

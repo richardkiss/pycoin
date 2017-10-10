@@ -2,7 +2,7 @@ from pycoin.encoding import EncodingError, a2b_hashed_base58, \
     from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
     is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
     sec_to_public_pair, secret_exponent_to_wif
-from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
+from pycoin.networks.registry import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
 from pycoin.satoshi.der import sigencode_der, sigdecode_der

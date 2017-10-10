@@ -5,7 +5,7 @@ from pycoin.encoding import hash160_sec_to_bitcoin_address
 from pycoin.key import Key
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.Key import InvalidPublicPairError, InvalidSecretExponentError
-from pycoin.networks import pay_to_script_prefix_for_netcode, network_codes
+from pycoin.networks.registry import pay_to_script_prefix_for_netcode, network_codes
 from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 
