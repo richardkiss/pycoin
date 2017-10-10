@@ -1,3 +1,4 @@
+from pycoin.serialize import h2b
 
 from .network import Network
 from .legacy_networks import NETWORKS
@@ -6,10 +7,9 @@ from pycoin.block import Block as BitcoinBlock
 from pycoin.coins.bitcoin.Tx import Tx as BitcoinTx
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
+from pycoin.coins.litecoin.networks import LitecoinMainnet, LitecoinTestnet
 
 from pycoin.coins.bcash.Tx import Tx as BCashTx
-
-from ..serialize import h2b
 
 
 
@@ -30,26 +30,8 @@ BUILT_IN_NETWORKS = [
     # BTC bitcoin mainnet : xprv/xpub
     BitcoinMainnet,
     BitcoinTestnet,
-
-    # LTC litecoin mainnet : Ltpv/Ltub
-    Network(
-        "LTC", "Litecoin", "mainnet",
-        b'\xb0', b'\x30', b'\5',
-        h2b('019d9cfe'), h2b('019da462'),
-        tx=BitcoinTx, block=BitcoinBlock,
-        bech32_hrp='lc',
-        ui=ltc_ui
-    ),
-
-    # LTC litecoin testnet : ttpv/ttub
-    Network(
-        "XLT", "Litecoin", "testnet",
-        b'\xef', b'\x6f', b'\xc4',
-        h2b('0436ef7d'), h2b('0436f6e1'),
-        tx=BitcoinTx, block=BitcoinBlock,
-        bech32_hrp='tl',
-        ui=xlt_ui
-    ),
+    LitecoinMainnet,
+    LitecoinTestnet,
 
     # BCH bcash mainnet : xprv/xpub
     Network(
@@ -61,8 +43,6 @@ BUILT_IN_NETWORKS = [
             "btccash-seeder.bitcoinunlimited.info", "seed.bitprim.org",
         ]
     ),
-
-
 
 ]
 

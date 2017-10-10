@@ -6,7 +6,7 @@ DEFAULT_ARGS_ORDER = (
     'magic_header', 'default_port', 'dns_bootstrap',
     'address_wit', 'pay_to_script_wit',
     'bech32_hrp',
-    'key', 'ui', 'puzzles'
+    'ui'
 )
 
 
