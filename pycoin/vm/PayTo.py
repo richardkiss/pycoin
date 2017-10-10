@@ -3,7 +3,7 @@ import collections
 from pycoin.serialize import b2h
 
 
-class PuzzleScripts(object):
+class PayTo(object):
     def __init__(self, scriptTools):
         self._scriptTools = scriptTools
 

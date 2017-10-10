@@ -1,7 +1,7 @@
 from .ScriptTools import BitcoinScriptTools
-from pycoin.vm.PuzzleScripts import PuzzleScripts
+from pycoin.vm.PayTo import PayTo
 
-_puzzle_script = PuzzleScripts(BitcoinScriptTools)
+_puzzle_script = PayTo(BitcoinScriptTools)
 
 
 script_for_p2pk = _puzzle_script.script_for_p2pk

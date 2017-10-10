@@ -2,7 +2,7 @@ import hashlib
 import itertools
 
 from pycoin.encoding import double_sha256, from_bytes_32, to_bytes_32
-from pycoin.key import Key
+from pycoin.key.Key import Key
 from pycoin.serialize import b2h
 
 

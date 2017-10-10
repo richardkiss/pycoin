@@ -12,19 +12,6 @@ from pycoin.coins.litecoin.networks import LitecoinMainnet, LitecoinTestnet
 from pycoin.coins.bcash.Tx import Tx as BCashTx
 
 
-
-# lightcoin
-
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.vm.PuzzleScripts import PuzzleScripts
-from pycoin.ui.uiclass import UI
-
-_puzzle_script = PuzzleScripts(BitcoinScriptTools)
-
-ltc_ui = UI(_puzzle_script, address_prefix=h2b("30"), pay_to_script_prefix=h2b("05"), bech32_hrp='lc')
-xlt_ui = UI(_puzzle_script, address_prefix=h2b("6f"), pay_to_script_prefix=h2b("c4"), bech32_hrp='tl')
-
-
 BUILT_IN_NETWORKS = [
 
     # BTC bitcoin mainnet : xprv/xpub

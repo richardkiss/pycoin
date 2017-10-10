@@ -5,7 +5,6 @@ from pycoin.block import Block
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
-from pycoin.coins.bitcoin.UI import UI
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 
 from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent

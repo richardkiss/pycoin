@@ -2,8 +2,6 @@ from pycoin.encoding import EncodingError, a2b_hashed_base58, \
     from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
     is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
     sec_to_public_pair, secret_exponent_to_wif
-from pycoin.networks.registry import address_prefix_for_netcode, wif_prefix_for_netcode
-from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
 from pycoin.satoshi.der import sigencode_der, sigdecode_der
 
@@ -41,6 +39,7 @@ class Key(object):
         Include at most one of secret_exponent, public_pair or hash160.
         prefer_uncompressed, is_compressed (booleans) are optional.
         """
+        from pycoin.networks.default import get_current_netcode
 
         if is_compressed is None:
             is_compressed = False if hash160 else True
@@ -99,6 +98,7 @@ class Key(object):
         Return the WIF representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
+        from pycoin.networks.registry import wif_prefix_for_netcode
         wif_prefix = wif_prefix_for_netcode(self._netcode)
         secret_exponent = self.secret_exponent()
         if secret_exponent is None:
@@ -164,6 +164,7 @@ class Key(object):
         Return the public address representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
+        from pycoin.networks.registry import address_prefix_for_netcode
         address_prefix = address_prefix_for_netcode(self._netcode)
         hash160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash160:

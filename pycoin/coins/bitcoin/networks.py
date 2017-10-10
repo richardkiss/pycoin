@@ -3,17 +3,20 @@ from pycoin.serialize import h2b
 
 from .ScriptTools import BitcoinScriptTools
 from .Tx import Tx as BitcoinTx
+from .KeyParser import KeyParser
 from pycoin.block import Block as BitcoinBlock
 
 from pycoin.networks.network import Network
 from pycoin.ui.uiclass import UI
-from pycoin.vm.PuzzleScripts import PuzzleScripts
+from pycoin.vm.PayTo import PayTo
 
-_puzzle_script = PuzzleScripts(BitcoinScriptTools)
+_puzzle_script = PayTo(BitcoinScriptTools)
 
 
 mainnet_ui = UI(_puzzle_script, address_prefix=h2b("00"), pay_to_script_prefix=h2b("05"), bech32_hrp='bc')
-
+mainnet_keyparser = KeyParser(
+    netcode="BTC", wif_prefix=h2b("05"), address_prefix=h2b("00"),
+    bip32_prv_prefix=h2b("0488ade4"), bip32_pub_prefix=h2b("0488B21E"), bech32_prefix="bc")
 
 BitcoinMainnet = Network(
     'BTC', "Bitcoin", "mainnet",
@@ -24,11 +27,14 @@ BitcoinMainnet = Network(
         "bitseed.xf2.org", "dnsseed.bluematt.me",
     ],
     bech32_hrp='bc',
-    ui=mainnet_ui
+    ui=mainnet_ui, keyparser=mainnet_keyparser
 )
 
 
 testnet_ui = UI(_puzzle_script, address_prefix=h2b("6f"), pay_to_script_prefix=h2b("c4"), bech32_hrp='tb')
+testnet_keyparser = KeyParser(
+    netcode="XTN", wif_prefix=h2b("c4"), address_prefix=h2b("6f"),
+    bip32_prv_prefix=h2b("04358394"), bip32_pub_prefix=h2b("043587CF"), bech32_prefix="tb")
 
 
 BitcoinTestnet = Network(
@@ -40,5 +46,5 @@ BitcoinTestnet = Network(
         "bluematt.me", "testnet-seed.bluematt.me"
     ],
     bech32_hrp='tb',
-    ui=testnet_ui
+    ui=testnet_ui, keyparser=testnet_keyparser
 )

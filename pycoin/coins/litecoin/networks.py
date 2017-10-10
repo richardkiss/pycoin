@@ -5,10 +5,10 @@ from pycoin.coins.bitcoin.Tx import Tx
 
 from pycoin.block import Block
 from pycoin.networks.network import Network
-from pycoin.vm.PuzzleScripts import PuzzleScripts
+from pycoin.vm.PayTo import PayTo
 from pycoin.ui.uiclass import UI
 
-_puzzle_script = PuzzleScripts(BitcoinScriptTools)
+_puzzle_script = PayTo(BitcoinScriptTools)
 
 
 ltc_ui = UI(_puzzle_script, address_prefix=h2b("30"), pay_to_script_prefix=h2b("05"), bech32_hrp='lc')

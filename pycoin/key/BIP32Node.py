@@ -46,7 +46,6 @@ import struct
 
 from ..encoding import a2b_hashed_base58, b2a_hashed_base58, from_bytes_32, to_bytes_32
 from ..encoding import sec_to_public_pair, public_pair_to_hash160_sec, EncodingError
-from ..networks.registry import prv32_prefix_for_netcode, pub32_prefix_for_netcode
 from .Key import Key
 from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
 
@@ -140,6 +139,7 @@ class BIP32Node(Key):
 
     def serialize(self, as_private=None):
         """Yield a 78-byte binary blob corresponding to this node."""
+        from ..networks.registry import prv32_prefix_for_netcode, pub32_prefix_for_netcode
         if as_private is None:
             as_private = self.secret_exponent() is not None
         if self.secret_exponent() is None and as_private:

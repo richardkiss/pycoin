@@ -3,13 +3,9 @@ import hashlib
 
 from pycoin import encoding
 from pycoin.serialize import b2h
-#from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGEs
-#from pycoin.coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer as ScriptStreamer  # BRAIN DAMAGEs
 
 from pycoin.contrib import segwit_addr
 from pycoin.intbytes import iterbytes, byte2int
-#from pycoin.networks import (
-#    address_prefix_for_netcode, bech32_hrp_for_netcode, pay_to_script_prefix_for_netcode)
 from pycoin.ui.validate import netcode_and_type_for_text
 
 

@@ -13,11 +13,9 @@ import subprocess
 import sys
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import hash160
-from pycoin.key import Key
 from pycoin.ui.validate import is_address_valid
 from pycoin.networks.registry import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
@@ -118,7 +116,7 @@ def dump_inputs(tx, netcode, verbose_signature, traceback_f, disassembly_level):
             dump_disassembly(tx, idx)
 
         if verbose_signature:
-            dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level)
+            dump_signatures(tx, tx_in, tx_out, idx, netcode, traceback_f, disassembly_level)
 
 
 def dump_disassembly(tx, tx_in_idx):
@@ -132,8 +130,8 @@ def dump_disassembly(tx, tx_in_idx):
             print("           %s" % l)
 
 
-def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level):
-    sc = BitcoinSolutionChecker(tx)
+def dump_signatures(tx, tx_in, tx_out, idx, netcode, traceback_f, disassembly_level):
+    sc = tx.SolutionChecker(tx)
     signatures = []
     for opcode in BitcoinScriptTools.opcode_list(tx_in.script):
         if not opcode.startswith("OP_"):
@@ -261,7 +259,8 @@ def create_parser():
                         'index, or a date/time (example: "2014-01-01T15:00:00"')
 
     parser.add_argument('-n', "--network", default=get_current_netcode(), choices=codes,
-                        help='Define network code (BTC=Bitcoin mainnet, XTN=Bitcoin testnet).')
+                        help=('Default network code (environment variable PYCOIN_DEFAULT_NETCODE '
+                              'or "BTC"=Bitcoin mainnet if unset'))
 
     parser.add_argument('-a', "--augment", action='store_true',
                         help='augment tx by adding any missing spendable metadata by fetching'
