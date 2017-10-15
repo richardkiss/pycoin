@@ -1,9 +1,9 @@
 import struct
 
-from ...tx.script import errno, opcodes, ScriptError
-
-from ...tx.script.IntStreamer import IntStreamer
-from ...tx.script.ScriptStreamer import ScriptStreamer
+from pycoin.coins.SolutionChecker import ScriptError
+from pycoin.satoshi import errno, opcodes
+from pycoin.satoshi.IntStreamer import IntStreamer
+from pycoin.vm.ScriptStreamer import ScriptStreamer
 
 
 def make_opcode_const_list():
@@ -37,13 +37,22 @@ def make_opcode_variable_list():
     return OPCODE_VARIABLE_LIST
 
 
+def end_of_data_f(msg):
+    raise ScriptError(msg, errno.BAD_OPCODE)
+
+
+def non_minimal_f(msg):
+    raise ScriptError(msg, errno.MINIMALDATA)
+
+
 def make_script_streamer():
     OPCODE_CONST_LIST = make_opcode_const_list()
     OPCODE_SIZED_LIST = make_opcode_sized_list()
     OPCODE_VARIABLE_LIST = make_opcode_variable_list()
     OPCODE_LOOKUP = dict(o for o in opcodes.OPCODE_LIST)
 
-    return ScriptStreamer(OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP)
+    return ScriptStreamer(
+        OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP, end_of_data_f, non_minimal_f)
 
 
 BitcoinScriptStreamer = make_script_streamer()

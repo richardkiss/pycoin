@@ -1,9 +1,9 @@
 import binascii
 import io
 
-from ...intbytes import int2byte
+from ..intbytes import int2byte
 
-from . import ScriptError
+from pycoin.coins.SolutionChecker import ScriptError
 
 
 class ScriptTools(object):

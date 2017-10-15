@@ -1,4 +1,4 @@
-from ...serialize import b2h
+from ...serialize import b2h, h2b
 
 from ..exceptions import SolvingError
 from ..SolutionChecker import ScriptError
@@ -6,11 +6,16 @@ from ..SolutionChecker import ScriptError
 from .SolutionChecker import BitcoinSolutionChecker
 from .ScriptTools import BitcoinScriptTools
 
-from ...tx.script.flags import SIGHASH_ALL
+from pycoin.satoshi.flags import SIGHASH_ALL
 
-from pycoin.tx.pay_to.ScriptType import generate_default_placeholder_signature
-from pycoin.tx.script.constraints import Atom, Operator, make_traceback_f
-from pycoin.tx.script.solve import solutions_for_constraint
+from pycoin.solve.constraints import Atom, Operator, make_traceback_f
+from pycoin.solve.solve import solutions_for_constraint
+
+
+def generate_default_placeholder_signature(generator):
+    return h2b(
+        "3045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207"
+        "fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001")
 
 
 class DynamicStack(list):

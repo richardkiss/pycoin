@@ -9,6 +9,7 @@ from ..ecdsa.secp256k1 import secp256k1_generator
 from ..networks import address_prefix_for_netcode, network_name_for_netcode
 from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256, EncodingError
 from ..key import Key
+from pycoin.ui.key_from_text import key_from_text
 
 # According to brainwallet, this is "inputs.io" format, but it seems practical
 # and is deployed in the wild. Core bitcoin doesn't offer a message wrapper like this.
@@ -190,7 +191,7 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
         # they gave us a private key or a public key already loaded.
         key = key_or_address
     else:
-        key = Key.from_text(key_or_address)
+        key = key_from_text(key_or_address)
 
     try:
         pair, is_compressed = pair_for_message(signature, message, msg_hash, key.netcode())

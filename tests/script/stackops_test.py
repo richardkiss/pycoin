@@ -2,7 +2,7 @@
 import binascii
 import unittest
 
-from pycoin.tx.script import stackops
+from pycoin.satoshi import stackops
 
 
 def b2h(b):

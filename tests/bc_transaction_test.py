@@ -36,7 +36,8 @@ from pycoin.serialize import h2b_rev
 from pycoin.tx.Tx import Tx
 from pycoin.tx.exceptions import ValidationFailureError
 from pycoin.tx.Spendable import Spendable
-from pycoin.tx.script import ScriptError, flags
+from pycoin.satoshi import flags
+from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools as ScriptTools
 
 DEBUG_TX_ID_LIST = []

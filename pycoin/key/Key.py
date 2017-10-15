@@ -2,11 +2,10 @@ from pycoin.encoding import EncodingError, a2b_hashed_base58, \
     from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
     is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
     sec_to_public_pair, secret_exponent_to_wif
-from pycoin.key.validate import netcode_and_type_for_data
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
-from pycoin.tx.script.der import sigencode_der, sigdecode_der
+from pycoin.satoshi.der import sigencode_der, sigdecode_der
 
 
 class InvalidPublicPairError(ValueError):
@@ -77,34 +76,6 @@ class Key(object):
             if (None in self._public_pair) or \
                (self._generator and not self._generator.contains_point(*self._public_pair)):
                 raise InvalidPublicPairError()
-
-    @classmethod
-    def from_text(class_, text, generator=None, is_compressed=False):
-        """
-        This function will accept a BIP0032 wallet string, a WIF, or a bitcoin address.
-
-        The "is_compressed" parameter is ignored unless a public address is passed in.
-        """
-
-        data = a2b_hashed_base58(text)
-        netcode, key_type, length = netcode_and_type_for_data(data)
-        data = data[1:]
-
-        if key_type in ("pub32", "prv32"):
-            # TODO: fix this... it doesn't belong here
-            from pycoin.key.BIP32Node import BIP32Node
-            return BIP32Node.from_wallet_key(generator, text)
-
-        if key_type == 'wif':
-            is_compressed = (len(data) > 32)
-            if is_compressed:
-                data = data[:-1]
-            return Key(
-                secret_exponent=from_bytes_32(data), generator=generator,
-                prefer_uncompressed=not is_compressed, netcode=netcode)
-        if key_type == 'address':
-            return Key(hash160=data, is_compressed=is_compressed, netcode=netcode)
-        raise EncodingError("unknown text: %s" % text)
 
     @classmethod
     def from_sec(class_, sec, generator, netcode=None):

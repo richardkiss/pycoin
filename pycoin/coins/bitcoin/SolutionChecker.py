@@ -8,15 +8,14 @@ from .VM import BitcoinVM, VMContext
 from ...encoding import double_sha256, from_bytes_32
 from ...intbytes import byte2int, indexbytes
 
-from ..SolutionChecker import SolutionChecker
-from ...tx.script import errno
-from ...tx.script import ScriptError
+from ..SolutionChecker import SolutionChecker, ScriptError
+from pycoin.satoshi import errno
 
 from ...serialize.bitcoin_streamer import (
     stream_struct, stream_bc_string
 )
 
-from ...tx.script.flags import (
+from pycoin.satoshi.flags import (
     SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
     VERIFY_P2SH, VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM,
     VERIFY_SIGPUSHONLY, VERIFY_CLEANSTACK,
@@ -89,7 +88,7 @@ class BitcoinSolutionChecker(SolutionChecker):
         puzzle_script = tx_context.puzzle_script
 
         if flags & VERIFY_SIGPUSHONLY:
-            self.VM.ScriptStreamer.check_script_push_only(solution_script)
+            self.check_script_push_only(solution_script)
 
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
         f1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
@@ -121,9 +120,9 @@ class BitcoinSolutionChecker(SolutionChecker):
         return stack, solution_stack
 
     def _check_p2sh(self, tx_context, solution_blob, puzzle_script, flags, traceback_f):
+        self.check_script_push_only(tx_context.solution_script)
         solution_script = self.ScriptTools.compile_push_data_list(solution_blob)
-        self.VM.ScriptStreamer.check_script_push_only(tx_context.solution_script)
-        flags = flags & ~VERIFY_P2SH
+        flags &= ~VERIFY_P2SH
         p2sh_tx_context = TxContext()
         p2sh_tx_context.puzzle_script = puzzle_script
         p2sh_tx_context.solution_script = solution_script
@@ -133,6 +132,14 @@ class BitcoinSolutionChecker(SolutionChecker):
         p2sh_tx_context.lock_time = tx_context.lock_time
         p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
         self.check_solution(p2sh_tx_context, flags=flags, traceback_f=traceback_f)
+
+    def check_script_push_only(self, script):
+        scriptStreamer = self.VM.ScriptStreamer
+        pc = 0
+        while pc < len(script):
+            opcode, data, pc = scriptStreamer.get_opcode(script, pc)
+            if opcode not in scriptStreamer.data_opcodes:
+                raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 
     def _puzzle_script_for_len20_segwit(self, witness_program):
         return V0_len20_prefix + self.ScriptTools.compile_push_data_list(
@@ -241,10 +248,10 @@ class BitcoinSolutionChecker(SolutionChecker):
         remove references to the signature, since it's a signature
         of the hash before the signature is applied.
 
-        tx_out_script: the script the coins for unsigned_txs_out_idx are coming from
-        unsigned_txs_out_idx: where to put the tx_out_script
-        hash_type: one of SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ALL,
-        optionally bitwise or'ed with SIGHASH_ANYONECANPAY
+        :param tx_out_script: the script the coins for unsigned_txs_out_idx are coming from
+        :param unsigned_txs_out_idx: where to put the tx_out_script
+        :param hash_type: one of SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ALL,
+            optionally bitwise or'ed with SIGHASH_ANYONECANPAY
         """
 
         # In case concatenating two scripts ends up with two codeseparators,

@@ -1,8 +1,8 @@
 import unittest
 
 from pycoin.tx.Tx import Tx
-from pycoin.tx.script.disassemble import annotate_scripts
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.vm.disassemble import annotate_scripts
 
 
 class DisassembleTest(unittest.TestCase):

@@ -2,13 +2,13 @@
 
 import pdb
 
-from ..script.checksigops import parse_signature_blob
-from ...serialize import b2h
+from pycoin.satoshi.checksigops import parse_signature_blob
+from ..serialize import b2h
 
 from pycoin import encoding
 from pycoin.intbytes import indexbytes, int2byte
 from pycoin.tx.exceptions import SolvingError
-from pycoin.tx.script import der
+from pycoin.satoshi import der
 
 from .constraints import Atom, Operator
 
@@ -98,10 +98,9 @@ class LIST(object):
 
 
 def build_sec_lookup(sec_values):
-    from pycoin.encoding import hash160
     d = {}
     for sec in sec_values or []:
-        d[hash160(sec)] = sec
+        d[encoding.hash160(sec)] = sec
     return d
 
 

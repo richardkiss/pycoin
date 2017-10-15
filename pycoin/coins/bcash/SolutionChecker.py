@@ -1,5 +1,5 @@
-from ...tx.script import ScriptError
-from ...tx.script.flags import SIGHASH_FORKID
+from ..SolutionChecker import ScriptError
+from pycoin.satoshi.flags import SIGHASH_FORKID
 
 from ..bitcoin.SolutionChecker import BitcoinSolutionChecker
 

@@ -3,6 +3,7 @@ import unittest
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
 from pycoin.serialize import h2b
+from pycoin.ui.key_from_text import key_from_text
 
 
 class KeyTest(unittest.TestCase):
@@ -26,8 +27,8 @@ class KeyTest(unittest.TestCase):
 
             keys_wif = [
                 Key(secret_exponent=secret_exponent, generator=secp256k1_generator),
-                Key.from_text(wif, generator=secp256k1_generator),
-                Key.from_text(c_wif, generator=secp256k1_generator),
+                key_from_text(wif, generator=secp256k1_generator),
+                key_from_text(c_wif, generator=secp256k1_generator),
             ]
 
             key_sec = Key.from_sec(sec, secp256k1_generator)
@@ -59,8 +60,8 @@ class KeyTest(unittest.TestCase):
                 self.assertEqual(key.address(use_uncompressed=False), c_address_b58)
                 self.assertEqual(key.address(use_uncompressed=True), address_b58)
 
-            key_pub = Key.from_text(address_b58, is_compressed=False)
-            key_pub_c = Key.from_text(c_address_b58, is_compressed=True)
+            key_pub = key_from_text(address_b58, is_compressed=False)
+            key_pub_c = key_from_text(c_address_b58, is_compressed=True)
 
             self.assertEqual(key_pub.address(), address_b58)
             self.assertEqual(key_pub.address(use_uncompressed=True), address_b58)

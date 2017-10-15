@@ -26,7 +26,7 @@ THE SOFTWARE.
 """
 
 from . import errno
-from . import ScriptError
+from pycoin.coins.SolutionChecker import ScriptError
 
 from .flags import VERIFY_MINIMALDATA
 

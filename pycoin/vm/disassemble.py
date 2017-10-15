@@ -1,15 +1,15 @@
 import collections
 
 from pycoin.encoding import (
-    hash160, hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address, sec_to_public_pair, is_sec_compressed
+    hash160, hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address, is_sec_compressed
 )
 
 from pycoin.serialize import b2h
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
 
-from pycoin.tx.script import ScriptError
-from pycoin.tx.script.checksigops import parse_signature_blob
-from pycoin.tx.script.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, SIGHASH_FORKID
+from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, SIGHASH_FORKID
+from pycoin.satoshi.checksigops import parse_signature_blob
+from pycoin.coins.SolutionChecker import ScriptError
 
 
 for _ in "EQUAL HASH160 CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():

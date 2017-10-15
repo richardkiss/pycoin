@@ -18,21 +18,22 @@ from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import hash160
 from pycoin.key import Key
-from pycoin.key.validate import is_address_valid
+from pycoin.ui.validate import is_address_valid
 from pycoin.networks import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode
+from pycoin.satoshi.checksigops import parse_signature_blob
+from pycoin.satoshi.der import UnexpectedDER
 from pycoin.serialize import b2h_rev, h2b, h2b_rev, stream_to_bytes
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
+from pycoin.solve.solve import build_sec_lookup
 from pycoin.tx.exceptions import BadSpendableError
-from pycoin.tx.script.checksigops import parse_signature_blob
-from pycoin.tx.script.der import UnexpectedDER
-from pycoin.tx.script.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
-from pycoin.tx.script.solve import build_sec_lookup
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
-from pycoin.ui import standard_tx_out_script
+from pycoin.ui.key_from_text import key_from_text
+from pycoin.ui.ui import standard_tx_out_script
+from pycoin.vm.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
 
 DEFAULT_VERSION = 1
 DEFAULT_LOCK_TIME = 0
@@ -364,7 +365,7 @@ def parse_private_key_file(args, key_list):
 
             def make_key(x):
                 try:
-                    return Key.from_text(x, generator=secp256k1_generator)
+                    return key_from_text(x, generator=secp256k1_generator)
                 except Exception:
                     return None
 
@@ -477,7 +478,7 @@ def parse_parts(tx_class, arg, spendables, payables, network):
 
 def key_found(arg, payables, key_iters):
     try:
-        key = Key.from_text(arg, generator=secp256k1_generator)
+        key = key_from_text(arg, generator=secp256k1_generator, key_types=["address", "wif", "prv32"])
         # TODO: check network
         if key.wif() is None:
             payables.append((key.address(), 0))

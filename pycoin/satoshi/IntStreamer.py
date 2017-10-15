@@ -1,4 +1,5 @@
-from . import ScriptError
+from pycoin.coins.SolutionChecker import ScriptError
+
 from . import errno
 
 

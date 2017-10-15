@@ -1,7 +1,7 @@
 
-from ...tx.script import intops, stackops, checksigops, miscops
-
-from ...tx.script import errno, opcodes, ScriptError
+from pycoin.coins.SolutionChecker import ScriptError
+from pycoin.satoshi import intops, stackops, checksigops, miscops
+from pycoin.satoshi import errno, opcodes
 
 from .ScriptStreamer import BitcoinScriptStreamer
 

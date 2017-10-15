@@ -28,9 +28,9 @@ THE SOFTWARE.
 import hashlib
 
 from . import errno
-from . import ScriptError
+from pycoin.coins.SolutionChecker import ScriptError
 
-from ...encoding import hash160, double_sha256, ripemd160
+from ..encoding import hash160, double_sha256, ripemd160
 
 
 def do_OP_NOP(s):

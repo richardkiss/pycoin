@@ -1,11 +1,15 @@
 
 from ..ecdsa.secp256k1 import secp256k1_generator
-from ..tx.script import errno
-from ..tx.script.flags import VERIFY_MINIMALDATA
-from ..tx.script.ConditionalStack import ConditionalStack
-from ..tx.script.IntStreamer import IntStreamer
+from pycoin.satoshi import errno
+from pycoin.satoshi.flags import VERIFY_MINIMALDATA
+from pycoin.satoshi.IntStreamer import IntStreamer
+from pycoin.vm.ConditionalStack import ConditionalStack
 
 from .SolutionChecker import ScriptError
+
+
+def conditional_error_f(msg):
+    raise ScriptError(msg, errno.UNBALANCED_CONDITIONAL)
 
 
 class VMContext(object):
@@ -26,7 +30,7 @@ class VMContext(object):
         self.tx_context = tx_context
         self.stack = initial_stack or list()
         self.altstack = list()
-        self.conditional_stack = self.ConditionalStack()
+        self.conditional_stack = self.ConditionalStack(conditional_error_f)
         self.op_count = 0
         self.begin_code_hash = 0
         self.flags = flags

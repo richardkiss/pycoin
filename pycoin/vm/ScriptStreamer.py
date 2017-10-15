@@ -1,8 +1,4 @@
-
-from ...intbytes import indexbytes, int2byte
-
-from . import ScriptError
-from . import errno
+from ..intbytes import indexbytes, int2byte
 
 
 def make_const_handler(data):
@@ -14,7 +10,7 @@ def make_const_handler(data):
     return constant_data_opcode_handler
 
 
-def make_sized_handler(size, const_values):
+def make_sized_handler(size, const_values, end_of_data_handler, non_minimal_data_handler):
     """
     Create a handler for a data opcode that returns literal data of a fixed size.
     """
@@ -24,14 +20,14 @@ def make_sized_handler(size, const_values):
         pc += 1
         data = script[pc:pc+size]
         if len(data) < size:
-            raise ScriptError("unexpected end of data when literal expected", errno.BAD_OPCODE)
+            end_of_data_handler("unexpected end of data when literal expected")
         if verify_minimal_data and data in const_values:
-            raise ScriptError("not minimal push of %s" % repr(data), errno.MINIMALDATA)
+            non_minimal_data_handler("not minimal push of %s" % repr(data))
         return pc+size, data
     return constant_size_opcode_handler
 
 
-def make_variable_handler(dec_f, sized_values, min_size):
+def make_variable_handler(dec_f, sized_values, min_size, end_of_data_handler, non_minimal_data_handler):
     """
     Create a handler for a data opcode that returns literal data of a variable size
     that's fetched and decoded by the function dec_f.
@@ -40,13 +36,12 @@ def make_variable_handler(dec_f, sized_values, min_size):
 
     def f(script, pc, verify_minimal_data=False):
         size, pc = dec_f(script, pc)
-        if verify_minimal_data and size in sized_values:
-            raise ScriptError("not minimal push of data with size %d" % size, errno.MINIMALDATA)
         data = script[pc:pc+size]
         if len(data) < size:
-            raise ScriptError("unexpected end of data when literal expected", errno.BAD_OPCODE)
-        if verify_minimal_data and size <= min_size:
-            raise ScriptError("not minimal push of data with size %d" % size, errno.MINIMALDATA)
+            end_of_data_handler("unexpected end of data when literal expected")
+        if verify_minimal_data:
+            if size in sized_values or size <= min_size:
+                non_minimal_data_handler("not minimal push of data with size %d" % size)
         return pc+size, data
     return f
 
@@ -80,7 +75,7 @@ class ScriptStreamer(object):
     help reduce the impact of malleability.
     """
     def __init__(self, opcode_const_list, opcode_sized_list, opcode_variable_list,
-                 opcode_lookup):
+                 opcode_lookup, end_of_data_handler, non_minimal_data_handler):
         """
         :param opcode_const_list: list of ("OPCODE_NAME", const_value) pairs, where
             OPCODE_NAME is the name of an opcode and const_value is the value to be pushed
@@ -96,6 +91,8 @@ class ScriptStreamer(object):
                 offset is the integer count of bytes consumed and data the decoded result
 
         :param opcode_lookup: dictionary with entries "OPCODE_NAME" => byte
+        :param end_of_data_handler: function called when not enough data remains in script for opcode
+        :param non_minimal_data_handler: function called when data encoded non-minimally
         """
 
         # build encoders
@@ -117,26 +114,21 @@ class ScriptStreamer(object):
 
         min_size = 0
         for o, max_size, enc_f, dec_f in opcode_variable_list:
-            self.decoder[opcode_lookup.get(o)] = make_variable_handler(dec_f, self.sized_encoder.keys(), min_size)
+            self.decoder[opcode_lookup.get(o)] = make_variable_handler(
+                dec_f, self.sized_encoder.keys(), min_size, end_of_data_handler, non_minimal_data_handler)
             min_size = max_size + 1
 
         # deal with sized data opcodes
 
         self.decoder.update(
-            {o: make_sized_handler(v, self.const_encoder.keys()) for o, v in sized_pairs})
+            {o: make_sized_handler(
+                v, self.const_encoder.keys(), end_of_data_handler, non_minimal_data_handler) for o, v in sized_pairs})
 
         # deal with constant data opcodes
 
         self.decoder.update({o: make_const_handler(v) for o, v in const_pairs})
 
         self.data_opcodes = frozenset(self.decoder.keys())
-
-    def check_script_push_only(self, script):
-        pc = 0
-        while pc < len(script):
-            opcode, data, pc = self.get_opcode(script, pc)
-            if opcode not in self.data_opcodes:
-                raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 
     def get_opcode(self, script, pc, verify_minimal_data=False):
         """

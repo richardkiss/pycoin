@@ -45,7 +45,15 @@ class Tx(object):
 
     @classmethod
     def from_bin(class_, blob):
-        """Return the Tx for the given binary blob."""
+        """Return the Tx for the given binary blob.
+
+        :param blob: a binary blob containing a transaction streamed in standard
+            form. The blob may also include the unspents (a nonstandard extension,
+            optionally written by :func:`Tx.stream <stream>`), and they will also be parsed.
+        :return: :class:`Tx`
+
+        If parsing fails, an exception is raised.
+        """
         f = io.BytesIO(blob)
         tx = class_.parse(f)
         try:
@@ -57,7 +65,15 @@ class Tx(object):
 
     @classmethod
     def from_hex(class_, hex_string):
-        """Return the Tx for the given hex string."""
+        """Return the Tx for the given hex string.
+
+        :param hex_string: a hex string containing a transaction streamed in standard
+            form. The blob may also include the unspents (a nonstandard extension,
+            optionally written by :func:`Tx.stream <stream>`), and they will also be parsed.
+        :return: :class:`Tx`
+
+        If parsing fails, an exception is raised.
+        """
         return class_.from_bin(h2b(hex_string))
 
     def __init__(self, *args, **kwargs):
@@ -68,13 +84,23 @@ class Tx(object):
         raise NotImplemented()
 
     def as_bin(self, *args, **kwargs):
-        """Return the transaction as binary."""
+        """Returns a binary blob containing the streamed transaction.
+
+        For information about the parameters, see :func:`Tx.stream <stream>`
+
+        :return: binary blob that would parse to the given transaction
+        """
         f = io.BytesIO()
         self.stream(f, *args, **kwargs)
         return f.getvalue()
 
     def as_hex(self, *args, **kwargs):
-        """Return the transaction as hex."""
+        """Returns a text string containing the streamed transaction encoded as hex.
+
+        For information about the parameters, see :func:`Tx.stream <stream>`
+
+        :return: hex string that would parse to the given transaction
+        """
         return b2h(self.as_bin(*args, **kwargs))
 
     def hash(self, hash_type=None):
