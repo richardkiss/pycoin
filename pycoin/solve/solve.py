@@ -167,19 +167,20 @@ def signing_solver(m):
                 secret_exponent = result[0]
                 sig_hash = signature_for_hash_type_f(signature_type)
                 generator = result[3]
-                order = generator.order()
                 r, s = generator.sign(secret_exponent, sig_hash)
             else:
                 # try existing signatures
                 for sig in signature_hints:
                     sig_hash = signature_for_hash_type_f(indexbytes(sig, -1))
-                    public_pair = encoding.sec_to_public_pair(sec_key)
+                    generator = generator_for_signature_type_f(signature_type)
+                    public_pair = encoding.sec_to_public_pair(sec_key, generator=generator)
                     sig_pair = der.sigdecode_der(sig[:-1])
-                    if ecdsa.verify(ecdsa.generator_secp256k1, public_pair, sig_hash, sig_pair):
+                    if generator.verify(public_pair, sig_hash, sig_pair):
                         r, s = sig_pair
                         break
                 else:
                     continue
+            order = generator.order()
             if s + s > order:
                 s = order - s
             binary_signature = der.sigencode_der(r, s) + int2byte(signature_type)

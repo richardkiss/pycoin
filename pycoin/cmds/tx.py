@@ -330,6 +330,12 @@ def create_parser():
                         type=argparse.FileType('r'), help='a file containing hex scripts '
                         '(one per line) corresponding to pay-to-script inputs')
 
+    parser.add_argument("--dump-signatures", action="store_true",
+                        help="print signatures (for use with --signature)")
+
+    parser.add_argument("--dump-secs", action="store_true",
+                        help="print secs (for use with --sec)")
+
     parser.add_argument("argument", nargs="*", help='generic argument: can be a hex transaction id '
                         '(exactly 64 characters) to be fetched from cache or a web service;'
                         ' a transaction as a hex string; a path name to a transaction to be loaded;'
@@ -711,6 +717,30 @@ def validate_against_bitcoind(tx, tx_db, network, bitcoind_url):
     return tx_db
 
 
+def dump_signatures_hex(tx):
+    from pycoin.contrib.who_signed import extract_signatures
+    from pycoin.serialize import b2h
+    sigs = []
+    for _, tx_in in enumerate(tx.txs_in):
+        sigs.extend(extract_signatures(tx, _))
+    if len(sigs):
+        print("SIGNATURES")
+    for sig in sigs:
+        print(b2h(sig[0]))
+
+
+def dump_secs_hex(tx):
+    from pycoin.contrib.who_signed import sec_keys
+    from pycoin.serialize import b2h
+    sec_key_list = []
+    for _, tx_in in enumerate(tx.txs_in):
+        sec_key_list.extend(sec_keys(tx_in.script))
+    if len(sec_key_list):
+        print("SECS")
+    for sec in sec_key_list:
+        print(b2h(sec))
+
+
 def tx(args, parser):
     (tx_class, txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
 
@@ -734,6 +764,12 @@ def tx(args, parser):
 
     print_output(tx, include_unspents, args.output_file, args.show_unspents, args.network,
                  args.verbose_signature, args.disassemble, args.trace, args.pdb)
+
+    if args.dump_signatures:
+        dump_signatures_hex(tx)
+
+    if args.dump_secs:
+        dump_secs_hex(tx)
 
     tx_db = cache_result(tx, tx_db, args.cache, args.network)
 
