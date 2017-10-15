@@ -15,28 +15,26 @@ class UI(object):
         self._address_prefix = address_prefix
         self._pay_to_script_prefix = pay_to_script_prefix
         self._bech32_hrp = bech32_hrp
-        #self._netcode = netcode
 
     def address_for_script(self, script):
         d = self._puzzle_scripts.info_from_script_p2pkh(script)
         if d:
-            return encoding.hash160_sec_to_bitcoin_address(
-                d["PUBKEYHASH_LIST"][0], address_prefix=self._address_prefix)
+            return self.address_for_pay_to_pkh(d["PUBKEYHASH_LIST"][0])
 
         d = self._puzzle_scripts.info_from_script_p2pkh_wit(script)
         if d:
             if self._bech32_hrp:
-                return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(d["PUBKEYHASH_LIST"][0]))
+                return self.address_for_p2skh_wit(iterbytes(d["PUBKEYHASH_LIST"][0]))
 
         d = self._puzzle_scripts.info_from_script_p2pk(script)
         if d:
             hash160 = encoding.hash160(d["PUBKEY_LIST"][0])
-            return encoding.hash160_sec_to_bitcoin_address(hash160, address_prefix=self._address_prefix)
+            # BRAIN DAMAGE: this isn't really a p2pkh
+            return self.address_for_pay_to_pkh(hash160)
 
         d = self._puzzle_scripts.info_from_script_p2sh(script)
         if d:
-            return encoding.hash160_sec_to_bitcoin_address(
-                d["PUBKEYHASH_LIST"][0], address_prefix=self._pay_to_script_prefix)
+            return self.address_for_pay_to_script_hash(d["PUBKEYHASH_LIST"][0])
 
         if (len(script), script[0:2]) in ((34, b'\00\x20'), (66, 'b\00\x40')):
             return segwit_addr.encode(self._bech32_hrp, self.version, self.hash256)
@@ -46,6 +44,11 @@ class UI(object):
             return "(nulldata %s)" % b2h(d["DATA"])
 
         return "???"
+
+    def address_for_pay_to_pkh(self, hash160):
+        if self._pay_to_script_prefix:
+            return encoding.hash160_sec_to_bitcoin_address(hash160, address_prefix=self._pay_to_script_prefix)
+        return None
 
     def address_for_pay_to_script_hash(self, hash160):
         if self._pay_to_script_prefix:

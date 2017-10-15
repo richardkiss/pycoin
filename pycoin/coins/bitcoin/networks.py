@@ -15,7 +15,7 @@ _puzzle_script = PayTo(BitcoinScriptTools)
 
 mainnet_ui = UI(_puzzle_script, address_prefix=h2b("00"), pay_to_script_prefix=h2b("05"), bech32_hrp='bc')
 mainnet_keyparser = KeyParser(
-    netcode="BTC", wif_prefix=h2b("05"), address_prefix=h2b("00"),
+    netcode="BTC", wif_prefix=h2b("80"), address_prefix=h2b("00"),
     bip32_prv_prefix=h2b("0488ade4"), bip32_pub_prefix=h2b("0488B21E"), bech32_prefix="bc")
 
 BitcoinMainnet = Network(
