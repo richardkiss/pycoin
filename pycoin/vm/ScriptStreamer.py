@@ -1,3 +1,4 @@
+from ..serialize import bytes_as_hex
 from ..intbytes import indexbytes, int2byte
 
 
@@ -5,6 +6,8 @@ def make_const_handler(data):
     """
     Create a handler for a data opcode that returns a constant.
     """
+    data = bytes_as_hex(data)
+
     def constant_data_opcode_handler(script, pc, verify_minimal_data=False):
         return pc+1, data
     return constant_data_opcode_handler
@@ -18,7 +21,7 @@ def make_sized_handler(size, const_values, end_of_data_handler, non_minimal_data
 
     def constant_size_opcode_handler(script, pc, verify_minimal_data=False):
         pc += 1
-        data = script[pc:pc+size]
+        data = bytes_as_hex(script[pc:pc+size])
         if len(data) < size:
             end_of_data_handler("unexpected end of data when literal expected")
         if verify_minimal_data and data in const_values:
@@ -36,7 +39,7 @@ def make_variable_handler(dec_f, sized_values, min_size, end_of_data_handler, no
 
     def f(script, pc, verify_minimal_data=False):
         size, pc = dec_f(script, pc)
-        data = script[pc:pc+size]
+        data = bytes_as_hex(script[pc:pc+size])
         if len(data) < size:
             end_of_data_handler("unexpected end of data when literal expected")
         if verify_minimal_data:
