@@ -26,7 +26,6 @@ THE SOFTWARE.
 """
 
 from . import errno
-from . import ScriptError
 
 from .flags import (
     SEQUENCE_LOCKTIME_DISABLE_FLAG, SEQUENCE_LOCKTIME_TYPE_FLAG,
@@ -34,6 +33,8 @@ from .flags import (
     VERIFY_CHECKLOCKTIMEVERIFY,
     VERIFY_MINIMALIF, VERIFY_CHECKSEQUENCEVERIFY,
 )
+
+from pycoin.coins.SolutionChecker import ScriptError
 
 
 def make_bad_opcode(opcode, even_outside_conditional=False, err=errno.BAD_OPCODE):

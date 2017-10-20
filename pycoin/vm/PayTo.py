@@ -1,5 +1,7 @@
 import collections
+import hashlib
 
+from pycoin import encoding
 from pycoin.serialize import b2h
 
 
@@ -27,7 +29,7 @@ class PayTo(object):
         return self._scriptTools.compile(script_text)
 
     def script_for_p2s(self, underlying_script):
-        return script_for_p2sh(encoding.hash160(underlying_script))
+        return self.script_for_p2sh(encoding.hash160(underlying_script))
 
     def script_for_p2sh_wit(self, underlying_script):
         hash256 = hashlib.sha256(underlying_script).digest()

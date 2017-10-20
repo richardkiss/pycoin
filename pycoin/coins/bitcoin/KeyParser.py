@@ -10,7 +10,6 @@
 import binascii
 import struct
 
-from .ScriptTools import BitcoinScriptTools
 from pycoin import encoding
 from pycoin.contrib.segwit_addr import bech32_decode
 from pycoin.ecdsa.secp256k1 import secp256k1_generator

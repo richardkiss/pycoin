@@ -31,7 +31,6 @@ from ...convention import satoshi_to_mbtc
 from ...serialize.bitcoin_streamer import parse_struct, stream_struct
 
 
-
 class TxOut(object):
 
     COIN_VALUE_CAST_F = int

@@ -1,7 +1,8 @@
-from pycoin.encoding import EncodingError, a2b_hashed_base58, \
-    from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
-    is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
+from pycoin.encoding import (
+    from_bytes_32, hash160, hash160_sec_to_bitcoin_address,
+    is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec,
     sec_to_public_pair, secret_exponent_to_wif
+)
 from pycoin.serialize import b2h
 from pycoin.satoshi.der import sigencode_der, sigdecode_der
 

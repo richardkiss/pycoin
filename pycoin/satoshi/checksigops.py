@@ -30,7 +30,6 @@ from ..encoding import sec_to_public_pair, EncodingError
 from ..intbytes import byte2int, indexbytes, iterbytes
 
 from . import der
-from . import ScriptError
 from . import errno
 
 from .flags import (
@@ -38,6 +37,8 @@ from .flags import (
     VERIFY_NULLDUMMY, VERIFY_NULLFAIL, VERIFY_STRICTENC,
     VERIFY_DERSIG, VERIFY_LOW_S, VERIFY_WITNESS_PUBKEYTYPE
 )
+
+from pycoin.coins.SolutionChecker import ScriptError
 
 
 def _check_valid_signature_1(sig):

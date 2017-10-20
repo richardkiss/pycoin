@@ -4,7 +4,6 @@ from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
 
-from .Tx import Tx
 from ..solve.utils import build_hash160_lookup
 
 
@@ -72,6 +71,7 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, netw
     """
 
     Tx = network.tx
+
     def _fix_spendable(s):
         if isinstance(s, Tx.Spendable):
             return s

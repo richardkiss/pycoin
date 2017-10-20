@@ -4,7 +4,6 @@ from .network import Network
 from .legacy_networks import NETWORKS
 
 from pycoin.block import Block as BitcoinBlock
-from pycoin.coins.bitcoin.Tx import Tx as BitcoinTx
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 from pycoin.coins.litecoin.networks import LitecoinMainnet, LitecoinTestnet

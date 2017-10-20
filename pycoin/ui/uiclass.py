@@ -1,11 +1,10 @@
-import collections
 import hashlib
 
 from pycoin import encoding
 from pycoin.serialize import b2h
 
 from pycoin.contrib import segwit_addr
-from pycoin.intbytes import iterbytes, byte2int
+from pycoin.intbytes import iterbytes
 from pycoin.ui.validate import netcode_and_type_for_text
 
 
@@ -47,7 +46,7 @@ class UI(object):
 
     def address_for_pay_to_pkh(self, hash160):
         if self._pay_to_script_prefix:
-            return encoding.hash160_sec_to_bitcoin_address(hash160, address_prefix=self._pay_to_script_prefix)
+            return encoding.hash160_sec_to_bitcoin_address(hash160, address_prefix=self._address_prefix)
         return None
 
     def address_for_pay_to_script_hash(self, hash160):

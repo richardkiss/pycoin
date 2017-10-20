@@ -16,8 +16,9 @@ from pycoin.key import Key
 from pycoin.ui.key_from_text import key_from_text
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks.default import get_current_netcode
-from pycoin.networks.registry import full_network_name_for_netcode, network_name_for_netcode, network_codes, network_for_netcode
-from pycoin.ui.key_from_text import key_from_text
+from pycoin.networks.registry import (
+    full_network_name_for_netcode, network_name_for_netcode, network_codes, network_for_netcode
+)
 
 
 SEC_RE = re.compile(r"^(0[23][0-9a-fA-F]{64})|(04[0-9a-fA-F]{128})$")
