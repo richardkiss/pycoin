@@ -218,6 +218,10 @@ def msg_magic_for_netcode(netcode):
     if netcode == 'XTN':
         name = "Bitcoin"
 
+    # XCoin, then DarkCoin, and finally rebranded to Dash
+    if netcode == 'DASH':
+        name = "DarkCoin"
+
     return '%s Signed Message:\n' % name
 
 
