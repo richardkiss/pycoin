@@ -33,7 +33,7 @@ BitcoinMainnet = Network(
 
 testnet_ui = UI(_puzzle_script, address_prefix=h2b("6f"), pay_to_script_prefix=h2b("c4"), bech32_hrp='tb')
 testnet_keyparser = KeyParser(
-    netcode="XTN", wif_prefix=h2b("c4"), address_prefix=h2b("6f"),
+    netcode="XTN", wif_prefix=h2b("ef"), address_prefix=h2b("6f"),
     bip32_prv_prefix=h2b("04358394"), bip32_pub_prefix=h2b("043587CF"), bech32_prefix="tb")
 
 

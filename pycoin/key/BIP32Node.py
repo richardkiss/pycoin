@@ -66,36 +66,6 @@ class BIP32Node(Key):
         return class_(generator=generator, netcode=netcode, chain_code=I64[32:],
                       secret_exponent=from_bytes_32(I64[:32]))
 
-    # BRAIN DAMAGE
-    # this method needs to be removed to pycoin.ui
-    @classmethod
-    def from_hwif(class_, generator, b58_str, allow_subkey_suffix=True):
-        """Generate a Wallet from a base58 string in a standard way."""
-        from pycoin.ui.validate import netcode_and_type_for_data
-        # TODO: support subkey suffixes
-
-        data = a2b_hashed_base58(b58_str)
-        netcode, key_type, length = netcode_and_type_for_data(data)
-
-        if key_type not in ("pub32", "prv32"):
-            raise EncodingError("bad wallet key header")
-
-        is_private = (key_type == 'prv32')
-        parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
-
-        d = dict(generator=generator, netcode=netcode, chain_code=data[13:45], depth=ord(data[4:5]),
-                 parent_fingerprint=parent_fingerprint, child_index=child_index)
-
-        if is_private:
-            if data[45:46] != b'\0':
-                raise EncodingError("private key encoded wrong")
-            d["secret_exponent"] = from_bytes_32(data[46:])
-        else:
-            d["public_pair"] = sec_to_public_pair(data[45:], generator)
-
-        return class_(**d)
-
-    from_wallet_key = from_hwif
 
     def __init__(self, generator, netcode, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
                  child_index=0, secret_exponent=None, public_pair=None):

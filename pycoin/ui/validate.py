@@ -1,4 +1,3 @@
-
 import binascii
 from .. import encoding
 from ..intbytes import int2byte

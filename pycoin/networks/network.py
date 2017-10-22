@@ -19,3 +19,6 @@ class Network(object):
                 raise TypeError("unexpected argument %s" % k)
         for name in DEFAULT_ARGS_ORDER:
             setattr(self, name, kwargs.get(name, None))
+
+    def __repr__(self):
+        return "<Network %s %s>" % (self.network_name, self.subnet_name)

@@ -1,13 +1,13 @@
 import unittest
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import (
     int2byte,
     to_bytes_32,
 )
 from pycoin.key import Key
+from pycoin.networks.registry import network_for_netcode
 from pycoin.satoshi.flags import (
     SIGHASH_ALL,
     SIGHASH_ANYONECANPAY,
@@ -27,8 +27,6 @@ from pycoin.tx.Tx import (
     TxOut
 )
 
-
-script_for_address = BitcoinMainnet.ui.script_for_address
 
 PRIV_KEYS = (
     2330949616242593315303241053456316633827293588958882755297900732239663851861,
@@ -87,6 +85,9 @@ class SighashSingleTest(unittest.TestCase):
 
         self.assertEqual('2acbe1006f7168bad538b477f7844e53de3a31ffddfcfc4c6625276dd714155a',
                          b2h_rev(coinbase_tx.hash()))
+
+        network = network_for_netcode(netcode)
+        script_for_address = network.ui.script_for_address
 
         # Make the test transaction
         txs_in = [

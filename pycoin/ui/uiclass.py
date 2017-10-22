@@ -3,9 +3,9 @@ import hashlib
 from pycoin import encoding
 from pycoin.serialize import b2h
 
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools, IntStreamer
 from pycoin.contrib import segwit_addr
-from pycoin.intbytes import iterbytes
-from pycoin.ui.validate import netcode_and_type_for_text
+from pycoin.intbytes import int2byte, iterbytes
 
 
 class UI(object):
@@ -71,16 +71,26 @@ class UI(object):
         return self.address_for_p2sh_wit(hashlib.sha256(script).digest())
 
     def script_for_address(self, address):
-        # BRAIN DAMAGE
-        netcode, key_type, data = netcode_and_type_for_text(address)
-        if key_type == 'address':
-            return self._puzzle_scripts.script_for_p2pkh(data)
-        if key_type == 'pay_to_script':
-            return self._puzzle_scripts.script_for_p2sh(data)
-        if key_type == 'segwit':
-            return data
-        # BRAIN DAMAGE: TODO
-        raise ValueError("bad text")
+        try:
+            hrp, data = segwit_addr.bech32_decode(address)
+            if data:
+                if hrp != self._bech32_hrp:
+                    return None
+                decoded = segwit_addr.convertbits(data[1:], 5, 8, False)
+                decoded_data = b''.join(int2byte(d) for d in decoded)
+                script = BitcoinScriptTools.compile_push_data_list([
+                    IntStreamer.int_to_script_bytes(data[0]), decoded_data])
+                return script
+        except (TypeError, KeyError):
+            pass
+
+        data = encoding.a2b_hashed_base58(address)
+        if data:
+            if data.startswith(self._address_prefix):
+                return self._puzzle_scripts.script_for_p2pkh(data[len(self._address_prefix):])
+            if data.startswith(self._pay_to_script_prefix):
+                return self._puzzle_scripts.script_for_p2sh(data[len(self._pay_to_script_prefix):])
+        return None
 
     def standard_tx_out_script(self, address):
         return self.script_for_address(address)

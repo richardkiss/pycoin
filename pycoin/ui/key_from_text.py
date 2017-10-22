@@ -1,9 +1,56 @@
-from .. import encoding
-from ..serialize import b2h
-from .validate import netcode_and_type_for_text
-from pycoin.key.electrum import ElectrumWallet
-from pycoin.key.BIP32Node import BIP32Node
-from pycoin.key.Key import Key
+import binascii
+
+from ..encoding import a2b_hashed_base58, EncodingError
+from ..serialize import h2b
+from ..contrib.segwit_addr import bech32_decode
+
+
+def key_info_from_text(text, networks):
+    try:
+        data = a2b_hashed_base58(text)
+        for network in networks:
+            try:
+                r = network.keyparser.key_info_from_b58(data)
+                if r:
+                    yield network, r
+            except Exception:
+                pass
+    except EncodingError:
+        pass
+
+    try:
+        hrp, data = bech32_decode(text)
+        if hrp and data:
+            for network in networks:
+                try:
+                    r = network.keyparser.key_info_from_bech32(hrp, data)
+                    if r:
+                        yield network, r
+                except Exception:
+                    pass
+    except (TypeError, KeyError):
+        pass
+
+    try:
+        prefix, rest = text.split(":", 1)
+        data = h2b(rest)
+        for network in networks:
+            try:
+                r = network.keyparser.key_info_from_prefixed_hex(prefix, data)
+                if r:
+                    yield network, r
+            except Exception:
+                pass
+    except (binascii.Error, TypeError, ValueError):
+        pass
+
+    for network in networks:
+        try:
+            r = network.keyparser.key_info_from_plaintext(text)
+            if r:
+                yield network, r
+        except Exception:
+            pass
 
 
 def key_from_text(text, generator=None, is_compressed=None, key_types=None):
@@ -12,34 +59,12 @@ def key_from_text(text, generator=None, is_compressed=None, key_types=None):
 
     The "is_compressed" parameter is ignored unless a public address is passed in.
     """
+    from ..networks.registry import network_codes, network_for_netcode
+    networks = [network_for_netcode(netcode) for netcode in network_codes()]
+    for network, key_info in key_info_from_text(text, networks=networks):
+        if is_compressed is not None:
+            # THIS IS A STUPID HACK
+            key_info["kwargs"]["is_compressed"] = is_compressed
+        return key_info["key_class"](**key_info["kwargs"])
 
-    netcode, key_type, data = netcode_and_type_for_text(text)
-
-    if key_types and key_type not in key_types:
-        raise encoding.EncodingError("bad key type: %s" % key_type)
-
-    if key_type in ("pub32", "prv32"):
-        return BIP32Node.from_wallet_key(generator, text)
-
-    if key_type == 'wif':
-        is_compressed = (len(data) > 32)
-        if is_compressed:
-            data = data[:-1]
-        return Key(
-            secret_exponent=encoding.from_bytes_32(data),
-            generator=generator,
-            prefer_uncompressed=not is_compressed, netcode=netcode)
-
-    if key_type == 'address':
-        return Key(hash160=data, is_compressed=is_compressed, netcode=netcode)
-
-    if key_type == 'elc_seed':
-        return ElectrumWallet(initial_key=b2h(data), generator=generator)
-
-    if key_type == 'elc_prv':
-        return ElectrumWallet(master_private_key=encoding.from_bytes_32(data), generator=generator)
-
-    if key_type == 'elc_pub':
-        return ElectrumWallet(master_public_key=data, generator=generator)
-
-    raise encoding.EncodingError("unknown text: %s" % text)
+    raise EncodingError("unknown text: %s" % text)

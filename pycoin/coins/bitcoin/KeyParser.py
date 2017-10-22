@@ -31,7 +31,7 @@ class KeyParser(object):
     def key_from_text(self, text):
         key_info = self.key_info_from_text(text)
         if key_info:
-            return self.key_from_key_info(key_info)
+            return key_from_key_info(key_info)
 
     def key_info_from_text(self, text):
         try:
@@ -75,10 +75,11 @@ class KeyParser(object):
             return dict(key_class=BIP32Node, key_type="bip32", is_private=bip32_prv, kwargs=d)
 
         if data.startswith(self._wif_prefix):
+            data = data[1:]
             is_compressed = (len(data) > 32)
             if is_compressed:
                 data = data[:-1]
-            se = encoding.from_bytes_32(data[1:])
+            se = encoding.from_bytes_32(data)
             kwargs = dict(secret_exponent=se, generator=secp256k1_generator,
                           prefer_uncompressed=not is_compressed, netcode=self._netcode)
             return dict(key_class=Key, key_type="wif", kwargs=kwargs)
@@ -111,5 +112,7 @@ class KeyParser(object):
     def key_info_from_plaintext(self, text):
         return None
 
-    def key_from_key_info(self, key_info):
-        return key_info["key_class"](**key_info["kwargs"])
+
+def key_from_key_info(key_info):
+    return key_info["key_class"](**key_info["kwargs"])
+
