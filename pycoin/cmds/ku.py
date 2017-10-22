@@ -62,13 +62,13 @@ def parse_as_number(s):
         pass
 
 
-def parse_as_secret_exponent(s):
+def parse_as_secret_exponent(s, generator):
     v = parse_as_number(s)
-    if v and 0 < v < secp256k1_generator.order():
+    if v and 0 < v < generator.order():
         return v
 
 
-def parse_as_public_pair(s):
+def parse_as_public_pair(s, generator):
     for c in ",/":
         if c in s:
             s0, s1 = s.split(c, 1)
@@ -76,11 +76,11 @@ def parse_as_public_pair(s):
             if v0:
                 if s1 in ("even", "odd"):
                     is_y_odd = (s1 == "odd")
-                    y = secp256k1_generator.y_values_for_x(v0)[is_y_odd]
-                    return secp256k1_generator.Point(v0, y)
+                    y = generator.y_values_for_x(v0)[is_y_odd]
+                    return generator.Point(v0, y)
                 v1 = parse_as_number(s1)
                 if v1:
-                    if not secp256k1_generator.contains_point(v0, v1):
+                    if not generator.contains_point(v0, v1):
                         sys.stderr.write("invalid (x, y) pair\n")
                         sys.exit(1)
                     return (v0, v1)
@@ -249,7 +249,7 @@ def create_parser():
     return parser
 
 
-def prefix_transforms_for_network(network):
+def prefix_transforms_for_network(network, generator):
     def _create_bip32(_):
         max_retries = 64
         for _ in range(max_retries):
@@ -261,14 +261,14 @@ def prefix_transforms_for_network(network):
         raise RuntimeError("can't create BIP32 key")
 
     return (
-        ("P:", lambda s: BIP32Node.from_master_secret(secp256k1_generator, s.encode("utf8"), netcode=network)),
-        ("H:", lambda s: BIP32Node.from_master_secret(secp256k1_generator, h2b(s), netcode=network)),
-        ("E:", lambda s: key_from_text(s, generator=secp256k1_generator)),
+        ("P:", lambda s: BIP32Node.from_master_secret(generator, s.encode("utf8"), netcode=network)),
+        ("H:", lambda s: BIP32Node.from_master_secret(generator, h2b(s), netcode=network)),
+        ("E:", lambda s: key_from_text(s, generator=generator)),
         ("create", _create_bip32),
     )
 
 
-def parse_prefixes(item, PREFIX_TRANSFORMS):
+def parse_prefixes(item, generator, PREFIX_TRANSFORMS):
     for k, f in PREFIX_TRANSFORMS:
         if item.startswith(k):
             try:
@@ -277,29 +277,29 @@ def parse_prefixes(item, PREFIX_TRANSFORMS):
                 pass
 
     try:
-        return key_from_text(item, generator=secp256k1_generator)
+        return key_from_text(item, generator=generator)
     except encoding.EncodingError:
         pass
     return None
 
 
-def parse_key(item, PREFIX_TRANSFORMS, network):
+def parse_key(item, PREFIX_TRANSFORMS, generator, network):
 
-    key = parse_prefixes(item, PREFIX_TRANSFORMS)
+    key = parse_prefixes(item, generator, PREFIX_TRANSFORMS)
     if key:
         return key
 
     if HASH160_RE.match(item):
         return Key(hash160=h2b(item), netcode=network)
 
-    secret_exponent = parse_as_secret_exponent(item)
+    secret_exponent = parse_as_secret_exponent(item, generator)
     if secret_exponent:
-        return Key(secret_exponent=secret_exponent, generator=secp256k1_generator, netcode=network)
+        return Key(secret_exponent=secret_exponent, generator=generator, netcode=network)
 
     if SEC_RE.match(item):
-        return Key.from_sec(h2b(item), secp256k1_generator)
+        return Key.from_sec(h2b(item), generator)
 
-    public_pair = parse_as_public_pair(item)
+    public_pair = parse_as_public_pair(item, generator)
     if public_pair:
         return Key(public_pair=public_pair, netcode=network)
 
@@ -326,10 +326,11 @@ def ku(args, parser):
         # force network arg to match override, but also will override decoded data below.
         args.network = args.override_network
 
-    PREFIX_TRANSFORMS = prefix_transforms_for_network(args.network)
+    generator = secp256k1_generator
+    PREFIX_TRANSFORMS = prefix_transforms_for_network(args.network, generator)
 
     for item in args.item:
-        key = parse_key(item, PREFIX_TRANSFORMS, args.network)
+        key = parse_key(item, PREFIX_TRANSFORMS, generator, args.network)
 
         if key is None:
             print("can't parse %s" % item, file=sys.stderr)

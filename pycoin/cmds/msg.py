@@ -7,6 +7,7 @@ import sys
 
 from pycoin import encoding
 from pycoin.contrib.msg_signing import sign_message, pair_for_message, hash_for_signing
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.networks.registry import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
 from .ku import parse_key, prefix_transforms_for_network
 
@@ -51,7 +52,8 @@ def get_message_hash(args):
 
 def msg_sign(args, parser):
     message_hash = get_message_hash(args)
-    key = parse_key(args.WIF, prefix_transforms_for_network(args.network), args.network)
+    ptfn = prefix_transforms_for_network(args.network, secp256k1_generator)
+    key = parse_key(args.WIF, ptfn, secp256k1_generator, args.network)
     sig = sign_message(key, msg_hash=message_hash)
     print(sig)
 
