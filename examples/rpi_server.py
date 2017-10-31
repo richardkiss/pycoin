@@ -2,6 +2,15 @@
 
 # this script runs a server that queues up transactions to be signed by the rpi_signer
 
+# to test:
+# start this server
+# $ python rpi_server.py"
+#
+# start the signer
+#
+# $ ku P:foo -w > example-key-file
+# $ python rpi_server.py http://localhost:8000/ example-key-file
+
 import json
 
 from http.server import test, BaseHTTPRequestHandler
