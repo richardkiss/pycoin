@@ -21,7 +21,8 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.validate import is_address_valid, is_private_bip32_valid, is_wif_valid
 from pycoin.encoding import bitcoin_address_to_hash160_sec
 from pycoin.serialize import b2h, h2b
-from pycoin.tx import Tx, tx_utils
+from pycoin.tx import tx_utils
+from pycoin.tx.Tx import Tx
 
 import requests
 
@@ -37,7 +38,7 @@ def sign_tx(tx, tx_info, bip32_db, key_db):
     tx_utils.sign_tx(tx, wifs=wifs)
 
 
-def process_tx_info(url, tx_info, bip32_db, key_db):
+def process_tx_info(url, tx_info, bip32_db, key_db, verify):
     start_time = time.time()
     hex_string = tx_info.get("tx_hex")
     f = io.BytesIO(h2b(hex_string))
@@ -55,7 +56,7 @@ def process_tx_info(url, tx_info, bip32_db, key_db):
     return r
 
 
-def process(url, tx_info_list, bip32_db, key_db):
+def process(url, tx_info_list, bip32_db, key_db, verify):
     """
     tx_info_list:
         a list of tx_info items where
@@ -66,7 +67,7 @@ def process(url, tx_info_list, bip32_db, key_db):
     """
     results = []
     for tx_info in tx_info_list:
-        r = process_tx_info(url, tx_info, bip32_db, key_db)
+        r = process_tx_info(url, tx_info, bip32_db, key_db, verify)
         results.append(r)
     return results
 
@@ -215,7 +216,7 @@ def main():
             if len(tx_info_list) > 0:
                 # choose two at random
                 random.shuffle(tx_info_list)
-                process(url, tx_info_list[:args.batch_size], bip32_db, key_db)
+                process(url, tx_info_list[:args.batch_size], bip32_db, key_db, args.verify)
                 MESSAGE[:] = "G"
             else:
                 time.sleep(15)
