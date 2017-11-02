@@ -3,7 +3,6 @@ import unittest
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import double_sha256, to_bytes_32
-from pycoin.key import Key
 from pycoin.serialize import b2h, b2h_rev, h2b
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
@@ -11,6 +10,8 @@ from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 
+# BRAIN DAMAGE
+Key = BitcoinMainnet.key
 
 
 class SegwitTest(unittest.TestCase):

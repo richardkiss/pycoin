@@ -6,8 +6,8 @@ from binascii import b2a_base64, a2b_base64
 from ..serialize.bitcoin_streamer import stream_bc_string
 from ..ecdsa.secp256k1 import secp256k1_generator
 
-from ..networks.registry import address_prefix_for_netcode, network_name_for_netcode
-from ..encoding import public_pair_to_bitcoin_address, to_bytes_32, from_bytes_32, double_sha256, EncodingError
+from ..networks.registry import network_name_for_netcode
+from ..encoding import public_pair_to_hash160_sec, to_bytes_32, from_bytes_32, double_sha256, EncodingError
 from ..key import Key
 from pycoin.ui.key_from_text import key_from_text
 
@@ -98,7 +98,7 @@ def parse_signed_message(msg_in):
     return msg, addr, sig
 
 
-def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_hash=None):
+def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_hash=None, netcode='BTC'):
     """
     Return a signature, encoded in Base64, which can be verified by anyone using the
     public key.
@@ -108,9 +108,8 @@ def sign_message(key, message=None, verbose=False, use_uncompressed=None, msg_ha
         raise TypeError("Private key is required to sign a message")
 
     addr = key.address()
-    netcode = key.netcode()
 
-    mhash = hash_for_signing(message, netcode) if message else msg_hash
+    mhash = hash_for_signing(message) if message else msg_hash
 
     # Use a deterministic K so our signatures are deterministic.
     r, s, recid = secp256k1_generator.sign_with_recid(secret_exponent, mhash)
@@ -152,7 +151,7 @@ def pair_for_message(signature, message=None, msg_hash=None, netcode=None):
     is_compressed, recid, r, s = _decode_signature(signature)
 
     # Calculate hash of message used in signature
-    msg_hash = hash_for_signing(message, netcode) if message is not None else msg_hash
+    msg_hash = hash_for_signing(message) if message is not None else msg_hash
 
     # Calculate the specific public key used to sign this message.
     y_parity = recid & 1
@@ -175,10 +174,9 @@ def pair_matches_key(pair, key, is_compressed):
     else:
         # Key() constructed from a hash of pubkey doesn't know the exact public pair, so
         # must compare hashed addresses instead.
-        addr = key.address()
-        prefix = address_prefix_for_netcode(key._netcode)
-        ta = public_pair_to_bitcoin_address(pair, compressed=is_compressed, address_prefix=prefix)
-        return ta == addr
+        key_hash160 = key.hash160()
+        pair_hash160 = public_pair_to_hash160_sec(pair, compressed=is_compressed)
+        return key_hash160 == pair_hash160
 
 
 def verify_message(key_or_address, signature, message=None, msg_hash=None, netcode=None):
@@ -194,7 +192,7 @@ def verify_message(key_or_address, signature, message=None, msg_hash=None, netco
         key = key_from_text(key_or_address)
 
     try:
-        pair, is_compressed = pair_for_message(signature, message, msg_hash, key.netcode())
+        pair, is_compressed = pair_for_message(signature, message, msg_hash)
     except EncodingError:
         return False
     return pair_matches_key(pair, key, is_compressed)

@@ -1,8 +1,12 @@
 import unittest
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key.BIP32Node import BIP32Node
+from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 from pycoin.serialize import h2b
 from pycoin.ui.key_from_text import key_from_text
+
+# BRAIN DAMAGE
+BIP32Node = BitcoinMainnet.keyparser._bip32node_class
+XTNBIP32Node = BitcoinTestnet.keyparser._bip32node_class
 
 
 class Bip0032TestCase(unittest.TestCase):
@@ -183,8 +187,7 @@ class Bip0032TestCase(unittest.TestCase):
 
     def test_testnet(self):
         # WARNING: these values have not been verified independently. TODO: do so
-        master = BIP32Node.from_master_secret(
-            secp256k1_generator, h2b("000102030405060708090a0b0c0d0e0f"), netcode='XTN')
+        master = XTNBIP32Node.from_master_secret(secp256k1_generator, h2b("000102030405060708090a0b0c0d0e0f"))
         self.assertEqual(
             master.wallet_key(as_private=True),
             "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5kh"
@@ -241,10 +244,9 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertRaises(ValueError, list, my_prv.subkeys('-1-0'))
 
     def test_repr(self):
-        from pycoin.key import Key
-        netcode = 'XTN'
-        key = Key(secret_exponent=273, netcode=netcode, generator=secp256k1_generator)
-        wallet = BIP32Node.from_master_secret(secp256k1_generator, bytes(key.wif().encode('ascii')), netcode)
+        Key = BitcoinTestnet.keyparser._key_class
+        key = Key(secret_exponent=273, generator=secp256k1_generator)
+        wallet = XTNBIP32Node.from_master_secret(secp256k1_generator, bytes(key.wif().encode('ascii')))
 
         address = wallet.address()
         pub_k = key_from_text(address)

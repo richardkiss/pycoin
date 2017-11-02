@@ -263,12 +263,11 @@ def prefix_transforms_for_network(network, generator):
     return (
         ("P:", lambda s: BIP32Node.from_master_secret(generator, s.encode("utf8"), netcode=network)),
         ("H:", lambda s: BIP32Node.from_master_secret(generator, h2b(s), netcode=network)),
-        ("E:", lambda s: key_from_text(s, generator=generator)),
         ("create", _create_bip32),
     )
 
 
-def parse_prefixes(item, generator, PREFIX_TRANSFORMS):
+def parse_prefixes(item, PREFIX_TRANSFORMS):
     for k, f in PREFIX_TRANSFORMS:
         if item.startswith(k):
             try:
@@ -277,7 +276,7 @@ def parse_prefixes(item, generator, PREFIX_TRANSFORMS):
                 pass
 
     try:
-        return key_from_text(item, generator=generator)
+        return key_from_text(item)
     except encoding.EncodingError:
         pass
     return None
@@ -285,7 +284,7 @@ def parse_prefixes(item, generator, PREFIX_TRANSFORMS):
 
 def parse_key(item, PREFIX_TRANSFORMS, generator, network):
 
-    key = parse_prefixes(item, generator, PREFIX_TRANSFORMS)
+    key = parse_prefixes(item, PREFIX_TRANSFORMS)
     if key:
         return key
 

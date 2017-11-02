@@ -1,9 +1,13 @@
 import unittest
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key import Key
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.serialize import h2b
 from pycoin.ui.key_from_text import key_from_text
+
+
+# BRAIN DAMAGE
+Key = BitcoinMainnet.key
 
 
 class KeyTest(unittest.TestCase):
@@ -20,7 +24,6 @@ class KeyTest(unittest.TestCase):
 
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
-
             secret_exponent = int(exp_hex, 16)
             sec = h2b(public_pair_sec)
             c_sec = h2b(c_public_pair_sec)

@@ -53,7 +53,7 @@ def key_info_from_text(text, networks):
             pass
 
 
-def key_from_text(text, generator=None, is_compressed=None, key_types=None):
+def key_from_text(text, generator=None, key_types=None):
     """
     This function will accept a BIP0032 wallet string, a WIF, or a bitcoin address.
 
@@ -62,9 +62,5 @@ def key_from_text(text, generator=None, is_compressed=None, key_types=None):
     from ..networks.registry import network_codes, network_for_netcode
     networks = [network_for_netcode(netcode) for netcode in network_codes()]
     for network, key_info in key_info_from_text(text, networks=networks):
-        if is_compressed is not None:
-            # THIS IS A STUPID HACK
-            key_info["kwargs"]["is_compressed"] = is_compressed
         return key_info["key_class"](**key_info["kwargs"])
-
-    raise EncodingError("unknown text: %s" % text)
+    return None

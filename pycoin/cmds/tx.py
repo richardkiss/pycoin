@@ -359,7 +359,7 @@ def parse_private_key_file(args, key_list):
 
             def make_key(x):
                 try:
-                    return key_from_text(x, generator=secp256k1_generator)
+                    return key_from_text(x)
                 except Exception:
                     return None
 
@@ -472,7 +472,7 @@ def parse_parts(tx_class, arg, spendables, payables, network):
 
 def key_found(arg, payables, key_iters):
     try:
-        key = key_from_text(arg, generator=secp256k1_generator, key_types=["address", "wif", "prv32"])
+        key = key_from_text(arg)
         # TODO: check network
         if key.wif() is None:
             payables.append((key.address(), 0))

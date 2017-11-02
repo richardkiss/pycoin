@@ -5,7 +5,6 @@ from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key import Key
 from pycoin.serialize import h2b
 from pycoin.tx import tx_utils
 from pycoin.tx.Spendable import Spendable
@@ -17,11 +16,15 @@ from pycoin.coins.bitcoin.pay_to import (
     script_for_multisig, script_for_p2pkh, script_for_p2pk, script_for_nulldata, script_for_nulldata_push
 )
 
+# BRAIN DAMAGE
 address_for_script = BitcoinMainnet.ui.address_for_script
 address_for_pay_to_script = BitcoinMainnet.ui.address_for_pay_to_script
 script_for_address = BitcoinMainnet.ui.script_for_address
 info_from_multisig_script = BitcoinMainnet.ui._puzzle_scripts.info_from_multisig_script
 nulldata_for_script = BitcoinMainnet.ui._puzzle_scripts.nulldata_for_script
+
+Key = BitcoinMainnet.key
+
 
 def const_f(v):
     def f(*args, **kwargs):

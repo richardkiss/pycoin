@@ -19,21 +19,18 @@ def initial_key_to_master_key(initial_key):
 
 
 class ElectrumWallet(Key):
-    def __init__(self, generator, initial_key=None, master_private_key=None, master_public_key=None, netcode='BTC'):
-        if [initial_key, master_private_key, master_public_key].count(None) != 2:
+    def __init__(self, generator, initial_key=None, master_private_key=None, public_pair=None, master_public_key=None):
+        if [initial_key, public_pair, master_private_key, master_public_key].count(None) != 3:
             raise ValueError(
                 "exactly one of initial_key, master_private_key, master_public_key must be non-None")
         self._initial_key = initial_key
         self._generator = generator
-        self._netcode = netcode
 
         if initial_key is not None:
             master_private_key = initial_key_to_master_key(initial_key)
-        pp = None
         if master_public_key:
-            pp = tuple(from_bytes_32(master_public_key[idx:idx+32]) for idx in (0, 32))
-        super(ElectrumWallet, self).__init__(generator=generator, secret_exponent=master_private_key, public_pair=pp)
-        self._master_public_key = None
+            public_pair = tuple(from_bytes_32(master_public_key[idx:idx+32]) for idx in (0, 32))
+        super(ElectrumWallet, self).__init__(generator=generator, secret_exponent=master_private_key, public_pair=public_pair, prefer_uncompressed=True)
 
     def secret_exponent(self):
         if self._secret_exponent is None and self._initial_key:
@@ -44,10 +41,7 @@ class ElectrumWallet(Key):
         return self.secret_exponent()
 
     def master_public_key(self):
-        if self._master_public_key is None:
-            pp = self.public_pair()
-            self._master_public_key = to_bytes_32(pp[0]) + to_bytes_32(pp[1])
-        return self._master_public_key
+        return self.sec(use_uncompressed=True)[1:]
 
     def subkey(self, path):
         """
@@ -63,17 +57,16 @@ class ElectrumWallet(Key):
             for_change = 0
         b = (str(n) + ':' + str(for_change) + ':').encode("utf8") + self.master_public_key()
         offset = from_bytes_32(double_sha256(b))
-        if self.master_private_key():
-            return Key(
+        if self.secret_exponent():
+            return self.__class__(
                 generator=self._generator,
-                secret_exponent=((self.master_private_key() + offset) % self._generator.order()),
-                prefer_uncompressed=True
+                master_private_key=((self.master_private_key() + offset) % self._generator.order())
             )
         p1 = offset * self._generator
         x, y = self.public_pair()
         p2 = self._generator.Point(x, y)
         p = p1 + p2
-        return Key(public_pair=p, prefer_uncompressed=True)
+        return self.__class__(public_pair=p, generator=self._generator)
 
     def subkeys(self, path):
         """

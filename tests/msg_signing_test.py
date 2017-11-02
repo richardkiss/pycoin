@@ -1,8 +1,11 @@
 import unittest
 
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.contrib.msg_signing import parse_signed_message, verify_message
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key import Key
+
+# BRAIN DAMAGE
+Key = BitcoinMainnet.key
 
 
 def test_against_myself():
