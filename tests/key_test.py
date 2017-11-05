@@ -7,7 +7,7 @@ from pycoin.ui.key_from_text import key_from_text
 
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.key
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 class KeyTest(unittest.TestCase):

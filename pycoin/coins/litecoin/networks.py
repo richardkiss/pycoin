@@ -5,7 +5,6 @@ from pycoin.coins.bitcoin.Tx import Tx
 
 from pycoin.block import Block
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key.Key import Key
 from pycoin.networks.network import Network
 from pycoin.vm.PayTo import PayTo
 from pycoin.ui.uiclass import UI
@@ -16,9 +15,8 @@ _puzzle_script = PayTo(BitcoinScriptTools)
 ltc_ui = UI(
     _puzzle_script, secp256k1_generator,
     bip32_prv_prefix=h2b("019d9cfe"), bip32_pub_prefix=h2b("019da462"),
-    wif_prefix=h2b("b0"), sec_prefix="LTCSEC", address_prefix=h2b("30"), pay_to_script_prefix=h2b("05"), bech32_hrp='lc')
-
-ltc_key = Key.make_subclass(default_ui_context=ltc_ui)
+    wif_prefix=h2b("b0"), sec_prefix="LTCSEC", address_prefix=h2b("30"),
+    pay_to_script_prefix=h2b("05"), bech32_hrp='lc')
 
 LitecoinMainnet = Network(
     "LTC", "Litecoin", "mainnet",
@@ -32,7 +30,6 @@ xlt_ui = UI(
     bip32_prv_prefix=h2b("0436ef7d"), bip32_pub_prefix=h2b("0436f6e1"),
     wif_prefix=h2b("ef"), sec_prefix="XLTSEC", address_prefix=h2b("6f"),
     pay_to_script_prefix=h2b("c4"), bech32_hrp='tl')
-xlt_key = Key.make_subclass(default_ui_context=xlt_ui)
 
 LitecoinTestnet = Network(
     "XLT", "Litecoin", "testnet",

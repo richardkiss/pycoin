@@ -10,6 +10,33 @@ from pycoin.intbytes import int2byte, iterbytes
 from pycoin.ui.KeyParser import KeyParser
 
 
+def metadata_for_text(text):
+    d = {}
+    try:
+        data = encoding.a2b_hashed_base58(text)
+        d["as_base58"] = (data,)
+    except encoding.EncodingError:
+        d["as_base58"] = None
+
+    try:
+        hrp, data = segwit_addr.bech32_decode(text)
+        if None not in [hrp, data]:
+            d["as_bech32"] = (hrp, data)
+        else:
+            d["as_bech32"] = None
+    except (TypeError, KeyError):
+        pass
+
+    try:
+        prefix, rest = text.split(":", 1)
+        data = h2b(rest)
+        d["as_prefixed_hex"] = (prefix, data)
+    except (binascii.Error, TypeError, ValueError):
+        d["as_prefixed_hex"] = None
+    d["as_text"] = text
+    return d
+
+
 class UI(object):
     def __init__(self, puzzle_scripts, generator, bip32_prv_prefix, bip32_pub_prefix,
                  wif_prefix, sec_prefix, address_prefix, pay_to_script_prefix, bech32_hrp=None):
@@ -105,7 +132,7 @@ class UI(object):
     ##############################################################################
 
     def parse_address_as_base58(self, data):
-        if data.startswith(self._address_prefix):
+        if self._address_prefix and data.startswith(self._address_prefix):
             hash160 = data[len(self._address_prefix):]
             if len(hash160) != 20:
                 return
@@ -113,7 +140,7 @@ class UI(object):
             script = self._puzzle_scripts.script_for_p2pkh(hash160)
             return dict(type="address", info=info, script=script, create_f=lambda: script)
 
-        if data.startswith(self._pay_to_script_prefix):
+        if self._pay_to_script_prefix and data.startswith(self._pay_to_script_prefix):
             hash160 = data[len(self._pay_to_script_prefix):]
             if len(hash160) != 20:
                 return
@@ -150,28 +177,6 @@ class UI(object):
     def parse_key_as_prefixed_hex(self, prefix, data):
         return self.parse_key_generic([prefix, data], self._keyparser.key_info_from_prefixed_hex)
 
-    def parse_item_to_metadata(self, text):
-        d = {}
-        try:
-            data = encoding.a2b_hashed_base58(text)
-            d["as_base58"] = (data,)
-        except encoding.EncodingError:
-            pass
-
-        try:
-            hrp, data = segwit_addr.bech32_decode(text)
-            d["as_bech32"] = (hrp, data)
-        except (TypeError, KeyError):
-            pass
-
-        try:
-            prefix, rest = text.split(":", 1)
-            data = h2b(rest)
-            d["as_prefixed_hex"] = (prefix, data)
-        except (binascii.Error, TypeError, ValueError):
-            pass
-        return d
-
     def parse_as_text(self, text):
         return None
 
@@ -192,7 +197,7 @@ class UI(object):
             eventually add "spendable", "payable", "address", "keychain_hint"
         """
         if metadata is None:
-            metadata = self.parse_item_to_metadata(item)
+            metadata = metadata_for_text(item)
         info = self.parse_metadata_to_info(metadata, types=types)
         if info:
             return info["create_f"]()

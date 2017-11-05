@@ -17,7 +17,7 @@ address_for_pay_to_script = BitcoinMainnet.ui.address_for_pay_to_script
 standard_tx_out_script = BitcoinMainnet.ui.script_for_address
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.key
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 class SolverTest(unittest.TestCase):

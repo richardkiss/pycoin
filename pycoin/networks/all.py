@@ -11,6 +11,16 @@ from pycoin.coins.litecoin.networks import LitecoinMainnet, LitecoinTestnet
 from pycoin.coins.bcash.Tx import Tx as BCashTx
 
 
+# BCH bcash mainnet : xprv/xpub
+BcashMainnet = Network(
+    'BCH', "Bcash", "mainnet",
+    BCashTx, BitcoinBlock,
+    h2b('F9BEB4D9'), 8333, [
+        "seed.bitcoinabc.org", "seed-abc.bitcoinforks.org",
+        "btccash-seeder.bitcoinunlimited.info", "seed.bitprim.org",
+    ], ui=BitcoinMainnet.ui
+)
+
 BUILT_IN_NETWORKS = [
 
     # BTC bitcoin mainnet : xprv/xpub
@@ -18,23 +28,27 @@ BUILT_IN_NETWORKS = [
     BitcoinTestnet,
     LitecoinMainnet,
     LitecoinTestnet,
-
-    # BCH bcash mainnet : xprv/xpub
-    Network(
-        'BCH', "Bcash", "mainnet",
-        BCashTx, BitcoinBlock,
-        h2b('F9BEB4D9'), 8333, [
-            "seed.bitcoinabc.org", "seed-abc.bitcoinforks.org",
-            "btccash-seeder.bitcoinunlimited.info", "seed.bitprim.org",
-        ]
-    ),
+    BcashMainnet
 
 ]
 
 
+
 def _transform_NetworkValues_to_Network(nv):
+    from pycoin.ecdsa.secp256k1 import secp256k1_generator
+    from pycoin.ui.uiclass import UI
+    from pycoin.vm.PayTo import PayTo
+    from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+
     defaults = dict(
         tx=None, block=None, magic_header=None, dns_bootstrap=[], default_port=None)
+    puzzle_script = PayTo(BitcoinScriptTools)
+    ui = UI(
+        puzzle_script, secp256k1_generator,
+        bip32_prv_prefix=nv.prv32, bip32_pub_prefix=nv.pub32,
+        wif_prefix=nv.wif, sec_prefix="%sSEC" % nv.code, address_prefix=nv.address,
+        pay_to_script_prefix=nv.pay_to_script)
+    defaults["ui"] = ui
     u = nv._asdict()
     for k in ['wif', 'address', 'pay_to_script', 'prv32', 'pub32']:
         if k in u:

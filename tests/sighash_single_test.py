@@ -71,7 +71,7 @@ class SighashSingleTest(unittest.TestCase):
         self._test_sighash_single(BitcoinTestnet)
 
     def _test_sighash_single(self, network):
-        Key = network.key
+        Key = network.ui._keyparser._key_class
         k0 = Key(secret_exponent=PRIV_KEYS[0], generator=secp256k1_generator, is_compressed=True)
         k1 = Key(secret_exponent=PRIV_KEYS[1], generator=secp256k1_generator, is_compressed=True)
         k2 = Key(secret_exponent=PRIV_KEYS[2], generator=secp256k1_generator, is_compressed=True)

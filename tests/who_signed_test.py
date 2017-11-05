@@ -15,7 +15,7 @@ from pycoin.tx.TxOut import TxOut
 # BRAIN DAMAGE
 address_for_pay_to_script = BitcoinMainnet.ui.address_for_pay_to_script
 script_for_address = BitcoinMainnet.ui.script_for_address
-Key = BitcoinMainnet.key
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 class WhoSignedTest(unittest.TestCase):
 

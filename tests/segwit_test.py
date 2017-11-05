@@ -11,7 +11,7 @@ from pycoin.tx.TxOut import TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.key
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 class SegwitTest(unittest.TestCase):

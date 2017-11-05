@@ -9,9 +9,9 @@ from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.key
-XTNKey = BitcoinTestnet.key
-BIP32Node = BitcoinMainnet.keyparser._bip32node_class
+Key = BitcoinMainnet.ui._keyparser._key_class
+XTNKey = BitcoinTestnet.ui._keyparser._key_class
+BIP32Node = BitcoinMainnet.ui._keyparser._bip32node_class
 
 
 def change_prefix(address, new_prefix):
@@ -38,13 +38,13 @@ class KeyUtilsTest(unittest.TestCase):
             self.assertEqual(is_address_valid(a), None)
 
         for address in PAY_TO_HASH_ADDRESSES:
-            self.assertEqual(is_address_valid(address, allowable_types=["pay_to_script"]), None)
-            self.assertEqual(is_address_valid(address, allowable_types=["address"]), "BTC")
+            self.assertEqual(is_address_valid(address, allowable_types=["p2sh"]), None)
+            self.assertEqual(is_address_valid(address, allowable_types=["p2pkh"]), "BTC")
 
         for address in PAY_TO_SCRIPT_ADDRESSES:
             self.assertEqual(address[0], "3")
-            self.assertEqual(is_address_valid(address, allowable_types=["pay_to_script"]), "BTC")
-            self.assertEqual(is_address_valid(address, allowable_types=["address"]), None)
+            self.assertEqual(is_address_valid(address, allowable_types=["p2sh"]), "BTC")
+            self.assertEqual(is_address_valid(address, allowable_types=["p2pkh"]), None)
 
     def test_is_wif_valid(self):
         WIFS = ["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn",
@@ -79,7 +79,7 @@ class KeyUtilsTest(unittest.TestCase):
         # not all networks support BIP32 yet
         for netcode in "BTC XTN DOGE".split()[:-1]:  # BRAIN DAMAGE
             network = network_for_netcode(netcode)
-            BIP32Node = network.keyparser._bip32node_class
+            BIP32Node = network.ui._keyparser._bip32node_class
             for wk in WALLET_KEYS:
                 wallet = BIP32Node.from_master_secret(secp256k1_generator, wk.encode("utf8"))
                 text = wallet.wallet_key(as_private=True)

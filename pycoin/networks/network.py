@@ -3,7 +3,7 @@ DEFAULT_ARGS_ORDER = (
     'code', 'network_name', 'subnet_name',
     'tx', 'block',
     'magic_header', 'default_port', 'dns_bootstrap',
-    'ui', 'key'
+    'ui'
 )
 
 

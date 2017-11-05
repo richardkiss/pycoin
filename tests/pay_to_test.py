@@ -23,7 +23,7 @@ script_for_address = BitcoinMainnet.ui.script_for_address
 info_from_multisig_script = BitcoinMainnet.ui._puzzle_scripts.info_from_multisig_script
 nulldata_for_script = BitcoinMainnet.ui._puzzle_scripts.nulldata_for_script
 
-Key = BitcoinMainnet.key
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 def const_f(v):

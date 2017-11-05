@@ -5,7 +5,7 @@ from pycoin.contrib.msg_signing import parse_signed_message, verify_message
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.key
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 def test_against_myself():

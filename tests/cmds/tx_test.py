@@ -13,7 +13,7 @@ from .ToolTest import ToolTest
 
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.key
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 class TxTest(ToolTest):
