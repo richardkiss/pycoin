@@ -22,7 +22,6 @@ BUILT_IN_NETWORKS = [
     # BCH bcash mainnet : xprv/xpub
     Network(
         'BCH', "Bcash", "mainnet",
-        b'\x80', b'\0', b'\5', h2b("0488ADE4"), h2b("0488B21E"),
         BCashTx, BitcoinBlock,
         h2b('F9BEB4D9'), 8333, [
             "seed.bitcoinabc.org", "seed-abc.bitcoinforks.org",
@@ -35,8 +34,12 @@ BUILT_IN_NETWORKS = [
 
 def _transform_NetworkValues_to_Network(nv):
     defaults = dict(
-        tx=None, block=None, magic_header=None, dns_bootstrap=[], default_port=None, bech32_hrp=None)
-    defaults.update(nv._asdict())
+        tx=None, block=None, magic_header=None, dns_bootstrap=[], default_port=None)
+    u = nv._asdict()
+    for k in ['wif', 'address', 'pay_to_script', 'prv32', 'pub32']:
+        if k in u:
+            del u[k]
+    defaults.update(u)
     return Network(**defaults)
 
 

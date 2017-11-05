@@ -11,7 +11,7 @@ from pycoin.ui.KeyParser import KeyParser
 
 
 class UI(object):
-    def __init__(self, puzzle_scripts, bip32_prv_prefix, bip32_pub_prefix,
+    def __init__(self, puzzle_scripts, generator, bip32_prv_prefix, bip32_pub_prefix,
                  wif_prefix, sec_prefix, address_prefix, pay_to_script_prefix, bech32_hrp=None):
         self._puzzle_scripts = puzzle_scripts
         self._bip32_prv_prefix = bip32_prv_prefix
@@ -21,7 +21,7 @@ class UI(object):
         self._address_prefix = address_prefix
         self._pay_to_script_prefix = pay_to_script_prefix
         self._bech32_hrp = bech32_hrp
-        self._keyparser = KeyParser(self)
+        self._keyparser = KeyParser(self, generator)
 
     def bip32_private_prefix(self):
         return self._bip32_prv_prefix

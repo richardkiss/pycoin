@@ -10,7 +10,7 @@ def key_info_from_text(text, networks):
         data = a2b_hashed_base58(text)
         for network in networks:
             try:
-                r = network.keyparser.key_info_from_b58(data)
+                r = network.ui._keyparser.key_info_from_b58(data)
                 if r:
                     yield network, r
             except Exception:
@@ -23,7 +23,7 @@ def key_info_from_text(text, networks):
         if hrp and data:
             for network in networks:
                 try:
-                    r = network.keyparser.key_info_from_bech32(hrp, data)
+                    r = network.ui._keyparser.key_info_from_bech32(hrp, data)
                     if r:
                         yield network, r
                 except Exception:
@@ -36,7 +36,7 @@ def key_info_from_text(text, networks):
         data = h2b(rest)
         for network in networks:
             try:
-                r = network.keyparser.key_info_from_prefixed_hex(prefix, data)
+                r = network.ui._keyparser.key_info_from_prefixed_hex(prefix, data)
                 if r:
                     yield network, r
             except Exception:

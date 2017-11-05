@@ -1,12 +1,9 @@
 
 DEFAULT_ARGS_ORDER = (
     'code', 'network_name', 'subnet_name',
-    'wif', 'address', 'pay_to_script', 'prv32', 'pub32',
     'tx', 'block',
     'magic_header', 'default_port', 'dns_bootstrap',
-    'address_wit', 'pay_to_script_wit',
-    'bech32_hrp',
-    'ui', 'keyparser', 'key'
+    'ui', 'key'
 )
 
 

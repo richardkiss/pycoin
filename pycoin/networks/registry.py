@@ -108,17 +108,17 @@ def wif_prefix_for_netcode(netcode):
 
 def address_prefix_for_netcode(netcode):
     "Return the 1 byte prefix for addresses for the given netcode (or None)"
-    return _lookup(netcode, "address")
+    return _NETWORK_NAME_LOOKUP.get(netcode).key._default_ui_context._address_prefix
 
 
 def bech32_hrp_for_netcode(netcode):
     "Return the bech32 hrp prefix for addresses for the given netcode (or None)"
-    return _lookup(netcode, "bech32_hrp")
+    return _NETWORK_NAME_LOOKUP.get(netcode).key._default_ui_context._bech32_hrp
 
 
 def pay_to_script_prefix_for_netcode(netcode):
     "Return the 1 byte prefix for pay-to-script addresses for the given netcode (or None)"
-    return _lookup(netcode, "pay_to_script")
+    return _NETWORK_NAME_LOOKUP.get(netcode).key._default_ui_context._pay_to_script_prefix
 
 
 def prv32_prefix_for_netcode(netcode):
