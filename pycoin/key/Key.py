@@ -1,5 +1,5 @@
 from pycoin.encoding import (
-    from_bytes_32, hash160, hash160_sec_to_bitcoin_address,
+    from_bytes_32, to_bytes_32, hash160, hash160_sec_to_bitcoin_address,
     is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec,
     sec_to_public_pair, secret_exponent_to_wif
 )
@@ -17,20 +17,15 @@ class InvalidSecretExponentError(ValueError):
 
 class Key(object):
 
-    wif_prefix = None
-    sec_prefix = None
-    address_prefix = None
+    _default_ui_context = None
 
     @classmethod
-    def make_subclass(class_, wif_prefix, sec_prefix, address_prefix):
+    def make_subclass(class_, default_ui_context):
 
         class Key(class_):
             pass
 
-        Key.wif_prefix = wif_prefix
-        Key.sec_prefix = sec_prefix
-        Key.address_prefix = address_prefix
-
+        Key._default_ui_context = default_ui_context
         return Key
 
     def __init__(self, secret_exponent=None, generator=None, public_pair=None, hash160=None, prefer_uncompressed=None,
@@ -103,7 +98,7 @@ class Key(object):
         """
         return self._secret_exponent
 
-    def wif(self, use_uncompressed=None, wif_prefix=None):
+    def wif(self, use_uncompressed=None, ui_context=None):
         """
         Return the WIF representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
@@ -111,12 +106,10 @@ class Key(object):
         secret_exponent = self.secret_exponent()
         if secret_exponent is None:
             return None
-        wif_prefix = wif_prefix or self.wif_prefix
-        if wif_prefix is None:
-            raise ValueError("wif_prefix not set")
-        return secret_exponent_to_wif(secret_exponent,
-                                      compressed=not self._use_uncompressed(use_uncompressed),
-                                      wif_prefix=wif_prefix)
+        blob = to_bytes_32(secret_exponent)
+        if not self._use_uncompressed(use_uncompressed):
+            blob += b'\01'
+        return self._ui_context(ui_context).wif_for_blob(blob)
 
     def public_pair(self):
         """
@@ -134,7 +127,7 @@ class Key(object):
             return None
         return public_pair_to_sec(public_pair, compressed=not self._use_uncompressed(use_uncompressed))
 
-    def sec_as_hex(self, use_uncompressed=None, sec_prefix=None):
+    def sec_as_hex(self, use_uncompressed=None, ui_context=None):
         """
         Return the SEC representation of this key as hex text.
         If use_uncompressed is not set, the preferred representation is returned.
@@ -142,11 +135,7 @@ class Key(object):
         sec = self.sec(use_uncompressed=use_uncompressed)
         if sec is None:
             return None
-        if sec_prefix is None:
-            sec_prefix = self.sec_prefix
-        if sec_prefix is None:
-            raise ValueError("sec_prefix not set")
-        return sec_prefix + b2h(sec)
+        return self._ui_context(ui_context).sec_text_for_blob(sec)
 
     def hash160(self, use_uncompressed=None):
         """
@@ -168,31 +157,28 @@ class Key(object):
             self._hash160_compressed = hash160(self.sec(use_uncompressed=use_uncompressed))
         return self._hash160_compressed
 
-    def address(self, use_uncompressed=None, address_prefix=None):
+    def address(self, use_uncompressed=None, ui_context=None):
         """
         Return the public address representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
         hash160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash160:
-            address_prefix = address_prefix or self.address_prefix
-            if address_prefix is None:
-                raise ValueError("address_prefix not set")
-            return hash160_sec_to_bitcoin_address(hash160, address_prefix=address_prefix)
+            return self._ui_context(ui_context).address_for_hash160(hash160)
         return None
 
     bitcoin_address = address
 
-    def as_text(self, address_prefix=None, sec_prefix=None, wif_prefix=None):
+    def as_text(self, ui_context=None):
         """
         Return a textual representation of this key.
         """
         if self.secret_exponent():
-            return self.wif(wif_prefix=wif_prefix)
-        sec_hex = self.sec_as_hex(sec_prefix=sec_prefix)
+            return self.wif(ui_context=ui_context)
+        sec_hex = self.sec_as_hex(ui_context=ui_context)
         if sec_hex:
             return sec_hex
-        return self.address(address_prefix=address_prefix)
+        return self.address(ui_context=ui_context)
 
     def public_copy(self):
         if self.secret_exponent() is None:
@@ -252,6 +238,13 @@ class Key(object):
                 return False
         return generator.verify(pubkey, val, rs)
 
+    def _ui_context(self, ui_context):
+        if ui_context is None:
+            ui_context = getattr(self, "_default_ui_context", None)
+        if ui_context is None:
+            raise ValueError("ui_context not set")
+        return ui_context
+
     def _use_uncompressed(self, use_uncompressed=None):
         if use_uncompressed:
             return use_uncompressed
@@ -260,7 +253,13 @@ class Key(object):
         return False
 
     def __repr__(self):
-        r = self.public_copy().as_text(sec_prefix='')
+        r = self.public_copy()
+        if hasattr(r, "_default_ui_context"):
+            s = r.as_text()
+        elif r.sec():
+            s = b2h(r.sec())
+        else:
+            s = b2h(r.hash160())
         if self.is_private():
-            return "private_for <%s>" % r
-        return "<%s>" % r
+            return "private_for <%s>" % s
+        return "<%s>" % s

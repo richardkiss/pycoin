@@ -59,19 +59,6 @@ class BIP32Node(Key):
     This is a deterministic wallet that complies with BIP0032
     https://en.bitcoin.it/wiki/BIP_0032
     """
-    @classmethod
-    def make_subclass(class_, wif_prefix, sec_prefix, address_prefix, pub32_prefix, prv32_prefix):
-
-        class BIP32Node(class_):
-            pass
-
-        BIP32Node.wif_prefix = wif_prefix
-        BIP32Node.sec_prefix = sec_prefix
-        BIP32Node.address_prefix = address_prefix
-        BIP32Node._pub32_prefix = pub32_prefix
-        BIP32Node._prv32_prefix = prv32_prefix
-
-        return BIP32Node
 
     @classmethod
     def from_master_secret(class_, generator, master_secret):
@@ -80,7 +67,7 @@ class BIP32Node(Key):
         return class_(generator=generator, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
 
     def __init__(self, generator, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0', child_index=0,
-                 secret_exponent=None, public_pair=None, pub32_prefix=None, prv32_prefix=None):
+                 secret_exponent=None, public_pair=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
 
         if [secret_exponent, public_pair].count(None) != 1:
@@ -89,11 +76,6 @@ class BIP32Node(Key):
         super(BIP32Node, self).__init__(
             secret_exponent=secret_exponent, generator=generator, public_pair=public_pair,
             prefer_uncompressed=False, is_compressed=True, is_pay_to_script=False)
-
-        if pub32_prefix:
-            self._pub32_prefix = pub32_prefix
-        if prv32_prefix:
-            self._prv32_prefix = prv32_prefix
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)
@@ -123,24 +105,19 @@ class BIP32Node(Key):
     def child_index(self):
         return self._child_index
 
-    def serialize(self, as_private=None, prv32_prefix=None, pub32_prefix=None):
+    def serialize(self, as_private=None, ui_context=None):
         """Yield a 78-byte binary blob corresponding to this node."""
         if as_private is None:
             as_private = self.secret_exponent() is not None
         if self.secret_exponent() is None and as_private:
             raise PublicPrivateMismatchError("public key has no private parts")
 
+        ui_context = self._ui_context(ui_context)
         ba = bytearray()
         if as_private:
-            prv32_prefix = prv32_prefix or getattr(self, "_prv32_prefix")
-            if prv32_prefix is None:
-                raise ValueError("prv32_prefix not specified")
-            ba.extend(prv32_prefix)
+            ba.extend(ui_context.bip32_private_prefix())
         else:
-            pub32_prefix = pub32_prefix or getattr(self, "_pub32_prefix")
-            if pub32_prefix is None:
-                raise ValueError("pub32_prefix not specified")
-            ba.extend(pub32_prefix)
+            ba.extend(ui_context.bip32_public_prefix())
         ba.extend([self._depth])
         ba.extend(self._parent_fingerprint + struct.pack(">L", self._child_index) + self._chain_code)
         if as_private:
@@ -152,9 +129,9 @@ class BIP32Node(Key):
     def fingerprint(self):
         return public_pair_to_hash160_sec(self.public_pair(), compressed=True)[:4]
 
-    def hwif(self, as_private=False, prv32_prefix=None, pub32_prefix=None):
+    def hwif(self, as_private=False, ui_context=None):
         """Yield a 111-byte string corresponding to this node."""
-        return b2a_hashed_base58(self.serialize(as_private=as_private, prv32_prefix=prv32_prefix, pub32_prefix=pub32_prefix))
+        return b2a_hashed_base58(self.serialize(as_private=as_private, ui_context=ui_context))
 
     as_text = hwif
     wallet_key = hwif
@@ -164,10 +141,6 @@ class BIP32Node(Key):
         d = dict(generator=self._generator, chain_code=self._chain_code,
                  depth=self._depth, parent_fingerprint=self._parent_fingerprint,
                  child_index=self._child_index, public_pair=self.public_pair())
-        if self._pub32_prefix:
-            d["pub32_prefix"] = self._pub32_prefix
-        if self._prv32_prefix:
-            d["prv32_prefix"] = self._prv32_prefix
         return self.__class__(**d)
 
     def _subkey(self, i, is_hardened, as_private):
@@ -180,11 +153,6 @@ class BIP32Node(Key):
             i |= 0x80000000
 
         d = dict(depth=self._depth+1, parent_fingerprint=self.fingerprint(), child_index=i)
-
-        if self._pub32_prefix:
-            d["pub32_prefix"] = self._pub32_prefix
-        if self._prv32_prefix:
-            d["prv32_prefix"] = self._prv32_prefix
 
         if self.secret_exponent() is None:
             if is_hardened:

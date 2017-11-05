@@ -11,22 +11,20 @@ import binascii
 import struct
 
 from pycoin import encoding
+from pycoin.key.BIP32Node import BIP32Node
+from pycoin.key.Key import Key
+from pycoin.key.electrum import ElectrumWallet
 from pycoin.contrib.segwit_addr import bech32_decode
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h, h2b
 
 
 class KeyParser(object):
-    def __init__(self, wif_prefix, address_prefix, bip32_prv_prefix, bip32_pub_prefix, bech32_prefix,
-                 key_class, bip32node_class=None, electrum_class=None):
-        self._wif_prefix = wif_prefix
-        self._address_prefix = address_prefix
-        self._bip32_prv_prefix = bip32_prv_prefix
-        self._bip32_pub_prefix = bip32_pub_prefix
-        self._bech32_prefix = bech32_prefix
-        self._key_class = key_class
-        self._bip32node_class = bip32node_class
-        self._electrum_class = electrum_class
+    def __init__(self, ui_context):
+        self._ui_context = ui_context
+        self._key_class = Key.make_subclass(default_ui_context=ui_context)
+        self._bip32node_class = BIP32Node.make_subclass(default_ui_context=ui_context)
+        self._electrum_class = ElectrumWallet.make_subclass(default_ui_context=ui_context)
 
     def key_from_text(self, text):
         key_info = self.key_info_from_text(text)
@@ -58,8 +56,8 @@ class KeyParser(object):
 
     def key_info_from_b58(self, data):
 
-        bip32_prv = data.startswith(self._bip32_prv_prefix)
-        bip32_pub = data.startswith(self._bip32_pub_prefix)
+        bip32_prv = data.startswith(self._ui_context.bip32_private_prefix())
+        bip32_pub = data.startswith(self._ui_context.bip32_public_prefix())
         if bip32_prv or bip32_pub:
             parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
 
@@ -74,7 +72,7 @@ class KeyParser(object):
                 d["public_pair"] = encoding.sec_to_public_pair(data[45:], secp256k1_generator)
             return dict(key_class=self._bip32node_class, key_type="bip32", is_private=bip32_prv, kwargs=d)
 
-        if data.startswith(self._wif_prefix):
+        if data.startswith(self._ui_context.wif_prefix()):
             data = data[1:]
             is_compressed = (len(data) > 32)
             if is_compressed:
@@ -84,7 +82,7 @@ class KeyParser(object):
                           prefer_uncompressed=not is_compressed)
             return dict(key_class=self._key_class, key_type="wif", kwargs=kwargs)
 
-        if data.startswith(self._address_prefix):
+        if data.startswith(self._ui_context._address_prefix):
             kwargs = dict(hash160=data[1:])
             return dict(key_class=self._key_class, key_type="address", kwargs=kwargs)
 

@@ -332,7 +332,7 @@ class KeyUtilsTest(unittest.TestCase):
         priv_k = key_from_text(wif, generator=secp256k1_generator)
         self.assertEqual(
             repr(priv_k),
-            'private_for <0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
+            'private_for <XTNSEC:0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
 
 
 if __name__ == '__main__':

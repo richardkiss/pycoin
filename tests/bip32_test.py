@@ -255,7 +255,7 @@ class Bip0032TestCase(unittest.TestCase):
         wif = wallet.wif()
         priv_k = key_from_text(wif)
         self.assertEqual(repr(priv_k),
-                         'private_for <03ad094b1dc9fdce5d3648ca359b4e210a89d049532fdd39d9ccdd8ca393ac82f4>')
+                         'private_for <XTNSEC:03ad094b1dc9fdce5d3648ca359b4e210a89d049532fdd39d9ccdd8ca393ac82f4>')
 
 
 if __name__ == '__main__':

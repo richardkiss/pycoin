@@ -3,13 +3,13 @@ from pycoin.serialize import h2b
 
 from .ScriptTools import BitcoinScriptTools
 from .Tx import Tx as BitcoinTx
-from .KeyParser import KeyParser
 from pycoin.block import Block as BitcoinBlock
 
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.electrum import ElectrumWallet
 from pycoin.key.Key import Key
 from pycoin.networks.network import Network
+from pycoin.ui.KeyParser import KeyParser
 from pycoin.ui.uiclass import UI
 from pycoin.vm.PayTo import PayTo
 
@@ -17,17 +17,15 @@ from pycoin.vm.PayTo import PayTo
 _puzzle_script = PayTo(BitcoinScriptTools)
 
 # BRAIN DAMAGE
-mainnet_key = Key.make_subclass(wif_prefix=h2b("80"), address_prefix=h2b("00"), sec_prefix="BTCSEC")
-mainnet_bip32node = BIP32Node.make_subclass(
-    wif_prefix=h2b("80"), address_prefix=h2b("00"), sec_prefix="BTCSEC",
-    pub32_prefix=h2b("0488B21E"), prv32_prefix=h2b("0488ade4"))
-mainnet_electrum = ElectrumWallet.make_subclass(
-    wif_prefix=h2b("80"), address_prefix=h2b("00"), sec_prefix="BTCSEC")
-mainnet_ui = UI(_puzzle_script, address_prefix=h2b("00"), pay_to_script_prefix=h2b("05"), bech32_hrp='bc')
-mainnet_keyparser = KeyParser(
-    wif_prefix=h2b("80"), address_prefix=h2b("00"), bip32_prv_prefix=h2b("0488ade4"),
-    bip32_pub_prefix=h2b("0488B21E"), bech32_prefix="bc", key_class=mainnet_key,
-    bip32node_class=mainnet_bip32node, electrum_class=mainnet_electrum)
+mainnet_ui = UI(
+    _puzzle_script, bip32_prv_prefix=h2b("0488ade4"), bip32_pub_prefix=h2b("0488B21E"),
+    wif_prefix=h2b("80"), sec_prefix="BTCSEC:", address_prefix=h2b("00"),
+    pay_to_script_prefix=h2b("05"), bech32_hrp='bc')
+
+mainnet_key = Key.make_subclass(default_ui_context=mainnet_ui)
+mainnet_bip32node = BIP32Node.make_subclass(default_ui_context=mainnet_ui)
+mainnet_electrum = ElectrumWallet.make_subclass(default_ui_context=mainnet_ui)
+mainnet_keyparser = KeyParser(mainnet_ui)
 
 BitcoinMainnet = Network(
     'BTC', "Bitcoin", "mainnet",
@@ -41,17 +39,15 @@ BitcoinMainnet = Network(
     ui=mainnet_ui, keyparser=mainnet_keyparser, key=mainnet_key
 )
 
+testnet_ui = UI(
+    _puzzle_script, bip32_prv_prefix=h2b("04358394"), bip32_pub_prefix=h2b("043587CF"),
+     wif_prefix=h2b("ef"), sec_prefix="XTNSEC:", address_prefix=h2b("6f"),
+     pay_to_script_prefix=h2b("c4"), bech32_hrp='tb')
 
-testnet_key = Key.make_subclass(wif_prefix=h2b("ef"), address_prefix=h2b("6f"), sec_prefix="XTNSEC")
-testnet_bip32node = BIP32Node.make_subclass(
-    wif_prefix=h2b("ef"), address_prefix=h2b("6f"), sec_prefix="XTNSEC",
-    pub32_prefix=h2b("043587CF"), prv32_prefix=h2b("04358394"))
-testnet_ui = UI(_puzzle_script, address_prefix=h2b("6f"), pay_to_script_prefix=h2b("c4"), bech32_hrp='tb')
-testnet_keyparser = KeyParser(
-    wif_prefix=h2b("ef"), address_prefix=h2b("6f"), bip32_prv_prefix=h2b("04358394"),
-    bip32_pub_prefix=h2b("043587CF"), bech32_prefix="tb", key_class=testnet_key,
-    bip32node_class=testnet_bip32node)
+testnet_key = Key.make_subclass(default_ui_context=testnet_ui)
+testnet_bip32node = BIP32Node.make_subclass(default_ui_context=testnet_ui)
 
+testnet_keyparser = KeyParser(testnet_ui)
 
 BitcoinTestnet = Network(
     "XTN", "Bitcoin", "testnet3",
