@@ -130,16 +130,18 @@ def create_hash160_output(key, network, add_output, output_dict):
     network_name = network.network_name
     hash160_c = key.hash160(use_uncompressed=False)
     hash160_u = key.hash160(use_uncompressed=True)
-    hash160 = hash160_c or hash160_u
-    if hash160:
-        add_output("hash160", b2h(hash160))
+    hash160 = None
+    if hash160_c == None and hash160_u == None:
+        hash160 = key.hash160()
+
+    add_output("hash160", b2h(hash160 or hash160_c))
+
     if hash160_c and hash160_u:
         add_output("hash160_uncompressed", b2h(hash160_u), " uncompressed")
 
-    if hash160:
-        address = key.address(ui_context=ui_context, use_uncompressed=hash160_c is None)
-        add_output("address", address, "%s address" % network_name)
-        output_dict["%s_address" % network.code] = address
+    address = ui_context.address_for_hash160(hash160 or hash160_c)
+    add_output("address", address, "%s address" % network_name)
+    output_dict["%s_address" % network.code] = address
 
     if hash160_c and hash160_u:
         address = key.address(ui_context=ui_context, use_uncompressed=True)
