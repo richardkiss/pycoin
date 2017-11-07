@@ -98,24 +98,15 @@ class KeyParser(object):
                 return dict(key_class=self._electrum_class, key_type="elc_pub", kwargs=kwargs)
 
         if prefix == 'H' and self._bip32node_class:
-            # BRAIN DAMAGE
-            import hashlib
-            import hmac
-            I64 = hmac.HMAC(key=b"Bitcoin seed", msg=data, digestmod=hashlib.sha512).digest()
-            kwargs = dict(generator=self._generator, chain_code=I64[32:], secret_exponent=encoding.from_bytes_32(I64[:32]))
-            return dict(key_class=self._bip32node_class, key_type="bip32", is_private=True, kwargs=kwargs)
+            kwargs = dict(generator=self._generator, master_secret=data)
+            return dict(key_class=self._bip32node_class.from_master_secret, kwargs=kwargs, key_type="bip32", is_private=True)
 
         return None
 
     def key_info_from_text(self, text):
         if text.startswith("P:") and self._bip32node_class:
-            # BRAIN DAMAGE
-            import hashlib
-            import hmac
-            master_secret = text[2:].encode("utf8")
-            I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
-            kwargs = dict(generator=self._generator, chain_code=I64[32:], secret_exponent=encoding.from_bytes_32(I64[:32]))
-            return dict(key_class=self._bip32node_class, key_type="bip32", is_private=True, kwargs=kwargs)
+            kwargs = dict(generator=self._generator, master_secret=text[2:].encode("utf8"))
+            return dict(key_class=self._bip32node_class.from_master_secret, kwargs=kwargs, key_type="bip32", is_private=True)
 
         return None
 

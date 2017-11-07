@@ -14,7 +14,6 @@ import sys
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.convention import tx_fee, satoshi_to_mbtc
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import hash160
 from pycoin.ui.validate import is_address_valid
 from pycoin.networks.registry import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
