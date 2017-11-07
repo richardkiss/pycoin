@@ -9,7 +9,7 @@ from pycoin import encoding
 from pycoin.contrib.msg_signing import sign_message, pair_for_message, hash_for_signing
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.networks.registry import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
-from .ku import parse_key, prefix_transforms_for_network
+from .ku import parse_key
 
 
 def add_read_msg_arguments(parser, operation):

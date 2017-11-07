@@ -33,7 +33,7 @@ def metadata_for_text(text):
         d["as_prefixed_hex"] = (prefix, data)
     except (binascii.Error, TypeError, ValueError):
         d["as_prefixed_hex"] = None
-    d["as_text"] = text
+    d["as_text"] = (text, )
     return d
 
 
@@ -177,8 +177,8 @@ class UI(object):
     def parse_key_as_prefixed_hex(self, prefix, data):
         return self.parse_key_generic([prefix, data], self._keyparser.key_info_from_prefixed_hex)
 
-    def parse_as_text(self, text):
-        return None
+    def parse_key_as_text(self, text):
+        return self.parse_key_generic([text], self._keyparser.key_info_from_text)
 
     def parse_metadata_to_info(self, metadata, types):
         for f in ["base58", "bech32", "prefixed_hex", "text"]:

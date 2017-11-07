@@ -254,7 +254,7 @@ class Key(object):
 
     def __repr__(self):
         r = self.public_copy()
-        if hasattr(r, "_default_ui_context"):
+        if getattr(r, "_default_ui_context", None):
             s = r.as_text()
         elif r.sec():
             s = b2h(r.sec())

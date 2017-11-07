@@ -1,11 +1,3 @@
-"""- methods that need to be accessible under network:
-  - key_from_text
-    - info_from_text (bech32_prefix, bip32_prefix, address_prefix, wif_prefix)
-      - key_type, key_class, **kwargs
-    - key_from_info
-    - returns key with network included in it
-    - maybe we don't need to parse address (since that's actually only really parsed by script_from_address)
-"""
 
 import binascii
 import struct
@@ -105,9 +97,26 @@ class KeyParser(object):
                 kwargs = dict(master_public_key=data, generator=self._generator)
                 return dict(key_class=self._electrum_class, key_type="elc_pub", kwargs=kwargs)
 
+        if prefix == 'H' and self._bip32node_class:
+            # BRAIN DAMAGE
+            import hashlib
+            import hmac
+            I64 = hmac.HMAC(key=b"Bitcoin seed", msg=data, digestmod=hashlib.sha512).digest()
+            kwargs = dict(generator=self._generator, chain_code=I64[32:], secret_exponent=encoding.from_bytes_32(I64[:32]))
+            return dict(key_class=self._bip32node_class, key_type="bip32", is_private=True, kwargs=kwargs)
+
         return None
 
-    def key_info_from_plaintext(self, text):
+    def key_info_from_text(self, text):
+        if text.startswith("P:") and self._bip32node_class:
+            # BRAIN DAMAGE
+            import hashlib
+            import hmac
+            master_secret = text[2:].encode("utf8")
+            I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
+            kwargs = dict(generator=self._generator, chain_code=I64[32:], secret_exponent=encoding.from_bytes_32(I64[:32]))
+            return dict(key_class=self._bip32node_class, key_type="bip32", is_private=True, kwargs=kwargs)
+
         return None
 
 
