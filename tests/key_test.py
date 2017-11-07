@@ -63,16 +63,11 @@ class KeyTest(unittest.TestCase):
                 self.assertEqual(key.address(use_uncompressed=False), c_address_b58)
                 self.assertEqual(key.address(use_uncompressed=True), address_b58)
 
-            key_pub = key_from_text(address_b58, is_compressed=False)
-            key_pub_c = key_from_text(c_address_b58, is_compressed=True)
+            key_pub = key_from_text(address_b58)
 
             self.assertEqual(key_pub.address(), address_b58)
-            self.assertEqual(key_pub.address(use_uncompressed=True), address_b58)
+            self.assertEqual(key_pub.address(use_uncompressed=True), None)
             self.assertEqual(key_pub.address(use_uncompressed=False), None)
-
-            self.assertEqual(key_pub_c.address(), c_address_b58)
-            self.assertEqual(key_pub_c.address(use_uncompressed=True), None)
-            self.assertEqual(key_pub_c.address(use_uncompressed=False), c_address_b58)
 
         do_test("1111111111111111111111111111111111111111111111111111111111111111",
                 "5HwoXVkHoRM8sL2KmNRS217n1g8mPPBomrY7yehCuXC1115WWsh",

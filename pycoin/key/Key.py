@@ -49,13 +49,11 @@ class Key(object):
         Include at most one of secret_exponent, public_pair or hash160.
         prefer_uncompressed, is_compressed (booleans) are optional.
         """
-        if is_compressed is None:
-            is_compressed = False if hash160 else True
         if [secret_exponent, public_pair, hash160].count(None) != 2:
             raise ValueError("exactly one of secret_exponent, public_pair, hash160 must be passed.")
         if secret_exponent and not generator:
             raise ValueError("generator not specified when secret exponent specified")
-        if prefer_uncompressed is None:
+        if prefer_uncompressed is None and is_compressed is not None:
             prefer_uncompressed = not is_compressed
         self._prefer_uncompressed = prefer_uncompressed
         self._secret_exponent = secret_exponent
@@ -63,11 +61,11 @@ class Key(object):
         self._public_pair = public_pair
         self._hash160_uncompressed = None
         self._hash160_compressed = None
+        self._hash160 = None
         if hash160:
-            if is_compressed:
-                self._hash160_compressed = hash160
-            else:
-                self._hash160_uncompressed = hash160
+            if prefer_uncompressed or is_compressed:
+                raise ValueError("can't set compression arguments with hash160 input")
+            self._hash160 = hash160
 
         if self._public_pair is None and self._secret_exponent is not None:
             if self._secret_exponent < 1 \
@@ -144,9 +142,9 @@ class Key(object):
         """
         use_uncompressed = self._use_uncompressed(use_uncompressed)
         if self.public_pair() is None:
-            if use_uncompressed:
-                return self._hash160_uncompressed
-            return self._hash160_compressed
+            if use_uncompressed is not None:
+                return None
+            return self._hash160
 
         if use_uncompressed:
             if self._hash160_uncompressed is None:
