@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from .ScriptTools import BitcoinScriptTools
+from .ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
 from ...convention import satoshi_to_mbtc
 
 from ...serialize.bitcoin_streamer import parse_struct, stream_struct

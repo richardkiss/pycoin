@@ -28,7 +28,11 @@ from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.ui.key_from_text import key_from_text
-from pycoin.vm.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
+from pycoin.vm.disassemble import Disassemble
+
+# BRAIN DAMAGE
+disassemble = Disassemble(BitcoinScriptTools)
+
 
 DEFAULT_VERSION = 1
 DEFAULT_LOCK_TIME = 0
@@ -120,7 +124,7 @@ def dump_inputs(tx, netcode, verbose_signature, traceback_f, disassembly_level):
 
 def dump_disassembly(tx, tx_in_idx):
     for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-            annotate_scripts(tx, tx_in_idx):
+            disassemble.annotate_scripts(tx, tx_in_idx):
         for l in pre_annotations:
             print("           %s" % l)
         if 1:
@@ -146,12 +150,12 @@ def dump_signatures(tx, tx_in, tx_out, idx, netcode, traceback_f, disassembly_le
             print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
                 print("      z{}: {:#x} {}".format(i, sc.signature_hash(tx_out.script, idx, sig_type),
-                                                   sighash_type_to_string(sig_type)))
+                                                   disassemble.sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:
             print("      z:{} {:#x} {}".format(' ' if i else '', sc.signature_hash(
-                tx_out.script, idx, sig_type), sighash_type_to_string(sig_type)))
+                tx_out.script, idx, sig_type), disassemble.sighash_type_to_string(sig_type)))
 
 
 def dump_footer(tx, missing_unspents):
@@ -179,8 +183,8 @@ def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb
         address = network.ui.address_for_script(tx_out.puzzle_script()) or "(unknown)"
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
         if disassembly_level > 0:
-            for (pre_annotations, pc, opcode, instruction, post_annotations) in annotate_spendable(
-                    tx.__class__, tx_out):
+            for (pre_annotations, pc, opcode, instruction, post_annotations) in \
+                    disassemble.annotate_spendable(tx.__class__, tx_out):
                 for l in pre_annotations:
                     print("           %s" % l)
                 if 1:

@@ -2,7 +2,10 @@ import unittest
 
 from pycoin.tx.Tx import Tx
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.vm.disassemble import annotate_scripts
+from pycoin.vm.disassemble import Disassemble
+
+
+annotate_scripts = Disassemble(BitcoinScriptTools).annotate_scripts
 
 
 class DisassembleTest(unittest.TestCase):
@@ -48,7 +51,6 @@ class DisassembleTest(unittest.TestCase):
         tx_to_validate.unspents_from_db(tx_db)
         self.assertEqual(tx_to_validate.id(), "f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
         r = annotate_scripts(tx_to_validate, 0)
-        print(r)
         EXPECTED = [
             (
                 ['--- SIGNATURE SCRIPT START'], 0, 0x47,

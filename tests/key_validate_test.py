@@ -77,7 +77,7 @@ class KeyUtilsTest(unittest.TestCase):
         WALLET_KEYS = ["foo", "1", "2", "3", "4", "5"]
 
         # not all networks support BIP32 yet
-        for netcode in "BTC XTN DOGE".split()[:-1]:  # BRAIN DAMAGE
+        for netcode in "BTC XTN DOGE".split():
             network = network_for_netcode(netcode)
             BIP32Node = network.ui._keyparser._bip32node_class
             for wk in WALLET_KEYS:
