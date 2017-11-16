@@ -1,19 +1,19 @@
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
-from pycoin.contrib.msg_signing import parse_signed_message, verify_message
+from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.ui._keyparser._key_class
+from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 
+Key = BitcoinMainnet.ui._keyparser._key_class
+message_signer = MessageSigner(BitcoinMainnet.network_name, BitcoinMainnet.ui, secp256k1_generator)
+XTN_message_signer = MessageSigner(BitcoinTestnet.network_name, BitcoinTestnet.ui, secp256k1_generator)
 
 def test_against_myself():
     """
     Test code that verifies against ourselves only. Useful but not so great.
     """
-    from pycoin.contrib.msg_signing import (
-            parse_signed_message, sign_message, verify_message)
     from pycoin.encoding import bitcoin_address_to_hash160_sec_with_prefix
     from pycoin.encoding import wif_to_tuple_of_secret_exponent_compressed
 
@@ -37,23 +37,23 @@ def test_against_myself():
 
         for i in range(1, 30, 10):
             msg = 'test message %s' % ('A'*i)
-            sig = sign_message(k, msg, verbose=1)
+            sig = message_signer.sign_message(k, msg, verbose=1)
             assert right_addr in sig
 
             # check parsing works
-            m, a, s = parse_signed_message(sig)
+            m, a, s = message_signer.parse_signed_message(sig)
             assert m == msg, m
             assert a == right_addr, a
 
-            sig2 = sign_message(k, msg, verbose=0)
+            sig2 = message_signer.sign_message(k, msg, verbose=0)
             assert sig2 in sig, (sig, sig2)
 
             assert s == sig2, s
 
-            ok = verify_message(k, sig2, msg)
+            ok = message_signer.verify_message(k, sig2, msg)
             assert ok
 
-            ok = verify_message(k, sig2.encode('ascii'), msg)
+            ok = message_signer.verify_message(k, sig2.encode('ascii'), msg)
             assert ok
 
 
@@ -75,12 +75,12 @@ HCT1esk/TWlF/o9UNzLDANqsPXntkMErf7erIrjH5IBOZP98cNcmWmnW0GpSAi3wbr6CwpUAN4ctNn1T
 -----END BITCOIN SIGNATURE-----
 
 '''
-    m, a, s = parse_signed_message(multibit)
+    m, a, s = message_signer.parse_signed_message(multibit)
     assert m == 'This is an example of a signed message.'
     assert a == '1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN'
     assert s == ('HCT1esk/TWlF/o9UNzLDANqsPXntkMErf7erIrjH5IBOZ'
                  'P98cNcmWmnW0GpSAi3wbr6CwpUAN4ctNn1T71UBwSc=')
-    ok = verify_message(a, s, m, netcode='BTC')
+    ok = message_signer.verify_message(a, s, m)
     assert ok
 
     # Sampled from: https://www.bitrated.com/u/Bit2c.txt on Sep 3/2014
@@ -99,11 +99,11 @@ https://www.bit2c.co.il
 H2utKkquLbyEJamGwUfS9J0kKT4uuMTEr2WX2dPU9YImg4LeRpyjBelrqEqfM4QC8pJ+hVlQgZI5IPpLyRNxvK8=
 -----END BITCOIN SIGNED MESSAGE-----
 '''
-    m, a, s = parse_signed_message(bit2c)
+    m, a, s = message_signer.parse_signed_message(bit2c)
     assert a == '15etuU8kwLFCBbCNRsgQTvWgrGWY9829ej'
     assert s == ('H2utKkquLbyEJamGwUfS9J0kKT4uuMTEr2WX2dPU9YI'
                  'mg4LeRpyjBelrqEqfM4QC8pJ+hVlQgZI5IPpLyRNxvK8=')
-    ok = verify_message(a, s, m, netcode='BTC')
+    ok = message_signer.verify_message(a, s, m)
     assert ok
 
     # testnet example
@@ -140,20 +140,12 @@ n2D9XsQX1mDpFGgYqsfmePTy61LJFQnXQM
 IEackZgifpBJs3SqQQ6leUwzvakTZgUKTDuCCn6rVMOQgHlIEzWSYZGQu2H+1chvu68uutzt04cGmsHy/kRIaEc=
 -----END BITCOIN SIGNED MESSAGE-----
 '''
-    m, a, s = parse_signed_message(bearbin)
+    m, a, s = XTN_message_signer.parse_signed_message(bearbin)
     assert a == 'n2D9XsQX1mDpFGgYqsfmePTy61LJFQnXQM'
     assert s == ('IEackZgifpBJs3SqQQ6leUwzvakTZgUKTDuCCn6rVMOQgH'
                  'lIEzWSYZGQu2H+1chvu68uutzt04cGmsHy/kRIaEc=')
-    ok = verify_message(a, s, m, netcode='XTN')
+    ok = XTN_message_signer.verify_message(a, s, m)
     assert ok
-
-
-class MsgSigningTests(unittest.TestCase):
-    def test_1(self):
-        test_against_myself()
-
-    def test_2(self):
-        test_msg_parse()
 
 
 if __name__ == "__main__":

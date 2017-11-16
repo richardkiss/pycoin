@@ -1,11 +1,12 @@
 import unittest
 
 from pycoin.tx.Tx import Tx
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.vm.disassemble import Disassemble
 
 
-annotate_scripts = Disassemble(BitcoinScriptTools).annotate_scripts
+annotate_scripts = Disassemble(BitcoinScriptTools, BitcoinMainnet.ui).annotate_scripts
 
 
 class DisassembleTest(unittest.TestCase):

@@ -6,7 +6,7 @@ import argparse
 import sys
 
 from pycoin import encoding
-from pycoin.contrib.msg_signing import sign_message, pair_for_message, hash_for_signing
+from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.networks.registry import address_prefix_for_netcode, full_network_name_for_netcode, network_for_netcode, network_codes
 from .ku import parse_key
@@ -43,24 +43,30 @@ def create_parser():
     return parser
 
 
-def get_message_hash(args):
+def get_message_hash(args, message_signer):
     message = args.message
     if message is None:
         message = args.input.read()
-    return hash_for_signing(message)
+    return message_signer.hash_for_signing(message)
 
 
 def msg_sign(args, parser):
-    message_hash = get_message_hash(args)
-    network, key = parse_key(args.WIF, [network_for_netcode(args.network)], secp256k1_generator)
-    sig = sign_message(key, msg_hash=message_hash)
+    network = network_for_netcode(args.network)
+    message_signer = MessageSigner(network.network_name, network.ui, secp256k1_generator)
+    message_hash = get_message_hash(args, message_signer)
+    network, key = parse_key(args.WIF, [network], secp256k1_generator)
+    is_compressed = not key._use_uncompressed()
+    sig = message_signer.signature_for_message_hash(
+        key.secret_exponent(), msg_hash=message_hash, is_compressed=is_compressed)
     print(sig)
 
 
 def msg_verify(args, parser):
-    message_hash = get_message_hash(args)
+    network = network_for_netcode(args.network)
+    message_signer = MessageSigner(network.network_name, network.ui, secp256k1_generator)
+    message_hash = get_message_hash(args, message_signer)
     try:
-        pair, is_compressed = pair_for_message(args.signature, msg_hash=message_hash, netcode=args.network)
+        pair, is_compressed = message_signer.pair_for_message_hash(args.signature, msg_hash=message_hash)
     except encoding.EncodingError:
         pass
     prefix = address_prefix_for_netcode(args.network)

@@ -1,7 +1,7 @@
 import collections
 
 from pycoin.encoding import (
-    hash160, hash160_sec_to_bitcoin_address, public_pair_to_bitcoin_address, is_sec_compressed
+    hash160, hash160_sec_to_bitcoin_address, public_pair_to_hash160_sec, is_sec_compressed
 )
 
 from pycoin.serialize import b2h
@@ -12,15 +12,13 @@ from pycoin.coins.SolutionChecker import ScriptError
 
 
 
-ADDRESS_PREFIX = b'\0'  # BRAIN DAMAGE
-
-
 class Disassemble(object):
     BIT_LIST = [(SIGHASH_ANYONECANPAY, "SIGHASH_ANYONECANPAY"), (SIGHASH_FORKID, "SIGHASH_FORKID")]
     BASE_LOOKUP = { SIGHASH_ALL: "SIGHASH_ALL", SIGHASH_SINGLE: "SIGHASH_SINGLE", SIGHASH_NONE: "SIGHASH_NONE" }
 
-    def __init__(self, script_tools):
+    def __init__(self, script_tools, ui_context):
         self._script_tools = script_tools
+        self._ui_context = ui_context
         for _ in "EQUAL HASH160 CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():
             setattr(self, "OP_%s" % _, self._script_tools.int_for_opcode('OP_%s' % _))
 
@@ -58,7 +56,8 @@ class Disassemble(object):
         pairs = generator.possible_public_pairs_for_signature(sig_hash, sig_pair)
         for pair in pairs:
             for comp in (True, False):
-                address = public_pair_to_bitcoin_address(pair, compressed=comp, address_prefix=ADDRESS_PREFIX)
+                hash160 = public_pair_to_hash160_sec(pair, compressed=comp)
+                address = self._ui_context.address_for_pay_to_pkh(hash160)
                 addresses.append(address)
         l.append(" sig for %s" % " ".join(addresses))
 
