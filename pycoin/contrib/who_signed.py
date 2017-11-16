@@ -1,6 +1,6 @@
 import binascii
 
-from ..coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer  # BRAIN DAMAGE
+from ..coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
 from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker  # BRAIN DAMAGE
 from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding import public_pair_to_bitcoin_address, sec_to_public_pair, EncodingError
@@ -15,11 +15,8 @@ class NoAddressesForScriptTypeError(Exception):
 
 
 def sec_keys(script):
-    pc = 0
-    opcode, data, pc = BitcoinScriptStreamer.get_opcode(script, pc)
     sec_keys = []
-    while pc < len(script):
-        opcode, data, pc = BitcoinScriptStreamer.get_opcode(script, pc)
+    for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(script):
         if data:
             try:
                 sec_to_public_pair(data, secp256k1_generator)
@@ -43,22 +40,20 @@ def who_signed_tx(tx, tx_in_idx, netcode='BTC'):
     parent_tx_out_script = tx.unspents[tx_in_idx].script
     signed_by = []
 
+    sc = BitcoinSolutionChecker(tx)
+    if sc.is_pay_to_script_hash(parent_tx_out_script):
+        tx_context = sc.tx_context_for_idx(tx_in_idx)
+        stack, solution_stack = sc._check_solution(tx_context, flags=0, traceback_f=None)
+        parent_tx_out_script = solution_stack[-1]
+
     script = tx_in.script
-    pc = 0
-    while pc < len(script):
-        opcode, data, pc = BitcoinScriptStreamer.get_opcode(script, pc)
+    for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(script):
         if data is None:
             continue
         try:
             sig_pair, sig_type = parse_signature_blob(data)
         except (ValueError, TypeError, binascii.Error, UnexpectedDER):
             continue
-
-        sc = BitcoinSolutionChecker(tx)
-        if sc.is_pay_to_script_hash(parent_tx_out_script):
-            tx_context = sc.tx_context_for_idx(tx_in_idx)
-            stack, solution_stack = sc._check_solution(tx_context, flags=0, traceback_f=None)
-            parent_tx_out_script = solution_stack[-1]
 
         sig_hash = sc.signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
 
