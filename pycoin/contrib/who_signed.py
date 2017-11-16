@@ -1,10 +1,10 @@
 import binascii
 
-from ..coins.bitcoin.ScriptStreamer import BitcoinScriptStreamer  # BRAIN DAMAGE
+from ..coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
 from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker  # BRAIN DAMAGE
 from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding import public_pair_to_bitcoin_address, sec_to_public_pair, EncodingError
-from ..networks import address_prefix_for_netcode
+from ..networks.registry import address_prefix_for_netcode
 
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
@@ -15,11 +15,8 @@ class NoAddressesForScriptTypeError(Exception):
 
 
 def sec_keys(script):
-    pc = 0
-    opcode, data, pc = BitcoinScriptStreamer.get_opcode(script, pc)
     sec_keys = []
-    while pc < len(script):
-        opcode, data, pc = BitcoinScriptStreamer.get_opcode(script, pc)
+    for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(script):
         if data:
             try:
                 sec_to_public_pair(data, secp256k1_generator)
@@ -47,10 +44,8 @@ def extract_signatures(tx, tx_in_idx, netcode='BTC'):
 
     signatures = []
     script = tx_in.script
-    pc = 0
     sc = BitcoinSolutionChecker(tx)
-    while pc < len(script):
-        opcode, data, pc = BitcoinScriptStreamer.get_opcode(script, pc)
+    for opcode, data, pc, new_pc in BitcoinScriptTools.get_opcodes(script):
         if data is None:
             continue
         try:
@@ -59,7 +54,6 @@ def extract_signatures(tx, tx_in_idx, netcode='BTC'):
             yield (data, sig_hash)
         except (ValueError, TypeError, binascii.Error, UnexpectedDER):
             continue
-
 
 def who_signed_tx(tx, tx_in_idx, netcode='BTC'):
     """

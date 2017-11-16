@@ -1,15 +1,21 @@
 import unittest
+
 from pycoin.contrib import who_signed
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key import Key
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.coins.bitcoin.pay_to import script_for_multisig
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx import tx_utils
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
-from pycoin.ui.ui import address_for_pay_to_script, script_for_address, script_for_multisig
 
+
+# BRAIN DAMAGE
+address_for_pay_to_script = BitcoinMainnet.ui.address_for_pay_to_script
+script_for_address = BitcoinMainnet.ui.script_for_address
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 class WhoSignedTest(unittest.TestCase):
 
@@ -68,7 +74,7 @@ class WhoSignedTest(unittest.TestCase):
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
-        address = address_for_pay_to_script(underlying_script, "BTC")
+        address = address_for_pay_to_script(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = script_for_address(address)
         tx_out = TxOut(1000000, script)

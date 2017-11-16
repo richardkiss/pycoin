@@ -5,7 +5,7 @@ from pycoin.satoshi import errno, opcodes
 
 from .ScriptStreamer import BitcoinScriptStreamer
 
-from ..VM import VM, VMContext
+from pycoin.vm.VM import VM
 
 
 def _make_bad_instruction(v):

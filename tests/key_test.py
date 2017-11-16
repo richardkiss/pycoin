@@ -1,9 +1,13 @@
 import unittest
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key import Key
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.serialize import h2b
 from pycoin.ui.key_from_text import key_from_text
+
+
+# BRAIN DAMAGE
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 class KeyTest(unittest.TestCase):
@@ -20,7 +24,6 @@ class KeyTest(unittest.TestCase):
 
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
-
             secret_exponent = int(exp_hex, 16)
             sec = h2b(public_pair_sec)
             c_sec = h2b(c_public_pair_sec)
@@ -60,16 +63,11 @@ class KeyTest(unittest.TestCase):
                 self.assertEqual(key.address(use_uncompressed=False), c_address_b58)
                 self.assertEqual(key.address(use_uncompressed=True), address_b58)
 
-            key_pub = key_from_text(address_b58, is_compressed=False)
-            key_pub_c = key_from_text(c_address_b58, is_compressed=True)
+            key_pub = key_from_text(address_b58)
 
             self.assertEqual(key_pub.address(), address_b58)
-            self.assertEqual(key_pub.address(use_uncompressed=True), address_b58)
+            self.assertEqual(key_pub.address(use_uncompressed=True), None)
             self.assertEqual(key_pub.address(use_uncompressed=False), None)
-
-            self.assertEqual(key_pub_c.address(), c_address_b58)
-            self.assertEqual(key_pub_c.address(use_uncompressed=True), None)
-            self.assertEqual(key_pub_c.address(use_uncompressed=False), c_address_b58)
 
         do_test("1111111111111111111111111111111111111111111111111111111111111111",
                 "5HwoXVkHoRM8sL2KmNRS217n1g8mPPBomrY7yehCuXC1115WWsh",

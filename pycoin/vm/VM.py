@@ -1,11 +1,10 @@
 
-from ..ecdsa.secp256k1 import secp256k1_generator
 from pycoin.satoshi import errno
 from pycoin.satoshi.flags import VERIFY_MINIMALDATA
 from pycoin.satoshi.IntStreamer import IntStreamer
 from pycoin.vm.ConditionalStack import ConditionalStack
 
-from .SolutionChecker import ScriptError
+from pycoin.coins.SolutionChecker import ScriptError
 
 
 def conditional_error_f(msg):
@@ -77,8 +76,9 @@ class VMContext(object):
         return class_.VM_TRUE if v else class_.VM_FALSE
 
     @classmethod
-    # BRAIN DAMAGE
     def generator_for_signature_type(class_, signature_type):
+        # BRAIN DAMAGE
+        from ..ecdsa.secp256k1 import secp256k1_generator
         return secp256k1_generator
 
 
@@ -145,4 +145,6 @@ class VM(object):
 
     @classmethod
     def generator_for_signature_type(class_, signature_type):
+        # BRAIN DAMAGE
+        from ..ecdsa.secp256k1 import secp256k1_generator
         return secp256k1_generator

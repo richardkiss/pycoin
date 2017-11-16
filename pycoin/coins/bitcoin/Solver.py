@@ -80,7 +80,7 @@ class Solver(object):
             return DynamicStack(stack, solution_reserve_count, fill_template)
 
         try:
-            traceback_f = make_traceback_f(constraints, reset_stack_f)
+            traceback_f = make_traceback_f(constraints, self.ScriptTools.int_for_opcode, reset_stack_f)
             self.solution_checker.check_solution(tx_context, traceback_f=traceback_f)
         except ScriptError:
             pass

@@ -1,8 +1,6 @@
 import functools
 import pdb
 
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-
 
 @functools.total_ordering
 class Atom(object):
@@ -136,7 +134,7 @@ def make_op_checkmultisig(constraints):
     return my_op_checkmultisig
 
 
-def make_traceback_f(constraints, reset_stack_f):
+def make_traceback_f(constraints, int_for_opcode_f, reset_stack_f):
 
     TWEAKED_OPCODES = (
         ("OP_HASH160", make_op_hash160),
@@ -146,7 +144,7 @@ def make_traceback_f(constraints, reset_stack_f):
         ("OP_CHECKMULTISIG", make_op_checkmultisig),
     )
 
-    MY_OPCODES = {BitcoinScriptTools.int_for_opcode(k): v(constraints) for k, v in TWEAKED_OPCODES}
+    MY_OPCODES = {int_for_opcode_f(k): v(constraints) for k, v in TWEAKED_OPCODES}
 
     def prelaunch(vmc):
         if not vmc.is_solution_script:

@@ -25,12 +25,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from .ScriptTools import BitcoinScriptTools
+from .ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
 from ...convention import satoshi_to_mbtc
 
 from ...serialize.bitcoin_streamer import parse_struct, stream_struct
-
-from pycoin.ui.ui import address_for_script
 
 
 class TxOut(object):
@@ -60,8 +58,5 @@ class TxOut(object):
             BitcoinScriptTools.disassemble(self.script)
         )
 
-    def address(self, netcode='BTC'):
-        # attempt to return the destination address, or None on failure
-        return address_for_script(self.script, netcode)
-
-    bitcoin_address = address
+    def puzzle_script(self):
+        return self.script

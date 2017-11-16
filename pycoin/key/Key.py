@@ -1,9 +1,8 @@
-from pycoin.encoding import EncodingError, a2b_hashed_base58, \
-    from_bytes_32, hash160, hash160_sec_to_bitcoin_address, \
-    is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
+from pycoin.encoding import (
+    from_bytes_32, to_bytes_32, hash160, hash160_sec_to_bitcoin_address,
+    is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec,
     sec_to_public_pair, secret_exponent_to_wif
-from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
-from pycoin.networks.default import get_current_netcode
+)
 from pycoin.serialize import b2h
 from pycoin.satoshi.der import sigencode_der, sigdecode_der
 
@@ -17,8 +16,20 @@ class InvalidSecretExponentError(ValueError):
 
 
 class Key(object):
+
+    _default_ui_context = None
+
+    @classmethod
+    def make_subclass(class_, default_ui_context):
+
+        class Key(class_):
+            pass
+
+        Key._default_ui_context = default_ui_context
+        return Key
+
     def __init__(self, secret_exponent=None, generator=None, public_pair=None, hash160=None, prefer_uncompressed=None,
-                 is_compressed=None, is_pay_to_script=False, netcode=None):
+                 is_compressed=None, is_pay_to_script=False):
         """
         secret_exponent:
             a long representing the secret exponent
@@ -35,22 +46,14 @@ class Key(object):
         is_pay_to_script:
             whether or not this key is for a pay-to-script style transaction
 
-        netcode:
-            the code for the network (as defined in pycoin.networks)
-
         Include at most one of secret_exponent, public_pair or hash160.
         prefer_uncompressed, is_compressed (booleans) are optional.
         """
-
-        if is_compressed is None:
-            is_compressed = False if hash160 else True
-        if netcode is None:
-            netcode = get_current_netcode()
         if [secret_exponent, public_pair, hash160].count(None) != 2:
             raise ValueError("exactly one of secret_exponent, public_pair, hash160 must be passed.")
         if secret_exponent and not generator:
             raise ValueError("generator not specified when secret exponent specified")
-        if prefer_uncompressed is None:
+        if prefer_uncompressed is None and is_compressed is not None:
             prefer_uncompressed = not is_compressed
         self._prefer_uncompressed = prefer_uncompressed
         self._secret_exponent = secret_exponent
@@ -58,12 +61,11 @@ class Key(object):
         self._public_pair = public_pair
         self._hash160_uncompressed = None
         self._hash160_compressed = None
+        self._hash160 = None
         if hash160:
-            if is_compressed:
-                self._hash160_compressed = hash160
-            else:
-                self._hash160_uncompressed = hash160
-        self._netcode = netcode
+            if prefer_uncompressed or is_compressed:
+                raise ValueError("can't set compression arguments with hash160 input")
+            self._hash160 = hash160
 
         if self._public_pair is None and self._secret_exponent is not None:
             if self._secret_exponent < 1 \
@@ -78,12 +80,12 @@ class Key(object):
                 raise InvalidPublicPairError()
 
     @classmethod
-    def from_sec(class_, sec, generator, netcode=None):
+    def from_sec(class_, sec, generator):
         """
         Create a key from an sec bytestream (which is an encoding of a public pair).
         """
         public_pair = sec_to_public_pair(sec, generator)
-        return class_(public_pair=public_pair, is_compressed=is_sec_compressed(sec), netcode=netcode)
+        return class_(public_pair=public_pair, is_compressed=is_sec_compressed(sec))
 
     def is_private(self):
         return self.secret_exponent() is not None
@@ -94,30 +96,24 @@ class Key(object):
         """
         return self._secret_exponent
 
-    def wif(self, use_uncompressed=None):
+    def wif(self, use_uncompressed=None, ui_context=None):
         """
         Return the WIF representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
-        wif_prefix = wif_prefix_for_netcode(self._netcode)
         secret_exponent = self.secret_exponent()
         if secret_exponent is None:
             return None
-        return secret_exponent_to_wif(secret_exponent,
-                                      compressed=not self._use_uncompressed(use_uncompressed),
-                                      wif_prefix=wif_prefix)
+        blob = to_bytes_32(secret_exponent)
+        if not self._use_uncompressed(use_uncompressed):
+            blob += b'\01'
+        return self._ui_context(ui_context).wif_for_blob(blob)
 
     def public_pair(self):
         """
         Return a pair of integers representing the public key (or None).
         """
         return self._public_pair
-
-    def netcode(self):
-        """
-        Return the netcode
-        """
-        return self._netcode
 
     def sec(self, use_uncompressed=None):
         """
@@ -129,7 +125,7 @@ class Key(object):
             return None
         return public_pair_to_sec(public_pair, compressed=not self._use_uncompressed(use_uncompressed))
 
-    def sec_as_hex(self, use_uncompressed=None):
+    def sec_as_hex(self, use_uncompressed=None, ui_context=None):
         """
         Return the SEC representation of this key as hex text.
         If use_uncompressed is not set, the preferred representation is returned.
@@ -137,7 +133,7 @@ class Key(object):
         sec = self.sec(use_uncompressed=use_uncompressed)
         if sec is None:
             return None
-        return b2h(sec)
+        return self._ui_context(ui_context).sec_text_for_blob(sec)
 
     def hash160(self, use_uncompressed=None):
         """
@@ -146,9 +142,9 @@ class Key(object):
         """
         use_uncompressed = self._use_uncompressed(use_uncompressed)
         if self.public_pair() is None:
-            if use_uncompressed:
-                return self._hash160_uncompressed
-            return self._hash160_compressed
+            if use_uncompressed is not None:
+                return None
+            return self._hash160
 
         if use_uncompressed:
             if self._hash160_uncompressed is None:
@@ -159,36 +155,35 @@ class Key(object):
             self._hash160_compressed = hash160(self.sec(use_uncompressed=use_uncompressed))
         return self._hash160_compressed
 
-    def address(self, use_uncompressed=None):
+    def address(self, use_uncompressed=None, ui_context=None):
         """
         Return the public address representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
-        address_prefix = address_prefix_for_netcode(self._netcode)
         hash160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash160:
-            return hash160_sec_to_bitcoin_address(hash160, address_prefix=address_prefix)
+            return self._ui_context(ui_context).address_for_hash160(hash160)
         return None
 
     bitcoin_address = address
 
-    def as_text(self):
+    def as_text(self, ui_context=None):
         """
         Return a textual representation of this key.
         """
         if self.secret_exponent():
-            return self.wif()
-        sec_hex = self.sec_as_hex()
+            return self.wif(ui_context=ui_context)
+        sec_hex = self.sec_as_hex(ui_context=ui_context)
         if sec_hex:
             return sec_hex
-        return self.address()
+        return self.address(ui_context=ui_context)
 
     def public_copy(self):
         if self.secret_exponent() is None:
             return self
 
-        return Key(public_pair=self.public_pair(), prefer_uncompressed=self._prefer_uncompressed,
-                   is_compressed=(self._hash160_compressed is not None), netcode=self._netcode)
+        return self.__class__(public_pair=self.public_pair(), prefer_uncompressed=self._prefer_uncompressed,
+                             is_compressed=(self._hash160_compressed is not None))
 
     def subkey(self, path_to_subkey):
         """
@@ -241,6 +236,13 @@ class Key(object):
                 return False
         return generator.verify(pubkey, val, rs)
 
+    def _ui_context(self, ui_context):
+        if ui_context is None:
+            ui_context = getattr(self, "_default_ui_context", None)
+        if ui_context is None:
+            raise ValueError("ui_context not set")
+        return ui_context
+
     def _use_uncompressed(self, use_uncompressed=None):
         if use_uncompressed:
             return use_uncompressed
@@ -249,7 +251,13 @@ class Key(object):
         return False
 
     def __repr__(self):
-        r = self.public_copy().as_text()
+        r = self.public_copy()
+        if getattr(r, "_default_ui_context", None):
+            s = r.as_text()
+        elif r.sec():
+            s = b2h(r.sec())
+        else:
+            s = b2h(r.hash160())
         if self.is_private():
-            return "private_for <%s>" % r
-        return "<%s>" % r
+            return "private_for <%s>" % s
+        return "<%s>" % s

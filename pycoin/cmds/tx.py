@@ -13,13 +13,10 @@ import subprocess
 import sys
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.convention import tx_fee, satoshi_to_mbtc
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import hash160
-from pycoin.key import Key
 from pycoin.ui.validate import is_address_valid
-from pycoin.networks import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
+from pycoin.networks.registry import address_prefix_for_netcode, full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.satoshi.checksigops import parse_signature_blob
@@ -32,8 +29,8 @@ from pycoin.solve.solve import build_sec_lookup
 from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.ui.key_from_text import key_from_text
-from pycoin.ui.ui import standard_tx_out_script
-from pycoin.vm.disassemble import annotate_scripts, annotate_spendable, sighash_type_to_string
+from pycoin.vm.disassemble import Disassemble
+
 
 DEFAULT_VERSION = 1
 DEFAULT_LOCK_TIME = 0
@@ -97,7 +94,8 @@ def make_trace_script(do_trace, use_pdb):
     return trace_script
 
 
-def dump_inputs(tx, netcode, verbose_signature, traceback_f, disassembly_level):
+def dump_inputs(tx, netcode, verbose_signature, traceback_f, disassembly_level, disassembler):
+    network = network_for_netcode(netcode)
     address_prefix = address_prefix_for_netcode(netcode)
     for idx, tx_in in enumerate(tx.txs_in):
         if tx.is_coinbase():
@@ -111,20 +109,20 @@ def dump_inputs(tx, netcode, verbose_signature, traceback_f, disassembly_level):
             tx_out = tx.unspents[idx]
             sig_result = " sig ok" if tx.is_signature_ok(idx, traceback_f=traceback_f) else " BAD SIG"
             suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
-            address = tx_out.address(netcode=netcode)
+            address = network.ui.address_for_script(tx_out.puzzle_script())
         t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
                                           tx_in.previous_index, suffix)
         print(t.rstrip())
         if disassembly_level > 0:
-            dump_disassembly(tx, idx)
+            dump_disassembly(tx, idx, disassembler)
 
         if verbose_signature:
-            dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level)
+            dump_signatures(tx, tx_in, tx_out, idx, netcode, traceback_f, disassembly_level, disassembler)
 
 
-def dump_disassembly(tx, tx_in_idx):
+def dump_disassembly(tx, tx_in_idx, disassembler):
     for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-            annotate_scripts(tx, tx_in_idx):
+            disassembler.annotate_scripts(tx, tx_in_idx):
         for l in pre_annotations:
             print("           %s" % l)
         if 1:
@@ -133,8 +131,8 @@ def dump_disassembly(tx, tx_in_idx):
             print("           %s" % l)
 
 
-def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f, disassembly_level):
-    sc = BitcoinSolutionChecker(tx)
+def dump_signatures(tx, tx_in, tx_out, idx, netcode, traceback_f, disassembly_level, disassembler):
+    sc = tx.SolutionChecker(tx)
     signatures = []
     for opcode in BitcoinScriptTools.opcode_list(tx_in.script):
         if not opcode.startswith("OP_"):
@@ -150,12 +148,12 @@ def dump_signatures(tx, tx_in, tx_out, idx, netcode, address_prefix, traceback_f
             print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
                 print("      z{}: {:#x} {}".format(i, sc.signature_hash(tx_out.script, idx, sig_type),
-                                                   sighash_type_to_string(sig_type)))
+                                                   disassembler.sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:
             print("      z:{} {:#x} {}".format(' ' if i else '', sc.signature_hash(
-                tx_out.script, idx, sig_type), sighash_type_to_string(sig_type)))
+                tx_out.script, idx, sig_type), disassembler.sighash_type_to_string(sig_type)))
 
 
 def dump_footer(tx, missing_unspents):
@@ -167,22 +165,24 @@ def dump_footer(tx, missing_unspents):
         print("Total fees   %12.5f mBTC" % satoshi_to_mbtc(tx.fee()))
 
 
-def dump_tx(tx, netcode, verbose_signature, disassembly_level, do_trace, use_pdb):
+def dump_tx(tx, netcode, verbose_signature, disassembly_level, disassembler, do_trace, use_pdb):
     missing_unspents = tx.missing_unspents()
     traceback_f = make_trace_script(do_trace, use_pdb)
 
     dump_header(tx)
 
-    dump_inputs(tx, netcode, verbose_signature, traceback_f, disassembly_level)
+    dump_inputs(tx, netcode, verbose_signature, traceback_f, disassembly_level, disassembler)
+
+    network = network_for_netcode(netcode)
 
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.tx_outs_as_spendable()):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
-        address = tx_out.bitcoin_address(netcode=netcode) or "(unknown)"
+        address = network.ui.address_for_script(tx_out.puzzle_script()) or "(unknown)"
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
         if disassembly_level > 0:
-            for (pre_annotations, pc, opcode, instruction, post_annotations) in annotate_spendable(
-                    tx.__class__, tx_out):
+            for (pre_annotations, pc, opcode, instruction, post_annotations) in \
+                    disassembler.annotate_spendable(tx.__class__, tx_out):
                 for l in pre_annotations:
                     print("           %s" % l)
                 if 1:
@@ -260,7 +260,8 @@ def create_parser():
                         'index, or a date/time (example: "2014-01-01T15:00:00"')
 
     parser.add_argument('-n', "--network", default=get_current_netcode(), choices=codes,
-                        help='Define network code (BTC=Bitcoin mainnet, XTN=Bitcoin testnet).')
+                        help=('Default network code (environment variable PYCOIN_DEFAULT_NETCODE '
+                              'or "BTC"=Bitcoin mainnet if unset'))
 
     parser.add_argument('-a', "--augment", action='store_true',
                         help='augment tx by adding any missing spendable metadata by fetching'
@@ -371,7 +372,7 @@ def parse_private_key_file(args, key_list):
 
             def make_key(x):
                 try:
-                    return key_from_text(x, generator=secp256k1_generator)
+                    return key_from_text(x)
                 except Exception:
                     return None
 
@@ -484,7 +485,7 @@ def parse_parts(tx_class, arg, spendables, payables, network):
 
 def key_found(arg, payables, key_iters):
     try:
-        key = key_from_text(arg, generator=secp256k1_generator, key_types=["address", "wif", "prv32"])
+        key = key_from_text(arg)
         # TODO: check network
         if key.wif() is None:
             payables.append((key.address(), 0))
@@ -498,7 +499,8 @@ def key_found(arg, payables, key_iters):
 
 
 def parse_context(args, parser):
-    tx_class = network_for_netcode(args.network).tx
+    network = network_for_netcode(args.network)
+    tx_class = network.tx
 
     # we create the tx_db lazily
     tx_db = None
@@ -554,11 +556,12 @@ def parse_context(args, parser):
         for address in args.fetch_spendables:
             spendables.extend(spendables_for_address(address, args.network))
 
-    return (tx_class, txs, spendables, payables, key_iters, tx_db, warning_spendables)
+    return (network, txs, spendables, payables, key_iters, tx_db, warning_spendables)
 
 
-def merge_txs(tx_class, txs, spendables, payables):
+def merge_txs(network, txs, spendables, payables):
 
+    tx_class = network.tx
     txs_in = []
     txs_out = []
     unspents = []
@@ -578,7 +581,7 @@ def merge_txs(tx_class, txs, spendables, payables):
         txs_in.append(spendable.tx_in())
         unspents.append(spendable)
     for address, coin_value in payables:
-        script = standard_tx_out_script(address)
+        script = network.ui.script_for_address(address)
         txs_out.append(tx_class.TxOut(coin_value, script))
 
     return txs_in, txs_out, unspents
@@ -622,14 +625,14 @@ def wif_iter(iters):
                 break
 
 
-def generate_tx(tx_class, txs, spendables, payables, args):
-    txs_in, txs_out, unspents = merge_txs(tx_class, txs, spendables, payables)
+def generate_tx(network, txs, spendables, payables, args):
+    txs_in, txs_out, unspents = merge_txs(network, txs, spendables, payables)
     lock_time, version = calculate_lock_time_and_version(args, txs)
     if len(unspents) == len(txs_in):
         unspents = remove_indices(unspents, args.remove_tx_in)
     txs_in = remove_indices(txs_in, args.remove_tx_in)
     txs_out = remove_indices(txs_out, args.remove_tx_out)
-    tx = tx_class(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
+    tx = network.tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
     fee = args.fee
     try:
         if len(payables) > 0:
@@ -639,7 +642,8 @@ def generate_tx(tx_class, txs, spendables, payables, args):
     return tx
 
 
-def print_output(tx, include_unspents, output_file, show_unspents, network, verbose_signature, disassemble, trace, pdb):
+def print_output(tx, include_unspents, output_file, show_unspents,
+                 network, verbose_signature, disassembly_level, disassembler, trace, pdb):
     if len(tx.txs_in) == 0:
         print("warning: transaction has no inputs", file=sys.stderr)
 
@@ -664,7 +668,7 @@ def print_output(tx, include_unspents, output_file, show_unspents, network, verb
     else:
         if not tx.missing_unspents():
             check_fees(tx)
-        dump_tx(tx, network, verbose_signature, disassemble, trace, pdb)
+        dump_tx(tx, network, verbose_signature, disassembly_level, disassembler, trace, pdb)
         if include_unspents:
             print("including unspents in hex dump since transaction not fully signed")
         print(tx_as_hex)
@@ -742,7 +746,10 @@ def dump_secs_hex(tx):
 
 
 def tx(args, parser):
-    (tx_class, txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
+    (network, txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
+
+    # BRAIN DAMAGE
+    disassembler = Disassemble(BitcoinScriptTools, network.ui)
 
     for tx in txs:
         if tx.missing_unspents() and (args.augment or tx_db):
@@ -753,7 +760,7 @@ def tx(args, parser):
     # build p2sh_lookup
     p2sh_lookup = build_p2sh_lookup(args)
 
-    tx = generate_tx(tx_class, txs, spendables, payables, args)
+    tx = generate_tx(network, txs, spendables, payables, args)
 
     signature_hints = [h2b(sig) for sig in (args.signature or [])]
     sec_hints = build_sec_lookup([h2b(sec) for sec in (args.sec or [])])
@@ -763,7 +770,7 @@ def tx(args, parser):
     include_unspents = not is_fully_signed
 
     print_output(tx, include_unspents, args.output_file, args.show_unspents, args.network,
-                 args.verbose_signature, args.disassemble, args.trace, args.pdb)
+                 args.verbose_signature, args.disassemble, disassembler, args.trace, args.pdb)
 
     if args.dump_signatures:
         dump_signatures_hex(tx)

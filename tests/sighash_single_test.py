@@ -1,4 +1,5 @@
 import unittest
+from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
@@ -25,7 +26,7 @@ from pycoin.tx.Tx import (
     TxIn,
     TxOut
 )
-from pycoin.ui.ui import script_for_address
+
 
 PRIV_KEYS = (
     2330949616242593315303241053456316633827293588958882755297900732239663851861,
@@ -64,18 +65,19 @@ def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
 class SighashSingleTest(unittest.TestCase):
 
     def test_sighash_single_mainnet(self):
-        self._test_sighash_single('BTC')
+        self._test_sighash_single(BitcoinMainnet)
 
     def test_sighash_single_testnet3(self):
-        self._test_sighash_single('XTN')
+        self._test_sighash_single(BitcoinTestnet)
 
-    def _test_sighash_single(self, netcode):
-        k0 = Key(secret_exponent=PRIV_KEYS[0], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
-        k1 = Key(secret_exponent=PRIV_KEYS[1], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
-        k2 = Key(secret_exponent=PRIV_KEYS[2], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
-        k3 = Key(secret_exponent=PRIV_KEYS[3], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
-        k4 = Key(secret_exponent=PRIV_KEYS[4], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
-        k5 = Key(secret_exponent=PRIV_KEYS[5], generator=secp256k1_generator, is_compressed=True, netcode=netcode)
+    def _test_sighash_single(self, network):
+        Key = network.ui._keyparser._key_class
+        k0 = Key(secret_exponent=PRIV_KEYS[0], generator=secp256k1_generator, is_compressed=True)
+        k1 = Key(secret_exponent=PRIV_KEYS[1], generator=secp256k1_generator, is_compressed=True)
+        k2 = Key(secret_exponent=PRIV_KEYS[2], generator=secp256k1_generator, is_compressed=True)
+        k3 = Key(secret_exponent=PRIV_KEYS[3], generator=secp256k1_generator, is_compressed=True)
+        k4 = Key(secret_exponent=PRIV_KEYS[4], generator=secp256k1_generator, is_compressed=True)
+        k5 = Key(secret_exponent=PRIV_KEYS[5], generator=secp256k1_generator, is_compressed=True)
 
         # Fake a coinbase transaction
         coinbase_tx = Tx.coinbase_tx(k0.sec(), 500000000)
@@ -85,6 +87,8 @@ class SighashSingleTest(unittest.TestCase):
         self.assertEqual('2acbe1006f7168bad538b477f7844e53de3a31ffddfcfc4c6625276dd714155a',
                          b2h_rev(coinbase_tx.hash()))
 
+        script_for_address = network.ui.script_for_address
+
         # Make the test transaction
         txs_in = [
             TxIn(coinbase_tx.hash(), 0),
@@ -92,9 +96,9 @@ class SighashSingleTest(unittest.TestCase):
             TxIn(coinbase_tx.hash(), 2),
         ]
         txs_out = [
-            TxOut(900000000, script_for_address(k3.address(), netcodes=[netcode])),
-            TxOut(800000000, script_for_address(k4.address(), netcodes=[netcode])),
-            TxOut(800000000, script_for_address(k5.address(), netcodes=[netcode])),
+            TxOut(900000000, script_for_address(k3.address())),
+            TxOut(800000000, script_for_address(k4.address())),
+            TxOut(800000000, script_for_address(k5.address())),
         ]
         tx = Tx(1, txs_in, txs_out)
         tx.set_unspents(coinbase_tx.txs_out)

@@ -1,13 +1,16 @@
 import itertools
 import unittest
 
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.coins.bitcoin.pay_to import script_for_multisig
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key import Key
 from pycoin.solve.utils import build_hash160_lookup
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.tx_utils import create_tx
-from pycoin.ui.ui import script_for_multisig
 
+
+# BRAIN DAMAGE
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 class MultisigIndividualTest(unittest.TestCase):
     def multisig_M_of_N_individually(self, M, N):

@@ -1,10 +1,10 @@
 import io
 import copy
 import unittest
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key import Key
 from pycoin.serialize import h2b
 from pycoin.tx import tx_utils
 from pycoin.tx.Spendable import Spendable
@@ -12,10 +12,18 @@ from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.ui.key_from_text import key_from_text
-from pycoin.ui.ui import (
-    address_for_pay_to_script, address_for_script, info_from_multisig_script, nulldata_for_script, script_for_address,
+from pycoin.coins.bitcoin.pay_to import (
     script_for_multisig, script_for_p2pkh, script_for_p2pk, script_for_nulldata, script_for_nulldata_push
 )
+
+# BRAIN DAMAGE
+address_for_script = BitcoinMainnet.ui.address_for_script
+address_for_pay_to_script = BitcoinMainnet.ui.address_for_pay_to_script
+script_for_address = BitcoinMainnet.ui.script_for_address
+info_from_multisig_script = BitcoinMainnet.ui._puzzle_scripts.info_from_multisig_script
+nulldata_for_script = BitcoinMainnet.ui._puzzle_scripts.nulldata_for_script
+
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 def const_f(v):
@@ -46,7 +54,7 @@ class ScriptTypesTest(unittest.TestCase):
                 hl = build_hash160_lookup([se], [secp256k1_generator])
                 tx = Tx(1, [], [TxOut(100, script)])
                 tx.sign(hash160_lookup=hl)
-                afs_address = tx.txs_out[0].address("BTC")
+                afs_address = address_for_script(tx.txs_out[0].puzzle_script())
                 self.assertEqual(afs_address, addr)
 
     def test_script_type_pay_to_public_pair(self):
@@ -69,7 +77,7 @@ class ScriptTypesTest(unittest.TestCase):
                 hl = build_hash160_lookup([se], [secp256k1_generator])
                 tx = Tx(1, [], [TxOut(100, script)])
                 tx.sign(hash160_lookup=hl)
-                afs_address = tx.txs_out[0].address("BTC")
+                afs_address = address_for_script(tx.txs_out[0].puzzle_script())
                 self.assertEqual(afs_address, addr)
 
     def test_sign(self):
@@ -203,7 +211,7 @@ class ScriptTypesTest(unittest.TestCase):
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
-        address = address_for_pay_to_script(underlying_script, "BTC")
+        address = address_for_pay_to_script(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = script_for_address(address)
         tx_out = TxOut(1000000, script)
@@ -276,9 +284,7 @@ class ScriptTypesTest(unittest.TestCase):
     def test_issue_225(self):
         script = script_for_nulldata(b"foobar")
         tx_out = TxOut(1, script)
-        address = tx_out.bitcoin_address(netcode="XTN")
-        self.assertEqual(address, "(nulldata 666f6f626172)")
-        address = tx_out.bitcoin_address(netcode="BTC")
+        address = address_for_script(tx_out.puzzle_script())
         self.assertEqual(address, "(nulldata 666f6f626172)")
 
 

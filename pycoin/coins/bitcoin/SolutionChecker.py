@@ -3,7 +3,9 @@ import io
 from hashlib import sha256
 
 from .ScriptTools import BitcoinScriptTools
-from .VM import BitcoinVM, VMContext
+from .VM import BitcoinVM
+
+from pycoin.vm.VM import VMContext
 
 from ...encoding import double_sha256, from_bytes_32
 from ...intbytes import byte2int, indexbytes

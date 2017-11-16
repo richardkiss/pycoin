@@ -1,16 +1,17 @@
 import unittest
 
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding import double_sha256, to_bytes_32
-from pycoin.key import Key
 from pycoin.serialize import b2h, b2h_rev, h2b
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
 from pycoin.tx.Tx import Tx
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
+
+# BRAIN DAMAGE
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 class SegwitTest(unittest.TestCase):
@@ -99,7 +100,7 @@ class SegwitTest(unittest.TestCase):
             17
         )
 
-        sc = BitcoinSolutionChecker(tx_s1)
+        sc = tx_s1.SolutionChecker(tx_s1)
         self.assertEqual(b2h(sc.hash_prevouts(SIGHASH_ALL)),
                          "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
         self.assertEqual(b2h(sc.hash_sequence(SIGHASH_ALL)),
@@ -107,8 +108,8 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(b2h(sc.hash_outputs(SIGHASH_ALL, 0)),
                          "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
 
-        script = BitcoinScriptTools.compile(
-            "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(tx_s1.unspents[1].script[2:]))
+        address = BitcoinMainnet.ui.address_for_script(tx_s1.unspents[1].script)
+        script = BitcoinMainnet.ui._puzzle_scripts.script_for_p2pkh(tx_s1.unspents[1].script[2:])
         self.assertEqual(
             b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
             "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd"
@@ -265,7 +266,7 @@ class SegwitTest(unittest.TestCase):
         tx_hex = tx_u5prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)
 
-        sc = BitcoinSolutionChecker(tx_s5)
+        sc = tx_s5.SolutionChecker(tx_s5)
         self.assertEqual(b2h(sc.hash_prevouts(SIGHASH_ALL)),
                          "74afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aaa0")
         self.assertEqual(b2h(sc.hash_sequence(SIGHASH_ALL)),
@@ -440,16 +441,15 @@ class SegwitTest(unittest.TestCase):
 
     def test_segwit_ui(self):
         # p2wpkh
-        from pycoin.ui.ui import address_for_script, script_for_address
         address = 'bc1qqyykvamqq62n64t8gw09uw0cdgxjwwlw7mypam'
-        s = script_for_address(address)
-        afs_address = address_for_script(s)
+        s = BitcoinMainnet.ui.script_for_address(address)
+        afs_address = BitcoinMainnet.ui.address_for_script(s)
         self.assertEqual(address, afs_address)
 
     def test_segwit_create_tx(self):
         from pycoin.tx.tx_utils import create_tx, sign_tx
-        from pycoin.ui.ui import (
-            address_for_pay_to_script_wit, script_for_p2pkh, script_for_p2pkh_wit, script_for_address
+        from pycoin.coins.bitcoin.pay_to import (
+            script_for_p2pkh, script_for_p2pkh_wit
         )
         key1 = Key(1, generator=secp256k1_generator)
         coin_value = 5000000
@@ -465,8 +465,8 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(len(tx.txs_in[0].witness), 2)
 
         s1 = script_for_p2pkh(key1.hash160())
-        address = address_for_pay_to_script_wit(s1, "BTC")
-        spendable.script = script_for_address(address)
+        address = BitcoinMainnet.ui.address_for_pay_to_script_wit(s1)
+        spendable.script = BitcoinMainnet.ui.script_for_address(address)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()], p2sh_lookup=build_p2sh_lookup([s1]))
