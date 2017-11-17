@@ -1,9 +1,10 @@
 import unittest
 
-from pycoin.contrib import who_signed
+from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.pay_to import script_for_multisig
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx import tx_utils
@@ -13,6 +14,7 @@ from pycoin.tx.TxOut import TxOut
 
 
 # BRAIN DAMAGE
+who_signed = WhoSigned(BitcoinScriptTools)
 UI = BitcoinMainnet.ui
 address_for_pay_to_script = UI.address_for_pay_to_script
 script_for_address = UI.script_for_address
