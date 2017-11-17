@@ -8,8 +8,8 @@ from pycoin.satoshi.opcodes import OPCODE_LIST
 from pycoin.satoshi.IntStreamer import IntStreamer
 from pycoin.serialize import h2b
 from pycoin.intbytes import int2byte
-from pycoin.vm.VM import VMContext
 
+# BRAIN DAMAGE
 bin_script = BitcoinScriptTools.compile_push_data_list
 compile = BitcoinScriptTools.compile
 disassemble = BitcoinScriptTools.disassemble
@@ -23,15 +23,14 @@ class ToolsTest(unittest.TestCase):
         def test_bytes(as_bytes):
             script = bin_script([as_bytes])
             # this is a pretty horrible hack to test the vm with long scripts. But it works
-            vm = BitcoinVM()
             tx_context = TxContext()
             tx_context.signature_for_hash_type_f = None
             tx_context.flags = 0
             tx_context.traceback_f = None
-            vm_context = VMContext(script, tx_context, tx_context.signature_for_hash_type_f, flags=0)
-            vm_context.MAX_SCRIPT_LENGTH = int(1e9)
-            vm_context.MAX_BLOB_LENGTH = int(1e9)
-            stack = vm.eval_script(vm_context)
+            vm = BitcoinVM(script, tx_context, tx_context.signature_for_hash_type_f, flags=0)
+            vm.MAX_SCRIPT_LENGTH = int(1e9)
+            vm.MAX_BLOB_LENGTH = int(1e9)
+            stack = vm.eval_script()
             assert len(stack) == 1
             assert stack[0] == as_bytes
 

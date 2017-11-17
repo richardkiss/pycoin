@@ -5,8 +5,6 @@ from hashlib import sha256
 from .ScriptTools import BitcoinScriptTools
 from .VM import BitcoinVM
 
-from pycoin.vm.VM import VMContext
-
 from ...encoding import double_sha256, from_bytes_32
 from ...intbytes import byte2int, indexbytes
 
@@ -101,22 +99,21 @@ class BitcoinSolutionChecker(SolutionChecker):
                 script = self.delete_signature(script, sig_blob)
             return self.signature_hash(script, tx_context.tx_in_idx, hash_type)
 
-        vm_context = VMContext(solution_script, tx_context, sig_for_hash_type_f, f1)
+        vm = self.VM(solution_script, tx_context, sig_for_hash_type_f, f1)
 
-        vm_context.is_solution_script = True
-        vm_context.traceback_f = traceback_f
+        vm.is_solution_script = True
+        vm.traceback_f = traceback_f
 
-        vm = self.VM()
-        solution_stack = vm.eval_script(vm_context)
+        solution_stack = vm.eval_script()
 
-        vm_context = VMContext(puzzle_script, tx_context, sig_for_hash_type_f, f1, initial_stack=solution_stack[:])
+        vm = self.VM(puzzle_script, tx_context, sig_for_hash_type_f, f1, initial_stack=solution_stack[:])
 
-        vm_context.is_solution_script = False
-        vm_context.traceback_f = traceback_f
+        vm.is_solution_script = False
+        vm.traceback_f = traceback_f
 
         # work on a copy of the solution stack
-        stack = vm.eval_script(vm_context)
-        if len(stack) == 0 or not vm_context.bool_from_script_bytes(stack[-1]):
+        stack = vm.eval_script()
+        if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         return stack, solution_stack
@@ -180,19 +177,18 @@ class BitcoinSolutionChecker(SolutionChecker):
             return self.signature_for_hash_type_segwit(
                 vmc.script[vmc.begin_code_hash:], tx_context.tx_in_idx, hash_type)
 
-        vm = self.VM()
-        vm_context = VMContext(
+        vm = self.VM(
             puzzle_script, tx_context, witness_signature_for_hash_type, flags, initial_stack=stack)
-        vm_context.traceback_f = traceback_f
-        vm_context.is_solution_script = False
+        vm.traceback_f = traceback_f
+        vm.is_solution_script = False
 
         for s in stack:
-            if len(s) > vm_context.MAX_BLOB_LENGTH:
+            if len(s) > vm.MAX_BLOB_LENGTH:
                 raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
-        stack = vm.eval_script(vm_context)
+        stack = vm.eval_script()
 
-        if len(stack) == 0 or not vm_context.bool_from_script_bytes(stack[-1]):
+        if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         if len(stack) != 1:
