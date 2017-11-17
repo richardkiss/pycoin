@@ -1,8 +1,5 @@
-from pycoin.ecdsa.secp256k1 import secp256k1_generator  # BRAIN DAMAGE
-
 from pycoin.satoshi import errno
 from pycoin.satoshi.flags import VERIFY_MINIMALDATA
-from pycoin.satoshi.IntStreamer import IntStreamer
 from pycoin.vm.ConditionalStack import ConditionalStack
 
 from pycoin.coins.SolutionChecker import ScriptError
@@ -18,11 +15,10 @@ class VM(object):
     MAX_OP_COUNT = 201
     MAX_STACK_SIZE = 1000
 
-    VM_FALSE = IntStreamer.int_to_script_bytes(0)
-    VM_TRUE = IntStreamer.int_to_script_bytes(1)
+    VM_FALSE = b''
+    VM_TRUE = b'\1'
 
     ConditionalStack = ConditionalStack
-    IntStreamer = IntStreamer
 
     def __init__(self, script, tx_context, signature_for_hash_type_f, flags, initial_stack=None, traceback_f=None):
         self.pc = 0
@@ -53,7 +49,7 @@ class VM(object):
             raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)
 
     def pop_int(self):
-        return self.IntStreamer.int_from_script_bytes(self.pop(), require_minimal=self.flags & VERIFY_MINIMALDATA)
+        raise NotImplemented
 
     def pop_nonnegative(self):
         v = self.pop_int()
@@ -62,23 +58,19 @@ class VM(object):
         return v
 
     def push_int(self, v):
-        self.append(self.IntStreamer.int_to_script_bytes(v))
+        raise NotImplemented
 
     @classmethod
     def bool_from_script_bytes(class_, v, require_minimal=False):
-        v = class_.IntStreamer.int_from_script_bytes(v, require_minimal=require_minimal)
-        if require_minimal:
-            if v not in (class_.VM_FALSE, class_.VM_TRUE):
-                raise ScriptError("non-minimally encoded", errno.UNKNOWN_ERROR)
-        return bool(v)
+        raise NotImplemented
 
     @classmethod
     def bool_to_script_bytes(class_, v):
-        return class_.VM_TRUE if v else class_.VM_FALSE
+        raise NotImplemented
 
     @classmethod
     def generator_for_signature_type(class_, signature_type):
-        return secp256k1_generator
+        raise NotImplemented
 
     def eval_script(self):
         if len(self.script) > self.MAX_SCRIPT_LENGTH:

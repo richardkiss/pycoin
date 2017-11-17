@@ -1,12 +1,7 @@
-import binascii
-
-from ..encoding import a2b_hashed_base58, EncodingError
-from ..serialize import h2b
-from ..contrib.segwit_addr import bech32_decode
+from pycoin.ui.uiclass import metadata_for_text
 
 
 def key_info_from_text(text, networks):
-    from pycoin.ui.uiclass import metadata_for_text
     metadata = metadata_for_text(text)
     for network in networks:
         info = network.ui.parse_metadata_to_info(metadata, types=["key"])

@@ -1,10 +1,3 @@
-import binascii
-from .. import encoding
-from ..intbytes import int2byte
-from ..serialize import h2b
-from ..coins.bitcoin.ScriptTools import BitcoinScriptTools, IntStreamer
-from ..contrib.segwit_addr import bech32_decode, convertbits
-
 from pycoin.ui.uiclass import metadata_for_text
 
 DEFAULT_ADDRESS_TYPES = ["p2pkh", "p2sh"]
@@ -63,7 +56,7 @@ def is_public_bip32_valid(hwif, allowable_netcodes=None):
     """
 
     def info_filter_f(k):
-        return k["info"]["key_type"] == 'bip32' and k["info"]["is_private"] == False
+        return k["info"]["key_type"] == 'bip32' and k["info"]["is_private"] is False
 
     return _is_key_valid(hwif, allowable_netcodes, info_filter_f)
 
@@ -74,6 +67,6 @@ def is_private_bip32_valid(hwif, allowable_netcodes=None):
     to just Bitcoin mainnet), return the network that the wif is a part of, or None if it doesn't validate.
     """
     def info_filter_f(k):
-        return k["info"]["key_type"] == 'bip32' and k["info"]["is_private"] == True
+        return k["info"]["key_type"] == 'bip32' and k["info"]["is_private"] is True
 
     return _is_key_valid(hwif, allowable_netcodes, info_filter_f)

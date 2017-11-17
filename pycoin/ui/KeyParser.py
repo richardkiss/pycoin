@@ -1,13 +1,10 @@
-
-import binascii
 import struct
 
 from pycoin import encoding
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.Key import Key
 from pycoin.key.electrum import ElectrumWallet
-from pycoin.contrib.segwit_addr import bech32_decode
-from pycoin.serialize import b2h, h2b
+from pycoin.serialize import b2h
 
 
 class KeyParser(object):
@@ -22,29 +19,6 @@ class KeyParser(object):
         key_info = self.key_info_from_text(text)
         if key_info:
             return key_from_key_info(key_info)
-
-    def key_info_from_text(self, text):
-        try:
-            data = encoding.a2b_hashed_base58(text)
-            return self.key_info_from_b58(data)
-        except encoding.EncodingError:
-            pass
-
-        try:
-            hrp, data = bech32_decode(text)
-            if hrp and data:
-                return self.key_info_from_bech32(hrp, data)
-        except (TypeError, KeyError):
-            pass
-
-        try:
-            prefix, rest = text.split(":", 1)
-            data = h2b(rest)
-            return self.key_info_from_prefixed_hex(prefix, data)
-        except (binascii.Error, TypeError, ValueError):
-            pass
-
-        return self.key_info_from_plaintext(text)
 
     def key_info_from_b58(self, data):
 
@@ -99,18 +73,19 @@ class KeyParser(object):
 
         if prefix == 'H' and self._bip32node_class:
             kwargs = dict(generator=self._generator, master_secret=data)
-            return dict(key_class=self._bip32node_class.from_master_secret, kwargs=kwargs, key_type="bip32", is_private=True)
+            return dict(key_class=self._bip32node_class.from_master_secret,
+                        kwargs=kwargs, key_type="bip32", is_private=True)
 
         return None
 
     def key_info_from_text(self, text):
         if text.startswith("P:") and self._bip32node_class:
             kwargs = dict(generator=self._generator, master_secret=text[2:].encode("utf8"))
-            return dict(key_class=self._bip32node_class.from_master_secret, kwargs=kwargs, key_type="bip32", is_private=True)
+            return dict(key_class=self._bip32node_class.from_master_secret,
+                        kwargs=kwargs, key_type="bip32", is_private=True)
 
         return None
 
 
 def key_from_key_info(key_info):
     return key_info["key_class"](**key_info["kwargs"])
-
