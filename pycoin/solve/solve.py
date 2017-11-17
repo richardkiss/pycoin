@@ -105,8 +105,8 @@ def hash_lookup_solver(m):
         result = db.get(the_hash)
         if result is None:
             raise SolvingError("can't find secret exponent for %s" % b2h(the_hash))
-        from pycoin.key.Key import Key  ## BRAIN DAMAGE
-        return {m["1"]: Key(result[0], generator=result[3]).sec(use_uncompressed=not result[2])}
+        sec = encoding.public_pair_to_sec(result[1], compressed=result[2])
+        return {m["1"]: sec}
 
     return (f, [m["1"]], ())
 

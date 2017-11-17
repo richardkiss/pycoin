@@ -4,7 +4,6 @@ import hashlib
 from pycoin import encoding
 from pycoin.serialize import b2h, h2b
 
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools, IntStreamer # BRAIN DAMAGE
 from pycoin.contrib import segwit_addr
 from pycoin.intbytes import int2byte, iterbytes
 from pycoin.ui.KeyParser import KeyParser
@@ -153,11 +152,11 @@ class UI(object):
             return
         decoded = segwit_addr.convertbits(data[1:], 5, 8, False)
         decoded_data = b''.join(int2byte(d) for d in decoded)
-        script = BitcoinScriptTools.compile_push_data_list([
-            IntStreamer.int_to_script_bytes(data[0]), decoded_data])
-        if len(decoded_data) == 20:
+        ldd = len(decoded_data)
+        script = int2byte(data[0]) + int2byte(ldd) + decoded_data
+        if ldd == 20:
             info = dict(subtype="p2pkh_wit", hash160=decoded_data)
-        elif len(decoded_data) == 32:
+        elif ldd == 32:
             info = dict(subtype="p2sh_wit", hash256=decoded_data)
         else:
             return
