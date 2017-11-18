@@ -75,7 +75,7 @@ class UI(object):
         d = self._puzzle_scripts.info_from_script_p2pkh_wit(script)
         if d:
             if self._bech32_hrp:
-                return self.address_for_p2skh_wit(iterbytes(d["PUBKEYHASH_LIST"][0]))
+                return self.address_for_p2skh_wit(d["PUBKEYHASH_LIST"][0])
 
         d = self._puzzle_scripts.info_from_script_p2pk(script)
         if d:
