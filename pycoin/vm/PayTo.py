@@ -9,43 +9,38 @@ class PayTo(object):
     def __init__(self, scriptTools):
         self._scriptTools = scriptTools
 
-    def types(self):
-        return ["p2pk", "p2pkh", "p2pkh_wit", "p2sh", "p2s", "p2sh_wit", "multisig", "nulldata", "nulldata_push"]
-
-    def script_for_p2pk(self, public_key_as_sec):
-        script_text = "%s OP_CHECKSIG" % b2h(public_key_as_sec)
-        return self._scriptTools.compile(script_text)
+    def script_for_p2pk(self, sec):
+        return self.script_for_info(dict(type="p2pk", sec=sec))
 
     def script_for_p2pkh(self, hash160):
-        script_source = "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(hash160)
-        return self._scriptTools.compile(script_source)
+        return self.script_for_info(dict(type="p2pkh", hash160=hash160))
 
     def script_for_p2pkh_wit(self, hash160):
-        script_text = "OP_0 %s" % b2h(hash160)
-        return self._scriptTools.compile(script_text)
+        return self.script_for_info(dict(type="p2pkh_wit", hash160=hash160))
 
-    def script_for_p2sh(self, underlying_script_hash160):
-        script_text = "OP_HASH160 %s OP_EQUAL" % b2h(underlying_script_hash160)
-        return self._scriptTools.compile(script_text)
+    def script_for_p2sh(self, hash160):
+        return self.script_for_info(dict(type="p2sh", hash160=hash160))
+
+    def script_for_p2sh_wit(self, hash256):
+        return self.script_for_info(dict(type="p2sh_wit", hash256=hash256))
+
+    def script_for_multisig(self, m, sec_keys):
+        return self.script_for_info(dict(type="multisig", m=m, sec_keys=sec_keys))
+
+    def script_for_nulldata(self, data):
+        return self.script_for_info(dict(type="nulldata", data=data))
+
+    def script_for_nulldata_push(self, data):
+        # BRAIN DAMAGE
+        return self._scriptTools.compile("OP_RETURN [%s]" % b2h(data))
+
+    ## BRAIN DAMAGE: the stuff above is redundant
 
     def script_for_p2s(self, underlying_script):
         return self.script_for_p2sh(encoding.hash160(underlying_script))
 
-    def script_for_p2sh_wit(self, underlying_script):
-        hash256 = hashlib.sha256(underlying_script).digest()
-        script_text = "OP_0 %s" % b2h(hash256)
-        return self._scriptTools.compile(script_text)
-
-    def script_for_multisig(self, m, sec_keys):
-        sec_keys_hex = " ".join(b2h(sk) for sk in sec_keys)
-        script_source = "%d %s %d OP_CHECKMULTISIG" % (m, sec_keys_hex, len(sec_keys))
-        return self._scriptTools.compile(script_source)
-
-    def script_for_nulldata(self, bin_data):
-        return self._scriptTools.compile("OP_RETURN") + bin_data
-
-    def script_for_nulldata_push(self, bin_data):
-        return self._scriptTools.compile("OP_RETURN [%s]" % b2h(bin_data))
+    def script_for_p2s_wit(self, underlying_script):
+        return self.script_for_p2sh_wit(hashlib.sha256(underlying_script).digest())
 
     def match(self, template_disassembly, script):
         template = self._scriptTools.compile(template_disassembly)
@@ -72,6 +67,23 @@ class PayTo(object):
             elif (opcode1, data1) != (opcode2, data2):
                 break
         return None
+
+    _SCRIPT_LOOKUP = dict(
+        p2pk=lambda info: "%s OP_CHECKSIG" % b2h(info.get("sec")),
+        p2pkh=lambda info: "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(info.get("hash160")),
+        p2pkh_wit=lambda info: "OP_0 %s" % b2h(info.get("hash160")),
+        p2sh=lambda info: "OP_HASH160 %s OP_EQUAL" % b2h(info.get("hash160")),
+        p2sh_wit=lambda info: "OP_0 %s" % b2h(info.get("hash256")),
+        multisig=lambda info: "%d %s %d OP_CHECKMULTISIG" % (
+            info.get("m"), " ".join(b2h(sk) for sk in info.get("sec_keys")), len(info.get("sec_keys"))),
+    )
+
+    def script_for_info(self, info):
+        type = info.get("type")
+        if type == "nulldata":
+            return self._scriptTools.compile("OP_RETURN") + info.get("data")
+        script_text = self._SCRIPT_LOOKUP[type](info)
+        return self._scriptTools.compile(script_text)
 
     # MISSING to consider
     # p2s: SCRIPTHASH160
@@ -101,13 +113,13 @@ class PayTo(object):
         if self._scriptTools.compile("OP_RETURN") == script[:1]:
             return dict(type="nulldata", data=script[1:])
 
-        d = self.info_from_multisig_script(script)
+        d = self._info_from_multisig_script(script)
         if d:
             return d
 
         return dict(type="unknown", script=script)
 
-    def info_from_multisig_script(self, script):
+    def _info_from_multisig_script(self, script):
         scriptTools = self._scriptTools
         scriptStreamer = scriptTools.scriptStreamer
         OP_1 = scriptTools.int_for_opcode("OP_1")

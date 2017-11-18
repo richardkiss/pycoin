@@ -20,7 +20,6 @@ from pycoin.coins.bitcoin.pay_to import (
 address_for_script = BitcoinMainnet.ui.address_for_script
 address_for_p2s = BitcoinMainnet.ui.address_for_p2s
 script_for_address = BitcoinMainnet.ui.script_for_address
-info_from_multisig_script = BitcoinMainnet.ui._puzzle_scripts.info_from_multisig_script
 script_info_for_script = BitcoinMainnet.ui._puzzle_scripts.info_for_script
 
 Key = BitcoinMainnet.ui._keyparser._key_class
@@ -133,7 +132,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx.parse_unspents(f)
         self.assertEqual(tx.id(), "10c61e258e0a2b19b245a96a2d0a1538fe81cd4ecd547e0a3df7ed6fd3761ada")
         script = tx.unspents[0].script
-        multisig_info = info_from_multisig_script(script)
+        multisig_info = script_info_for_script(script)
         del multisig_info["type"]
         s = script_for_multisig(**multisig_info)
         self.assertEqual(s, script)
