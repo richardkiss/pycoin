@@ -9,7 +9,7 @@ def key_info_from_text(text, networks):
             yield network, info["info"]
 
 
-def key_from_text(text, generator=None, key_types=None, networks=None):
+def key_from_text(text, key_types=None, networks=None):
     """
     This function will accept a BIP0032 wallet string, a WIF, or a bitcoin address.
 

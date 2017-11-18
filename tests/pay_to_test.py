@@ -274,7 +274,7 @@ class ScriptTypesTest(unittest.TestCase):
         tx = Tx.from_hex(partially_signed_raw_tx)
         tx_out = TxOut(1000000, h2b("a914a10dfa21ee8c33b028b92562f6fe04e60563d3c087"))
         tx.set_unspents([tx_out])
-        key = key_from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx", generator=secp256k1_generator)
+        key = key_from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx")
         hash160_lookup = build_hash160_lookup([key.secret_exponent()], [secp256k1_generator])
         self.assertEqual(tx.bad_signature_count(), 1)
         tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)

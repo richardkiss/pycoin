@@ -1,7 +1,7 @@
 import hashlib
 import itertools
 
-from pycoin.encoding import double_sha256, from_bytes_32, to_bytes_32
+from pycoin.encoding import double_sha256, from_bytes_32
 from pycoin.key.Key import Key
 from pycoin.serialize import b2h
 
@@ -30,7 +30,8 @@ class ElectrumWallet(Key):
             master_private_key = initial_key_to_master_key(initial_key)
         if master_public_key:
             public_pair = tuple(from_bytes_32(master_public_key[idx:idx+32]) for idx in (0, 32))
-        super(ElectrumWallet, self).__init__(generator=generator, secret_exponent=master_private_key, public_pair=public_pair, prefer_uncompressed=True)
+        super(ElectrumWallet, self).__init__(
+            generator=generator, secret_exponent=master_private_key, public_pair=public_pair, prefer_uncompressed=True)
 
     def secret_exponent(self):
         if self._secret_exponent is None and self._initial_key:

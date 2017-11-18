@@ -33,14 +33,14 @@ class ElectrumTest(unittest.TestCase):
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = key_from_text(wif, generator=secp256k1_generator)
+            key = key_from_text(wif)
             self.assertEqual(key.address(use_uncompressed=True), address)
         for idx, address in enumerate(CHANGE_ADDRESSES):
             subkey = wallet.subkey("%s/1" % idx)
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = key_from_text(wif, generator=secp256k1_generator)
+            key = key_from_text(wif)
             self.assertEqual(key.address(use_uncompressed=True), address)
 
     def test_master_public_and_private(self):
@@ -80,12 +80,12 @@ class ElectrumTest(unittest.TestCase):
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = key_from_text(wif, generator=secp256k1_generator)
+            key = key_from_text(wif)
             self.assertEqual(key.address(use_uncompressed=True), address)
         for idx, address in enumerate(CHANGE_ADDRESSES):
             subkey = wallet.subkey("%s/1" % idx)
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = key_from_text(wif, generator=secp256k1_generator)
+            key = key_from_text(wif)
             self.assertEqual(key.address(use_uncompressed=True), address)

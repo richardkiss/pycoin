@@ -16,7 +16,7 @@ BIP32Node = BitcoinMainnet.ui._keyparser._bip32node_class
 
 def change_prefix(address, new_prefix):
     return hash160_sec_to_bitcoin_address(
-        key_from_text(address, generator=secp256k1_generator).hash160(), address_prefix=new_prefix)
+        key_from_text(address).hash160(), address_prefix=new_prefix)
 
 
 PAY_TO_HASH_ADDRESSES = [
@@ -329,7 +329,7 @@ class KeyUtilsTest(unittest.TestCase):
         self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
 
         wif = key.wif()
-        priv_k = key_from_text(wif, generator=secp256k1_generator)
+        priv_k = key_from_text(wif)
         self.assertEqual(
             repr(priv_k),
             'private_for <XTNSEC:0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
