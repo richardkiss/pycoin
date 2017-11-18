@@ -8,7 +8,7 @@ import sys
 
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.serialize import b2h
-from pycoin.ui.ui import address_for_pay_to_script, script_for_multisig
+from pycoin.ui.ui import address_for_p2s, script_for_multisig
 
 
 def main():
@@ -34,7 +34,7 @@ def main():
     pay_to_multisig_script = script_for_multisig(2, public_key_sec_list)
 
     # create a "2-of-3" multisig address_for_multisig
-    the_address = address_for_pay_to_script(pay_to_multisig_script)
+    the_address = address_for_p2s(pay_to_multisig_script)
 
     print("Here is your pay 2-of-3 address: %s" % the_address)
 

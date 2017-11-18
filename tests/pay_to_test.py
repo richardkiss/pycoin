@@ -18,10 +18,10 @@ from pycoin.coins.bitcoin.pay_to import (
 
 # BRAIN DAMAGE
 address_for_script = BitcoinMainnet.ui.address_for_script
-address_for_pay_to_script = BitcoinMainnet.ui.address_for_pay_to_script
+address_for_p2s = BitcoinMainnet.ui.address_for_p2s
 script_for_address = BitcoinMainnet.ui.script_for_address
 info_from_multisig_script = BitcoinMainnet.ui._puzzle_scripts.info_from_multisig_script
-nulldata_for_script = BitcoinMainnet.ui._puzzle_scripts.nulldata_for_script
+script_info_for_script = BitcoinMainnet.ui._puzzle_scripts.info_for_script
 
 Key = BitcoinMainnet.ui._keyparser._key_class
 
@@ -134,6 +134,7 @@ class ScriptTypesTest(unittest.TestCase):
         self.assertEqual(tx.id(), "10c61e258e0a2b19b245a96a2d0a1538fe81cd4ecd547e0a3df7ed6fd3761ada")
         script = tx.unspents[0].script
         multisig_info = info_from_multisig_script(script)
+        del multisig_info["type"]
         s = script_for_multisig(**multisig_info)
         self.assertEqual(s, script)
 
@@ -211,7 +212,7 @@ class ScriptTypesTest(unittest.TestCase):
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
-        address = address_for_pay_to_script(underlying_script)
+        address = address_for_p2s(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = script_for_address(address)
         tx_out = TxOut(1000000, script)
@@ -233,7 +234,8 @@ class ScriptTypesTest(unittest.TestCase):
         for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
             sample_script = OP_RETURN + sample
             sc = script_for_nulldata(sample)
-            self.assertEqual(nulldata_for_script(sc), sample)
+            info = script_info_for_script(sc)
+            self.assertEqual(info.get("data"), sample)
             self.assertEqual(sc, sample_script)
             out = TxOut(1, sc)
             # ensure we can create a tx
@@ -248,7 +250,8 @@ class ScriptTypesTest(unittest.TestCase):
             sample_push = BitcoinScriptTools.compile_push_data_list([sample])
             sample_script = OP_RETURN + sample_push
             sc = script_for_nulldata_push(sample)
-            self.assertEqual(nulldata_for_script(sc), sample_push)
+            info = script_info_for_script(sc)
+            self.assertEqual(info.get("data"), sample_push)
             self.assertEqual(sc, sample_script)
             out = TxOut(1, sc)
             # ensure we can create a tx

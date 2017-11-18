@@ -73,33 +73,39 @@ class PayTo(object):
                 break
         return None
 
-    # TODO: info_for_script
-    # type: "p2pk", "p2pkh", "p2pkh_wit", "p2sh", "p2s", "p2sh_wit", "multisig", "nulldata", "nulldata_push"
-    # p2pk: PUBKEY
-    # p2pkh: PUBKEYHASH
-    # p2pkh_wit: PUBKEYHASH
-    # p2sh: SCRIPTHASH160
-    # p2s: SCRIPTHASH160 (never)
-    # p2sh_wit: SCRIPTHASH256
-    # multisig: PUBKEY_LIST, M
-    # nulldata: DATA
+    # MISSING to consider
+    # p2s: SCRIPTHASH160
     # nulldata_push: DATA, RAW_DATA
 
-    def info_from_script_p2pkh(self, script):
-        return self.match("OP_DUP OP_HASH160 'PUBKEYHASH' OP_EQUALVERIFY OP_CHECKSIG", script)
+    def info_for_script(self, script):
+        d = self.match("OP_DUP OP_HASH160 'PUBKEYHASH' OP_EQUALVERIFY OP_CHECKSIG", script)
+        if d:
+            return dict(type="p2pkh", hash160=d["PUBKEYHASH_LIST"][0])
 
-    def info_from_script_p2pkh_wit(self, script):
-        return self.match("OP_0 'PUBKEYHASH'", script)
+        d = self.match("OP_0 'PUBKEYHASH'", script)
+        if d:
+            data = d["PUBKEYHASH_LIST"][0]
+            if len(data) == 20:
+                return dict(type="p2pkh_wit", hash160=data)
+            if len(data) == 32:
+                return dict(type="p2sh_wit", hash256=data)
 
-    def info_from_script_p2pk(self, script):
-        return self.match("'PUBKEY' OP_CHECKSIG", script)
+        d = self.match("OP_HASH160 'PUBKEYHASH' OP_EQUAL", script)
+        if d:
+            return dict(type="p2sh", hash160=d["PUBKEYHASH_LIST"][0])
 
-    def info_from_script_p2sh(self, script):
-        return self.match("OP_HASH160 'PUBKEYHASH' OP_EQUAL", script)
+        d = self.match("'PUBKEY' OP_CHECKSIG", script)
+        if d:
+            return dict(type="p2pk", sec=d["PUBKEY_LIST"][0])
 
-    def info_from_nulldata(self, script):
-        if self.match("OP_RETURN", script[:1]) is not None:
-            return dict(DATA=script[1:])
+        if self._scriptTools.compile("OP_RETURN") == script[:1]:
+            return dict(type="nulldata", data=script[1:])
+
+        d = self.info_from_multisig_script(script)
+        if d:
+            return d
+
+        return dict(type="unknown", script=script)
 
     def info_from_multisig_script(self, script):
         scriptTools = self._scriptTools
@@ -133,7 +139,4 @@ class PayTo(object):
             return None
         if pc != len(script):
             return None
-        return dict(sec_keys=sec_keys, m=m)
-
-    def nulldata_for_script(self, script):
-        return script[1:]
+        return dict(type="multisig", sec_keys=sec_keys, m=m)

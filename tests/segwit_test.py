@@ -465,7 +465,7 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(len(tx.txs_in[0].witness), 2)
 
         s1 = script_for_p2pkh(key1.hash160())
-        address = BitcoinMainnet.ui.address_for_pay_to_script_wit(s1)
+        address = BitcoinMainnet.ui.address_for_p2s_wit(s1)
         spendable.script = BitcoinMainnet.ui.script_for_address(address)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)

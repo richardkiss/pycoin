@@ -15,13 +15,7 @@ class KeyParser(object):
         self._electrum_class = ElectrumWallet.make_subclass(default_ui_context=ui_context)
         self._generator = generator
 
-    def key_from_text(self, text):
-        key_info = self.key_info_from_text(text)
-        if key_info:
-            return key_from_key_info(key_info)
-
     def key_info_from_b58(self, data):
-
         bip32_prv = data.startswith(self._ui_context.bip32_private_prefix())
         bip32_pub = data.startswith(self._ui_context.bip32_public_prefix())
         if bip32_prv or bip32_pub:
@@ -85,7 +79,3 @@ class KeyParser(object):
                         kwargs=kwargs, key_type="bip32", is_private=True)
 
         return None
-
-
-def key_from_key_info(key_info):
-    return key_info["key_class"](**key_info["kwargs"])

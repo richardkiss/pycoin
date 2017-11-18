@@ -57,7 +57,7 @@ class Disassemble(object):
         for pair in pairs:
             for comp in (True, False):
                 hash160 = public_pair_to_hash160_sec(pair, compressed=comp)
-                address = self._ui_context.address_for_pay_to_pkh(hash160)
+                address = self._ui_context.address_for_p2pkh(hash160)
                 addresses.append(address)
         l.append(" sig for %s" % " ".join(addresses))
 
