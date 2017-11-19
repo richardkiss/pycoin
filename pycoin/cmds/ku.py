@@ -149,7 +149,7 @@ def create_hash160_output(key, network, add_output, output_dict):
         output_dict["%s_address_uncompressed" % network.code] = address
 
     # don't print segwit addresses unless we're sure we have a compressed key
-    if hash160_c and hasattr(network, "ui") and hasattr(network.ui, "address_for_p2pkh_wit"):
+    if hash160_c and hasattr(network, "ui") and getattr(network.ui, "_bech32_hrp"):
         address_segwit = network.ui.address_for_p2pkh_wit(hash160_c)
         if address_segwit:
             # this network seems to support segwit
