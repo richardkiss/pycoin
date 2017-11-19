@@ -268,7 +268,7 @@ def parse_key(item, networks, generator):
         return None, _create_bip32(generator)
 
     for network, key_info in key_info_from_text(item, networks=networks):
-        return network, key_info["key_class"](**key_info["kwargs"])
+        return network, key_info["create_f"]()
 
     if HASH160_RE.match(item):
         return None, Key(hash160=h2b(item))

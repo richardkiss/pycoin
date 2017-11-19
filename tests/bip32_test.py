@@ -5,8 +5,8 @@ from pycoin.serialize import h2b
 from pycoin.ui.key_from_text import key_from_text
 
 # BRAIN DAMAGE
-BIP32Node = BitcoinMainnet.ui._keyparser._bip32node_class
-XTNBIP32Node = BitcoinTestnet.ui._keyparser._bip32node_class
+BIP32Node = BitcoinMainnet.ui._bip32node_class
+XTNBIP32Node = BitcoinTestnet.ui._bip32node_class
 
 
 class Bip0032TestCase(unittest.TestCase):
@@ -244,7 +244,7 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertRaises(ValueError, list, my_prv.subkeys('-1-0'))
 
     def test_repr(self):
-        Key = BitcoinTestnet.ui._keyparser._key_class
+        Key = BitcoinTestnet.ui._key_class
         key = Key(secret_exponent=273, generator=secp256k1_generator)
         wallet = XTNBIP32Node.from_master_secret(secp256k1_generator, bytes(key.wif().encode('ascii')))
 

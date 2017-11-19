@@ -6,40 +6,33 @@ from pycoin.serialize import b2h, h2b
 
 from pycoin.contrib import segwit_addr
 from pycoin.intbytes import int2byte, iterbytes
+from pycoin.key.Key import Key
+from pycoin.key.BIP32Node import BIP32Node
+from pycoin.key.electrum import ElectrumWallet
 from pycoin.ui.KeyParser import KeyParser
+from pycoin.ui.Hash160Parser import Hash160Parser
+from pycoin.ui.BIP32Parser import BIP32Parser
+from pycoin.ui.ElectrumParser import ElectrumParser
+from pycoin.ui.AddressParser import AddressParser
 
+from .Parser import metadata_for_text, parse, parse_to_info
 
-def metadata_for_text(text):
-    d = {}
-    try:
-        data = encoding.a2b_hashed_base58(text)
-        d["as_base58"] = (data,)
-    except encoding.EncodingError:
-        d["as_base58"] = None
-
-    try:
-        hrp, data = segwit_addr.bech32_decode(text)
-        if None not in [hrp, data]:
-            d["as_bech32"] = (hrp, data)
-        else:
-            d["as_bech32"] = None
-    except (TypeError, KeyError):
-        pass
-
-    try:
-        prefix, rest = text.split(":", 1)
-        data = h2b(rest)
-        d["as_prefixed_hex"] = (prefix, data)
-    except (binascii.Error, TypeError, ValueError):
-        d["as_prefixed_hex"] = None
-    d["as_text"] = (text, )
-    return d
 
 
 class UI(object):
     def __init__(self, puzzle_scripts, generator, bip32_prv_prefix, bip32_pub_prefix,
                  wif_prefix, sec_prefix, address_prefix, pay_to_script_prefix, bech32_hrp=None):
         self._puzzle_scripts = puzzle_scripts
+        self._key_class = Key.make_subclass(default_ui_context=self)
+        self._electrum_class = ElectrumWallet.make_subclass(default_ui_context=self)
+        self._bip32node_class = BIP32Node.make_subclass(default_ui_context=self)
+        self._parsers = [
+            KeyParser(generator, wif_prefix, address_prefix, self._key_class),
+            ElectrumParser(generator, self._electrum_class),
+            BIP32Parser(generator, bip32_prv_prefix, bip32_pub_prefix, self._bip32node_class),
+            Hash160Parser(address_prefix, self._key_class),
+            AddressParser(puzzle_scripts, address_prefix, pay_to_script_prefix, bech32_hrp)
+        ]
         self._bip32_prv_prefix = bip32_prv_prefix
         self._bip32_pub_prefix = bip32_pub_prefix
         self._wif_prefix = wif_prefix
@@ -47,7 +40,6 @@ class UI(object):
         self._address_prefix = address_prefix
         self._pay_to_script_prefix = pay_to_script_prefix
         self._bech32_hrp = bech32_hrp
-        self._keyparser = KeyParser(self, generator)
 
     def bip32_private_prefix(self):
         return self._bip32_prv_prefix
@@ -180,23 +172,16 @@ class UI(object):
         return self.parse_key_generic([text], self._keyparser.key_info_from_text)
 
     def parse_metadata_to_info(self, metadata, types):
-        for f in ["base58", "bech32", "prefixed_hex", "text"]:
-            k = "as_%s" % f
-            d = metadata.get(k)
-            if d is None:
-                continue
-            for t in types:
-                r = getattr(self, "parse_%s_%s" % (t, k), lambda *args, **kwargs: None)(*d)
-                if r:
-                    return r
+        parsers = [p for p in self._parsers if p.TYPE in types]
+        return parse_to_info(None, parsers, metadata=metadata)
 
-    def parse(self, item, metadata=None, types=["address", "key"]):
+    def parse(self, item, metadata=None, types=None):
         """
         type: one of "key", "address"
             eventually add "spendable", "payable", "address", "keychain_hint"
         """
-        if metadata is None:
-            metadata = metadata_for_text(item)
-        info = self.parse_metadata_to_info(metadata, types=types)
-        if info:
-            return info["create_f"]()
+        if types:
+            parsers = [p for p in self._parsers if p.TYPE in types]
+        else:
+            parsers = self._parsers
+        return parse(item, parsers, metadata=None)

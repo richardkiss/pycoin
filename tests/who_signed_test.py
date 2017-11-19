@@ -18,7 +18,7 @@ who_signed = WhoSigned(BitcoinScriptTools)
 UI = BitcoinMainnet.ui
 address_for_p2s = UI.address_for_p2s
 script_for_address = UI.script_for_address
-Key = UI._keyparser._key_class
+Key = UI._key_class
 
 
 class WhoSignedTest(unittest.TestCase):

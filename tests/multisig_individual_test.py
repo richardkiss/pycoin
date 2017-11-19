@@ -10,7 +10,7 @@ from pycoin.tx.tx_utils import create_tx
 
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.ui._keyparser._key_class
+Key = BitcoinMainnet.ui._key_class
 
 class MultisigIndividualTest(unittest.TestCase):
     def multisig_M_of_N_individually(self, M, N):

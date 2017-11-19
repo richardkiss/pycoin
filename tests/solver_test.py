@@ -17,7 +17,7 @@ address_for_p2s = BitcoinMainnet.ui.address_for_p2s
 standard_tx_out_script = BitcoinMainnet.ui.script_for_address
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.ui._keyparser._key_class
+Key = BitcoinMainnet.ui._key_class
 
 
 class SolverTest(unittest.TestCase):
