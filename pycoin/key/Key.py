@@ -161,7 +161,7 @@ class Key(object):
         """
         hash160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash160:
-            return self._ui_context(ui_context).address_for_hash160(hash160)
+            return self._ui_context(ui_context).address_for_p2pkh(hash160)
         return None
 
     bitcoin_address = address

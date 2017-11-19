@@ -47,17 +47,11 @@ class UI(object):
     def bip32_public_prefix(self):
         return self._bip32_pub_prefix
 
-    def wif_prefix(self):
-        return self._wif_prefix
-
     def wif_for_blob(self, blob):
         return encoding.b2a_hashed_base58(self._wif_prefix + blob)
 
     def sec_text_for_blob(self, blob):
         return self._sec_prefix + b2h(blob)
-
-    def address_for_hash160(self, hash160):
-        return self.address_for_p2pkh(hash160)
 
     def address_for_script(self, script):
         script_info = self._puzzle_scripts.info_for_script(script)
@@ -91,12 +85,12 @@ class UI(object):
     def address_for_p2pkh(self, hash160):
         if self._address_prefix:
             return encoding.hash160_sec_to_bitcoin_address(hash160, address_prefix=self._address_prefix)
-        return None
+        return "???"
 
     def address_for_p2sh(self, hash160):
         if self._pay_to_script_prefix:
             return encoding.hash160_sec_to_bitcoin_address(hash160, address_prefix=self._pay_to_script_prefix)
-        return None
+        return "???"
 
     def address_for_p2s(self, script):
         return self.address_for_p2sh(encoding.hash160(script))
@@ -104,7 +98,7 @@ class UI(object):
     def address_for_p2pkh_wit(self, hash160):
         if self._bech32_hrp:
             return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(hash160))
-        return None
+        return "???"
 
     def address_for_p2sh_wit(self, hash256):
         if self._bech32_hrp:
@@ -117,59 +111,7 @@ class UI(object):
     def script_for_address(self, address):
         return self.parse(address, types=["address"])
 
-    def standard_tx_out_script(self, address):
-        return self.script_for_address(address)
-
     ##############################################################################
-
-    def parse_address_as_base58(self, data):
-        if self._address_prefix and data.startswith(self._address_prefix):
-            hash160 = data[len(self._address_prefix):]
-            if len(hash160) != 20:
-                return
-            info = dict(subtype="p2pkh", hash160=hash160)
-            script = self._puzzle_scripts.script_for_p2pkh(hash160)
-            return dict(type="address", info=info, script=script, create_f=lambda: script)
-
-        if self._pay_to_script_prefix and data.startswith(self._pay_to_script_prefix):
-            hash160 = data[len(self._pay_to_script_prefix):]
-            if len(hash160) != 20:
-                return
-            info = dict(subtype="p2sh", hash160=hash160)
-            script = self._puzzle_scripts.script_for_p2sh(hash160)
-            return dict(type="address", info=info, script=script, create_f=lambda: script)
-
-    def parse_address_as_bech32(self, hrp, data):
-        if hrp != self._bech32_hrp:
-            return
-        decoded = segwit_addr.convertbits(data[1:], 5, 8, False)
-        decoded_data = b''.join(int2byte(d) for d in decoded)
-        ldd = len(decoded_data)
-        script = int2byte(data[0]) + int2byte(ldd) + decoded_data
-        if ldd == 20:
-            info = dict(subtype="p2pkh_wit", hash160=decoded_data)
-        elif ldd == 32:
-            info = dict(subtype="p2sh_wit", hash256=decoded_data)
-        else:
-            return
-        return dict(type="address", info=info, script=script, create_f=lambda: script)
-
-    def parse_key_generic(self, args, method):
-        key_info = method(*args)
-        if key_info:
-            return dict(type="key", info=key_info, create_f=lambda: key_info["key_class"](**key_info["kwargs"]))
-
-    def parse_key_as_base58(self, data):
-        return self.parse_key_generic([data], self._keyparser.key_info_from_b58)
-
-    def parse_key_as_bech32(self, hrp, data):
-        return self.parse_key_generic([hrp, data], self._keyparser.key_info_from_bech32)
-
-    def parse_key_as_prefixed_hex(self, prefix, data):
-        return self.parse_key_generic([prefix, data], self._keyparser.key_info_from_prefixed_hex)
-
-    def parse_key_as_text(self, text):
-        return self.parse_key_generic([text], self._keyparser.key_info_from_text)
 
     def parse_metadata_to_info(self, metadata, types):
         parsers = [p for p in self._parsers if p.TYPE in types]

@@ -38,7 +38,6 @@ class WhoSigned(object):
         parent_tx_out_idx = tx_in.previous_index
         parent_tx_out_script = self.extract_parent_tx_out_script(tx, tx_in_idx)
 
-        signatures = []
         script = tx_in.script
         sc = tx.SolutionChecker(tx)
         for opcode, data, pc, new_pc in self._script_tools.get_opcodes(script):
@@ -77,5 +76,5 @@ class WhoSigned(object):
         public_pair_sig_type_list = self.public_pairs_signed(tx, tx_in_idx)
         sig_type_list = [pp[-1] for pp in public_pair_sig_type_list]
         hash160_list = [public_pair_to_hash160_sec(pp[0]) for pp in public_pair_sig_type_list]
-        address_list = [ui.address_for_hash160(h160) for h160 in hash160_list]
+        address_list = [ui.address_for_p2pkh(h160) for h160 in hash160_list]
         return list(zip(address_list, sig_type_list))

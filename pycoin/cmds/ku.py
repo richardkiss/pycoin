@@ -139,7 +139,7 @@ def create_hash160_output(key, network, add_output, output_dict):
     if hash160_c and hash160_u:
         add_output("hash160_uncompressed", b2h(hash160_u), " uncompressed")
 
-    address = ui_context.address_for_hash160(hash160 or hash160_c)
+    address = ui_context.address_for_p2pkh(hash160 or hash160_c)
     add_output("address", address, "%s address" % network_name)
     output_dict["%s_address" % network.code] = address
 
