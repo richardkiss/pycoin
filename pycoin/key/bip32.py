@@ -44,14 +44,10 @@ import hmac
 import logging
 import struct
 
-from ..ecdsa.secp256k1 import secp256k1_generator
-
 from ..encoding import public_pair_to_sec, from_bytes_32, to_bytes_32
 
 logger = logging.getLogger(__name__)
 
-INFINITY = secp256k1_generator.infinity()
-ORDER = secp256k1_generator.order()
 
 _SUBKEY_VALIDATION_LOG_ERR_FMT = """
 BUY A LOTTO TICKET RIGHT NOW! (And consider giving up your wallet to
@@ -76,10 +72,12 @@ class DerivationError(ValueError):
 
 
 def subkey_secret_exponent_chain_code_pair(
-        secret_exponent, chain_code_bytes, i, is_hardened, public_pair=None):
+        generator, secret_exponent, chain_code_bytes, i, is_hardened, public_pair=None):
     """
     Yield info for a child node for this node.
 
+    generator:
+        the ecdsa generator
     secret_exponent:
         base secret exponent
     chain_code:
@@ -94,13 +92,14 @@ def subkey_secret_exponent_chain_code_pair(
 
     Returns a pair (new_secret_exponent, new_chain_code)
     """
+    ORDER = generator.order()
     i_as_bytes = struct.pack(">L", i)
 
     if is_hardened:
         data = b'\0' + to_bytes_32(secret_exponent) + i_as_bytes
     else:
         if public_pair is None:
-            public_pair = secret_exponent * secp256k1_generator
+            public_pair = secret_exponent * generator
         sec = public_pair_to_sec(public_pair, compressed=True)
         data = sec + i_as_bytes
 
@@ -119,10 +118,12 @@ def subkey_secret_exponent_chain_code_pair(
     return new_secret_exponent, new_chain_code
 
 
-def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
+def subkey_public_pair_chain_code_pair(generator, public_pair, chain_code_bytes, i):
     """
     Yield info for a child node for this node.
 
+    generator:
+        the ecdsa generator
     public_pair:
         base public pair
     chain_code:
@@ -132,6 +133,8 @@ def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
 
     Returns a pair (new_public_pair, new_chain_code)
     """
+    INFINITY = generator.infinity()
+    ORDER = generator.order()
     i_as_bytes = struct.pack(">l", i)
     sec = public_pair_to_sec(public_pair, compressed=True)
     data = sec + i_as_bytes
@@ -142,7 +145,7 @@ def subkey_public_pair_chain_code_pair(public_pair, chain_code_bytes, i):
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
         raise DerivationError('I_L >= {}'.format(ORDER))
 
-    the_point = I_left_as_exponent * secp256k1_generator + secp256k1_generator.Point(*public_pair)
+    the_point = I_left_as_exponent * generator + generator.Point(*public_pair)
     if the_point == INFINITY:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
         raise DerivationError('K_{} == {}'.format(i, the_point))

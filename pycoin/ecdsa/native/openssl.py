@@ -5,6 +5,10 @@ import platform
 from .bignum import bignum_type_for_library
 
 
+NID_X9_62_prime256v1 = 415
+NID_secp256k1 = 714
+
+
 class BignumContext(ctypes.Structure):
     pass
 
@@ -68,44 +72,8 @@ def load_library():
 OpenSSL = load_library()
 
 
+def create_OpenSSLOptimizations(curve_id):
 
-class Optimizations:
-
-    if OpenSSL:
-        openssl_group = OpenSSL.EC_GROUP_new_by_curve_name(714)
-
-    def multiply(self, p, e):
-        "Use OpenSSL to perform point mulitiplication."
-        if e == 0 or p == self._infinity:
-            return self._infinity
-
-        bn_x = OpenSSL.BignumType(p[0])
-        bn_y = OpenSSL.BignumType(p[1])
-        bn_n = OpenSSL.BignumType(e)
-
-        ctx = OpenSSL.BN_CTX_new()
-        ec_result = OpenSSL.EC_POINT_new(self.openssl_group)
-        ec_point = OpenSSL.EC_POINT_new(self.openssl_group)
-
-        OpenSSL.EC_POINT_set_affine_coordinates_GFp(self.openssl_group, ec_point, bn_x, bn_y, ctx)
-
-        OpenSSL.EC_POINT_mul(self.openssl_group, ec_result, None, ec_point, bn_n, ctx)
-
-        OpenSSL.EC_POINT_get_affine_coordinates_GFp(self.openssl_group, ec_result, bn_x, bn_y, ctx)
-        OpenSSL.EC_POINT_free(ec_point)
-        OpenSSL.EC_POINT_free(ec_result)
-        OpenSSL.BN_CTX_free(ctx)
-        return self.Point(bn_x.to_int(), bn_y.to_int())
-
-    def inverse_mod(self, a, p):
-        ctx = OpenSSL.BN_CTX_new()
-        a1 = OpenSSL.BignumType(a)
-        OpenSSL.BN_mod_inverse(a1, a1, OpenSSL.BignumType(p), ctx)
-        OpenSSL.BN_CTX_free(ctx)
-        return a1.to_int()
-
-
-def create_OpenSSLOptimizations():
     class noop:
         pass
 
@@ -116,7 +84,39 @@ def create_OpenSSLOptimizations():
     if not OpenSSL:
         return noop
 
+    class Optimizations:
+
+        if OpenSSL:
+            openssl_group = OpenSSL.EC_GROUP_new_by_curve_name(curve_id)
+
+        def multiply(self, p, e):
+            "Use OpenSSL to perform point mulitiplication."
+            if e == 0 or p == self._infinity:
+                return self._infinity
+
+            bn_x = OpenSSL.BignumType(p[0])
+            bn_y = OpenSSL.BignumType(p[1])
+            bn_n = OpenSSL.BignumType(e)
+
+            ctx = OpenSSL.BN_CTX_new()
+            ec_result = OpenSSL.EC_POINT_new(self.openssl_group)
+            ec_point = OpenSSL.EC_POINT_new(self.openssl_group)
+
+            OpenSSL.EC_POINT_set_affine_coordinates_GFp(self.openssl_group, ec_point, bn_x, bn_y, ctx)
+
+            OpenSSL.EC_POINT_mul(self.openssl_group, ec_result, None, ec_point, bn_n, ctx)
+
+            OpenSSL.EC_POINT_get_affine_coordinates_GFp(self.openssl_group, ec_result, bn_x, bn_y, ctx)
+            OpenSSL.EC_POINT_free(ec_point)
+            OpenSSL.EC_POINT_free(ec_result)
+            OpenSSL.BN_CTX_free(ctx)
+            return self.Point(bn_x.to_int(), bn_y.to_int())
+
+        def inverse_mod(self, a, p):
+            ctx = OpenSSL.BN_CTX_new()
+            a1 = OpenSSL.BignumType(a)
+            OpenSSL.BN_mod_inverse(a1, a1, OpenSSL.BignumType(p), ctx)
+            OpenSSL.BN_CTX_free(ctx)
+            return a1.to_int()
+
     return Optimizations
-
-
-OpenSSLOptimizations = create_OpenSSLOptimizations()

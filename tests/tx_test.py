@@ -1,6 +1,7 @@
 import binascii
 import unittest
 
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.serialize import b2h, h2b_rev
 from pycoin.tx.Tx import Tx
 
@@ -15,14 +16,18 @@ TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX = (
     "0b5ce889ac8700000000")
 
 
+address_for_script = BitcoinMainnet.ui.address_for_script
+
 class TxTest(unittest.TestCase):
 
     def test_tx_api(self):
         tx = Tx.from_hex(TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX)
         # this transaction is a pay-to-hash transaction
         self.assertEqual(tx.id(), "e1a18b843fc420734deeb68ff6df041a2585e1a0d7dbf3b82aab98291a6d9952")
-        self.assertEqual(tx.txs_out[0].bitcoin_address(), "19LemzJ3XPdUxp113uynqCAivDbXZBdBy3")
-        self.assertEqual(tx.txs_out[1].bitcoin_address(), "3KmkA7hvqG2wKkWUGz1BySioUywvcmdPLR")
+        address = address_for_script(tx.txs_out[0].puzzle_script())
+        self.assertEqual(address, "19LemzJ3XPdUxp113uynqCAivDbXZBdBy3")
+        address = address_for_script(tx.txs_out[1].puzzle_script())
+        self.assertEqual(address, "3KmkA7hvqG2wKkWUGz1BySioUywvcmdPLR")
 
     def test_blanked_hash(self):
         tx = Tx.from_hex(TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX)

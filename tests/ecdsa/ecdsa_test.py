@@ -82,9 +82,10 @@ class ECDSATestCase(unittest.TestCase):
                 signature = secp256k1_generator.sign(secret_exponent, v)
                 r = secp256k1_generator.verify(public_point, v, signature)
                 assert r is True
-                r = secp256k1_generator.verify(public_point, v, (signature[0], secp256k1_generator.order() - signature[1]))
+                inv_sig = (signature[0], secp256k1_generator.order() - signature[1])
+                r = secp256k1_generator.verify(public_point, v, inv_sig)
                 assert r is True
-                signature = signature[0],signature[1]+1
+                signature = signature[0], signature[1]+1
                 r = secp256k1_generator.verify(public_point, v, signature)
                 assert r is False
 
@@ -97,7 +98,10 @@ class ECDSATestCase(unittest.TestCase):
     def test_custom_k(self):
         secret_exponent = 1
         sig_hash = 1
-        gen_k = lambda *args: 1
+
+        def gen_k(*args):
+            return 1
+
         signature = secp256k1_generator.sign(secret_exponent, sig_hash, gen_k)
         self.assertEqual(signature, (
             55066263022277343669578718895168534326250603453777594175500187360389116729240,

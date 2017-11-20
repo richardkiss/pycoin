@@ -46,8 +46,6 @@ import struct
 
 from ..encoding import a2b_hashed_base58, b2a_hashed_base58, from_bytes_32, to_bytes_32
 from ..encoding import sec_to_public_pair, public_pair_to_hash160_sec, EncodingError
-from ..networks import prv32_prefix_for_netcode, pub32_prefix_for_netcode
-from .validate import netcode_and_type_for_data
 from .Key import Key
 from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
 
@@ -61,50 +59,23 @@ class BIP32Node(Key):
     This is a deterministic wallet that complies with BIP0032
     https://en.bitcoin.it/wiki/BIP_0032
     """
+
     @classmethod
-    def from_master_secret(class_, master_secret, netcode='BTC'):
+    def from_master_secret(class_, generator, master_secret):
         """Generate a Wallet from a master password."""
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
-        return class_(netcode=netcode, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
+        return class_(generator=generator, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
 
-    @classmethod
-    def from_hwif(class_, b58_str, allow_subkey_suffix=True):
-        """Generate a Wallet from a base58 string in a standard way."""
-        # TODO: support subkey suffixes
-
-        data = a2b_hashed_base58(b58_str)
-        netcode, key_type, length = netcode_and_type_for_data(data)
-
-        if key_type not in ("pub32", "prv32"):
-            raise EncodingError("bad wallet key header")
-
-        is_private = (key_type == 'prv32')
-        parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
-
-        d = dict(netcode=netcode, chain_code=data[13:45], depth=ord(data[4:5]),
-                 parent_fingerprint=parent_fingerprint, child_index=child_index)
-
-        if is_private:
-            if data[45:46] != b'\0':
-                raise EncodingError("private key encoded wrong")
-            d["secret_exponent"] = from_bytes_32(data[46:])
-        else:
-            d["public_pair"] = sec_to_public_pair(data[45:])
-
-        return class_(**d)
-
-    from_wallet_key = from_hwif
-
-    def __init__(self, netcode, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0',
-                 child_index=0, secret_exponent=None, public_pair=None):
+    def __init__(self, generator, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0', child_index=0,
+                 secret_exponent=None, public_pair=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
 
         if [secret_exponent, public_pair].count(None) != 1:
             raise ValueError("must include exactly one of public_pair and secret_exponent")
 
         super(BIP32Node, self).__init__(
-            secret_exponent=secret_exponent, public_pair=public_pair, prefer_uncompressed=False,
-            is_compressed=True, is_pay_to_script=False, netcode=netcode)
+            secret_exponent=secret_exponent, generator=generator, public_pair=public_pair,
+            prefer_uncompressed=False, is_compressed=True, is_pay_to_script=False)
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)
@@ -113,7 +84,6 @@ class BIP32Node(Key):
             raise TypeError("chain code must be bytes")
         if len(chain_code) != 32:
             raise ValueError("chain code wrong length")
-        self._netcode = netcode
         self._chain_code = chain_code
         self._depth = depth
         if len(parent_fingerprint) != 4:
@@ -135,18 +105,19 @@ class BIP32Node(Key):
     def child_index(self):
         return self._child_index
 
-    def serialize(self, as_private=None):
+    def serialize(self, as_private=None, ui_context=None):
         """Yield a 78-byte binary blob corresponding to this node."""
         if as_private is None:
             as_private = self.secret_exponent() is not None
         if self.secret_exponent() is None and as_private:
             raise PublicPrivateMismatchError("public key has no private parts")
 
+        ui_context = self._ui_context(ui_context)
         ba = bytearray()
         if as_private:
-            ba.extend(prv32_prefix_for_netcode(self._netcode))
+            ba.extend(ui_context.bip32_private_prefix())
         else:
-            ba.extend(pub32_prefix_for_netcode(self._netcode))
+            ba.extend(ui_context.bip32_public_prefix())
         ba.extend([self._depth])
         ba.extend(self._parent_fingerprint + struct.pack(">L", self._child_index) + self._chain_code)
         if as_private:
@@ -158,18 +129,19 @@ class BIP32Node(Key):
     def fingerprint(self):
         return public_pair_to_hash160_sec(self.public_pair(), compressed=True)[:4]
 
-    def hwif(self, as_private=False):
+    def hwif(self, as_private=False, ui_context=None):
         """Yield a 111-byte string corresponding to this node."""
-        return b2a_hashed_base58(self.serialize(as_private=as_private))
+        return b2a_hashed_base58(self.serialize(as_private=as_private, ui_context=ui_context))
 
     as_text = hwif
     wallet_key = hwif
 
     def public_copy(self):
         """Yield the corresponding public node for this node."""
-        return self.__class__(netcode=self._netcode, chain_code=self._chain_code,
-                              depth=self._depth, parent_fingerprint=self._parent_fingerprint,
-                              child_index=self._child_index, public_pair=self.public_pair())
+        d = dict(generator=self._generator, chain_code=self._chain_code,
+                 depth=self._depth, parent_fingerprint=self._parent_fingerprint,
+                 child_index=self._child_index, public_pair=self.public_pair())
+        return self.__class__(**d)
 
     def _subkey(self, i, is_hardened, as_private):
         if i < 0:
@@ -180,18 +152,18 @@ class BIP32Node(Key):
         if is_hardened:
             i |= 0x80000000
 
-        d = dict(netcode=self._netcode, depth=self._depth+1,
-                 parent_fingerprint=self.fingerprint(), child_index=i)
+        d = dict(depth=self._depth+1, parent_fingerprint=self.fingerprint(), child_index=i)
 
         if self.secret_exponent() is None:
             if is_hardened:
                 raise PublicPrivateMismatchError("can't derive a private key from a public key")
             d["public_pair"], chain_code = subkey_public_pair_chain_code_pair(
-                self.public_pair(), self._chain_code, i)
+                self._generator, self.public_pair(), self._chain_code, i)
         else:
             d["secret_exponent"], chain_code = subkey_secret_exponent_chain_code_pair(
-                self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
+                self._generator, self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
         d["chain_code"] = chain_code
+        d["generator"] = self._generator
         key = self.__class__(**d)
         if not as_private:
             key = key.public_copy()

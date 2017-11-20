@@ -1,12 +1,10 @@
 
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
+
 from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
 
-from .Spendable import Spendable
-from .Tx import Tx
-from .TxOut import TxOut
-from .pay_to import build_hash160_lookup
-from ..ui import standard_tx_out_script
+from ..solve.utils import build_hash160_lookup
 
 
 class SecretExponentMissing(Exception):
@@ -20,9 +18,10 @@ class LazySecretExponentDB(object):
     and caches the results to optimize for the case of a large number
     of secret exponents.
     """
-    def __init__(self, wif_iterable, secret_exponent_db_cache, netcode='BTC'):
+    def __init__(self, wif_iterable, secret_exponent_db_cache, generators, netcode='BTC'):
         self.wif_iterable = iter(wif_iterable)
         self.secret_exponent_db_cache = secret_exponent_db_cache
+        self._generators = generators
         self.netcode = netcode
 
     def get(self, v):
@@ -30,7 +29,7 @@ class LazySecretExponentDB(object):
             return self.secret_exponent_db_cache[v]
         for wif in self.wif_iterable:
             secret_exponent = wif_to_secret_exponent(wif)
-            d = build_hash160_lookup([secret_exponent])
+            d = build_hash160_lookup([secret_exponent], self._generators)
             self.secret_exponent_db_cache.update(d)
             if v in self.secret_exponent_db_cache:
                 return self.secret_exponent_db_cache[v]
@@ -38,53 +37,47 @@ class LazySecretExponentDB(object):
         return None
 
 
-def create_tx(spendables, payables, fee="standard", lock_time=0, version=1):
+def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, network=BitcoinMainnet):
     """
     This function provides the easiest way to create an unsigned transaction.
 
     All coin values are in satoshis.
 
-    spendables:
-        a list of Spendable objects, which act as inputs. These can
-        be either a Spendable or a Spendable.as_text or a Spendable.as_dict
-        if you prefer a non-object-based input (which might be easier for
+    :param spendables: a list of Spendable objects, which act as inputs.
+        Each item in the list can be a Spendable, or text from Spendable.as_text,
+        or a dictionary from Spendable.as_dict (which might be easier for
         airgapped transactions, for example).
-    payables:
-        a list where each entry is a bitcoin address, or a tuple of
+    :param payables: a list where each entry is a bitcoin address, or a tuple of
         (bitcoin address, coin_value). If the coin_value is missing or
         zero, this address is thrown into the "split pool". Funds not
         explicitly claimed by the fee or a bitcoin address are shared as
-        equally as possible among the split pool. [Minor point: if the
-        amount to be split does not divide evenly, some of the earlier
-        bitcoin addresses will get an extra satoshi.]
-    fee:
-        a value, or "standard" for it to be calculated.
-    version:
-        the version to use in the transaction. Normally 1.
-    lock_time:
-        the lock_time to use in the transaction. Normally 0.
+        equally as possible among the split pool. All coins are consumed:
+        if the amount to be split does not divide evenly, some of the earlier
+        bitcoin addresses will get an extra satoshi.
+    :param fee: an integer, or the (deprecated) string "standard" for it to be calculated
+    :param version: (optional) the version to use in the transaction. Defaults to 1.
+    :param lock_time: (optional) the lock_time to use in the transaction. Defaults to 0.
+    :return: :class:`Tx <Tx>` object, with unspents populated
+    :rtype: pycoin.tx.Tx.Tx
 
-    Returns the unsigned Tx transaction. Note that unspents are set, so the
-    transaction can be immediately signed.
+    Usage::
 
-    Example:
-
-    tx = create_tx(
-        spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH"),
-        ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"],
-        fee=0)
+        >>> spendables = spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
+        >>> tx = create_tx(spendables, ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"], fee=0)
 
     This will move all available reported funds from 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
     to 1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP, with no transaction fees (which means it might
     take a while to confirm, possibly never).
     """
 
+    Tx = network.tx
+
     def _fix_spendable(s):
-        if isinstance(s, Spendable):
+        if isinstance(s, Tx.Spendable):
             return s
         if not hasattr(s, "keys"):
-            return Spendable.from_text(s)
-        return Spendable.from_dict(s)
+            return Tx.Spendable.from_text(s)
+        return Tx.Spendable.from_dict(s)
 
     spendables = [_fix_spendable(s) for s in spendables]
     txs_in = [spendable.tx_in() for spendable in spendables]
@@ -96,8 +89,8 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1):
         else:
             bitcoin_address = payable
             coin_value = 0
-        script = standard_tx_out_script(bitcoin_address)
-        txs_out.append(TxOut(coin_value, script))
+        script = network.ui.script_for_address(bitcoin_address)
+        txs_out.append(Tx.TxOut(coin_value, script))
 
     tx = Tx(version=version, txs_in=txs_in, txs_out=txs_out, lock_time=lock_time)
     tx.set_unspents(spendables)
@@ -116,16 +109,15 @@ def split_with_remainder(total_amount, split_count):
 
 def distribute_from_split_pool(tx, fee):
     """
+    :param tx: a transaction
+    :param fee: integer, satoshi value to set aside for transaction fee
+
     This function looks at TxOut items of a transaction tx and
     and puts TxOut items with a coin value of zero into a "split pool".
     Funds not explicitly claimed by the fee or other TxOut items are
     shared as equally as possible among the split pool. If the amount
     to be split does not divide evenly, some of the earlier TxOut items
-    will get an extra satoshi.
-    tx:
-        the transaction
-    fee:
-        the reserved fee set aside
+    will get an extra satoshi. This function modifies `tx` in place.
     """
 
     # calculate fees
@@ -152,64 +144,53 @@ def distribute_from_split_pool(tx, fee):
 
 def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
     """
-    This function provides an convenience method to sign a transaction.
-
-    The transaction must have "unspents" set by, for example,
-    calling tx.unspents_from_db.
-
-    wifs:
-        the list of WIFs required to sign this transaction.
-    secret_exponent_db:
-        an optional dictionary (or any object with a .get method) that contains
-        a bitcoin address => (secret_exponent, public_pair, is_compressed)
-        tuple. This will be built automatically lazily with the list of WIFs.
+    :param tx: a transaction
+    :param wifs: the list of WIFs required to sign this transaction.
+    :param secret_exponent_db: (optional) a dictionary (or any object with a .get method) that contains
+        a bitcoin address => (secret_exponent, public_pair, is_compressed) tuple lookup.
+        This will be built automatically lazily with the list of WIFs.
         You can pass in an empty dictionary and as WIFs are processed, they
         will be cached here. If you have multiple transactions to sign, each with
         the same WIF list, passing a cache dictionary in may speed things up a bit.
+    :return: :class:`Tx <Tx>` object, modified in place
+
+    This is a convenience function used to sign a transaction.
+    The transaction must have "unspents" set by, for example, calling tx.unspents_from_db.
 
     Returns the signed Tx transaction, or raises an exception.
 
     At least one of "wifs" and "secret_exponent_db" must be included for there
     to be any hope of signing the transaction.
 
-    Example:
+    Usage::
 
-    sign_tx(wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
+        >> sign_tx(tx, wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
     secret_exponent_db = secret_exponent_db or {}
-    tx.sign(LazySecretExponentDB(wifs, secret_exponent_db, netcode), **kwargs)
+    solver = tx.Solver(tx)
+    solver.sign(LazySecretExponentDB(wifs, secret_exponent_db, tx.SolutionChecker.generators, netcode), **kwargs)
 
 
 def create_signed_tx(spendables, payables, wifs=[], fee="standard",
                      lock_time=0, version=1, secret_exponent_db={},
-                     netcode='BTC', **kwargs):
+                     netcode='BTC', network=BitcoinMainnet, **kwargs):
     """
-    This function provides an easy way to create and sign a transaction.
+    This convenience function calls :func:`create_tx` and :func:`sign_tx` in turn. Read the documentation
+    for those functions for information on the parameters.
 
-    All coin values are in satoshis.
+    Usage::
 
-    spendables, payables, fee, lock_time, version are as in create_tx, above.
-    wifs, secret_exponent_db are as in sign_tx, above.
-
-    Returns the signed Tx transaction, or raises an exception.
-
-    At least one of "wifs" and "secret_exponent_db" must be included for there
-    to be any hope of signing the transaction.
-
-    Example:
-
-    tx = create_signed_tx(
-        spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH"),
-        ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"],
-        wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"],
-        fee=0)
+        >>> spendables = spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
+        >>> wifs = ["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"]
+        >>> payables = ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"]
+        >>> tx = create_signed_tx(spendables, payables, wifs=wifs, fee=0)
 
     This will move all available reported funds from 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
     to 1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP, with no transaction fees (which means it might
     take a while to confirm, possibly never).
     """
 
-    tx = create_tx(spendables, payables, fee=fee, lock_time=lock_time, version=version)
+    tx = create_tx(spendables, payables, fee=fee, lock_time=lock_time, version=version, network=network)
     sign_tx(tx, wifs=wifs, secret_exponent_db=secret_exponent_db,
             netcode=netcode, **kwargs)
     for idx, tx_out in enumerate(tx.txs_in):

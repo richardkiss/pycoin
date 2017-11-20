@@ -21,6 +21,8 @@ Contents:
    :maxdepth: 2
 
    getting-started
+   bitcoin
+   overview
    source/recipes
    source/pycoin
    source/tests

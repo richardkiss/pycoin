@@ -1,36 +1,41 @@
 import unittest
 
-from pycoin.key import Key
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.serialize import h2b
+from pycoin.ui.key_from_text import key_from_text
+
+
+# BRAIN DAMAGE
+Key = BitcoinMainnet.ui._keyparser._key_class
 
 
 class KeyTest(unittest.TestCase):
 
     def test_sign_verify(self):
-        private_key = Key(secret_exponent=1)
+        private_key = Key(secret_exponent=1, generator=secp256k1_generator)
         h = b"\x00" * 32
         sig = private_key.sign(h)
         self.assertTrue(private_key.verify(h, sig))
         public_key = private_key.public_copy()
-        self.assertTrue(public_key.verify(h, sig))
+        self.assertTrue(public_key.verify(h, sig, generator=secp256k1_generator))
         h160_key = Key(hash160=private_key.hash160())
-        self.assertTrue(h160_key.verify(h, sig))
+        self.assertTrue(h160_key.verify(h, sig, generator=secp256k1_generator))
 
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
-
             secret_exponent = int(exp_hex, 16)
             sec = h2b(public_pair_sec)
             c_sec = h2b(c_public_pair_sec)
 
             keys_wif = [
-                Key(secret_exponent=secret_exponent),
-                Key.from_text(wif),
-                Key.from_text(c_wif),
+                Key(secret_exponent=secret_exponent, generator=secp256k1_generator),
+                key_from_text(wif, generator=secp256k1_generator),
+                key_from_text(c_wif, generator=secp256k1_generator),
             ]
 
-            key_sec = Key.from_sec(sec)
-            key_sec_c = Key.from_sec(c_sec)
+            key_sec = Key.from_sec(sec, secp256k1_generator)
+            key_sec_c = Key.from_sec(c_sec, secp256k1_generator)
             keys_sec = [key_sec, key_sec_c]
 
             for key in keys_wif:
@@ -58,16 +63,11 @@ class KeyTest(unittest.TestCase):
                 self.assertEqual(key.address(use_uncompressed=False), c_address_b58)
                 self.assertEqual(key.address(use_uncompressed=True), address_b58)
 
-            key_pub = Key.from_text(address_b58, is_compressed=False)
-            key_pub_c = Key.from_text(c_address_b58, is_compressed=True)
+            key_pub = key_from_text(address_b58)
 
             self.assertEqual(key_pub.address(), address_b58)
-            self.assertEqual(key_pub.address(use_uncompressed=True), address_b58)
+            self.assertEqual(key_pub.address(use_uncompressed=True), None)
             self.assertEqual(key_pub.address(use_uncompressed=False), None)
-
-            self.assertEqual(key_pub_c.address(), c_address_b58)
-            self.assertEqual(key_pub_c.address(use_uncompressed=True), None)
-            self.assertEqual(key_pub_c.address(use_uncompressed=False), c_address_b58)
 
         do_test("1111111111111111111111111111111111111111111111111111111111111111",
                 "5HwoXVkHoRM8sL2KmNRS217n1g8mPPBomrY7yehCuXC1115WWsh",

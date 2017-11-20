@@ -35,13 +35,13 @@ class BuildTxTest(unittest.TestCase):
 
             public_pair = secret_exponent * secp256k1_generator
 
-            pk_public_pair = sec_to_public_pair(sec)
+            pk_public_pair = sec_to_public_pair(sec, secp256k1_generator)
             compressed = is_sec_compressed(sec)
             self.assertEqual(pk_public_pair, public_pair)
             self.assertFalse(is_sec_compressed(sec))
             self.assertEqual(public_pair_to_sec(pk_public_pair, compressed=False), sec)
 
-            pk_public_pair = sec_to_public_pair(c_sec)
+            pk_public_pair = sec_to_public_pair(c_sec, secp256k1_generator)
             compressed = is_sec_compressed(c_sec)
             self.assertEqual(pk_public_pair, public_pair)
             self.assertTrue(compressed)
