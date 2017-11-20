@@ -22,7 +22,7 @@ address_for_p2s = BitcoinMainnet.ui.address_for_p2s
 script_for_address = BitcoinMainnet.ui.script_for_address
 script_info_for_script = BitcoinMainnet.ui._puzzle_scripts.info_for_script
 
-Key = BitcoinMainnet.ui._key_class
+Key = BitcoinMainnet.extras.Key
 
 
 def const_f(v):

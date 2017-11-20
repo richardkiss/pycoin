@@ -96,12 +96,12 @@ class UI(object):
         return self.address_for_p2sh(encoding.hash160(script))
 
     def address_for_p2pkh_wit(self, hash160):
-        if self._bech32_hrp:
+        if self._bech32_hrp and len(hash160) == 20:
             return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(hash160))
         return "???"
 
     def address_for_p2sh_wit(self, hash256):
-        if self._bech32_hrp:
+        if self._bech32_hrp and len(hash256) == 32:
             return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(hash256))
         return "???"
 

@@ -6,9 +6,10 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 # BRAIN DAMAGE
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 
-Key = BitcoinMainnet.ui._key_class
+Key = BitcoinMainnet.extras.Key
 message_signer = MessageSigner(BitcoinMainnet.network_name, BitcoinMainnet.ui, secp256k1_generator)
 XTN_message_signer = MessageSigner(BitcoinTestnet.network_name, BitcoinTestnet.ui, secp256k1_generator)
+
 
 def test_against_myself():
     """

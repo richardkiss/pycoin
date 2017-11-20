@@ -1,6 +1,5 @@
 import unittest
 
-from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.pay_to import script_for_multisig
@@ -14,7 +13,7 @@ from pycoin.tx.TxOut import TxOut
 
 
 # BRAIN DAMAGE
-who_signed = WhoSigned(BitcoinScriptTools)
+who_signed_tx = BitcoinMainnet.extras.who_signed_tx
 UI = BitcoinMainnet.ui
 address_for_p2s = UI.address_for_p2s
 script_for_address = UI.script_for_address
@@ -36,7 +35,7 @@ class WhoSignedTest(unittest.TestCase):
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_signature_count(), 0)
-        self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0, UI)),
+        self.assertEqual(sorted(who_signed_tx(tx2, 0, UI)),
                          sorted(((key.address(), SIGHASH_ALL) for key in keys[:M])))
 
     def test_create_multisig_1_of_2(self):
@@ -68,7 +67,7 @@ class WhoSignedTest(unittest.TestCase):
             hash160_lookup = build_hash160_lookup([keys[i-1].secret_exponent()], [secp256k1_generator])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
-            t1 = sorted(who_signed.who_signed_tx(tx2, 0, UI))
+            t1 = sorted(who_signed_tx(tx2, 0, UI))
             t2 = sorted(((key.address(), SIGHASH_ALL) for key in keys[:i]))
             self.assertEqual(t1, t2)
         self.assertEqual(tx2.bad_signature_count(), 0)
@@ -88,7 +87,7 @@ class WhoSignedTest(unittest.TestCase):
         p2sh_lookup = build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_signature_count(), 0)
-        self.assertEqual(sorted(who_signed.who_signed_tx(tx2, 0, UI)),
+        self.assertEqual(sorted(who_signed_tx(tx2, 0, UI)),
                          sorted(((key.address(), SIGHASH_ALL) for key in keys[:M])))
 
 

@@ -1,5 +1,6 @@
 import unittest
 
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import TxContext
 from pycoin.coins.bitcoin.VM import BitcoinVM
@@ -10,18 +11,17 @@ from pycoin.serialize import h2b
 from pycoin.intbytes import int2byte
 
 # BRAIN DAMAGE
-bin_script = BitcoinScriptTools.compile_push_data_list
-compile = BitcoinScriptTools.compile
-disassemble = BitcoinScriptTools.disassemble
-int_to_script_bytes = BitcoinScriptTools.intStreamer.int_to_script_bytes
+compile_push_data_list = BitcoinMainnet.extras.ScriptTools.compile_push_data_list
+compile = BitcoinMainnet.extras.ScriptTools.compile
+disassemble = BitcoinMainnet.extras.ScriptTools.disassemble
 
 
 class ToolsTest(unittest.TestCase):
 
-    def test_bin_script(self):
+    def test_compile_push_data_list(self):
 
         def test_bytes(as_bytes):
-            script = bin_script([as_bytes])
+            script = compile_push_data_list([as_bytes])
             # this is a pretty horrible hack to test the vm with long scripts. But it works
             tx_context = TxContext()
             tx_context.signature_for_hash_type_f = None
@@ -35,7 +35,7 @@ class ToolsTest(unittest.TestCase):
             assert stack[0] == as_bytes
 
         def test_val(n):
-            as_bytes = int_to_script_bytes(n)
+            as_bytes = IntStreamer.int_to_script_bytes(n)
             test_bytes(as_bytes)
 
         for i in range(100):
