@@ -33,7 +33,6 @@ BUILT_IN_NETWORKS = [
 ]
 
 
-
 def _transform_NetworkValues_to_Network(nv):
     from pycoin.ecdsa.secp256k1 import secp256k1_generator
     from pycoin.ui.uiclass import UI

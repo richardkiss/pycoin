@@ -34,7 +34,7 @@ class ScriptInfo(object):
         # BRAIN DAMAGE
         return self._scriptTools.compile("OP_RETURN [%s]" % b2h(data))
 
-    ## BRAIN DAMAGE: the stuff above is redundant
+    # BRAIN DAMAGE: the stuff above is redundant
 
     def script_for_p2s(self, underlying_script):
         return self.script_for_p2sh(encoding.hash160(underlying_script))
@@ -137,8 +137,8 @@ class ScriptInfo(object):
             if pc >= len(script):
                 return None
             opcode, data, pc = scriptStreamer.get_opcode(script, pc)
-            l = len(data) if data else 0
-            if l < 33 or l > 120:
+            size = len(data) if data else 0
+            if size < 33 or size > 120:
                 break
             sec_keys.append(data)
         n = opcode + (1 - OP_1)

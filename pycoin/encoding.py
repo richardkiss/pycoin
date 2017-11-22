@@ -90,16 +90,16 @@ def from_long(v, prefix, base, charset):
     base: the new base
     charset: an array indicating what printable character to use for each value.
     """
-    l = bytearray()
+    ba = bytearray()
     while v > 0:
         try:
             v, mod = divmod(v, base)
-            l.append(charset(mod))
+            ba.append(charset(mod))
         except Exception:
             raise EncodingError("can't convert to character corresponding to %d" % mod)
-    l.extend([charset(0)] * prefix)
-    l.reverse()
-    return bytes(l)
+    ba.extend([charset(0)] * prefix)
+    ba.reverse()
+    return bytes(ba)
 
 
 if hasattr(int, "to_bytes"):

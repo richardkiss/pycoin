@@ -45,7 +45,6 @@ def metadata_for_text(text):
     return d
 
 
-
 def _parse_base58(parser, metadata):
     r = metadata.get("as_base58")
     if not r:
@@ -58,6 +57,7 @@ def _parse_base58(parser, metadata):
         if f:
             return f(data)
 
+
 def _parse_bech32(parser, metadata):
     r = metadata.get("as_bech32")
     if not r:
@@ -66,6 +66,7 @@ def _parse_bech32(parser, metadata):
     f = parser.bech32_prefixes().get(hrp)
     if f:
         return f(hrp, data)
+
 
 def _parse_as_colon(parser, metadata):
     r = metadata.get("as_colon")
@@ -76,8 +77,10 @@ def _parse_as_colon(parser, metadata):
     if f:
         return f(hrp, data)
 
+
 def _parse_as_text(parser, metadata):
     return parser.parse_as_text(metadata.get("as_text"))
+
 
 def parse_to_info(item, parsers, metadata=None):
     # TODO: simplify, and put the "type" field into info here
@@ -89,6 +92,7 @@ def parse_to_info(item, parsers, metadata=None):
             v = f(parser, metadata)
             if v:
                 return v
+
 
 def parse(item, parsers, metadata=None):
     info = parse_to_info(item, parsers, metadata=metadata)

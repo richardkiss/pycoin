@@ -8,7 +8,9 @@ import sys
 from pycoin import encoding
 from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.networks.registry import address_prefix_for_netcode, full_network_name_for_netcode, network_for_netcode, network_codes
+from pycoin.networks.registry import (
+    address_prefix_for_netcode, full_network_name_for_netcode, network_for_netcode, network_codes
+)
 from .ku import parse_key
 
 

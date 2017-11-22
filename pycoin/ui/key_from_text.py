@@ -1,4 +1,4 @@
-from pycoin.ui.uiclass import metadata_for_text
+from pycoin.ui.Parser import metadata_for_text
 
 
 def key_info_from_text(text, networks):

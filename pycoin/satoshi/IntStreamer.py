@@ -32,13 +32,13 @@ class IntStreamer(object):
         is_negative = (v < 0)
         if is_negative:
             v = -v
-        l = bytearray()
+        ba = bytearray()
         while v >= 256:
-            l.append(v & 0xff)
+            ba.append(v & 0xff)
             v >>= 8
-        l.append(v & 0xff)
-        if l[-1] >= 128:
-            l.append(0x80 if is_negative else 0)
+        ba.append(v & 0xff)
+        if ba[-1] >= 128:
+            ba.append(0x80 if is_negative else 0)
         elif is_negative:
-            l[-1] |= 0x80
-        return bytes(l)
+            ba[-1] |= 0x80
+        return bytes(ba)

@@ -8,13 +8,13 @@ class AddressParser(Parser):
 
     def __init__(self, pay_to, address_prefix, pay_to_script_prefix, bech32_hrp):
         self._pay_to = pay_to
-        l = []
+        prefixes = []
         if address_prefix:
-            l.append((address_prefix, self.info_for_p2pkh))
+            prefixes.append((address_prefix, self.info_for_p2pkh))
         if pay_to_script_prefix:
-            l.append((pay_to_script_prefix, self.info_for_p2sh))
+            prefixes.append((pay_to_script_prefix, self.info_for_p2sh))
 
-        self._base58_prefixes = make_base58_prefixes(l)
+        self._base58_prefixes = make_base58_prefixes(prefixes)
         if bech32_hrp:
             self._bech32_prefixes = {bech32_hrp: self.info_for_p2wit}
 

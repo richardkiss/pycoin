@@ -40,13 +40,12 @@ class MessageSigner(object):
         except ValueError:
             raise EncodingError("expecting text SIGNED MESSSAGE somewhere")
 
-        try:
-            # - sometimes middle sep is BEGIN BITCOIN SIGNATURE, other times just BEGIN SIGNATURE
-            # - choose the last instance, in case someone signs a signed message
-            parts = re.split('\n-----BEGIN [A-Z ]*SIGNATURE-----\n', body)
-            msg, hdr = ''.join(parts[:-1]), parts[-1]
-        except:
+        # - sometimes middle sep is BEGIN BITCOIN SIGNATURE, other times just BEGIN SIGNATURE
+        # - choose the last instance, in case someone signs a signed message
+        parts = re.split('\n-----BEGIN [A-Z ]*SIGNATURE-----\n', body)
+        if len(parts) < 2:
             raise EncodingError("expected BEGIN SIGNATURE line", body)
+        msg, hdr = ''.join(parts[:-1]), parts[-1]
 
         if dos_nl:
             msg = msg.replace('\n', '\r\n')
@@ -75,24 +74,24 @@ class MessageSigner(object):
 
         sig = hdr[-2]
         addr = None
-        for l in hdr:
-            l = l.strip()
-            if not l:
+        for line in hdr:
+            line = line.strip()
+            if not line:
                 continue
 
-            if l.startswith('-----END'):
+            if line.startswith('-----END'):
                 break
 
-            if ':' in l:
-                label, value = [i.strip() for i in l.split(':', 1)]
+            if ':' in line:
+                label, value = [i.strip() for i in line.split(':', 1)]
 
                 if label.lower() == 'address':
-                    addr = l.split(':')[1].strip()
+                    addr = line.split(':')[1].strip()
                     break
 
                 continue
 
-            addr = l
+            addr = line
             break
 
         if not addr or addr == sig:

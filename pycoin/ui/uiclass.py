@@ -1,11 +1,10 @@
-import binascii
 import hashlib
 
 from pycoin import encoding
-from pycoin.serialize import b2h, h2b
+from pycoin.serialize import b2h
 
 from pycoin.contrib import segwit_addr
-from pycoin.intbytes import int2byte, iterbytes
+from pycoin.intbytes import iterbytes
 from pycoin.key.Key import Key
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.electrum import ElectrumWallet
@@ -15,7 +14,7 @@ from pycoin.ui.BIP32Parser import BIP32Parser
 from pycoin.ui.ElectrumParser import ElectrumParser
 from pycoin.ui.AddressParser import AddressParser
 
-from .Parser import metadata_for_text, parse, parse_to_info
+from .Parser import parse, parse_to_info
 
 
 # PARTS:

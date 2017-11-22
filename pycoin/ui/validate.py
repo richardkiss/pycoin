@@ -1,4 +1,4 @@
-from pycoin.ui.uiclass import metadata_for_text
+from pycoin.ui.Parser import metadata_for_text
 
 DEFAULT_ADDRESS_TYPES = ["p2pkh", "p2sh"]
 

@@ -46,9 +46,11 @@ class BIP32Parser(Parser):
             return
         kwargs = dict(generator=self._generator, master_secret=bin_data)
         return dict(type="key", key_type="bip32", bip32_type="seeded", is_private=True, key_class=self._bip32node_class,
-                    seed_type="hex", kwargs=kwargs, create_f=lambda: self._bip32node_class.from_master_secret(**kwargs))
+                    seed_type="hex", create_f=lambda: self._bip32node_class.from_master_secret(**kwargs),
+                    kwargs=kwargs)
 
     def info_for_P(self, prefix, data):
         kwargs = dict(generator=self._generator, master_secret=data.encode("utf8"))
         return dict(type="key", key_type="bip32", bip32_type="seeded", is_private=True, key_class=self._bip32node_class,
-                    seed_type="text", kwargs=kwargs, create_f=lambda: self._bip32node_class.from_master_secret(**kwargs))
+                    seed_type="text", create_f=lambda: self._bip32node_class.from_master_secret(**kwargs),
+                    kwargs=kwargs)

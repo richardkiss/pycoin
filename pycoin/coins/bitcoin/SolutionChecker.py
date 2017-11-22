@@ -145,15 +145,15 @@ class BitcoinSolutionChecker(SolutionChecker):
             [witness_program]) + V0_len20_postfix
 
     def check_witness_program_v0(self, witness_solution_stack, witness_program, tx_context, flags):
-        l = len(witness_program)
-        if l == 32:
+        size = len(witness_program)
+        if size == 32:
             if len(witness_solution_stack) == 0:
                 raise ScriptError("witness program witness empty", errno.WITNESS_PROGRAM_WITNESS_EMPTY)
             puzzle_script = witness_solution_stack[-1]
             if sha256(puzzle_script).digest() != witness_program:
                 raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
             stack = list(witness_solution_stack[:-1])
-        elif l == 20:
+        elif size == 20:
             # special case for pay-to-pubkeyhash; signature + pubkey in witness
             if len(witness_solution_stack) != 2:
                 raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)

@@ -10,7 +10,6 @@ class KeyParser(Parser):
         self._key_class = key_class
         self._base58_prefixes = make_base58_prefixes([
             (wif_prefix, self.info_for_wif),
-            #(address_prefix, self.info_for_address),
         ])
 
     def info_for_wif(self, data):

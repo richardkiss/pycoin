@@ -8,7 +8,6 @@ import re
 import subprocess
 import sys
 
-from pycoin import encoding
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
@@ -16,7 +15,7 @@ from pycoin.ui.key_from_text import key_info_from_text
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import (
-    full_network_name_for_netcode, network_name_for_netcode, network_codes, network_for_netcode
+    full_network_name_for_netcode, network_codes, network_for_netcode
 )
 
 
@@ -130,7 +129,7 @@ def create_hash160_output(key, network, add_output, output_dict):
     hash160_c = key.hash160(use_uncompressed=False)
     hash160_u = key.hash160(use_uncompressed=True)
     hash160 = None
-    if hash160_c == None and hash160_u == None:
+    if hash160_c is None and hash160_u is None:
         hash160 = key.hash160()
 
     add_output("hash160", b2h(hash160 or hash160_c))

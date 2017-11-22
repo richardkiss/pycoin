@@ -85,11 +85,11 @@ def remove_integer(string, use_broken_open_ssl_mechanism=False):
     return v, rest
 
 
-def encode_length(l):
-    assert l >= 0
-    if l < 0x80:
-        return int2byte(l)
-    s = "%x" % l
+def encode_length(length):
+    assert length >= 0
+    if length < 0x80:
+        return int2byte(length)
+    s = "%x" % length
     if len(s) % 2:
         s = "0"+s
     s = binascii.unhexlify(s)
