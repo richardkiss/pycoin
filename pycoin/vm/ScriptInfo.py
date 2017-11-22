@@ -5,7 +5,7 @@ from pycoin import encoding
 from pycoin.serialize import b2h
 
 
-class PayTo(object):
+class ScriptInfo(object):
     def __init__(self, scriptTools):
         self._scriptTools = scriptTools
 

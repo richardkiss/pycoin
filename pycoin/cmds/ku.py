@@ -9,7 +9,6 @@ import subprocess
 import sys
 
 from pycoin import encoding
-from pycoin.coins.bitcoin.pay_to import script_for_p2pkh_wit
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
@@ -156,7 +155,7 @@ def create_hash160_output(key, network, add_output, output_dict):
             add_output("address_segwit", address_segwit, "%s segwit address" % network_name)
             output_dict["%s_address_segwit" % network.code] = address_segwit
 
-            p2sh_script = script_for_p2pkh_wit(hash160_c)
+            p2sh_script = network.ui._script_info.script_for_p2pkh_wit(hash160_c)
             p2s_address = network.ui.address_for_p2s(p2sh_script)
             if p2s_address:
                 add_output("p2sh_segwit", p2s_address)

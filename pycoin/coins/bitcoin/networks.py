@@ -9,14 +9,14 @@ from pycoin.block import Block as BitcoinBlock
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.networks.network import Network
 from pycoin.ui.uiclass import UI
-from pycoin.vm.PayTo import PayTo
+from pycoin.vm.ScriptInfo import ScriptInfo
 
 # BRAIN DAMAGE
-_puzzle_script = PayTo(BitcoinScriptTools)
+_script_info = ScriptInfo(BitcoinScriptTools)
 
 # BRAIN DAMAGE
 mainnet_ui = UI(
-    _puzzle_script, secp256k1_generator,
+    _script_info, secp256k1_generator,
     bip32_prv_prefix=h2b("0488ade4"), bip32_pub_prefix=h2b("0488B21E"),
     wif_prefix=h2b("80"), sec_prefix="BTCSEC:", address_prefix=h2b("00"),
     pay_to_script_prefix=h2b("05"), bech32_hrp='bc')
@@ -34,7 +34,7 @@ BitcoinMainnet = Network(
 )
 
 testnet_ui = UI(
-    _puzzle_script, secp256k1_generator,
+    _script_info, secp256k1_generator,
     bip32_prv_prefix=h2b("04358394"), bip32_pub_prefix=h2b("043587CF"),
     wif_prefix=h2b("ef"), sec_prefix="XTNSEC:", address_prefix=h2b("6f"),
     pay_to_script_prefix=h2b("c4"), bech32_hrp='tb')

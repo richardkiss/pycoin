@@ -18,11 +18,14 @@ from pycoin.ui.AddressParser import AddressParser
 from .Parser import metadata_for_text, parse, parse_to_info
 
 
+# PARTS:
+# - turn network elements (key, address) into text and back (Parser objects)
+
 
 class UI(object):
     def __init__(self, puzzle_scripts, generator, bip32_prv_prefix, bip32_pub_prefix,
                  wif_prefix, sec_prefix, address_prefix, pay_to_script_prefix, bech32_hrp=None):
-        self._puzzle_scripts = puzzle_scripts
+        self._script_info = puzzle_scripts
         self._key_class = Key.make_subclass(default_ui_context=self)
         self._electrum_class = ElectrumWallet.make_subclass(default_ui_context=self)
         self._bip32node_class = BIP32Node.make_subclass(default_ui_context=self)
@@ -54,7 +57,7 @@ class UI(object):
         return self._sec_prefix + b2h(blob)
 
     def address_for_script(self, script):
-        script_info = self._puzzle_scripts.info_for_script(script)
+        script_info = self._script_info.info_for_script(script)
         return self.address_for_script_info(script_info)
 
     def address_for_script_info(self, script_info):

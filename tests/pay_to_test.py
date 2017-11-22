@@ -12,15 +12,18 @@ from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.ui.key_from_text import key_from_text
-from pycoin.coins.bitcoin.pay_to import (
-    script_for_multisig, script_for_p2pkh, script_for_p2pk, script_for_nulldata, script_for_nulldata_push
-)
+
 
 # BRAIN DAMAGE
 address_for_script = BitcoinMainnet.ui.address_for_script
 address_for_p2s = BitcoinMainnet.ui.address_for_p2s
 script_for_address = BitcoinMainnet.ui.script_for_address
-script_info_for_script = BitcoinMainnet.ui._puzzle_scripts.info_for_script
+script_info_for_script = BitcoinMainnet.ui._script_info.info_for_script
+script_for_multisig = BitcoinMainnet.ui._script_info.script_for_multisig
+script_for_p2pkh = BitcoinMainnet.ui._script_info.script_for_p2pkh
+script_for_p2pk = BitcoinMainnet.ui._script_info.script_for_p2pk
+script_for_nulldata = BitcoinMainnet.ui._script_info.script_for_nulldata
+script_for_nulldata_push = BitcoinMainnet.ui._script_info.script_for_nulldata_push
 
 Key = BitcoinMainnet.extras.Key
 
