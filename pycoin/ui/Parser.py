@@ -82,10 +82,8 @@ def _parse_as_text(parser, metadata):
     return parser.parse_as_text(metadata.get("as_text"))
 
 
-def parse_to_info(item, parsers, metadata=None):
+def parse_to_info(metadata, parsers):
     # TODO: simplify, and put the "type" field into info here
-    if metadata is None:
-        metadata = metadata_for_text(item)
 
     for parser in parsers:
         for f in [_parse_base58, _parse_bech32, _parse_as_colon, _parse_as_text]:
@@ -95,7 +93,9 @@ def parse_to_info(item, parsers, metadata=None):
 
 
 def parse(item, parsers, metadata=None):
-    info = parse_to_info(item, parsers, metadata=metadata)
+    if metadata is None:
+        metadata = metadata_for_text(item)
+    info = parse_to_info(metadata, parsers)
     if info:
         return info.get("create_f")()
 

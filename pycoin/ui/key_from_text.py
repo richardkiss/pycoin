@@ -4,7 +4,7 @@ from pycoin.ui.Parser import metadata_for_text
 def key_info_from_text(text, networks):
     metadata = metadata_for_text(text)
     for network in networks:
-        info = network.ui.parse_metadata_to_info(metadata, types=["key", "bip32", "electrum"])
+        info = network.ui.parse_to_info(metadata, types=["key", "bip32", "electrum"])
         if info:
             yield network, info
 

@@ -115,17 +115,17 @@ class UI(object):
 
     ##############################################################################
 
-    def parse_metadata_to_info(self, metadata, types):
-        parsers = [p for p in self._parsers if p.TYPE in types]
-        return parse_to_info(None, parsers, metadata=metadata)
+    def parsers_for_types(self, types):
+        if types:
+            return [p for p in self._parsers if p.TYPE in types]
+        return self._parsers
+
+    def parse_to_info(self, metadata, types):
+        return parse_to_info(metadata, self.parsers_for_types(types))
 
     def parse(self, item, metadata=None, types=None):
         """
         type: one of "key", "address"
             eventually add "spendable", "payable", "address", "keychain_hint"
         """
-        if types:
-            parsers = [p for p in self._parsers if p.TYPE in types]
-        else:
-            parsers = self._parsers
-        return parse(item, parsers, metadata=None)
+        return parse(item, self.parsers_for_types(types), metadata=None)
