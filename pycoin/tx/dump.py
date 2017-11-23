@@ -49,7 +49,7 @@ def make_trace_script(do_trace, use_pdb):
     return trace_script
 
 
-def dump_inputs(tx, network, verbose_signature, traceback_f, disassembly_level, disassembler):
+def dump_inputs(tx, network, verbose_signature, traceback_f, disassembly_level):
     address_prefix = address_prefix_for_netcode(network.code)
     for idx, tx_in in enumerate(tx.txs_in):
         if tx.is_coinbase():
@@ -68,10 +68,10 @@ def dump_inputs(tx, network, verbose_signature, traceback_f, disassembly_level, 
                                           tx_in.previous_index, suffix)
         print(t.rstrip())
         if disassembly_level > 0:
-            dump_disassembly(tx, idx, disassembler)
+            dump_disassembly(tx, idx, network.extras.disassembler)
 
         if verbose_signature:
-            dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f, disassembly_level, disassembler)
+            dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f, disassembly_level)
 
 
 def dump_disassembly(tx, tx_in_idx, disassembler):
@@ -85,7 +85,7 @@ def dump_disassembly(tx, tx_in_idx, disassembler):
             print("           %s" % l)
 
 
-def dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f, disassembly_level, disassembler):
+def dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f, disassembly_level):
     sc = tx.SolutionChecker(tx)
     signatures = []
     for opcode in BitcoinScriptTools.opcode_list(tx_in.script):
@@ -102,12 +102,12 @@ def dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f, disassembly_le
             print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
                 print("      z{}: {:#x} {}".format(i, sc.signature_hash(tx_out.script, idx, sig_type),
-                                                   disassembler.sighash_type_to_string(sig_type)))
+                                                   network.extras.disassembler.sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:
             print("      z:{} {:#x} {}".format(' ' if i else '', sc.signature_hash(
-                tx_out.script, idx, sig_type), disassembler.sighash_type_to_string(sig_type)))
+                tx_out.script, idx, sig_type), network.extras.disassembler.sighash_type_to_string(sig_type)))
 
 
 def dump_footer(tx, missing_unspents):
@@ -119,13 +119,13 @@ def dump_footer(tx, missing_unspents):
         print("Total fees   %12.5f mBTC" % satoshi_to_mbtc(tx.fee()))
 
 
-def dump_tx(tx, network, verbose_signature, disassembly_level, disassembler, do_trace, use_pdb):
+def dump_tx(tx, network, verbose_signature, disassembly_level, do_trace, use_pdb):
     missing_unspents = tx.missing_unspents()
     traceback_f = make_trace_script(do_trace, use_pdb)
 
     dump_header(tx)
 
-    dump_inputs(tx, network, verbose_signature, traceback_f, disassembly_level, disassembler)
+    dump_inputs(tx, network, verbose_signature, traceback_f, disassembly_level)
 
     print("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.tx_outs_as_spendable()):
@@ -134,7 +134,7 @@ def dump_tx(tx, network, verbose_signature, disassembly_level, disassembler, do_
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
         if disassembly_level > 0:
             for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-                    disassembler.annotate_spendable(tx.__class__, tx_out):
+                    network.extras.disassembler.annotate_spendable(tx.__class__, tx_out):
                 for l in pre_annotations:
                     print("           %s" % l)
                 if 1:

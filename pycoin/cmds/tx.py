@@ -495,7 +495,7 @@ def generate_tx(network, txs, spendables, payables, args):
 
 
 def print_output(tx, include_unspents, output_file, show_unspents,
-                 network, verbose_signature, disassembly_level, disassembler, trace, pdb):
+                 network, verbose_signature, disassembly_level, trace, pdb):
     if len(tx.txs_in) == 0:
         print("warning: transaction has no inputs", file=sys.stderr)
 
@@ -520,7 +520,7 @@ def print_output(tx, include_unspents, output_file, show_unspents,
     else:
         if not tx.missing_unspents():
             check_fees(tx)
-        dump_tx(tx, network, verbose_signature, disassembly_level, disassembler, trace, pdb)
+        dump_tx(tx, network, verbose_signature, disassembly_level, trace, pdb)
         if include_unspents:
             print("including unspents in hex dump since transaction not fully signed")
         print(tx_as_hex)
@@ -576,9 +576,6 @@ def validate_against_bitcoind(tx, tx_db, network, bitcoind_url):
 def tx(args, parser):
     (network, txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
 
-    # BRAIN DAMAGE
-    disassembler = Disassemble(BitcoinScriptTools, network.ui)
-
     for tx in txs:
         if tx.missing_unspents() and (args.augment or tx_db):
             if tx_db is None:
@@ -595,7 +592,7 @@ def tx(args, parser):
     include_unspents = not is_fully_signed
 
     print_output(tx, include_unspents, args.output_file, args.show_unspents, network,
-                 args.verbose_signature, args.disassemble, disassembler, args.trace, args.pdb)
+                 args.verbose_signature, args.disassemble, args.trace, args.pdb)
 
     tx_db = cache_result(tx, tx_db, args.cache, args.network)
 
