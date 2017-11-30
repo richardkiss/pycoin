@@ -10,6 +10,7 @@ from .blockchain_info import BlockchainInfoProvider
 from .blockcypher import BlockcypherProvider
 from .chain_so import ChainSoProvider
 from .insight import InsightProvider
+from .btgexp import BTGExpProvider
 
 from .env import main_cache_dir, config_string_for_netcode_from_env
 from .env import tx_read_cache_dirs, tx_writable_cache_dir
@@ -102,6 +103,7 @@ DESCRIPTOR_CRE_INIT_TUPLES = [
     (re.compile(r"^blockexplorer\.com$"), lambda m, netcode: BlockExplorerProvider(netcode)),
     (re.compile(r"^chain\.so$"), lambda m, netcode: ChainSoProvider(netcode)),
     (re.compile(r"^insight:(?P<url>\S*)$"), insight_init),
+    (re.compile(r"^btgexp.com"), lambda m, netcode: BTGExpProvider()),
 ]
 
 
