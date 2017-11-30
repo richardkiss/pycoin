@@ -4,10 +4,12 @@ from pycoin.encoding import EncodingError, a2b_hashed_base58, \
     is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec, \
     sec_to_public_pair, secret_exponent_to_wif
 from pycoin.key.validate import netcode_and_type_for_data
-from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode
+from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode, \
+  pay_to_script_wit_for_netcode, pay_to_script_prefix_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
 from pycoin.tx.script.der import sigencode_der, sigdecode_der
+from  pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
 
 
 class InvalidPublicPairError(ValueError):
@@ -191,10 +193,16 @@ class Key(object):
         Return the public address representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
-        address_prefix = address_prefix_for_netcode(self._netcode)
-        hash160 = self.hash160(use_uncompressed=use_uncompressed)
-        if hash160:
-            return hash160_sec_to_bitcoin_address(hash160, address_prefix=address_prefix)
+        is_p2pwk_in_p2sh = pay_to_script_wit_for_netcode(self._netcode)
+        hash_160 = self.hash160(use_uncompressed=use_uncompressed)
+        if hash_160:
+            if is_p2pwk_in_p2sh:
+                address_prefix = pay_to_script_prefix_for_netcode(self._netcode)
+                wit_script = ScriptPayToAddressWit('\0', hash_160).script()
+                hash_160 = hash160(wit_script)
+            else:
+                address_prefix = address_prefix_for_netcode(self._netcode)
+            return hash160_sec_to_bitcoin_address(hash_160, address_prefix=address_prefix)
         return None
 
     bitcoin_address = address

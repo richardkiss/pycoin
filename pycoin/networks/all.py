@@ -20,6 +20,19 @@ BUILT_IN_NETWORKS = [
         ],
         bech32_hrp='bc'
     ),
+    
+    # BTC bitcoin mainnet : yprv/ypub
+    Network(
+        'BTCS', "Bitcoin", "mainnet_segwit_not_native",
+        b'\x80', b'\0', b'\5', h2b("049d7878"), h2b("049d7cb2"),
+        BitcoinTx, BitcoinBlock,
+        h2b('F9BEB4D9'), 8333, [
+            "seed.bitcoin.sipa.be", "dnsseed.bitcoin.dashjr.org",
+            "bitseed.xf2.org", "dnsseed.bluematt.me",
+        ],
+        bech32_hrp='bc',
+        pay_to_script_wit=True
+    ),
 
     # BTC bitcoin testnet : tprv/tpub
     Network(
