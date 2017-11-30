@@ -5,7 +5,8 @@ from pycoin.encoding import EncodingError, a2b_hashed_base58, \
     sec_to_public_pair, secret_exponent_to_wif
 from pycoin.key.validate import netcode_and_type_for_data
 from pycoin.networks import address_prefix_for_netcode, wif_prefix_for_netcode, \
-  pay_to_script_wit_for_netcode, pay_to_script_prefix_for_netcode
+  pay_to_script_wit_for_netcode, pay_to_script_prefix_for_netcode, \
+  address_wit_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h
 from pycoin.tx.script.der import sigencode_der, sigdecode_der
@@ -193,9 +194,13 @@ class Key(object):
         Return the public address representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
         """
-        is_p2pwk_in_p2sh = pay_to_script_wit_for_netcode(self._netcode)
         hash_160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash_160:
+            is_p2pwk = address_wit_for_netcode(self._netcode)
+            if is_p2pwk:
+                witness = ScriptPayToAddressWit('\0', hash_160)
+                return witness.info()['address_f']()
+            is_p2pwk_in_p2sh = pay_to_script_wit_for_netcode(self._netcode)
             if is_p2pwk_in_p2sh:
                 address_prefix = pay_to_script_prefix_for_netcode(self._netcode)
                 wit_script = ScriptPayToAddressWit('\0', hash_160).script()

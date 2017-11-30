@@ -114,6 +114,10 @@ def pay_to_script_wit_for_netcode(netcode):
     "Return pay_to_script_wit field for the given netcode (or None)"
     return _lookup(netcode, "pay_to_script_wit")
 
+def address_wit_for_netcode(netcode):
+    "Return address_wit field for the given netcode (or None)"
+    return _lookup(netcode, "address_wit")
+
 def bech32_hrp_for_netcode(netcode):
     "Return the bech32 hrp prefix for addresses for the given netcode (or None)"
     return _lookup(netcode, "bech32_hrp")
