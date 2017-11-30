@@ -252,6 +252,20 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertEqual(repr(priv_k),
                          'private_for <03ad094b1dc9fdce5d3648ca359b4e210a89d049532fdd39d9ccdd8ca393ac82f4>')
 
-
+    def test_p2wpkh_in_p2sh(self):
+        from pycoin.key import Key
+        node = Key.from_text('ypub6XDth9u8DzXV1tcpDtoDKMf6kVMaVMn1juVWEesTshcX4zUVvfNgjPJLXrD9N7AdTLnbHFL64KmBn3SNaTe69iZYbYCqLCCNPZKbLz9niQ4')
+        self.assertEqual(node.subkey(0).subkey(0).address(),
+                         '35ohQTdNykjkF1Mn9nAVEFjupyAtsPAK1W')
+        self.assertEqual(node.subkey(1).subkey(0).address(),
+                         '3KaBTcviBLEJajTEMstsA2GWjYoPzPK7Y7')
+    
+    def test_p2wpkh_native(self):
+        from pycoin.key import Key
+        node = Key.from_text('zpub6nsHdRuY92FsMKdbn9BfjBCG6X8pyhCibNP6uDvpnw2cyrVhecvHRMa3Ne8kdJZxjxgwnpbHLkcR4bfnhHy6auHPJyDTQ3kianeuVLdkCYQ')
+        self.assertEqual(node.subkey(0).subkey(0).address(),
+                         'bc1q3g5tmkmlvxryhh843v4dz026avatc0zzr6h3af')
+        self.assertEqual(node.subkey(1).subkey(0).address(),
+                         'bc1qdy94n2q5qcp0kg7v9yzwe6wvfkhnvyzje7nx2p')
 if __name__ == '__main__':
     unittest.main()
