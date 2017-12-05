@@ -8,11 +8,11 @@ from pycoin.intbytes import iterbytes
 from pycoin.key.Key import Key
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.electrum import ElectrumWallet
-from pycoin.ui.KeyParser import KeyParser
-from pycoin.ui.Hash160Parser import Hash160Parser
-from pycoin.ui.BIP32Parser import BIP32Parser
-from pycoin.ui.ElectrumParser import ElectrumParser
 from pycoin.ui.AddressParser import AddressParser
+from pycoin.ui.BIP32Parser import BIP32Parser
+from pycoin.ui.Hash160Parser import Hash160Parser
+from pycoin.ui.ElectrumParser import ElectrumParser
+from pycoin.ui.WIFParser import WIFParser
 
 from .Parser import parse, parse_to_info
 
@@ -29,7 +29,7 @@ class UI(object):
         self._electrum_class = ElectrumWallet.make_subclass(default_ui_context=self)
         self._bip32node_class = BIP32Node.make_subclass(default_ui_context=self)
         self._parsers = [
-            KeyParser(generator, wif_prefix, address_prefix, self._key_class),
+            WIFParser(generator, wif_prefix, address_prefix, self._key_class),
             ElectrumParser(generator, self._electrum_class),
             BIP32Parser(generator, bip32_prv_prefix, bip32_pub_prefix, self._bip32node_class),
             Hash160Parser(address_prefix, self._key_class),

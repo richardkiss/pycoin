@@ -2,7 +2,7 @@ from pycoin.encoding import from_bytes_32
 from pycoin.ui.Parser import Parser, make_base58_prefixes
 
 
-class KeyParser(Parser):
+class WIFParser(Parser):
     TYPE = "key"
 
     def __init__(self, generator, wif_prefix, address_prefix, key_class):
