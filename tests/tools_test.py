@@ -1,7 +1,6 @@
 import unittest
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.SolutionChecker import TxContext
 from pycoin.coins.bitcoin.VM import BitcoinVM
 

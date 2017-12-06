@@ -71,7 +71,6 @@ class SolverTest(unittest.TestCase):
         self.do_test_tx(script_for_multisig(2, secs))
 
     def test_p2sh(self):
-        netcode = "BTC"
         keys = [Key(i, generator=secp256k1_generator) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
         underlying_script = script_for_multisig(1, secs)
@@ -99,7 +98,6 @@ class SolverTest(unittest.TestCase):
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
     def test_p2multisig_wit(self):
-        netcode = "BTC"
         keys = [Key(i, generator=secp256k1_generator) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
         underlying_script = script_for_multisig(2, secs)

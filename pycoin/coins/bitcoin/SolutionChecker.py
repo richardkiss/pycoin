@@ -195,11 +195,11 @@ class BitcoinSolutionChecker(SolutionChecker):
             raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
 
     def witness_program_version(self, script):
-        l = len(script)
-        if l < 4 or l > 42:
+        size = len(script)
+        if size < 4 or size > 42:
             return None
         first_opcode = byte2int(script)
-        if indexbytes(script, 1) + 2 != l:
+        if indexbytes(script, 1) + 2 != size:
             return None
         if first_opcode == OP_0:
             return 0

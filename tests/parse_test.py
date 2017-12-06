@@ -6,6 +6,7 @@ from pycoin.coins.bitcoin.networks import BitcoinMainnet
 ui = BitcoinMainnet.ui
 parse = ui.parse
 
+
 class ParseTest(unittest.TestCase):
 
     def test_parse_wif(self):

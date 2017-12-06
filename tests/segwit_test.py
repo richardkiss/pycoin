@@ -111,7 +111,6 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(b2h(sc.hash_outputs(SIGHASH_ALL, 0)),
                          "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
 
-        address = BitcoinMainnet.ui.address_for_script(tx_s1.unspents[1].script)
         script = BitcoinMainnet.ui._script_info.script_for_p2pkh(tx_s1.unspents[1].script[2:])
         self.assertEqual(
             b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),

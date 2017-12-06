@@ -7,7 +7,6 @@ from pycoin.encoding import (
     int2byte,
     to_bytes_32,
 )
-from pycoin.key import Key
 from pycoin.satoshi.flags import (
     SIGHASH_ALL,
     SIGHASH_ANYONECANPAY,

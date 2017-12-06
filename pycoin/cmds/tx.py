@@ -12,7 +12,6 @@ import re
 import subprocess
 import sys
 
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding import hash160
 from pycoin.ui.validate import is_address_valid
@@ -27,7 +26,6 @@ from pycoin.tx.dump import dump_tx
 from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
 from pycoin.ui.key_from_text import key_from_text
-from pycoin.vm.disassemble import Disassemble
 
 
 DEFAULT_VERSION = 1

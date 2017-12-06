@@ -4,7 +4,6 @@ from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.key import Key
 from pycoin.key.electrum import ElectrumWallet
-from pycoin.serialize import h2b
 from pycoin.ui.key_from_text import key_from_text
 
 MPK = 1
