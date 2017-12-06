@@ -47,47 +47,16 @@ def metadata_for_text(text):
     return d
 
 
-def _parse_base58(parser, data):
-    base58_prefixes = parser.base58_prefixes()
-    for size in base58_prefixes.keys():
-        prefix = data[:size]
-        for f in base58_prefixes[size].get(prefix, []):
-            try:
-                yield f(data)
-            except Exception:
-                pass
-
-
-def _parse_bech32(parser, hrp, data):
-    for f in parser.bech32_prefixes().get(hrp, []):
-        try:
-            yield f(hrp, data)
-        except Exception:
-            pass
-
-
-def _parse_as_colon(parser, hrp, data):
-    for f in parser.colon_prefixes().get(hrp, []):
-        try:
-            yield f(hrp, data)
-        except Exception:
-            pass
-
-
-def _parse_as_text(parser, text):
-    return parser.parse_as_text(text)
-
-
 def parse_all_to_info(metadata, parsers):
     # TODO: simplify, and put the "type" field into info here
-    for key, f in [
-            ("as_base58", _parse_base58), ("as_bech32", _parse_bech32),
-            ("as_colon", _parse_as_colon), ("as_text", _parse_as_text)]:
+    for key in ["as_base58", "as_bech32", "as_colon", "as_text"]:
         v = metadata.get(key)
         if v is None:
             continue
         for p in parsers:
-            yield from f(p, *v)
+            f_name = "_parse_%s" % key
+            f = getattr(p, f_name)
+            yield from f(*v)
 
 
 def parse_to_info(metadata, parsers):
@@ -118,17 +87,31 @@ class Parser(object):
     TYPE = None
 
     _base58_prefixes = make_base58_prefixes([])
-    _bech32_prefixes = dict()
-    _colon_prefixes = dict()
+    _bech32_prefixes = defaultdict(list)
+    _colon_prefixes = defaultdict(list)
 
-    def base58_prefixes(self):
-        return self._base58_prefixes
+    def _parse_as_base58(self, data):
+        for size, lookup in self._base58_prefixes.items():
+            prefix = data[:size]
+            for f in lookup.get(prefix, []):
+                try:
+                    yield f(data)
+                except Exception:
+                    pass
 
-    def bech32_prefixes(self):
-        return self._bech32_prefixes
+    def _parse_as_bech32(self, hrp, data):
+        for f in self._bech32_prefixes.get(hrp, []):
+            try:
+                yield f(hrp, data)
+            except Exception:
+                pass
 
-    def colon_prefixes(self):
-        return self._colon_prefixes
+    def _parse_as_colon(self, hrp, data):
+        for f in self._colon_prefixes.get(hrp, []):
+            try:
+                yield f(hrp, data)
+            except Exception:
+                pass
 
-    def parse_as_text(self, text):
+    def _parse_as_text(self, text):
         return []
