@@ -45,6 +45,8 @@ class UI(object):
         self._pay_to_script_prefix = pay_to_script_prefix
         self._bech32_hrp = bech32_hrp
 
+    # ui_context stuff (used with Key, BIP32Node)
+
     def bip32_private_prefix(self):
         return self._bip32_prv_prefix
 
@@ -56,6 +58,8 @@ class UI(object):
 
     def sec_text_for_blob(self, blob):
         return self._sec_prefix + b2h(blob)
+
+    # address_for_script and script_for_address stuff
 
     def address_for_script(self, script):
         script_info = self._script_info.info_for_script(script)
@@ -96,9 +100,6 @@ class UI(object):
             return encoding.hash160_sec_to_bitcoin_address(hash160, address_prefix=self._pay_to_script_prefix)
         return "???"
 
-    def address_for_p2s(self, script):
-        return self.address_for_p2sh(encoding.hash160(script))
-
     def address_for_p2pkh_wit(self, hash160):
         if self._bech32_hrp and len(hash160) == 20:
             return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(hash160))
@@ -109,13 +110,18 @@ class UI(object):
             return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(hash256))
         return "???"
 
-    def address_for_p2s_wit(self, script):
-        return self.address_for_p2sh_wit(hashlib.sha256(script).digest())
-
     def script_for_address(self, address):
         return self.parse(address, types=["address"])
 
-    ##############################################################################
+    # p2s and p2s_wit helpers
+
+    def address_for_p2s(self, script):
+        return self.address_for_p2sh(encoding.hash160(script))
+
+    def address_for_p2s_wit(self, script):
+        return self.address_for_p2sh_wit(hashlib.sha256(script).digest())
+
+    # parser stuff
 
     def parsers_for_types(self, types):
         if types:
@@ -127,7 +133,7 @@ class UI(object):
 
     def parse(self, item, metadata=None, types=None):
         """
-        type: one of "key", "address"
-            eventually add "spendable", "payable", "address", "keychain_hint"
+        types: a list containing a subset of ["key", "address"]
+            eventually add "spendable", "payable", "keychain_hint"
         """
         return parse(item, self.parsers_for_types(types), metadata=None)
