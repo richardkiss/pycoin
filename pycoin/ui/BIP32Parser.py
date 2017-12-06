@@ -40,10 +40,7 @@ class BIP32Parser(Parser):
                     kwargs=d, key_class=self._bip32node_class, create_f=lambda: self._bip32node_class(**d))
 
     def info_for_H(self, prefix, data):
-        try:
-            bin_data = h2b(data)
-        except ValueError:
-            return
+        bin_data = h2b(data)
         kwargs = dict(generator=self._generator, master_secret=bin_data)
         return dict(type="key", key_type="bip32", bip32_type="seeded", is_private=True, key_class=self._bip32node_class,
                     seed_type="hex", create_f=lambda: self._bip32node_class.from_master_secret(**kwargs),

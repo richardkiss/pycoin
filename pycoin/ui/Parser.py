@@ -87,9 +87,12 @@ def parse_to_info(metadata, parsers):
 
     for parser in parsers:
         for f in [_parse_base58, _parse_bech32, _parse_as_colon, _parse_as_text]:
-            v = f(parser, metadata)
-            if v:
-                return v
+            try:
+                v = f(parser, metadata)
+                if v:
+                    return v
+            except Exception:
+                pass
 
 
 def parse(item, parsers, metadata=None):

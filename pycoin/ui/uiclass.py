@@ -12,6 +12,7 @@ from pycoin.ui.AddressParser import AddressParser
 from pycoin.ui.BIP32Parser import BIP32Parser
 from pycoin.ui.Hash160Parser import Hash160Parser
 from pycoin.ui.ElectrumParser import ElectrumParser
+from pycoin.ui.SECParser import SECParser
 from pycoin.ui.WIFParser import WIFParser
 
 from .Parser import parse, parse_to_info
@@ -33,6 +34,7 @@ class UI(object):
             ElectrumParser(generator, self._electrum_class),
             BIP32Parser(generator, bip32_prv_prefix, bip32_pub_prefix, self._bip32node_class),
             Hash160Parser(address_prefix, self._key_class),
+            SECParser(generator, sec_prefix, self._key_class),
             AddressParser(puzzle_scripts, address_prefix, pay_to_script_prefix, bech32_hrp)
         ]
         self._bip32_prv_prefix = bip32_prv_prefix

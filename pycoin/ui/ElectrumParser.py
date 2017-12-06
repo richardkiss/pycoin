@@ -12,10 +12,7 @@ class ElectrumParser(Parser):
         self._colon_prefixes = dict(E=self.info_for_E)
 
     def info_for_E(self, prefix, data):
-        try:
-            bin_data = h2b(data)
-        except TypeError:
-            return
+        bin_data = h2b(data)
 
         size = len(bin_data)
         if size not in (16, 32, 64):
