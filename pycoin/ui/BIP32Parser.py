@@ -16,7 +16,7 @@ class BIP32Parser(Parser):
             (bip32_private_prefix, self.info_for_private),
             (bip32_public_prefix, self.info_for_public),
         ])
-        self._colon_prefixes = dict(H=self.info_for_H, P=self.info_for_P)
+        self._colon_prefixes = dict(H=[self.info_for_H], P=[self.info_for_P])
 
     def info_for_private(self, data):
         return self.info_for_data(data, is_private=True)

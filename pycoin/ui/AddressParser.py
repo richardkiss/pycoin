@@ -16,7 +16,7 @@ class AddressParser(Parser):
 
         self._base58_prefixes = make_base58_prefixes(prefixes)
         if bech32_hrp:
-            self._bech32_prefixes = {bech32_hrp: self.info_for_p2wit}
+            self._bech32_prefixes = {bech32_hrp: [self.info_for_p2wit]}
 
     def info_for_p2pkh(self, data):
         hash160 = data[1:]

@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from pycoin import encoding
 from pycoin.contrib import segwit_addr
 
@@ -45,71 +47,69 @@ def metadata_for_text(text):
     return d
 
 
-def _parse_base58(parser, metadata):
-    r = metadata.get("as_base58")
-    if not r:
-        return
-    data = r[0]
+def _parse_base58(parser, data):
     base58_prefixes = parser.base58_prefixes()
     for size in base58_prefixes.keys():
         prefix = data[:size]
-        f = base58_prefixes[size].get(prefix)
-        if f:
-            return f(data)
-
-
-def _parse_bech32(parser, metadata):
-    r = metadata.get("as_bech32")
-    if not r:
-        return
-    hrp, data = r
-    f = parser.bech32_prefixes().get(hrp)
-    if f:
-        return f(hrp, data)
-
-
-def _parse_as_colon(parser, metadata):
-    r = metadata.get("as_colon")
-    if not r:
-        return
-    hrp, data = r
-    f = parser.colon_prefixes().get(hrp)
-    if f:
-        return f(hrp, data)
-
-
-def _parse_as_text(parser, metadata):
-    return parser.parse_as_text(metadata.get("as_text"))
-
-
-def parse_to_info(metadata, parsers):
-    # TODO: simplify, and put the "type" field into info here
-
-    for parser in parsers:
-        for f in [_parse_base58, _parse_bech32, _parse_as_colon, _parse_as_text]:
+        for f in base58_prefixes[size].get(prefix, []):
             try:
-                v = f(parser, metadata)
-                if v:
-                    return v
+                yield f(data)
             except Exception:
                 pass
 
 
-def parse(item, parsers, metadata=None):
-    if metadata is None:
-        metadata = metadata_for_text(item)
-    info = parse_to_info(metadata, parsers)
-    if info:
-        return info.get("create_f")()
+def _parse_bech32(parser, hrp, data):
+    for f in parser.bech32_prefixes().get(hrp, []):
+        try:
+            yield f(hrp, data)
+        except Exception:
+            pass
+
+
+def _parse_as_colon(parser, hrp, data):
+    for f in parser.colon_prefixes().get(hrp, []):
+        try:
+            yield f(hrp, data)
+        except Exception:
+            pass
+
+
+def _parse_as_text(parser, text):
+    return parser.parse_as_text(text)
+
+
+def parse_all_to_info(metadata, parsers):
+    # TODO: simplify, and put the "type" field into info here
+    for key, f in [
+            ("as_base58", _parse_base58), ("as_bech32", _parse_bech32),
+            ("as_colon", _parse_as_colon), ("as_text", _parse_as_text)]:
+        v = metadata.get(key)
+        if v is None:
+            continue
+        for p in parsers:
+            yield from f(p, *v)
+
+
+def parse_to_info(metadata, parsers):
+    for r in parse_all_to_info(metadata, parsers):
+        return r
+
+
+def parse_all(item, parsers):
+    metadata = metadata_for_text(item)
+    for info in parse_all_to_info(metadata, parsers):
+        yield info.get("create_f")()
+
+
+def parse(item, parsers):
+    for r in parse_all(item, parsers):
+        return r
 
 
 def make_base58_prefixes(prefix_f_list):
-    d = {}
+    d = defaultdict(lambda: defaultdict(list))
     for prefix, f in prefix_f_list:
-        size = len(prefix)
-        if size not in d:
-            d[size] = {}
-        d[size][prefix] = f
+        d[len(prefix)][prefix].append(f)
     return d
 
 
@@ -131,4 +131,4 @@ class Parser(object):
         return self._colon_prefixes
 
     def parse_as_text(self, text):
-        return None
+        return []

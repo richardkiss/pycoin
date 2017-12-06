@@ -9,7 +9,7 @@ class ElectrumParser(Parser):
     def __init__(self, generator, electrum_class):
         self._generator = generator
         self._electrum_class = electrum_class
-        self._colon_prefixes = dict(E=self.info_for_E)
+        self._colon_prefixes = dict(E=[self.info_for_E])
 
     def info_for_E(self, prefix, data):
         bin_data = h2b(data)

@@ -10,7 +10,7 @@ class SECParser(Parser):
     def __init__(self, generator, sec_prefix, key_class):
         self._generator = generator
         self._key_class = key_class
-        self._colon_prefixes = {"SEC": self.info_for_sec}
+        self._colon_prefixes = {"SEC": [self.info_for_sec]}
 
     def info_for_sec(self, prefix, text):
         sec = h2b(text)

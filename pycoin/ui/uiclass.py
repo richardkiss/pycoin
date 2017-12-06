@@ -131,9 +131,9 @@ class UI(object):
     def parse_to_info(self, metadata, types):
         return parse_to_info(metadata, self.parsers_for_types(types))
 
-    def parse(self, item, metadata=None, types=None):
+    def parse(self, item, types=None):
         """
         types: a list containing a subset of ["key", "address"]
             eventually add "spendable", "payable", "keychain_hint"
         """
-        return parse(item, self.parsers_for_types(types), metadata=None)
+        return parse(item, self.parsers_for_types(types))
