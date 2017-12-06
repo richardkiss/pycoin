@@ -1,5 +1,3 @@
-import binascii
-
 from ..ecdsa.secp256k1 import secp256k1_generator  # BRAIN DAMAGE
 from ..encoding import public_pair_to_hash160_sec, sec_to_public_pair, EncodingError
 from pycoin.satoshi.checksigops import parse_signature_blob
@@ -47,7 +45,7 @@ class WhoSigned(object):
                 sig_pair, sig_type = parse_signature_blob(data)
                 sig_hash = sc.signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
                 yield (data, sig_hash)
-            except (ValueError, TypeError, binascii.Error, UnexpectedDER):
+            except (ValueError, TypeError, UnexpectedDER):
                 continue
 
     def public_pairs_signed(self, tx, tx_in_idx):
