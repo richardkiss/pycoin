@@ -18,7 +18,7 @@ BITCOIN_ADDRESSES = [public_pair_to_bitcoin_address(i * secp256k1_generator) for
 
 WIFS = [secret_exponent_to_wif(i) for i in range(1, 21)]
 
-FAKE_HASHES = [hashlib.sha256(struct.pack("Q", idx)).digest() for idx in range(100)]
+FAKE_HASH = hashlib.sha256(struct.pack("Q", 1)).digest()
 
 
 class SpendTest(unittest.TestCase):
@@ -29,7 +29,7 @@ class SpendTest(unittest.TestCase):
 
         # create a fake Spendable
         COIN_VALUE = 100000000
-        spendables = [Spendable(COIN_VALUE, script_for_address(BITCOIN_ADDRESSES[0]), FAKE_HASHES[1], 0)]
+        spendables = [Spendable(COIN_VALUE, script_for_address(BITCOIN_ADDRESSES[0]), FAKE_HASH, 0)]
 
         EXPECTED_IDS = [
             "d28bff6c4a8a0f9e7d5b7df0670d07b43c5613d8c9b14e84707b1e2c0154a978",
@@ -56,12 +56,12 @@ class SpendTest(unittest.TestCase):
             # TODO: add check that s + s < generator for each signature
             for i in range(count):
                 extra = (1 if i < ((COIN_VALUE - FEE) % count) else 0)
-                self.assertEqual(tx.txs_out[i].coin_value, (COIN_VALUE - FEE)//count + extra)
+                self.assertEqual(tx.txs_out[i].coin_value, (COIN_VALUE - FEE) // count + extra)
 
     def test_confirm_input(self):
         # create a fake Spendable
         COIN_VALUE = 100000000
-        spendables = [Spendable(COIN_VALUE, script_for_address(BITCOIN_ADDRESSES[0]), FAKE_HASHES[1], 0)]
+        spendables = [Spendable(COIN_VALUE, script_for_address(BITCOIN_ADDRESSES[0]), FAKE_HASH, 0)]
 
         tx_1 = create_signed_tx(spendables, BITCOIN_ADDRESSES[1:2], wifs=WIFS[:1])
 
@@ -81,7 +81,7 @@ class SpendTest(unittest.TestCase):
     def test_confirm_input_raises(self):
         # create a fake Spendable
         COIN_VALUE = 100000000
-        spendables = [Spendable(COIN_VALUE, script_for_address(BITCOIN_ADDRESSES[0]), FAKE_HASHES[1], 0)]
+        spendables = [Spendable(COIN_VALUE, script_for_address(BITCOIN_ADDRESSES[0]), FAKE_HASH, 0)]
 
         tx_1 = create_signed_tx(spendables, BITCOIN_ADDRESSES[1:2], wifs=WIFS[:1])
         spendables = tx_1.tx_outs_as_spendable()

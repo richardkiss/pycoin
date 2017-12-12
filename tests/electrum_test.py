@@ -6,7 +6,6 @@ from pycoin.key import Key
 from pycoin.key.electrum import ElectrumWallet
 from pycoin.ui.key_from_text import key_from_text
 
-MPK = 1
 
 # BRAIN DAMAGE
 ElectrumWallet = ElectrumWallet.make_subclass(default_ui_context=BitcoinMainnet.ui)
