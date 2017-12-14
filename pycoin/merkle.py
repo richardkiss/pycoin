@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from .encoding import double_sha256
+from .encoding.hash import double_sha256
 from .serialize import h2b_rev
 
 

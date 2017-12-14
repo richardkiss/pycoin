@@ -1,8 +1,7 @@
 import collections
 
-from pycoin.encoding import (
-    hash160, hash160_sec_to_bitcoin_address, public_pair_to_hash160_sec, is_sec_compressed
-)
+from pycoin.encoding.hash import hash160
+from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec
 
 from pycoin.serialize import b2h
 
@@ -38,7 +37,7 @@ class Disassemble(object):
 
     def annotate_pubkey(self, blob, da):
         is_compressed = is_sec_compressed(blob)
-        address = hash160_sec_to_bitcoin_address(hash160(blob))
+        address = self._ui_context.address_for_p2pkh(hash160(blob))
         da[blob].append("SEC for %scompressed %s" % ("" if is_compressed else "un", address))
 
     def annotate_signature(self, blob, da, vmc):

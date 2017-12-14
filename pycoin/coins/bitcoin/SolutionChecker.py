@@ -5,7 +5,8 @@ from hashlib import sha256
 from .ScriptTools import BitcoinScriptTools
 from .VM import BitcoinVM
 
-from ...encoding import double_sha256, from_bytes_32
+from ...encoding.hash import double_sha256
+from ...encoding.bytes32 import from_bytes_32
 from ...intbytes import byte2int, indexbytes
 
 from ..SolutionChecker import SolutionChecker, ScriptError

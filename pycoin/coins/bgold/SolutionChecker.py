@@ -1,4 +1,5 @@
-from pycoin.encoding import double_sha256, from_bytes_32
+from pycoin.encoding.bytes32 import from_bytes_32
+from pycoin.encoding.hash import double_sha256
 from ..SolutionChecker import ScriptError
 from pycoin.satoshi.flags import SIGHASH_FORKID
 

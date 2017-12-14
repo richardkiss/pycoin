@@ -5,11 +5,12 @@ from __future__ import print_function
 import argparse
 import sys
 
-from pycoin import encoding
+from pycoin.encoding.exceptions import EncodingError
+from pycoin.encoding.sec import public_pair_to_hash160_sec
 from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.networks.registry import (
-    address_prefix_for_netcode, full_network_name_for_netcode, network_for_netcode, network_codes
+    full_network_name_for_netcode, network_for_netcode, network_codes
 )
 from .ku import parse_key
 
@@ -69,10 +70,9 @@ def msg_verify(args, parser):
     message_hash = get_message_hash(args, message_signer)
     try:
         pair, is_compressed = message_signer.pair_for_message_hash(args.signature, msg_hash=message_hash)
-    except encoding.EncodingError:
+    except EncodingError:
         pass
-    prefix = address_prefix_for_netcode(args.network)
-    ta = encoding.public_pair_to_bitcoin_address(pair, compressed=is_compressed, address_prefix=prefix)
+    ta = network.ui.address_for_p2pkh(public_pair_to_hash160_sec(pair, compressed=is_compressed))
     if args.address:
         if ta == args.address:
             print("signature ok")

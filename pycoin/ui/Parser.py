@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from pycoin import encoding
+from pycoin.encoding.b58 import a2b_hashed_base58, EncodingError
 from pycoin.contrib import segwit_addr
 
 """
@@ -22,9 +22,9 @@ KEY:
 def metadata_for_text(text):
     d = {}
     try:
-        data = encoding.a2b_hashed_base58(text)
+        data = a2b_hashed_base58(text)
         d["as_base58"] = (data,)
-    except encoding.EncodingError:
+    except EncodingError:
         d["as_base58"] = None
 
     try:

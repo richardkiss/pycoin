@@ -1,6 +1,7 @@
 import hashlib
 
-from pycoin import encoding
+from pycoin.encoding.b58 import b2a_hashed_base58
+from pycoin.encoding.hash import hash160
 from pycoin.serialize import b2h
 
 from pycoin.contrib import segwit_addr
@@ -54,7 +55,7 @@ class UI(object):
         return self._bip32_pub_prefix
 
     def wif_for_blob(self, blob):
-        return encoding.b2a_hashed_base58(self._wif_prefix + blob)
+        return b2a_hashed_base58(self._wif_prefix + blob)
 
     def sec_text_for_blob(self, blob):
         return self._sec_prefix + b2h(blob)
@@ -78,9 +79,9 @@ class UI(object):
             return self.address_for_p2sh_wit(script_info["hash256"])
 
         if type == "p2pk":
-            hash160 = encoding.hash160(script_info["sec"])
+            h160 = hash160(script_info["sec"])
             # BRAIN DAMAGE: this isn't really a p2pkh
-            return self.address_for_p2pkh(hash160)
+            return self.address_for_p2pkh(h160)
 
         if type == "p2sh":
             return self.address_for_p2sh(script_info["hash160"])
@@ -90,19 +91,19 @@ class UI(object):
 
         return "???"
 
-    def address_for_p2pkh(self, hash160):
+    def address_for_p2pkh(self, h160):
         if self._address_prefix:
-            return encoding.hash160_sec_to_bitcoin_address(hash160, address_prefix=self._address_prefix)
+            return b2a_hashed_base58(self._address_prefix + h160)
         return "???"
 
-    def address_for_p2sh(self, hash160):
+    def address_for_p2sh(self, h160):
         if self._pay_to_script_prefix:
-            return encoding.hash160_sec_to_bitcoin_address(hash160, address_prefix=self._pay_to_script_prefix)
+            return b2a_hashed_base58(self._pay_to_script_prefix + h160)
         return "???"
 
-    def address_for_p2pkh_wit(self, hash160):
-        if self._bech32_hrp and len(hash160) == 20:
-            return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(hash160))
+    def address_for_p2pkh_wit(self, h160):
+        if self._bech32_hrp and len(h160) == 20:
+            return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(h160))
         return "???"
 
     def address_for_p2sh_wit(self, hash256):
@@ -116,7 +117,7 @@ class UI(object):
     # p2s and p2s_wit helpers
 
     def address_for_p2s(self, script):
-        return self.address_for_p2sh(encoding.hash160(script))
+        return self.address_for_p2sh(hash160(script))
 
     def address_for_p2s_wit(self, script):
         return self.address_for_p2sh_wit(hashlib.sha256(script).digest())

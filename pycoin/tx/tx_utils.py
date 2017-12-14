@@ -1,7 +1,6 @@
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 
-from ..encoding import wif_to_secret_exponent
 from ..convention import tx_fee
 
 from ..solve.utils import build_hash160_lookup
@@ -18,22 +17,27 @@ class LazySecretExponentDB(object):
     and caches the results to optimize for the case of a large number
     of secret exponents.
     """
-    def __init__(self, wif_iterable, secret_exponent_db_cache, generators, netcode='BTC'):
-        self.wif_iterable = iter(wif_iterable)
-        self.secret_exponent_db_cache = secret_exponent_db_cache
+    def __init__(self, wif_iterable, secret_exponent_db_cache, generators, network=BitcoinMainnet):
+        self._wif_iterable = iter(wif_iterable)
+        self._secret_exponent_db_cache = secret_exponent_db_cache
         self._generators = generators
-        self.netcode = netcode
+        self._network = network
 
     def get(self, v):
-        if v in self.secret_exponent_db_cache:
-            return self.secret_exponent_db_cache[v]
-        for wif in self.wif_iterable:
-            secret_exponent = wif_to_secret_exponent(wif)
+        if v in self._secret_exponent_db_cache:
+            return self._secret_exponent_db_cache[v]
+        for wif in self._wif_iterable:
+            key = self._network.ui.parse(wif, types=["key"])
+            if key is None:
+                continue
+            secret_exponent = key.secret_exponent()
+            if secret_exponent is None:
+                continue
             d = build_hash160_lookup([secret_exponent], self._generators)
-            self.secret_exponent_db_cache.update(d)
-            if v in self.secret_exponent_db_cache:
-                return self.secret_exponent_db_cache[v]
-        self.wif_iterable = []
+            self._secret_exponent_db_cache.update(d)
+            if v in self._secret_exponent_db_cache:
+                return self._secret_exponent_db_cache[v]
+        self._wif_iterable = []
         return None
 
 
@@ -142,7 +146,7 @@ def distribute_from_split_pool(tx, fee):
     return zero_count
 
 
-def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
+def sign_tx(tx, wifs=[], secret_exponent_db=None, network=BitcoinMainnet, **kwargs):
     """
     :param tx: a transaction
     :param wifs: the list of WIFs required to sign this transaction.
@@ -168,7 +172,7 @@ def sign_tx(tx, wifs=[], secret_exponent_db=None, netcode='BTC', **kwargs):
     """
     secret_exponent_db = secret_exponent_db or {}
     solver = tx.Solver(tx)
-    solver.sign(LazySecretExponentDB(wifs, secret_exponent_db, tx.SolutionChecker.generators, netcode), **kwargs)
+    solver.sign(LazySecretExponentDB(wifs, secret_exponent_db, tx.SolutionChecker.generators, network), **kwargs)
 
 
 def create_signed_tx(spendables, payables, wifs=[], fee="standard",

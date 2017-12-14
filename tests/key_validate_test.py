@@ -2,7 +2,7 @@ import unittest
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.encoding import hash160_sec_to_bitcoin_address
+from pycoin.encoding.b58 import b2a_hashed_base58
 from pycoin.key.Key import InvalidPublicPairError, InvalidSecretExponentError
 from pycoin.networks.registry import pay_to_script_prefix_for_netcode, network_codes
 from pycoin.ui.key_from_text import key_from_text
@@ -14,9 +14,9 @@ XTNKey = BitcoinTestnet.ui._key_class
 BIP32Node = BitcoinMainnet.ui._bip32node_class
 
 
+
 def change_prefix(address, new_prefix):
-    return hash160_sec_to_bitcoin_address(
-        key_from_text(address).hash160(), address_prefix=new_prefix)
+    return b2a_hashed_base58(new_prefix + key_from_text(address).hash160())
 
 
 PAY_TO_HASH_ADDRESSES = [
@@ -107,8 +107,6 @@ class KeyUtilsTest(unittest.TestCase):
         for i in range(1, 512):
             Key(secret_exponent=i, generator=secp256k1_generator)
             BIP32Node(secp256k1_generator, cc, secret_exponent=i)
-
-
 
     def test_repr(self):
         key = XTNKey(secret_exponent=273, generator=secp256k1_generator)

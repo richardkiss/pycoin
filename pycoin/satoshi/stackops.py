@@ -30,7 +30,7 @@ import hashlib
 from . import errno
 from pycoin.coins.SolutionChecker import ScriptError
 
-from ..encoding import hash160, double_sha256, ripemd160
+from ..encoding.hash import hash160, double_sha256, ripemd160
 
 
 def do_OP_NOP(s):

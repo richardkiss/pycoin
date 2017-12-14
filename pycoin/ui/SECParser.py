@@ -1,5 +1,5 @@
 
-from pycoin.encoding import is_sec_compressed, sec_to_public_pair
+from pycoin.encoding.sec import is_sec_compressed, sec_to_public_pair
 from pycoin.serialize import h2b
 from pycoin.ui.Parser import Parser
 

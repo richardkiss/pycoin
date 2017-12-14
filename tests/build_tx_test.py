@@ -7,7 +7,7 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 
-from pycoin.encoding import public_pair_to_sec, public_pair_to_bitcoin_address, wif_to_secret_exponent
+from pycoin.encoding.sec import public_pair_to_sec, public_pair_to_hash160_sec
 from pycoin.serialize import h2b
 
 from pycoin.tx.Tx import Tx
@@ -73,13 +73,18 @@ def standard_tx(coins_from, coins_to):
     return tx
 
 
+def public_pair_to_bitcoin_address(pair, compressed):
+    return BitcoinMainnet.ui.address_for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
+
+
 class BuildTxTest(unittest.TestCase):
 
     def test_signature_hash(self):
         compressed = False
         exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
         address_2 = public_pair_to_bitcoin_address(exponent_2 * secp256k1_generator, compressed=compressed)
-        exponent = wif_to_secret_exponent("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+        key = BitcoinMainnet.ui.parse("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+        exponent = key.secret_exponent()
 
         public_key_sec = public_pair_to_sec(exponent * secp256k1_generator, compressed=compressed)
 
@@ -125,7 +130,8 @@ class BuildTxTest(unittest.TestCase):
 
         # create a coinbase Tx where we know the public & private key
 
-        exponent = wif_to_secret_exponent("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+        key = BitcoinMainnet.ui.parse("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+        exponent = key.secret_exponent()
         compressed = False
 
         public_key_sec = public_pair_to_sec(exponent * secp256k1_generator, compressed=compressed)

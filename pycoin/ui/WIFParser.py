@@ -1,4 +1,4 @@
-from pycoin.encoding import from_bytes_32
+from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.ui.Parser import Parser, make_base58_prefixes
 
 

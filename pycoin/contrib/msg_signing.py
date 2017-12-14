@@ -8,7 +8,10 @@ from pycoin.intbytes import byte2int, int2byte
 from ..serialize.bitcoin_streamer import stream_bc_string
 from ..ecdsa.secp256k1 import secp256k1_generator
 
-from ..encoding import public_pair_to_hash160_sec, to_bytes_32, from_bytes_32, double_sha256, EncodingError
+from ..encoding.bytes32 import to_bytes_32, from_bytes_32
+from ..encoding.exceptions import EncodingError
+from ..encoding.hash import double_sha256
+from ..encoding.sec import public_pair_to_hash160_sec
 from ..key import Key
 
 

@@ -1,5 +1,5 @@
 from ..ecdsa.secp256k1 import secp256k1_generator  # BRAIN DAMAGE
-from ..encoding import public_pair_to_hash160_sec, sec_to_public_pair, EncodingError
+from ..encoding.sec import public_pair_to_hash160_sec, sec_to_public_pair, EncodingError
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
 

@@ -1,6 +1,4 @@
-
-class EncodingError(TypeError):
-    pass
+from .exceptions import EncodingError
 
 
 def to_long(base, lookup_f, s):

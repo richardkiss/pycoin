@@ -5,7 +5,9 @@ import pdb
 from pycoin.satoshi.checksigops import parse_signature_blob
 from ..serialize import b2h
 
-from pycoin import encoding
+from pycoin.encoding.exceptions import EncodingError
+from pycoin.encoding.hash import hash160
+from pycoin.encoding.sec import public_pair_to_sec, sec_to_public_pair
 from pycoin.intbytes import int2byte
 from pycoin.tx.exceptions import SolvingError
 from pycoin.satoshi import der
@@ -37,14 +39,14 @@ def _find_signatures(script_blobs, generator_for_signature_type_f, signature_for
             generator = generator_for_signature_type_f(signature_type)
             seen += 1
             for idx, sec_key in enumerate(sec_keys):
-                public_pair = encoding.sec_to_public_pair(sec_key, generator)
+                public_pair = sec_to_public_pair(sec_key, generator)
                 sign_value = signature_for_hash_type_f(signature_type)
                 v = generator.verify(public_pair, sign_value, sig_pair)
                 if v:
                     signatures.append((idx, data))
                     secs_solved.add(sec_key)
                     break
-        except (ValueError, encoding.EncodingError, der.UnexpectedDER):
+        except (ValueError, EncodingError, der.UnexpectedDER):
             # if public_pair is invalid, we just ignore it
             pass
     return signatures, secs_solved
@@ -105,7 +107,7 @@ def hash_lookup_solver(m):
         result = db.get(the_hash)
         if result is None:
             raise SolvingError("can't find secret exponent for %s" % b2h(the_hash))
-        sec = encoding.public_pair_to_sec(result[1], compressed=result[2])
+        sec = public_pair_to_sec(result[1], compressed=result[2])
         return {m["1"]: sec}
 
     return (f, [m["1"]], ())
@@ -150,7 +152,7 @@ def signing_solver(m):
                 continue
             if len(existing_signatures) >= len(signature_variables):
                 break
-            result = db.get(encoding.hash160(sec_key))
+            result = db.get(hash160(sec_key))
             if result is None:
                 continue
             secret_exponent = result[0]

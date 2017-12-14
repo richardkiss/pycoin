@@ -16,8 +16,6 @@ def test_against_myself():
     """
     Test code that verifies against ourselves only. Useful but not so great.
     """
-    from pycoin.encoding import bitcoin_address_to_hash160_sec_with_prefix
-    from pycoin.encoding import wif_to_tuple_of_secret_exponent_compressed
 
     for wif, right_addr in [
                     ('L4gXBvYrXHo59HLeyem94D9yLpRkURCHmCwQtPuWW9m6o1X8p8sp',
@@ -25,16 +23,13 @@ def test_against_myself():
                     ('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss',
                      '1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN'),
                 ]:
-        se, comp = wif_to_tuple_of_secret_exponent_compressed(wif)
-
-        k = Key(generator=secp256k1_generator, secret_exponent=se, is_compressed=comp)
+        k = BitcoinMainnet.ui.parse(wif)
         assert k.address() == right_addr
 
-        vk = Key(public_pair=k.public_pair(), is_compressed=comp)
+        vk = Key(public_pair=k.public_pair(), is_compressed=not k._use_uncompressed())
         assert vk.address() == right_addr
 
-        h160, pubpre = bitcoin_address_to_hash160_sec_with_prefix(right_addr)
-        vk2 = Key(hash160=h160)
+        vk2 = BitcoinMainnet.ui.parse(right_addr)
         assert vk2.address() == right_addr
 
         for i in range(1, 30, 10):

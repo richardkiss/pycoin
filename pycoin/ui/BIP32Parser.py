@@ -1,6 +1,7 @@
 import struct
 
-from pycoin.encoding import from_bytes_32, sec_to_public_pair
+from pycoin.encoding.bytes32 import from_bytes_32
+from pycoin.encoding.sec import sec_to_public_pair
 from pycoin.serialize import h2b
 
 from pycoin.ui.Parser import Parser, make_base58_prefixes

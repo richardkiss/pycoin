@@ -1,17 +1,25 @@
 import unittest
 
-from pycoin import encoding
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.encoding.b58 import a2b_base58, b2a_base58, a2b_hashed_base58, b2a_hashed_base58, is_hashed_base58_valid
+from pycoin.encoding.base_conversion import from_long, to_long, EncodingError
+from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
+from pycoin.encoding.hash import double_sha256, hash160
+from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec, public_pair_to_sec, sec_to_public_pair
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.ui.validate import is_address_valid
 from pycoin.intbytes import iterbytes
 from pycoin.serialize import h2b
+
+Key = BitcoinMainnet.ui._key_class
 
 
 class EncodingTestCase(unittest.TestCase):
 
     def test_to_from_long(self):
         def do_test(as_int, prefix, as_rep, base):
-            self.assertEqual((as_int, prefix), encoding.to_long(base, lambda v: v, iterbytes(as_rep)))
-            self.assertEqual(as_rep, encoding.from_long(as_int, prefix, base, lambda v: v))
+            self.assertEqual((as_int, prefix), to_long(base, lambda v: v, iterbytes(as_rep)))
+            self.assertEqual(as_rep, from_long(as_int, prefix, base, lambda v: v))
 
         do_test(10000101, 2, h2b("00009896e5"), 256)
         do_test(10000101, 3, h2b("0000009896e5"), 256)
@@ -20,16 +28,16 @@ class EncodingTestCase(unittest.TestCase):
 
     def test_to_bytes_32(self):
         for i in range(256):
-            v = encoding.to_bytes_32(i)
+            v = to_bytes_32(i)
             self.assertEqual(v, b'\0' * 31 + bytes(bytearray([i])))
         for i in range(256, 512):
-            v = encoding.to_bytes_32(i)
+            v = to_bytes_32(i)
             self.assertEqual(v, b'\0' * 30 + bytes(bytearray([1, i & 0xff])))
 
     def test_to_from_base58(self):
         def do_test(as_text, as_bin):
-            self.assertEqual(as_bin, encoding.a2b_base58(as_text))
-            self.assertEqual(as_text, encoding.b2a_base58(as_bin))
+            self.assertEqual(as_bin, a2b_base58(as_text))
+            self.assertEqual(as_text, b2a_base58(as_bin))
 
         do_test("1abcdefghijkmnpqrst", h2b("0001935c7cf22ab9be1962aee48c7b"))
         do_test("1CASrvcpMMTa4dz4DmYtAqcegCtdkhjvdn",
@@ -42,11 +50,11 @@ class EncodingTestCase(unittest.TestCase):
 
     def test_to_from_hashed_base58(self):
         def do_test(as_text, as_bin):
-            self.assertEqual(as_text, encoding.b2a_hashed_base58(as_bin))
-            self.assertEqual(as_bin, encoding.a2b_hashed_base58(as_text))
-            self.assertTrue(encoding.is_hashed_base58_valid(as_text))
+            self.assertEqual(as_text, b2a_hashed_base58(as_bin))
+            self.assertEqual(as_bin, a2b_hashed_base58(as_text))
+            self.assertTrue(is_hashed_base58_valid(as_text))
             bogus_text = as_text[:-1] + chr(1+ord(as_text[-1]))
-            self.assertFalse(encoding.is_hashed_base58_valid(bogus_text))
+            self.assertFalse(is_hashed_base58_valid(bogus_text))
 
         do_test("14nr3dMd4VwNpFhFECU1A6imi", h2b("0001935c7cf22ab9be1962aee48c7b"))
         do_test("1CASrvcpMMTa4dz4DmYtAqcegCtdkhjvdn", h2b("007a72b6fa63de36c4abc60a68b52d7f33e3d7cd3e"))
@@ -57,7 +65,7 @@ class EncodingTestCase(unittest.TestCase):
 
     def test_double_sha256(self):
         def do_test(blob, expected_hash):
-            self.assertEqual(encoding.double_sha256(blob), expected_hash)
+            self.assertEqual(double_sha256(blob), expected_hash)
 
         do_test(b"This is a test",
                 h2b("eac649d431aa3fc2d5749d1a5021bba7812ec83b8a59fa840bff75c17f8a665c"))
@@ -68,7 +76,7 @@ class EncodingTestCase(unittest.TestCase):
 
     def test_hash160(self):
         def do_test(blob, expected_hash):
-            self.assertEqual(encoding.hash160(blob), expected_hash)
+            self.assertEqual(hash160(blob), expected_hash)
 
         do_test(b"This is a test", h2b("18ac98fa2a2412ddb75de60459b52acd98f2d972"))
         do_test(b"The quick brown fox jumps over the lazy dogs",
@@ -77,11 +85,13 @@ class EncodingTestCase(unittest.TestCase):
 
     def test_wif_to_from_secret_exponent(self):
         def do_test(as_secret_exponent, as_wif, is_compressed):
-            self.assertEqual(as_wif, encoding.secret_exponent_to_wif(as_secret_exponent, compressed=is_compressed))
-            se, comp = encoding.wif_to_tuple_of_secret_exponent_compressed(as_wif)
+            key = Key(as_secret_exponent, is_compressed=is_compressed, generator=secp256k1_generator)
+            self.assertEqual(as_wif, key.wif())
+            key = BitcoinMainnet.ui.parse(as_wif)
+            se = key.secret_exponent()
+            comp = not key._use_uncompressed()
             self.assertEqual(se, as_secret_exponent)
             self.assertEqual(comp, is_compressed)
-            self.assertTrue(encoding.is_valid_wif(as_wif))
 
         WIF_LIST = [
             "5HwoXVkHoRM8sL2KmNRS217n1g8mPPBomrY7yehCuXC1115WWsh",
@@ -105,17 +115,16 @@ class EncodingTestCase(unittest.TestCase):
 
     def test_public_pair_to_sec(self):
         def do_test(as_public_pair, as_sec, is_compressed, as_hash160_sec, as_bitcoin_address):
-            self.assertEqual(encoding.sec_to_public_pair(as_sec, secp256k1_generator), as_public_pair)
-            self.assertEqual(encoding.public_pair_to_sec(as_public_pair, compressed=is_compressed), as_sec)
-            self.assertEqual(encoding.is_sec_compressed(as_sec), is_compressed)
-            self.assertEqual(encoding.public_pair_to_hash160_sec(as_public_pair, compressed=is_compressed),
+            self.assertEqual(sec_to_public_pair(as_sec, secp256k1_generator), as_public_pair)
+            self.assertEqual(public_pair_to_sec(as_public_pair, compressed=is_compressed), as_sec)
+            self.assertEqual(is_sec_compressed(as_sec), is_compressed)
+            self.assertEqual(public_pair_to_hash160_sec(as_public_pair, compressed=is_compressed),
                              as_hash160_sec)
-            self.assertEqual(encoding.hash160_sec_to_bitcoin_address(as_hash160_sec), as_bitcoin_address)
-            self.assertEqual(encoding.public_pair_to_bitcoin_address(as_public_pair, compressed=is_compressed),
-                             as_bitcoin_address)
-            self.assertTrue(encoding.is_valid_bitcoin_address(as_bitcoin_address))
+
+            self.assertEqual(BitcoinMainnet.ui.address_for_p2pkh(as_hash160_sec), as_bitcoin_address)
+            self.assertTrue(is_address_valid(as_bitcoin_address))
             bad_address = as_bitcoin_address[:17] + chr(ord(as_bitcoin_address[17]) + 1) + as_bitcoin_address[18:]
-            self.assertFalse(encoding.is_valid_bitcoin_address(bad_address))
+            self.assertFalse(is_address_valid(bad_address))
 
         SEC_TEST_DATA = [
             (
@@ -177,11 +186,11 @@ class EncodingTestCase(unittest.TestCase):
     def test_sec(self):
         pair_blob = h2b("0679be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483a"
                         "da7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8")
-        encoding.sec_to_public_pair(pair_blob, secp256k1_generator, strict=False)
+        sec_to_public_pair(pair_blob, secp256k1_generator, strict=False)
         try:
-            encoding.sec_to_public_pair(pair_blob, secp256k1_generator, strict=True)
+            sec_to_public_pair(pair_blob, secp256k1_generator, strict=True)
             self.fail("sec_to_public_pair unexpectedly succeeded")
-        except encoding.EncodingError:
+        except EncodingError:
             pass
 
 

@@ -13,7 +13,7 @@ import subprocess
 import sys
 
 from pycoin.convention import tx_fee, satoshi_to_mbtc
-from pycoin.encoding import hash160
+from pycoin.encoding.hash import hash160
 from pycoin.ui.validate import is_address_valid
 from pycoin.networks.registry import full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
