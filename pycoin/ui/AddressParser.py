@@ -41,7 +41,7 @@ class AddressParser(Parser):
                             create_f=lambda: self._pay_to.script_for_p2pkh_wit(data))
 
             if ldd == 32:
-                return dict(type="address", address_type="p2sh_wit", hash160=data,
+                return dict(type="address", address_type="p2sh_wit", hash256=data,
                             create_f=lambda: self._pay_to.script_for_p2sh_wit(data))
 
         return dict(type="address", address_type="wit_other", version_byte=version_byte,
