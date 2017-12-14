@@ -254,7 +254,7 @@ def _create_bip32(generator):
     max_retries = 64
     for _ in range(max_retries):
         try:
-            return BIP32Node.from_master_secret(get_entropy())
+            return BIP32Node.from_master_secret(secp256k1_generator, get_entropy())
         except ValueError as e:
             continue
     # Probably a bug if we get here
