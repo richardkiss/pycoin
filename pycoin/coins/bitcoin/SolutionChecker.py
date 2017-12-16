@@ -11,10 +11,8 @@ from ...intbytes import byte2int, indexbytes
 
 from ..SolutionChecker import SolutionChecker, ScriptError
 from pycoin.satoshi import errno
-
-from ...serialize.bitcoin_streamer import (
-    stream_struct, stream_bc_string
-)
+from pycoin.satoshi.satoshi_struct import stream_struct
+from pycoin.satoshi.satoshi_string import stream_satoshi_string
 
 from pycoin.satoshi.flags import (
     SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
@@ -350,7 +348,7 @@ class BitcoinSolutionChecker(SolutionChecker):
         f.write(tx_in.previous_hash)
         stream_struct("L", f, tx_in.previous_index)
         tx_out = self.tx.unspents[tx_in_idx]
-        stream_bc_string(f, script)
+        stream_satoshi_string(f, script)
         stream_struct("Q", f, tx_out.coin_value)
         stream_struct("L", f, tx_in.sequence)
         f.write(self.hash_outputs(hash_type, tx_in_idx))

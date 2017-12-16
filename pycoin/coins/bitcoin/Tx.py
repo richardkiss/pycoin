@@ -37,10 +37,10 @@ from .SolutionChecker import BitcoinSolutionChecker as SolutionChecker
 from ...convention import SATOSHI_PER_COIN
 from ...encoding.hash import double_sha256
 from ...serialize import b2h, b2h_rev, h2b_rev
-from ...serialize.bitcoin_streamer import (
-    parse_struct, parse_bc_int, parse_bc_string,
-    stream_struct, stream_bc_string
-)
+
+from pycoin.satoshi.satoshi_struct import parse_struct, stream_struct
+from pycoin.satoshi.satoshi_int import parse_satoshi_int
+from pycoin.satoshi.satoshi_string import parse_satoshi_string, stream_satoshi_string
 
 from ..exceptions import BadSpendableError, ValidationFailureError
 from .TxIn import TxIn
@@ -101,11 +101,11 @@ class Tx(BaseTx):
             else:
                 is_segwit = False
                 v2 = ord(flag)
-        count = parse_bc_int(f, v=v1)
+        count = parse_satoshi_int(f, v=v1)
         txs_in = []
         for i in range(count):
             txs_in.append(class_.TxIn.parse(f))
-        count = parse_bc_int(f, v=v2)
+        count = parse_satoshi_int(f, v=v2)
         txs_out = []
         for i in range(count):
             txs_out.append(class_.TxOut.parse(f))
@@ -113,9 +113,9 @@ class Tx(BaseTx):
         if is_segwit:
             for tx_in in txs_in:
                 stack = []
-                count = parse_bc_int(f)
+                count = parse_satoshi_int(f)
                 for i in range(count):
-                    stack.append(parse_bc_string(f))
+                    stack.append(parse_satoshi_string(f))
                 tx_in.witness = stack
         lock_time, = parse_struct("L", f)
         return class_(version, txs_in, txs_out, lock_time)
@@ -177,7 +177,7 @@ class Tx(BaseTx):
                 witness = tx_in.witness
                 stream_struct("I", f, len(witness))
                 for w in witness:
-                    stream_bc_string(f, w)
+                    stream_satoshi_string(f, w)
         stream_struct("L", f, self.lock_time)
         if include_unspents and not self.missing_unspents():
             self.stream_unspents(f)

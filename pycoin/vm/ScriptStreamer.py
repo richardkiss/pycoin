@@ -1,4 +1,4 @@
-from ..serialize import bytes_as_hex
+from ..encoding.hexbytes import bytes_as_hex
 from ..intbytes import indexbytes, int2byte
 
 

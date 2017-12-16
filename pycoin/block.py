@@ -3,7 +3,7 @@ import io
 
 from .encoding.hash import double_sha256
 from .merkle import merkle
-from .serialize.bitcoin_streamer import parse_struct, stream_struct
+from .satoshi.satoshi_struct import parse_struct, stream_struct
 from .serialize import b2h, b2h_rev
 
 from .tx.Tx import Tx
