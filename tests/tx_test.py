@@ -18,6 +18,7 @@ TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX = (
 
 address_for_script = BitcoinMainnet.ui.address_for_script
 
+
 class TxTest(unittest.TestCase):
 
     def test_tx_api(self):
@@ -199,11 +200,8 @@ class TxTest(unittest.TestCase):
 
 def tx_to_b64(tx_hex):
     # use this to dump raw transactions in the data above
-    import io
     tx = Tx.from_hex(tx_hex)
-    f = io.BytesIO()
-    tx.stream(f)
-    d = f.getvalue()
+    d = tx.as_bin()
     for idx in range(0, len(d), 45):
         print('"%s"' % binascii.b2a_base64(d[idx:idx+45]).decode("utf8")[:-1])
 

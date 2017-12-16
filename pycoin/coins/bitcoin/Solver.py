@@ -19,10 +19,10 @@ def generate_default_placeholder_signature(generator):
 
 
 class DynamicStack(list):
-    def __init__(self, l=[], reserve_count=0, fill_template="x_%d"):
+    def __init__(self, initial_stack=[], reserve_count=0, fill_template="x_%d"):
         self.total_item_count = reserve_count
         self.fill_template = fill_template
-        super(DynamicStack, self).__init__(l)
+        super(DynamicStack, self).__init__(initial_stack)
 
     def _fill(self):
         self.insert(0, Atom(self.fill_template % self.total_item_count))

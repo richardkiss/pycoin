@@ -17,7 +17,7 @@ class Streamer(object):
         self.array_count_parse_f = array_count_parse_f
 
     def parse_struct(self, fmt, f):
-        l = []
+        items = []
         i = 0
         while i < len(fmt):
             c = fmt[i]
@@ -33,12 +33,12 @@ class Streamer(object):
                         array.append(self.parse_struct(subfmt, f)[0])
                     else:
                         array.append(self.parse_struct(subfmt, f))
-                l.append(tuple(array))
+                items.append(tuple(array))
                 i = end
             else:
-                l.append(self.parse_lookup[c](f))
+                items.append(self.parse_lookup[c](f))
             i += 1
-        return tuple(l)
+        return tuple(items)
 
     def parse_as_dict(self, attribute_list, pack_list, f):
         return dict(list(zip(attribute_list, self.parse_struct(pack_list, f))))

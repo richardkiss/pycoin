@@ -1,57 +1,51 @@
 
 from pycoin.coins.SolutionChecker import ScriptError
-from pycoin.satoshi import intops, stackops, checksigops, miscops
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.satoshi import errno, opcodes
+from pycoin.satoshi.IntStreamer import IntStreamer
+from pycoin.satoshi.flags import VERIFY_MINIMALDATA
 
 from .ScriptStreamer import BitcoinScriptStreamer
 
 from pycoin.vm.VM import VM
 
 
-def _make_bad_instruction(v):
-    def f(vm_state):
-        raise ScriptError("invalid instruction x%02x at %d" % (v, vm_state.pc), errno.BAD_OPCODE)
-    return f
+from .make_instruction_lookup import make_instruction_lookup
 
 
-def _collect_opcodes(module):
-    d = {}
-    for k in dir(module):
-        if k.startswith("do_OP"):
-            d[k[3:]] = getattr(module, k)
-    return d
+class BitcoinVM(VM):
+    IntStreamer = IntStreamer
 
+    VM_FALSE = IntStreamer.int_to_script_bytes(0)
+    VM_TRUE = IntStreamer.int_to_script_bytes(1)
 
-def _no_op(vm):
-    pass
+    INSTRUCTION_LOOKUP = make_instruction_lookup(opcodes.OPCODE_LIST)
+    ScriptStreamer = BitcoinScriptStreamer
 
+    def pop_int(self):
+        return self.IntStreamer.int_from_script_bytes(self.pop(), require_minimal=self.flags & VERIFY_MINIMALDATA)
 
-def _make_instruction_lookup(opcode_pairs):
-    OPCODE_DATA_LIST = list(BitcoinScriptStreamer.data_opcodes)
+    def pop_nonnegative(self):
+        v = self.pop_int()
+        if v < 0:
+            raise ScriptError("unexpectedly got negative value", errno.INVALID_STACK_OPERATION)
+        return v
 
-    # start with all opcodes invalid
-    instruction_lookup = [_make_bad_instruction(i) for i in range(256)]
+    def push_int(self, v):
+        self.append(self.IntStreamer.int_to_script_bytes(v))
 
-    for i in OPCODE_DATA_LIST:
-        instruction_lookup[i] = _no_op
-    opcode_lookups = {}
-    opcode_lookups.update(_collect_opcodes(checksigops))
-    opcode_lookups.update(_collect_opcodes(intops))
-    opcode_lookups.update(_collect_opcodes(stackops))
-    opcode_lookups.update(_collect_opcodes(miscops))
-    opcode_lookups.update(miscops.extra_opcodes())
-    for opcode_name, opcode_value in opcode_pairs:
-        if opcode_name in opcode_lookups:
-            instruction_lookup[opcode_value] = opcode_lookups[opcode_name]
-    return instruction_lookup
+    @classmethod
+    def bool_from_script_bytes(class_, v, require_minimal=False):
+        v = class_.IntStreamer.int_from_script_bytes(v, require_minimal=require_minimal)
+        if require_minimal:
+            if v not in (class_.VM_FALSE, class_.VM_TRUE):
+                raise ScriptError("non-minimally encoded", errno.UNKNOWN_ERROR)
+        return bool(v)
 
+    @classmethod
+    def bool_to_script_bytes(class_, v):
+        return class_.VM_TRUE if v else class_.VM_FALSE
 
-def make_vm():
-    class BitcoinVM(VM):
-        INSTRUCTION_LOOKUP = _make_instruction_lookup(opcodes.OPCODE_LIST)
-        ScriptStreamer = BitcoinScriptStreamer
-
-    return BitcoinVM
-
-
-BitcoinVM = make_vm()
+    @classmethod
+    def generator_for_signature_type(class_, signature_type):
+        return secp256k1_generator

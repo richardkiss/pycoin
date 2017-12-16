@@ -35,23 +35,5 @@ class BlockTest(unittest.TestCase):
         # try to parse a block
 
         block = Block.parse(io.BytesIO(block_data))
-
-        print(block)
         assert b2h_rev(block.hash()) == expected_checksum
-
-        for tx in block.txs:
-            print(tx)
-            for t in tx.txs_in:
-                print("  %s" % t)
-            for t in tx.txs_out:
-                print("  %s" % t)
-
         block.check_merkle_hash()
-
-
-def main():
-    unittest.main()
-
-
-if __name__ == "__main__":
-    main()

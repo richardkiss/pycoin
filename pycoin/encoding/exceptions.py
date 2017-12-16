@@ -1,0 +1,2 @@
+class EncodingError(ValueError):
+    pass

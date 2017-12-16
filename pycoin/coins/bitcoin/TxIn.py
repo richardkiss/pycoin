@@ -80,12 +80,10 @@ class TxIn(object):
         # attempt to return the source address
         sec = self.public_key_sec()
         if sec:
-            bitcoin_address = encoding.hash160_sec_to_bitcoin_address(
+            address = encoding.hash160_sec_to_bitcoin_address(
                 encoding.hash160(sec), address_prefix=address_prefix)
-            return bitcoin_address
+            return address
         return "(unknown)"
-
-    bitcoin_address = address
 
     def __str__(self):
         if self.is_coinbase():

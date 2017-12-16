@@ -4,14 +4,13 @@ import argparse
 import datetime
 
 from pycoin.block import Block
-from pycoin.cmds.tx import dump_tx
+from pycoin.tx.dump import dump_tx
 from pycoin.networks.default import get_current_netcode
+from pycoin.networks.registry import network_for_netcode
 from pycoin.serialize import b2h, b2h_rev, stream_to_bytes
 
 
-def dump_block(block, netcode=None):
-    if netcode is None:
-        netcode = get_current_netcode()
+def dump_block(block, network):
     blob = stream_to_bytes(block.stream)
     print("%d bytes   block hash %s" % (len(blob), block.id()))
     print("version %d" % block.version)
@@ -23,8 +22,7 @@ def dump_block(block, netcode=None):
     print("%d transaction%s" % (len(block.txs), "s" if len(block.txs) != 1 else ""))
     for idx, tx in enumerate(block.txs):
         print("Tx #%d:" % idx)
-        dump_tx(tx, netcode=netcode, verbose_signature=False,
-                disassembly_level=0, disassembler=None, do_trace=False, use_pdb=False)
+        dump_tx(tx, network=network, verbose_signature=False, disassembly_level=0, do_trace=False, use_pdb=False)
 
 
 def create_parser():
@@ -35,9 +33,10 @@ def create_parser():
 
 
 def block(args, parser):
+    network = network_for_netcode(get_current_netcode())
     for f in args.block_file:
         block = Block.parse(f)
-        dump_block(block)
+        dump_block(block, network)
         print('')
 
 

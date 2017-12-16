@@ -5,7 +5,9 @@ import pdb
 from pycoin.satoshi.checksigops import parse_signature_blob
 from ..serialize import b2h
 
-from pycoin import encoding
+from pycoin.encoding.exceptions import EncodingError
+from pycoin.encoding.hash import hash160
+from pycoin.encoding.sec import public_pair_to_sec, sec_to_public_pair
 from pycoin.intbytes import indexbytes, int2byte
 from pycoin.tx.exceptions import SolvingError
 from pycoin.satoshi import der
@@ -37,14 +39,14 @@ def _find_signatures(script_blobs, generator_for_signature_type_f, signature_for
             generator = generator_for_signature_type_f(signature_type)
             seen += 1
             for idx, sec_key in enumerate(sec_keys):
-                public_pair = encoding.sec_to_public_pair(sec_key, generator)
+                public_pair = sec_to_public_pair(sec_key, generator)
                 sign_value = signature_for_hash_type_f(signature_type)
                 v = generator.verify(public_pair, sign_value, sig_pair)
                 if v:
                     signatures.append((idx, data))
                     secs_solved.add(sec_key)
                     break
-        except (ValueError, encoding.EncodingError, der.UnexpectedDER):
+        except (ValueError, EncodingError, der.UnexpectedDER):
             # if public_pair is invalid, we just ignore it
             pass
     return signatures, secs_solved
@@ -100,7 +102,7 @@ class LIST(object):
 def build_sec_lookup(sec_values):
     d = {}
     for sec in sec_values or []:
-        d[encoding.hash160(sec)] = sec
+        d[hash160(sec)] = sec
     return d
 
 
@@ -116,8 +118,8 @@ def hash_lookup_solver(m):
                 return {m["1"]: result}
         if result is None:
             raise SolvingError("can't find public pair for %s" % b2h(the_hash))
-        from pycoin.key.Key import Key  ## BRAIN DAMAGE
-        return {m["1"]: Key(result[0], generator=result[3]).sec(use_uncompressed=not result[2])}
+        sec = public_pair_to_sec(result[1], compressed=result[2])
+        return {m["1"]: sec}
 
     return (f, [m["1"]], ())
 
@@ -162,7 +164,7 @@ def signing_solver(m):
                 continue
             if len(existing_signatures) >= len(signature_variables):
                 break
-            result = db.get(encoding.hash160(sec_key))
+            result = db.get(hash160(sec_key))
             if result:
                 secret_exponent = result[0]
                 sig_hash = signature_for_hash_type_f(signature_type)
@@ -173,7 +175,7 @@ def signing_solver(m):
                 for sig in signature_hints:
                     sig_hash = signature_for_hash_type_f(indexbytes(sig, -1))
                     generator = generator_for_signature_type_f(signature_type)
-                    public_pair = encoding.sec_to_public_pair(sec_key, generator=generator)
+                    public_pair = sec_to_public_pair(sec_key, generator=generator)
                     sig_pair = der.sigdecode_der(sig[:-1])
                     if generator.verify(public_pair, sig_hash, sig_pair):
                         r, s = sig_pair

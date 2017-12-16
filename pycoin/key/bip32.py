@@ -44,7 +44,8 @@ import hmac
 import logging
 import struct
 
-from ..encoding import public_pair_to_sec, from_bytes_32, to_bytes_32
+from ..encoding.bytes32 import from_bytes_32, to_bytes_32
+from ..encoding.sec import public_pair_to_sec
 
 logger = logging.getLogger(__name__)
 

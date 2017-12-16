@@ -1,7 +1,8 @@
-from pycoin.encoding import (
-    from_bytes_32, to_bytes_32, hash160, hash160_sec_to_bitcoin_address,
-    is_sec_compressed, public_pair_to_sec, public_pair_to_hash160_sec,
-    sec_to_public_pair, secret_exponent_to_wif
+from pycoin.encoding.hash import hash160
+from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
+from pycoin.encoding.sec import (
+    is_sec_compressed, public_pair_to_sec,
+    public_pair_to_hash160_sec, sec_to_public_pair
 )
 from pycoin.serialize import b2h
 from pycoin.satoshi.der import sigencode_der, sigdecode_der
@@ -162,7 +163,7 @@ class Key(object):
         """
         hash160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash160:
-            return self._ui_context(ui_context).address_for_hash160(hash160)
+            return self._ui_context(ui_context).address_for_p2pkh(hash160)
         return None
 
     bitcoin_address = address
@@ -183,7 +184,7 @@ class Key(object):
             return self
 
         return self.__class__(public_pair=self.public_pair(), prefer_uncompressed=self._prefer_uncompressed,
-                             is_compressed=(self._hash160_compressed is not None))
+                              is_compressed=(self._hash160_compressed is not None))
 
     def subkey(self, path_to_subkey):
         """

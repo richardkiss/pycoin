@@ -18,14 +18,14 @@ if hasattr(int, "to_bytes"):
 else:
     def to_bytes(v, length, byteorder="big"):
         "See int.to_bytes in python 3"
-        l = bytearray()
+        ba = bytearray()
         for i in range(length):
             mod = v & 0xff
             v >>= 8
-            l.append(mod)
+            ba.append(mod)
         if byteorder == "big":
-            l.reverse()
-        return bytes(l)
+            ba.reverse()
+        return bytes(ba)
 
     def from_bytes(bytes, byteorder="big", signed=False):
         "See int.from_bytes in python 3"

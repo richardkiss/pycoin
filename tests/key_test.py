@@ -7,7 +7,7 @@ from pycoin.ui.key_from_text import key_from_text
 
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.ui._keyparser._key_class
+Key = BitcoinMainnet.ui._key_class
 
 
 class KeyTest(unittest.TestCase):
@@ -30,8 +30,8 @@ class KeyTest(unittest.TestCase):
 
             keys_wif = [
                 Key(secret_exponent=secret_exponent, generator=secp256k1_generator),
-                key_from_text(wif, generator=secp256k1_generator),
-                key_from_text(c_wif, generator=secp256k1_generator),
+                key_from_text(wif),
+                key_from_text(c_wif),
             ]
 
             key_sec = Key.from_sec(sec, secp256k1_generator)

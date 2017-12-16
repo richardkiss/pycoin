@@ -8,8 +8,6 @@ import re
 import subprocess
 import sys
 
-from pycoin import encoding
-from pycoin.coins.bitcoin.pay_to import script_for_p2pkh_wit
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h, h2b
 from pycoin.key import Key
@@ -17,7 +15,7 @@ from pycoin.ui.key_from_text import key_info_from_text
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import (
-    full_network_name_for_netcode, network_name_for_netcode, network_codes, network_for_netcode
+    full_network_name_for_netcode, network_codes, network_for_netcode
 )
 
 
@@ -131,7 +129,7 @@ def create_hash160_output(key, network, add_output, output_dict):
     hash160_c = key.hash160(use_uncompressed=False)
     hash160_u = key.hash160(use_uncompressed=True)
     hash160 = None
-    if hash160_c == None and hash160_u == None:
+    if hash160_c is None and hash160_u is None:
         hash160 = key.hash160()
 
     add_output("hash160", b2h(hash160 or hash160_c))
@@ -139,7 +137,7 @@ def create_hash160_output(key, network, add_output, output_dict):
     if hash160_c and hash160_u:
         add_output("hash160_uncompressed", b2h(hash160_u), " uncompressed")
 
-    address = ui_context.address_for_hash160(hash160 or hash160_c)
+    address = ui_context.address_for_p2pkh(hash160 or hash160_c)
     add_output("address", address, "%s address" % network_name)
     output_dict["%s_address" % network.code] = address
 
@@ -149,15 +147,15 @@ def create_hash160_output(key, network, add_output, output_dict):
         output_dict["%s_address_uncompressed" % network.code] = address
 
     # don't print segwit addresses unless we're sure we have a compressed key
-    if hash160_c and hasattr(network, "ui") and hasattr(network.ui, "address_for_p2skh_wit"):
-        address_segwit = network.ui.address_for_p2skh_wit(hash160_c)
+    if hash160_c and hasattr(network, "ui") and getattr(network.ui, "_bech32_hrp"):
+        address_segwit = network.ui.address_for_p2pkh_wit(hash160_c)
         if address_segwit:
             # this network seems to support segwit
             add_output("address_segwit", address_segwit, "%s segwit address" % network_name)
             output_dict["%s_address_segwit" % network.code] = address_segwit
 
-            p2sh_script = script_for_p2pkh_wit(hash160_c)
-            p2s_address = network.ui.address_for_pay_to_script(p2sh_script)
+            p2sh_script = network.ui._script_info.script_for_p2pkh_wit(hash160_c)
+            p2s_address = network.ui.address_for_p2s(p2sh_script)
             if p2s_address:
                 add_output("p2sh_segwit", p2s_address)
 
@@ -256,7 +254,7 @@ def _create_bip32(generator):
     max_retries = 64
     for _ in range(max_retries):
         try:
-            return BIP32Node.from_master_secret(get_entropy())
+            return BIP32Node.from_master_secret(secp256k1_generator, get_entropy())
         except ValueError as e:
             continue
     # Probably a bug if we get here
@@ -268,7 +266,7 @@ def parse_key(item, networks, generator):
         return None, _create_bip32(generator)
 
     for network, key_info in key_info_from_text(item, networks=networks):
-        return network, key_info["key_class"](**key_info["kwargs"])
+        return network, key_info["create_f"]()
 
     if HASH160_RE.match(item):
         return None, Key(hash160=h2b(item))

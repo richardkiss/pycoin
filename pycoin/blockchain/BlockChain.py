@@ -60,10 +60,10 @@ class BlockChain(object):
     def tuple_for_index(self, index):
         if index < 0:
             index = self.length() + index
-        l = len(self._locked_chain)
-        if index < l:
+        size = len(self._locked_chain)
+        if index < size:
             return self._locked_chain[index]
-        index -= l
+        index -= size
 
         longest_chain = self._longest_local_block_chain()
         the_hash = longest_chain[-index-1]

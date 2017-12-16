@@ -5,9 +5,8 @@ from hashlib import sha256
 from .ScriptTools import BitcoinScriptTools
 from .VM import BitcoinVM
 
-from pycoin.vm.VM import VMContext
-
-from ...encoding import double_sha256, from_bytes_32
+from ...encoding.hash import double_sha256
+from ...encoding.bytes32 import from_bytes_32
 from ...intbytes import byte2int, indexbytes
 
 from ..SolutionChecker import SolutionChecker, ScriptError
@@ -101,22 +100,21 @@ class BitcoinSolutionChecker(SolutionChecker):
                 script = self.delete_signature(script, sig_blob)
             return self.signature_hash(script, tx_context.tx_in_idx, hash_type)
 
-        vm_context = VMContext(solution_script, tx_context, sig_for_hash_type_f, f1)
+        vm = self.VM(solution_script, tx_context, sig_for_hash_type_f, f1)
 
-        vm_context.is_solution_script = True
-        vm_context.traceback_f = traceback_f
+        vm.is_solution_script = True
+        vm.traceback_f = traceback_f
 
-        vm = self.VM()
-        solution_stack = vm.eval_script(vm_context)
+        solution_stack = vm.eval_script()
 
-        vm_context = VMContext(puzzle_script, tx_context, sig_for_hash_type_f, f1, initial_stack=solution_stack[:])
+        vm = self.VM(puzzle_script, tx_context, sig_for_hash_type_f, f1, initial_stack=solution_stack[:])
 
-        vm_context.is_solution_script = False
-        vm_context.traceback_f = traceback_f
+        vm.is_solution_script = False
+        vm.traceback_f = traceback_f
 
         # work on a copy of the solution stack
-        stack = vm.eval_script(vm_context)
-        if len(stack) == 0 or not vm_context.bool_from_script_bytes(stack[-1]):
+        stack = vm.eval_script()
+        if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         return stack, solution_stack
@@ -148,15 +146,15 @@ class BitcoinSolutionChecker(SolutionChecker):
             [witness_program]) + V0_len20_postfix
 
     def check_witness_program_v0(self, witness_solution_stack, witness_program, tx_context, flags):
-        l = len(witness_program)
-        if l == 32:
+        size = len(witness_program)
+        if size == 32:
             if len(witness_solution_stack) == 0:
                 raise ScriptError("witness program witness empty", errno.WITNESS_PROGRAM_WITNESS_EMPTY)
             puzzle_script = witness_solution_stack[-1]
             if sha256(puzzle_script).digest() != witness_program:
                 raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
             stack = list(witness_solution_stack[:-1])
-        elif l == 20:
+        elif size == 20:
             # special case for pay-to-pubkeyhash; signature + pubkey in witness
             if len(witness_solution_stack) != 2:
                 raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
@@ -180,30 +178,29 @@ class BitcoinSolutionChecker(SolutionChecker):
             return self.signature_for_hash_type_segwit(
                 vmc.script[vmc.begin_code_hash:], tx_context.tx_in_idx, hash_type)
 
-        vm = self.VM()
-        vm_context = VMContext(
+        vm = self.VM(
             puzzle_script, tx_context, witness_signature_for_hash_type, flags, initial_stack=stack)
-        vm_context.traceback_f = traceback_f
-        vm_context.is_solution_script = False
+        vm.traceback_f = traceback_f
+        vm.is_solution_script = False
 
         for s in stack:
-            if len(s) > vm_context.MAX_BLOB_LENGTH:
+            if len(s) > vm.MAX_BLOB_LENGTH:
                 raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
-        stack = vm.eval_script(vm_context)
+        stack = vm.eval_script()
 
-        if len(stack) == 0 or not vm_context.bool_from_script_bytes(stack[-1]):
+        if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         if len(stack) != 1:
             raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
 
     def witness_program_version(self, script):
-        l = len(script)
-        if l < 4 or l > 42:
+        size = len(script)
+        if size < 4 or size > 42:
             return None
         first_opcode = byte2int(script)
-        if indexbytes(script, 1) + 2 != l:
+        if indexbytes(script, 1) + 2 != size:
             return None
         if first_opcode == OP_0:
             return 0

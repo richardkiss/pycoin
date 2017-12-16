@@ -81,7 +81,7 @@ def txs_from_json(path):
             flag_mask = parse_flags(tvec[2])
             try:
                 tx = Tx.from_hex(tx_hex)
-            except:
+            except Exception:
                 print("Cannot parse tx_hex: %s" % tx_hex)
                 raise
 
