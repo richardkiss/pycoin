@@ -1,5 +1,4 @@
 import binascii
-import io
 import unittest
 
 from pycoin.block import Block
@@ -8,10 +7,32 @@ from pycoin.serialize import h2b
 from pycoin.tx.Tx import Tx
 
 
-class ValidatingTest(unittest.TestCase):
-    def test_validate(self):
+class ValidationTest(unittest.TestCase):
+
+    def test_validate_multisig_tx(self):
+        # this is a transaction in the block chain
+        # the unspents are included too, so it can be validated
+        TX_HEX = (
+            "01000000025718fb915fb8b3a802bb699ddf04dd91261ef6715f5f2820a2b1b9b7e38b"
+            "4f27000000004a004830450221008c2107ed4e026ab4319a591e8d9ec37719cdea0539"
+            "51c660566e3a3399428af502202ecd823d5f74a77cc2159d8af2d3ea5d36a702fef9a7"
+            "edaaf562aef22ac35da401ffffffff038f52231b994efb980382e4d804efeadaee13cf"
+            "e01abe0d969038ccb45ec17000000000490047304402200487cd787fde9b337ab87f9f"
+            "e54b9fd46d5d1692aa58e97147a4fe757f6f944202203cbcfb9c0fc4e3c453938bbea9"
+            "e5ae64030cf7a97fafaf460ea2cb54ed5651b501ffffffff0100093d00000000001976"
+            "a9144dc39248253538b93d3a0eb122d16882b998145888ac0000000002000000000000"
+            "004751210351efb6e91a31221652105d032a2508275f374cea63939ad72f1b1e02f477"
+            "da782100f2b7816db49d55d24df7bdffdbc1e203b424e8cd39f5651ab938e5e4a19356"
+            "9e52ae404b4c00000000004751210351efb6e91a31221652105d032a2508275f374cea"
+            "63939ad72f1b1e02f477da7821004f0331742bbc917ba2056a3b8a857ea47ec088dd10"
+            "475ea311302112c9d24a7152ae")
+        tx = Tx.from_hex(TX_HEX)
+        self.assertEqual(tx.id(), "70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a")
+        self.assertEqual(tx.bad_signature_count(), 0)
+
+    def test_validate_block_data(self):
         # block 80971
-        block_80971_cs = '00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC'.lower()
+        block_80971_id = '00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC'.lower()
         block_80971_data = h2b(
             "01000000950A1631FB9FAC411DFB173487B9E18018B7C6F7147E78C062584100000000"
             "00A881352F97F14BF191B54915AE124E051B8FE6C3922C5082B34EAD503000FC34D891"
@@ -41,7 +62,7 @@ class ValidatingTest(unittest.TestCase):
             "0D2E2B80ECBCDD48DB88AC00000000")
 
         # block 80974
-        block_80974_cs = '0000000000089F7910F6755C10EA2795EC368A29B435D80770AD78493A6FECF1'.lower()
+        block_80974_id = '0000000000089F7910F6755C10EA2795EC368A29B435D80770AD78493A6FECF1'.lower()
         block_80974_data = h2b(
             "010000007480150B299A16BBCE5CCDB1D1BBC65CFC5893B01E6619107C552000000000"
             "007900A2B203D24C69710AB6A94BEB937E1B1ADD64C2327E268D8C3E5F8B41DBED8796"
@@ -65,10 +86,10 @@ class ValidatingTest(unittest.TestCase):
             "00001976A914D4CAA8447532CA8EE4C80A1AE1D230A01E22BFDB88AC8013A0DE010000"
             "001976A9149661A79AE1F6D487AF3420C13E649D6DF3747FC288AC00000000")
 
-        block_80971 = Block.parse(io.BytesIO(block_80971_data))
-        self.assertEqual(block_80971.id(), block_80971_cs)
-        block_80974 = Block.parse(io.BytesIO(block_80974_data))
-        self.assertEqual(block_80974.id(), block_80974_cs)
+        block_80971 = Block.from_bin(block_80971_data)
+        self.assertEqual(block_80971.id(), block_80971_id)
+        block_80974 = Block.from_bin(block_80974_data)
+        self.assertEqual(block_80974.id(), block_80974_id)
 
         tx_db = {tx.hash(): tx for tx in block_80971.txs}
 
@@ -98,9 +119,9 @@ class ValidatingTest(unittest.TestCase):
 
     def test_validate_two_inputs(self):
         def tx_from_b64(h):
-            f = io.BytesIO(binascii.a2b_base64(h.encode("utf8")))
-            return Tx.parse(f)
-        # c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d
+            d = binascii.a2b_base64(h.encode("utf8"))
+            return Tx.from_bin(d)
+        # tx_0 = c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d
         # This is the one we're going to validate. It has inputs from
         #  tx_1 = b52201c2741d410b70688335afebba0d58f8675fa9b6c8c54becb0d7c0a75983
         # and tx_2 = 72151f65db1d8594df90778639a4c0c17c1e303af01de0d04af8fac13854bbfd
