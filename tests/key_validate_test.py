@@ -14,7 +14,6 @@ XTNKey = BitcoinTestnet.ui._key_class
 BIP32Node = BitcoinMainnet.ui._bip32node_class
 
 
-
 def change_prefix(address, new_prefix):
     return b2a_hashed_base58(new_prefix + key_from_text(address).hash160())
 
