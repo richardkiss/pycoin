@@ -9,6 +9,7 @@ from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 from pycoin.coins.litecoin.networks import LitecoinMainnet, LitecoinTestnet
 
 from pycoin.coins.bcash.Tx import Tx as BCashTx
+from pycoin.coins.bgold.networks import BGoldMainnet, BGoldTestnet
 
 
 # BCH bcash mainnet : xprv/xpub
@@ -28,21 +29,22 @@ BUILT_IN_NETWORKS = [
     BitcoinTestnet,
     LitecoinMainnet,
     LitecoinTestnet,
-    BcashMainnet
+    BcashMainnet,
+    BGoldMainnet,
+    BGoldTestnet,
 
 ]
-
 
 
 def _transform_NetworkValues_to_Network(nv):
     from pycoin.ecdsa.secp256k1 import secp256k1_generator
     from pycoin.ui.uiclass import UI
-    from pycoin.vm.PayTo import PayTo
+    from pycoin.vm.ScriptInfo import ScriptInfo
     from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 
     defaults = dict(
         tx=None, block=None, magic_header=None, dns_bootstrap=[], default_port=None)
-    puzzle_script = PayTo(BitcoinScriptTools)
+    puzzle_script = ScriptInfo(BitcoinScriptTools)
     ui = UI(
         puzzle_script, secp256k1_generator,
         bip32_prv_prefix=nv.prv32, bip32_pub_prefix=nv.pub32,

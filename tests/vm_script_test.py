@@ -91,7 +91,7 @@ def make_script_test(script_in, script_out, flags_string, comment, expected, coi
         except ScriptError as se:
             r = se.error_code()
             msg = se.args[0]
-        except:
+        except Exception:
             r = -1
         # for now, just deal with 0 versus nonzero
         expect_error = getattr(errno, expected)

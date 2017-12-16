@@ -1,6 +1,6 @@
 import unittest
 
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.SolutionChecker import TxContext
 from pycoin.coins.bitcoin.VM import BitcoinVM
 
@@ -8,35 +8,31 @@ from pycoin.satoshi.opcodes import OPCODE_LIST
 from pycoin.satoshi.IntStreamer import IntStreamer
 from pycoin.serialize import h2b
 from pycoin.intbytes import int2byte
-from pycoin.vm.VM import VMContext
 
-bin_script = BitcoinScriptTools.compile_push_data_list
-compile = BitcoinScriptTools.compile
-disassemble = BitcoinScriptTools.disassemble
-int_to_script_bytes = BitcoinScriptTools.intStreamer.int_to_script_bytes
+# BRAIN DAMAGE
+ScriptTools = BitcoinMainnet.extras.ScriptTools
 
 
 class ToolsTest(unittest.TestCase):
 
-    def test_bin_script(self):
+    def test_compile_push_data_list(self):
 
         def test_bytes(as_bytes):
-            script = bin_script([as_bytes])
+            script = ScriptTools.compile_push_data_list([as_bytes])
             # this is a pretty horrible hack to test the vm with long scripts. But it works
-            vm = BitcoinVM()
             tx_context = TxContext()
             tx_context.signature_for_hash_type_f = None
             tx_context.flags = 0
             tx_context.traceback_f = None
-            vm_context = VMContext(script, tx_context, tx_context.signature_for_hash_type_f, flags=0)
-            vm_context.MAX_SCRIPT_LENGTH = int(1e9)
-            vm_context.MAX_BLOB_LENGTH = int(1e9)
-            stack = vm.eval_script(vm_context)
+            vm = BitcoinVM(script, tx_context, tx_context.signature_for_hash_type_f, flags=0)
+            vm.MAX_SCRIPT_LENGTH = int(1e9)
+            vm.MAX_BLOB_LENGTH = int(1e9)
+            stack = vm.eval_script()
             assert len(stack) == 1
             assert stack[0] == as_bytes
 
         def test_val(n):
-            as_bytes = int_to_script_bytes(n)
+            as_bytes = IntStreamer.int_to_script_bytes(n)
             test_bytes(as_bytes)
 
         for i in range(100):
@@ -57,9 +53,9 @@ class ToolsTest(unittest.TestCase):
 
     def test_compile_decompile(self):
         def check(s):
-            b1 = compile(s)
-            s1 = disassemble(b1)
-            b2 = compile(s1)
+            b1 = ScriptTools.compile(s)
+            s1 = ScriptTools.disassemble(b1)
+            b2 = ScriptTools.compile(s1)
             self.assertEqual(s, s1)
             self.assertEqual(b1, b2)
 
@@ -101,7 +97,7 @@ class ToolsTest(unittest.TestCase):
             "93dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351ed993e"
             "a0d455b75642e2098ea51448d967ae33bfbdfe40cfe97bdc4773992254ae00")
 
-        d1 = disassemble(script).split()
+        d1 = ScriptTools.disassemble(script).split()
         self.assertEqual(len(d1), 5)
         self.assertEqual(d1[-1], "OP_0")
 

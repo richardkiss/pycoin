@@ -1,0 +1,72 @@
+from .base_conversion import from_long, to_long, EncodingError
+from .b58 import b2a_base58, a2b_base58, b2a_hashed_base58, a2b_hashed_base58, is_hashed_base58_valid
+from .bytes32 import from_bytes_32, to_bytes_32
+from .hash import double_sha256, hash160, ripemd160
+
+from ..intbytes import int2byte
+
+
+def public_pair_to_sec(public_pair, compressed=True):
+    """Convert a public pair (a pair of bignums corresponding to a public key) to the
+    gross internal sec binary format used by OpenSSL."""
+    x_str = to_bytes_32(public_pair[0])
+    if compressed:
+        return int2byte((2 + (public_pair[1] & 1))) + x_str
+    y_str = to_bytes_32(public_pair[1])
+    return b'\4' + x_str + y_str
+
+
+def sec_to_public_pair(sec, generator=None, strict=True):
+    """Convert a public key in sec binary format to a public pair."""
+    x = from_bytes_32(sec[1:33])
+    sec0 = sec[:1]
+    if len(sec) == 65:
+        isok = sec0 == b'\4'
+        if not strict:
+            isok = isok or (sec0 in [b'\6', b'\7'])
+        if isok:
+            y = from_bytes_32(sec[33:65])
+            return (x, y)
+    elif len(sec) == 33:
+        if not strict or (sec0 in (b'\2', b'\3')):
+            is_y_odd = (sec0 != b'\2')
+            y = generator.y_values_for_x(x)[is_y_odd]
+            return generator.Point(x, y)
+    raise EncodingError("bad sec encoding for public key")
+
+
+def is_sec_compressed(sec):
+    """Return a boolean indicating if the sec represents a compressed public key."""
+    return sec[:1] in (b'\2', b'\3')
+
+
+def public_pair_to_hash160_sec(public_pair, compressed=True):
+    """Convert a public_pair (corresponding to a public key) to hash160_sec format.
+    This is a hash of the sec representation of a public key, and is used to generate
+    the corresponding Bitcoin address."""
+    return hash160(public_pair_to_sec(public_pair, compressed=compressed))
+
+
+"""
+The MIT License (MIT)
+
+Copyright (c) 2013 by Richard Kiss
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""

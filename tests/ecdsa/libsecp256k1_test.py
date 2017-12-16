@@ -4,7 +4,7 @@ from ctypes import byref, c_size_t, create_string_buffer
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.ecdsa.native.secp256k1 import libsecp256k1, SECP256K1_EC_UNCOMPRESSED
-from pycoin.encoding import from_bytes_32, to_bytes_32
+from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
 from pycoin.intbytes import int2byte, byte2int
 from pycoin.serialize import b2h
 

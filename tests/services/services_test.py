@@ -38,18 +38,18 @@ class ServicesTest(unittest.TestCase):
         providers.set_default_providers_for_netcode("BTC", p_list_1)
         self.assertEqual(providers.get_default_providers_for_netcode("BTC"), p_list_1)
         # use a dictionary so it can be mutable in the subthread
-        l = {"is_ok": False}
+        d = {"is_ok": False}
 
         def subthread():
             providers.set_default_providers_for_netcode("BTC", [])
             self.assertEqual(providers.get_default_providers_for_netcode("BTC"), [])
             providers.set_default_providers_for_netcode("BTC", p_list_2)
             self.assertEqual(providers.get_default_providers_for_netcode("BTC"), p_list_2)
-            l["is_ok"] = True
+            d["is_ok"] = True
         t = threading.Thread(target=subthread)
         t.start()
         t.join()
-        self.assertTrue(l["is_ok"])
+        self.assertTrue(d["is_ok"])
         self.assertEqual(providers.get_default_providers_for_netcode("BTC"), p_list_1)
 
     def check_provider_tx_for_tx_hash(self, p, networks):

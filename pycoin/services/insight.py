@@ -10,7 +10,7 @@ from .agent import request, urlencode, urlopen
 from pycoin.block import Block
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.convention import btc_to_satoshi
-from pycoin.encoding import double_sha256
+from pycoin.encoding.hash import double_sha256
 from pycoin.merkle import merkle
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev

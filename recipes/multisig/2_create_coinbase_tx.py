@@ -7,7 +7,7 @@ import sys
 
 from pycoin.key.validate import is_address_valid
 from pycoin.tx.Tx import Tx, TxIn, TxOut
-from pycoin.ui import standard_tx_out_script
+from pycoin.ui import script_for_address
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
     print("creating coinbase transaction to %s" % address)
 
     tx_in = TxIn.coinbase_tx_in(script=b'')
-    tx_out = TxOut(50*1e8, standard_tx_out_script(address))
+    tx_out = TxOut(50*1e8, script_for_address(address))
     tx = Tx(1, [tx_in], [tx_out])
     print("Here is the tx as hex:\n%s" % tx.as_hex())
 

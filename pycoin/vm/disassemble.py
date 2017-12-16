@@ -1,8 +1,7 @@
 import collections
 
-from pycoin.encoding import (
-    hash160, hash160_sec_to_bitcoin_address, public_pair_to_hash160_sec, is_sec_compressed
-)
+from pycoin.encoding.hash import hash160
+from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec
 
 from pycoin.serialize import b2h
 
@@ -11,10 +10,9 @@ from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.coins.SolutionChecker import ScriptError
 
 
-
 class Disassemble(object):
     BIT_LIST = [(SIGHASH_ANYONECANPAY, "SIGHASH_ANYONECANPAY"), (SIGHASH_FORKID, "SIGHASH_FORKID")]
-    BASE_LOOKUP = { SIGHASH_ALL: "SIGHASH_ALL", SIGHASH_SINGLE: "SIGHASH_SINGLE", SIGHASH_NONE: "SIGHASH_NONE" }
+    BASE_LOOKUP = {SIGHASH_ALL: "SIGHASH_ALL", SIGHASH_SINGLE: "SIGHASH_SINGLE", SIGHASH_NONE: "SIGHASH_NONE"}
 
     def __init__(self, script_tools, ui_context):
         self._script_tools = script_tools
@@ -38,28 +36,27 @@ class Disassemble(object):
         return "[PUSH_%d] %s" % (opcode, b2h(data))
 
     def annotate_pubkey(self, blob, da):
-        l = da[blob]
         is_compressed = is_sec_compressed(blob)
-        address = hash160_sec_to_bitcoin_address(hash160(blob))
-        l.append("SEC for %scompressed %s" % ("" if is_compressed else "un", address))
+        address = self._ui_context.address_for_p2pkh(hash160(blob))
+        da[blob].append("SEC for %scompressed %s" % ("" if is_compressed else "un", address))
 
     def annotate_signature(self, blob, da, vmc):
-        l = da[blob]
+        lst = da[blob]
         sig_pair, sig_type = parse_signature_blob(blob)
-        l.append("r: {0:#066x}".format(sig_pair[0]))
-        l.append("s: {0:#066x}".format(sig_pair[1]))
+        lst.append("r: {0:#066x}".format(sig_pair[0]))
+        lst.append("s: {0:#066x}".format(sig_pair[1]))
         sig_hash = vmc.signature_for_hash_type_f(sig_type, [blob], vmc)
-        l.append("z: {0:#066x}".format(sig_hash))
-        l.append("signature type %s" % self.sighash_type_to_string(sig_type))
+        lst.append("z: {0:#066x}".format(sig_hash))
+        lst.append("signature type %s" % self.sighash_type_to_string(sig_type))
         addresses = []
         generator = vmc.generator_for_signature_type(sig_type)
         pairs = generator.possible_public_pairs_for_signature(sig_hash, sig_pair)
         for pair in pairs:
             for comp in (True, False):
                 hash160 = public_pair_to_hash160_sec(pair, compressed=comp)
-                address = self._ui_context.address_for_pay_to_pkh(hash160)
+                address = self._ui_context.address_for_p2pkh(hash160)
                 addresses.append(address)
-        l.append(" sig for %s" % " ".join(addresses))
+        lst.append(" sig for %s" % " ".join(addresses))
 
     def annotate_checksig(self, vmc, da):
         s = list(vmc.stack)

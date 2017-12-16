@@ -19,7 +19,7 @@ def get_test_cases():
             if fn.endswith(".txt") and fn[0] != '.':
                 paths.append(os.path.join(dirpath, fn))
     paths.sort()
-    l = []
+    test_cases = []
     for p in paths:
         with open(p) as f:
             # allow "#" comments at the beginning of the file
@@ -32,8 +32,8 @@ def get_test_cases():
             expected_output = f.read()
             test_name = os.path.relpath(
                 p, TESTS_PATH).replace(".", "_").replace("/", "_")
-            l.append((test_name, cmd, expected_output, comments, p))
-    return l
+            test_cases.append((test_name, cmd, expected_output, comments, p))
+    return test_cases
 
 
 class CmdlineTest(ToolTest):

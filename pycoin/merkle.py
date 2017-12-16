@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from .encoding import double_sha256
+from .encoding.hash import double_sha256
 from .serialize import h2b_rev
 
 
@@ -42,10 +42,10 @@ def merkle_pair(hashes, hash_f):
     if len(hashes) % 2 == 1:
         hashes = list(hashes)
         hashes.append(hashes[-1])
-    l = []
+    items = []
     for i in range(0, len(hashes), 2):
-        l.append(hash_f(hashes[i] + hashes[i+1]))
-    return l
+        items.append(hash_f(hashes[i] + hashes[i+1]))
+    return items
 
 
 def test_merkle():

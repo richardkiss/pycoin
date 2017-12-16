@@ -6,6 +6,7 @@ from pycoin.coins.bitcoin.networks import BitcoinMainnet
 ui = BitcoinMainnet.ui
 parse = ui.parse
 
+
 class ParseTest(unittest.TestCase):
 
     def test_parse_wif(self):
@@ -48,12 +49,12 @@ class ParseTest(unittest.TestCase):
 
     def test_parse_address_p2pkh(self):
         address = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH"
-        k = parse(address)
+        k = parse(address, types=["address"])
         self.assertEqual(ui.address_for_script(k), address)
 
     def test_parse_address_p2sh(self):
         address = "3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN"
-        k = parse(address)
+        k = parse(address, types=["address"])
         self.assertEqual(ui.address_for_script(k), address)
 
     def test_parse_address_p2pkh_wit(self):

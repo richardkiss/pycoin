@@ -1,11 +1,12 @@
 import unittest
 
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
+
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 
-from pycoin.encoding import (
-    bitcoin_address_to_hash160_sec, is_sec_compressed, public_pair_to_sec, secret_exponent_to_wif,
-    public_pair_to_bitcoin_address, wif_to_tuple_of_secret_exponent_compressed, sec_to_public_pair,
-    public_pair_to_hash160_sec
+from pycoin.encoding.bytes32 import to_bytes_32
+from pycoin.encoding.sec import (
+    is_sec_compressed, public_pair_to_sec, sec_to_public_pair, public_pair_to_hash160_sec
 )
 from pycoin.serialize import h2b
 
@@ -14,7 +15,22 @@ http://sourceforge.net/mailarchive/forum.php?thread_name=CAPg%2BsBhDFCjAn1tRRQha
 """
 
 
-class BuildTxTest(unittest.TestCase):
+def secret_exponent_to_wif(se, compressed):
+    blob = to_bytes_32(se)
+    if compressed:
+        blob += b'\01'
+    return BitcoinMainnet.ui.wif_for_blob(blob)
+
+
+def public_pair_to_bitcoin_address(pair, compressed):
+    return BitcoinMainnet.ui.address_for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
+
+
+def bitcoin_address_to_hash160_sec(bitcoin_address):
+    return BitcoinMainnet.ui.parse(bitcoin_address).hash160()
+
+
+class KeyTranslationTest(unittest.TestCase):
 
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
@@ -25,11 +41,15 @@ class BuildTxTest(unittest.TestCase):
             self.assertEqual(secret_exponent_to_wif(secret_exponent, compressed=False), wif)
             self.assertEqual(secret_exponent_to_wif(secret_exponent, compressed=True), c_wif)
 
-            exponent, compressed = wif_to_tuple_of_secret_exponent_compressed(wif)
+            key = BitcoinMainnet.ui.parse(wif)
+            exponent = key.secret_exponent()
+            compressed = not key._use_uncompressed()
             self.assertEqual(exponent, secret_exponent)
             self.assertFalse(compressed)
 
-            exponent, compressed = wif_to_tuple_of_secret_exponent_compressed(c_wif)
+            key = BitcoinMainnet.ui.parse(c_wif)
+            exponent = key.secret_exponent()
+            compressed = not key._use_uncompressed()
             self.assertEqual(exponent, secret_exponent)
             self.assertTrue(compressed)
 

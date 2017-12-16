@@ -60,12 +60,12 @@ class Curve(object):
             if (y0 + y1) % p == 0:
                 return infinity
             else:
-                l = ((3 * x0 * x0 + self._a) * self.inverse_mod(2 * y0, p)) % p
+                slope = ((3 * x0 * x0 + self._a) * self.inverse_mod(2 * y0, p)) % p
         else:
-            l = ((y1 - y0) * self.inverse_mod(x1 - x0, p)) % p
+            slope = ((y1 - y0) * self.inverse_mod(x1 - x0, p)) % p
 
-        x3 = (l * l - x0 - x1) % p
-        y3 = (l * (x0 - x3) - y0) % p
+        x3 = (slope * slope - x0 - x1) % p
+        y3 = (slope * (x0 - x3) - y0) % p
 
         return self.Point(x3, y3)
 

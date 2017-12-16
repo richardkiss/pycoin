@@ -5,7 +5,6 @@ from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Solver import Solver
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
-from pycoin.coins.bitcoin.pay_to import script_for_multisig, script_for_p2pk
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h
@@ -13,11 +12,13 @@ from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.tx.Tx import Tx, TxIn, TxOut
 
 
-address_for_pay_to_script = BitcoinMainnet.ui.address_for_pay_to_script
-standard_tx_out_script = BitcoinMainnet.ui.script_for_address
+address_for_p2s = BitcoinMainnet.ui.address_for_p2s
+script_for_address = BitcoinMainnet.ui.script_for_address
+script_for_multisig = BitcoinMainnet.ui._script_info.script_for_multisig
+script_for_p2pk = BitcoinMainnet.ui._script_info.script_for_p2pk
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.ui._keyparser._key_class
+Key = BitcoinMainnet.extras.Key
 
 
 class SolverTest(unittest.TestCase):
@@ -36,7 +37,7 @@ class SolverTest(unittest.TestCase):
     def make_test_tx(self, input_script):
         previous_hash = b'\1' * 32
         txs_in = [TxIn(previous_hash, 0)]
-        txs_out = [TxOut(1000, standard_tx_out_script(Key(1, generator=secp256k1_generator).address()))]
+        txs_out = [TxOut(1000, script_for_address(Key(1, generator=secp256k1_generator).address()))]
         version, lock_time = 1, 0
         tx = Tx(version, txs_in, txs_out, lock_time)
         unspents = [TxOut(1000, input_script)]
@@ -53,7 +54,7 @@ class SolverTest(unittest.TestCase):
 
     def test_p2pkh(self):
         key = Key(1, generator=secp256k1_generator)
-        self.do_test_tx(standard_tx_out_script(key.address()))
+        self.do_test_tx(script_for_address(key.address()))
 
     def test_p2pk(self):
         key = Key(1, generator=secp256k1_generator)
@@ -62,7 +63,7 @@ class SolverTest(unittest.TestCase):
 
     def test_nonstandard_p2pkh(self):
         key = Key(1, generator=secp256k1_generator)
-        self.do_test_tx(BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(key.address()))
+        self.do_test_tx(BitcoinScriptTools.compile("OP_SWAP") + script_for_address(key.address()))
 
     def test_p2multisig(self):
         keys = [Key(i, generator=secp256k1_generator) for i in (1, 2, 3)]
@@ -70,19 +71,18 @@ class SolverTest(unittest.TestCase):
         self.do_test_tx(script_for_multisig(2, secs))
 
     def test_p2sh(self):
-        netcode = "BTC"
         keys = [Key(i, generator=secp256k1_generator) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
         underlying_script = script_for_multisig(1, secs)
-        script = standard_tx_out_script(address_for_pay_to_script(underlying_script))
+        script = script_for_address(address_for_p2s(underlying_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
-        underlying_script = BitcoinScriptTools.compile("OP_SWAP") + standard_tx_out_script(keys[0].address())
-        script = standard_tx_out_script(address_for_pay_to_script(underlying_script))
+        underlying_script = BitcoinScriptTools.compile("OP_SWAP") + script_for_address(keys[0].address())
+        script = script_for_address(address_for_p2s(underlying_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
         underlying_script = script_for_p2pk(keys[2].sec())
-        script = standard_tx_out_script(address_for_pay_to_script(underlying_script))
+        script = script_for_address(address_for_p2s(underlying_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
     def test_p2pkh_wit(self):
@@ -98,12 +98,11 @@ class SolverTest(unittest.TestCase):
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
     def test_p2multisig_wit(self):
-        netcode = "BTC"
         keys = [Key(i, generator=secp256k1_generator) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
         underlying_script = script_for_multisig(2, secs)
         p2sh_script = BitcoinScriptTools.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
-        script = standard_tx_out_script(address_for_pay_to_script(p2sh_script))
+        script = script_for_address(address_for_p2s(p2sh_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script, p2sh_script]))
 
     def test_if(self):
