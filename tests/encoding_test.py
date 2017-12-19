@@ -3,7 +3,7 @@ import unittest
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.encoding.b58 import a2b_base58, b2a_base58, a2b_hashed_base58, b2a_hashed_base58, is_hashed_base58_valid
 from pycoin.encoding.base_conversion import from_long, to_long, EncodingError
-from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
+from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.hash import double_sha256, hash160
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec, public_pair_to_sec, sec_to_public_pair
 from pycoin.ecdsa.secp256k1 import secp256k1_generator

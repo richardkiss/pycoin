@@ -3,7 +3,7 @@ import unittest
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.b58 import b2a_hashed_base58
-from pycoin.key.Key import InvalidPublicPairError, InvalidSecretExponentError
+from pycoin.key.Key import InvalidSecretExponentError
 from pycoin.networks.registry import pay_to_script_prefix_for_netcode, network_codes
 from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
@@ -12,7 +12,6 @@ from pycoin.ui.validate import is_address_valid, is_wif_valid, is_public_bip32_v
 Key = BitcoinMainnet.ui._key_class
 XTNKey = BitcoinTestnet.ui._key_class
 BIP32Node = BitcoinMainnet.ui._bip32node_class
-
 
 
 def change_prefix(address, new_prefix):
