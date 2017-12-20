@@ -3,7 +3,7 @@ import binascii
 from ..coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
 from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker  # BRAIN DAMAGE
 from ..ecdsa.secp256k1 import secp256k1_generator
-from ..encoding.sec import public_pair_to_hash160_sec, sec_to_public_pair, EncodingError
+from ..encoding.sec import is_sec, public_pair_to_hash160_sec, sec_to_public_pair, EncodingError
 
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
@@ -26,7 +26,19 @@ class WhoSigned(object):
                     pass
         return public_pairs
 
+    def secs_for_script(self, script):
+        """
+        For a given script, iterate over and pull out public pairs encoded as sec values.
+        """
+        secs = []
+        for opcode, data, pc, new_pc in self._script_tools.get_opcodes(script):
+            if data and is_sec(data):
+                secs.append(data)
+        return secs
+
     def extract_parent_tx_out_script(self, tx, tx_in_idx):
+        if len(tx.unspents) <= tx_in_idx or tx.unspents[tx_in_idx] is None:
+            return b''
         parent_tx_out_script = tx.unspents[tx_in_idx].script
         sc = tx.SolutionChecker(tx)
         if sc.is_pay_to_script_hash(parent_tx_out_script):

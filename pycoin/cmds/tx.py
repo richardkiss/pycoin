@@ -18,7 +18,7 @@ from pycoin.ui.validate import is_address_valid
 from pycoin.networks.registry import full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode
-from pycoin.serialize import h2b, h2b_rev
+from pycoin.serialize import b2h, h2b, h2b_rev
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
@@ -584,24 +584,20 @@ def validate_against_bitcoind(tx, tx_db, network, bitcoind_url):
     return tx_db
 
 
-def dump_signatures_hex(tx):
-    from pycoin.contrib.who_signed import extract_signatures
-    from pycoin.serialize import b2h
+def dump_signatures_hex(tx, network):
     sigs = []
     for _, tx_in in enumerate(tx.txs_in):
-        sigs.extend(extract_signatures(tx, _))
+        sigs.extend(network.extras.extract_signatures(tx, _))
     if len(sigs):
         print("SIGNATURES")
     for sig in sigs:
         print(b2h(sig[0]))
 
 
-def dump_secs_hex(tx):
-    from pycoin.contrib.who_signed import sec_keys
-    from pycoin.serialize import b2h
+def dump_secs_hex(tx, network):
     sec_key_list = []
     for _, tx_in in enumerate(tx.txs_in):
-        sec_key_list.extend(sec_keys(tx_in.script))
+        sec_key_list.extend(network.extras.secs_for_script(tx_in.script))
     if len(sec_key_list):
         print("SECS")
     for sec in sec_key_list:
@@ -629,14 +625,17 @@ def tx(args, parser):
 
     include_unspents = not is_fully_signed
 
+    if args.dump_signatures or args.dump_secs:
+        if args.dump_signatures:
+            dump_signatures_hex(tx, network)
+
+        if args.dump_secs:
+            dump_secs_hex(tx, network)
+
+        return
+
     print_output(tx, include_unspents, args.output_file, args.show_unspents, network,
                  args.verbose_signature, args.disassemble, args.trace, args.pdb)
-
-    if args.dump_signatures:
-        dump_signatures_hex(tx)
-
-    if args.dump_secs:
-        dump_secs_hex(tx)
 
     tx_db = cache_result(tx, tx_db, args.cache, args.network)
 

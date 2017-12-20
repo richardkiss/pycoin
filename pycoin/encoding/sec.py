@@ -35,6 +35,14 @@ def sec_to_public_pair(sec, generator=None, strict=True):
     raise EncodingError("bad sec encoding for public key")
 
 
+def is_sec(sec):
+    c = sec[:1]
+    size = len(sec)
+    if c in (b'\2', b'\3') and size == 33:
+        return True
+    return c == b'\4' and size == 65
+
+
 def is_sec_compressed(sec):
     """Return a boolean indicating if the sec represents a compressed public key."""
     return sec[:1] in (b'\2', b'\3')
