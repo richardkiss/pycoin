@@ -70,7 +70,7 @@ class Solver(object):
             if len(witness_program) == 32:
                 underlying_script_wit = p2sh_lookup.get(witness_program, None)
                 if underlying_script_wit is None:
-                    raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
+                    raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(witness_program))
                 fill_template = "w_%d"
                 solution_reserve_count = 1
                 tx_context.witness_solution_stack = [underlying_script_wit]
@@ -180,7 +180,7 @@ class Solver(object):
                 try:
                     self.sign_tx_in(
                         hash160_lookup, idx, self.tx.unspents[idx].script, hash_type=hash_type, **kwargs)
-                except SolvingError:
+                except (SolvingError, ValueError):
                     pass
 
         return self

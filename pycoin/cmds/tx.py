@@ -22,6 +22,7 @@ from pycoin.serialize import h2b, h2b_rev
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
+from pycoin.solve.utils import build_p2sh_lookup
 from pycoin.tx.dump import dump_tx
 from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
@@ -297,15 +298,12 @@ def parse_scripts(args):
     return scripts, warnings
 
 
-def build_p2sh_lookup(args):
+def invoke_p2sh_lookup(args):
     scripts, warnings = parse_scripts(args)
     for w in warnings:
         print(w)
 
-    p2sh_lookup = {}
-    for script in scripts:
-        p2sh_lookup[hash160(script)] = script
-    return p2sh_lookup
+    return build_p2sh_lookup(scripts)
 
 
 def create_tx_db(network):
@@ -581,7 +579,7 @@ def tx(args, parser):
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
     # build p2sh_lookup
-    p2sh_lookup = build_p2sh_lookup(args)
+    p2sh_lookup = invoke_p2sh_lookup(args)
 
     tx = generate_tx(network, txs, spendables, payables, args)
 
