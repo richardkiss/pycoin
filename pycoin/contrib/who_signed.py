@@ -1,7 +1,3 @@
-import binascii
-
-from ..coins.bitcoin.ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
-from ..coins.bitcoin.SolutionChecker import BitcoinSolutionChecker  # BRAIN DAMAGE
 from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding.sec import is_sec, public_pair_to_hash160_sec, sec_to_public_pair, EncodingError
 
@@ -30,6 +26,7 @@ class WhoSigned(object):
         """
         This is a gross hack that returns the final list of data blobs that
         appear in the the solution_script or the witness.
+        BRAIN DAMAGE: clean up, or move to SolutionChecker somehow
         """
         if len(tx.unspents) <= tx_in_idx or tx.unspents[tx_in_idx] is None:
             raise ValueError("no unspents")

@@ -1,9 +1,8 @@
-from .base_conversion import from_long, to_long, EncodingError
-from .b58 import b2a_base58, a2b_base58, b2a_hashed_base58, a2b_hashed_base58, is_hashed_base58_valid
-from .bytes32 import from_bytes_32, to_bytes_32
-from .hash import double_sha256, hash160, ripemd160
-
 from ..intbytes import int2byte
+
+from .base_conversion import EncodingError
+from .bytes32 import from_bytes_32, to_bytes_32
+from .hash import hash160
 
 
 def public_pair_to_sec(public_pair, compressed=True):

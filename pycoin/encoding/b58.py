@@ -2,8 +2,6 @@
 Utilities to convert to and from base58.
 """
 
-import hashlib
-
 from .base_conversion import from_long, to_long, EncodingError
 from .hash import double_sha256
 from ..intbytes import iterbytes
