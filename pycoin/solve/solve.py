@@ -99,13 +99,6 @@ class LIST(object):
         return False
 
 
-def build_sec_lookup(sec_values):
-    d = {}
-    for sec in sec_values or []:
-        d[hash160(sec)] = sec
-    return d
-
-
 def hash_lookup_solver(m):
 
     def f(solved_values, **kwargs):

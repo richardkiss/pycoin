@@ -22,8 +22,7 @@ from pycoin.serialize import b2h, h2b, h2b_rev
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
-from pycoin.solve.solve import build_sec_lookup
-from pycoin.solve.utils import build_p2sh_lookup
+from pycoin.solve.utils import build_p2sh_lookup, build_sec_lookup
 from pycoin.tx.dump import dump_tx
 from pycoin.tx.exceptions import BadSpendableError
 from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx

@@ -19,3 +19,10 @@ def build_p2sh_lookup(scripts):
     d1 = dict((hash160(s), s) for s in scripts)
     d1.update((hashlib.sha256(s).digest(), s) for s in scripts)
     return d1
+
+
+def build_sec_lookup(sec_values):
+    d = {}
+    for sec in sec_values or []:
+        d[hash160(sec)] = sec
+    return d
