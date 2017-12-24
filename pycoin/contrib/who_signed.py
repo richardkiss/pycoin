@@ -26,15 +26,23 @@ class WhoSigned(object):
                     pass
         return public_pairs
 
-    def secs_for_script(self, script):
+    def solution_values(self, tx, tx_in_idx):
         """
-        For a given script, iterate over and pull out public pairs encoded as sec values.
+        This is a gross hack that returns the final list of data blobs that
+        appear in the the solution_script or the witness.
         """
-        secs = []
-        for opcode, data, pc, new_pc in self._script_tools.get_opcodes(script):
-            if data and is_sec(data):
-                secs.append(data)
-        return secs
+        if len(tx.unspents) <= tx_in_idx or tx.unspents[tx_in_idx] is None:
+            raise ValueError("no unspents")
+        parent_tx_out_script = tx.unspents[tx_in_idx].script
+        sc = tx.SolutionChecker(tx)
+        tx_context = sc.tx_context_for_idx(tx_in_idx)
+        stack, solution_stack = sc._check_solution(tx_context, flags=0, traceback_f=None)
+        if sc.is_pay_to_script_hash(parent_tx_out_script):
+            parent_tx_out_script = solution_stack[-1]
+            solution_stack = solution_stack[:-1]
+        if sc.witness_program_version(parent_tx_out_script) is not None:
+            solution_stack = tx_context.witness_solution_stack
+        return solution_stack
 
     def extract_parent_tx_out_script(self, tx, tx_in_idx):
         if len(tx.unspents) <= tx_in_idx or tx.unspents[tx_in_idx] is None:
@@ -48,22 +56,39 @@ class WhoSigned(object):
         return parent_tx_out_script
 
     def extract_signatures(self, tx, tx_in_idx):
-        tx_in = tx.txs_in[tx_in_idx]
-
-        parent_tx_out_idx = tx_in.previous_index
+        sc = tx.SolutionChecker(tx)
+        parent_tx_out_idx = tx.txs_in[tx_in_idx].previous_index
         parent_tx_out_script = self.extract_parent_tx_out_script(tx, tx_in_idx)
 
-        script = tx_in.script
-        sc = tx.SolutionChecker(tx)
-        for opcode, data, pc, new_pc in self._script_tools.get_opcodes(script):
-            if data is None:
-                continue
+        for data in self.solution_values(tx, tx_in_idx):
             try:
                 sig_pair, sig_type = parse_signature_blob(data)
                 sig_hash = sc.signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
                 yield (data, sig_hash)
             except (ValueError, TypeError, UnexpectedDER):
                 continue
+
+    def extract_secs(self, tx, tx_in_idx):
+        """
+        For a given script solution, iterate yield its sec blobs
+        """
+        for data in self.solution_values(tx, tx_in_idx):
+            if is_sec(data):
+                yield data
+
+    def blobs_for_solution(self, tx, tx_in_idx):
+        sc = tx.SolutionChecker(tx)
+        tx_in = tx.txs_in[tx_in_idx]
+        script = tx_in.script
+        if sc.is_pay_to_script_hash(script):
+            tx_context = sc.tx_context_for_idx(tx_in_idx)
+            stack, solution_stack = sc._check_solution(tx_context, flags=0, traceback_f=None)
+            for data in stack:
+                yield data
+            parent_tx_out_script = solution_stack[-1]
+        for opcode, data, pc, new_pc in self._script_tools.get_opcodes(script):
+            if data is not None:
+                yield data
 
     def public_pairs_signed(self, tx, tx_in_idx):
         signed_by = []

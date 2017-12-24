@@ -13,7 +13,7 @@ class Extras(object):
         who_signed = WhoSigned(script_tools)
         self.who_signed_tx = who_signed.who_signed_tx
         self.public_pairs_signed = who_signed.public_pairs_signed
+        self.extract_secs = who_signed.extract_secs
         self.extract_signatures = who_signed.extract_signatures
         self.public_pairs_for_script = who_signed.public_pairs_for_script
-        self.secs_for_script = who_signed.secs_for_script
         self.ScriptTools = script_tools

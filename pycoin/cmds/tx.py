@@ -594,7 +594,7 @@ def dump_signatures_hex(tx, network):
 def dump_secs_hex(tx, network):
     sec_key_list = []
     for _, tx_in in enumerate(tx.txs_in):
-        sec_key_list.extend(network.extras.secs_for_script(tx_in.script))
+        sec_key_list.extend(network.extras.extract_secs(tx, _))
     if len(sec_key_list):
         print("SECS")
     for sec in sec_key_list:
