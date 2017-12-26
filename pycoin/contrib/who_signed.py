@@ -26,7 +26,7 @@ class WhoSigned(object):
         sc = tx.SolutionChecker(tx)
         if sc.is_pay_to_script_hash(parent_tx_out_script):
             tx_context = sc.tx_context_for_idx(tx_in_idx)
-            stack, solution_stack = sc._check_solution(tx_context, flags=0, traceback_f=None)
+            solution_stack = sc.solution_script_to_stack(tx_context, flags=0, traceback_f=None)
             parent_tx_out_script = solution_stack[-1]
         return parent_tx_out_script
 

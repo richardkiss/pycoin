@@ -111,11 +111,11 @@ class BitcoinSolutionChecker(SolutionChecker):
 
         solution_stack = self.solution_script_to_stack(tx_context, flags=flags, traceback_f=traceback_f)
 
-        stack, solution_stack = self._check_solution(tx_context, solution_stack, flags, traceback_f)
+        stack = self._check_solution(tx_context, solution_stack, flags, traceback_f)
 
         had_witness = False
         if flags & VERIFY_WITNESS:
-            had_witness = self.check_witness(tx_context, flags, traceback_f)
+            had_witness = self.check_witness(tx_context, solution_stack, flags, traceback_f)
 
         had_p2sh = False
         if flags & VERIFY_P2SH:
@@ -146,7 +146,7 @@ class BitcoinSolutionChecker(SolutionChecker):
         if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
-        return stack, solution_stack
+        return stack
 
     def check_p2sh(self, tx_context, solution_stack, flags, traceback_f):
         if self.is_pay_to_script_hash(tx_context.puzzle_script):
@@ -154,19 +154,27 @@ class BitcoinSolutionChecker(SolutionChecker):
             return True
         return False
 
-    def _check_p2sh(self, tx_context, solution_blob, puzzle_script, flags, traceback_f):
+    def _check_p2sh(self, tx_context, solution_stack, puzzle_script, flags, traceback_f):
         self.check_script_push_only(tx_context.solution_script)
-        solution_script = self.ScriptTools.compile_push_data_list(solution_blob)
+
         flags &= ~VERIFY_P2SH
         p2sh_tx_context = TxContext()
         p2sh_tx_context.puzzle_script = puzzle_script
-        p2sh_tx_context.solution_script = solution_script
+        p2sh_tx_context.solution_script = tx_context.solution_script
         p2sh_tx_context.witness_solution_stack = tx_context.witness_solution_stack
         p2sh_tx_context.sequence = tx_context.sequence
         p2sh_tx_context.version = tx_context.version
         p2sh_tx_context.lock_time = tx_context.lock_time
         p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
-        self.check_solution(p2sh_tx_context, flags=flags, traceback_f=traceback_f)
+
+        stack = self._check_solution(p2sh_tx_context, solution_stack, flags, traceback_f)
+
+        if flags & VERIFY_CLEANSTACK and len(stack) != 1:
+            raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
+
+        had_witness = False
+        if flags & VERIFY_WITNESS:
+            had_witness = self.check_witness(p2sh_tx_context, solution_stack, flags, traceback_f)
 
     def check_script_push_only(self, script):
         scriptStreamer = self.VM.ScriptStreamer
@@ -243,13 +251,13 @@ class BitcoinSolutionChecker(SolutionChecker):
             return first_opcode - OP_1 + 1
         return None
 
-    def check_witness(self, tx_context, flags, traceback_f):
+    def check_witness(self, tx_context, solution_stack, flags, traceback_f):
         witness_version = self.witness_program_version(tx_context.puzzle_script)
         had_witness = False
         if witness_version is not None:
             had_witness = True
             witness_program = tx_context.puzzle_script[2:]
-            if len(tx_context.solution_script) > 0:
+            if len(solution_stack) > 0:
                 err = errno.WITNESS_MALLEATED if flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
                 raise ScriptError("script sig is not blank on segwit input", err)
             self.check_witness_program(
