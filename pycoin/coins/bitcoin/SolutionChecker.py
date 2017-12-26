@@ -74,8 +74,11 @@ class BitcoinSolutionChecker(SolutionChecker):
         if flags & VERIFY_WITNESS:
             had_witness = self.check_witness(tx_context, flags, traceback_f)
 
-        if self.is_pay_to_script_hash(tx_context.puzzle_script) and (flags & VERIFY_P2SH):
-            self._check_p2sh(tx_context, solution_stack[:-1], solution_stack[-1], flags=flags, traceback_f=traceback_f)
+        had_p2sh = False
+        if flags & VERIFY_P2SH:
+            had_p2sh = self.check_p2sh(tx_context, solution_stack, flags, traceback_f)
+
+        if had_p2sh:
             return
 
         if flags & VERIFY_CLEANSTACK and len(stack) != 1:
@@ -118,6 +121,12 @@ class BitcoinSolutionChecker(SolutionChecker):
             raise ScriptError("eval false", errno.EVAL_FALSE)
 
         return stack, solution_stack
+
+    def check_p2sh(self, tx_context, solution_stack, flags, traceback_f):
+        if self.is_pay_to_script_hash(tx_context.puzzle_script):
+            self._check_p2sh(tx_context, solution_stack[:-1], solution_stack[-1], flags=flags, traceback_f=traceback_f)
+            return True
+        return False
 
     def _check_p2sh(self, tx_context, solution_blob, puzzle_script, flags, traceback_f):
         self.check_script_push_only(tx_context.solution_script)
