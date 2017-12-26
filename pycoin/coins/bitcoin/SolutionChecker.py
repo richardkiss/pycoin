@@ -60,15 +60,58 @@ class BitcoinSolutionChecker(SolutionChecker):
             return puzzle_script[2:-1]
         return False
 
+    def _delete_signature(self, script, sig_blob):
+        """
+        Returns a script with the given subscript removed. The subscript
+        must appear in the main script aligned to opcode boundaries for it
+        to be removed.
+        """
+        subscript = self.ScriptTools.compile_push_data_list([sig_blob])
+        new_script = bytearray()
+        pc = 0
+        for opcode, data, pc, new_pc in self.ScriptTools.get_opcodes(script):
+            section = script[pc:new_pc]
+            if section != subscript:
+                new_script.extend(section)
+        return bytes(new_script)
+
+    def make_sighash_f(self, tx_in_idx):
+
+        def sig_for_hash_type_f(hash_type, sig_blobs, vm):
+            script = vm.script[vm.begin_code_hash:]
+            for sig_blob in sig_blobs:
+                script = self._delete_signature(script, sig_blob)
+            return self.signature_hash(script, tx_in_idx, hash_type)
+
+        return sig_for_hash_type_f
+
+    def solution_script_to_stack(self, tx_context, flags, traceback_f):
+        if flags & VERIFY_SIGPUSHONLY:
+            self.check_script_push_only(tx_context.solution_script)
+
+        # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
+        f1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
+
+        vm = self.VM(tx_context.solution_script, tx_context, self.make_sighash_f(tx_context.tx_in_idx), f1)
+
+        vm.is_solution_script = True
+        vm.traceback_f = traceback_f
+
+        solution_stack = vm.eval_script()
+        return solution_stack
+
     def check_solution(self, tx_context, flags=None, traceback_f=None):
         """
         tx_context: information about the transaction that the VM may need
         flags: gives the VM hints about which additional constraints to check
         """
+
         if flags is None:
             flags = VERIFY_P2SH | VERIFY_WITNESS
 
-        stack, solution_stack = self._check_solution(tx_context, flags, traceback_f)
+        solution_stack = self.solution_script_to_stack(tx_context, flags=flags, traceback_f=traceback_f)
+
+        stack, solution_stack = self._check_solution(tx_context, solution_stack, flags, traceback_f)
 
         had_witness = False
         if flags & VERIFY_WITNESS:
@@ -87,30 +130,13 @@ class BitcoinSolutionChecker(SolutionChecker):
         if (flags & VERIFY_WITNESS) and not had_witness and len(tx_context.witness_solution_stack) > 0:
             raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
 
-    def _check_solution(self, tx_context, flags, traceback_f):
-        solution_script = tx_context.solution_script
+    def _check_solution(self, tx_context, solution_stack, flags, traceback_f):
         puzzle_script = tx_context.puzzle_script
-
-        if flags & VERIFY_SIGPUSHONLY:
-            self.check_script_push_only(solution_script)
 
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
         f1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
 
-        def sig_for_hash_type_f(hash_type, sig_blobs, vmc):
-            script = vmc.script[vmc.begin_code_hash:]
-            for sig_blob in sig_blobs:
-                script = self.delete_signature(script, sig_blob)
-            return self.signature_hash(script, tx_context.tx_in_idx, hash_type)
-
-        vm = self.VM(solution_script, tx_context, sig_for_hash_type_f, f1)
-
-        vm.is_solution_script = True
-        vm.traceback_f = traceback_f
-
-        solution_stack = vm.eval_script()
-
-        vm = self.VM(puzzle_script, tx_context, sig_for_hash_type_f, f1, initial_stack=solution_stack[:])
+        vm = self.VM(puzzle_script, tx_context, self.make_sighash_f(tx_context.tx_in_idx), f1, initial_stack=solution_stack[:])
 
         vm.is_solution_script = False
         vm.traceback_f = traceback_f
@@ -183,9 +209,9 @@ class BitcoinSolutionChecker(SolutionChecker):
         else:
             return
 
-        def witness_signature_for_hash_type(hash_type, sig_blobs, vmc):
+        def witness_signature_for_hash_type(hash_type, sig_blobs, vm):
             return self.signature_for_hash_type_segwit(
-                vmc.script[vmc.begin_code_hash:], tx_context.tx_in_idx, hash_type)
+                vm.script[vm.begin_code_hash:], tx_context.tx_in_idx, hash_type)
 
         vm = self.VM(
             puzzle_script, tx_context, witness_signature_for_hash_type, flags, initial_stack=stack)
@@ -369,22 +395,6 @@ class BitcoinSolutionChecker(SolutionChecker):
 
     def signature_for_hash_type_segwit(self, script, tx_in_idx, hash_type):
         return from_bytes_32(double_sha256(self.segwit_signature_preimage(script, tx_in_idx, hash_type)))
-
-    @classmethod
-    def delete_signature(class_, script, sig_blob):
-        """
-        Returns a script with the given subscript removed. The subscript
-        must appear in the main script aligned to opcode boundaries for it
-        to be removed.
-        """
-        subscript = class_.ScriptTools.compile_push_data_list([sig_blob])
-        new_script = bytearray()
-        pc = 0
-        for opcode, data, pc, new_pc in class_.ScriptTools.get_opcodes(script):
-            section = script[pc:new_pc]
-            if section != subscript:
-                new_script.extend(section)
-        return bytes(new_script)
 
     def tx_context_for_idx(self, tx_in_idx):
         """
