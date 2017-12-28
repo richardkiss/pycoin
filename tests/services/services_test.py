@@ -7,7 +7,6 @@ from pycoin.services import providers
 from pycoin.services.blockchain_info import BlockchainInfoProvider
 from pycoin.services.blockcypher import BlockcypherProvider
 from pycoin.services.blockexplorer import BlockExplorerProvider
-from pycoin.services.blockr_io import BlockrioProvider
 from pycoin.services.chain_so import ChainSoProvider
 from pycoin.services.insight import InsightProvider
 
@@ -73,9 +72,6 @@ class ServicesTest(unittest.TestCase):
 
     def test_BlockExplorerProvider(self):
         self.check_provider_tx_for_tx_hash(BlockExplorerProvider, ["BTC"])
-
-    def test_BlockIOProvider(self):
-        self.check_provider_tx_for_tx_hash(BlockrioProvider, ["BTC", "XTN"])
 
     def test_ChainSoProvider(self):
         # this test is causing problems in travis-ci because chain_so thinks it's a DOS attack
