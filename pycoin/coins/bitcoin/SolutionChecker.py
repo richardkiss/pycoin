@@ -188,7 +188,7 @@ class BitcoinSolutionChecker(SolutionChecker):
         return V0_len20_prefix + self.ScriptTools.compile_push_data_list(
             [witness_program]) + V0_len20_postfix
 
-    def check_witness_program_v0(self, witness_solution_stack, witness_program, tx_context, flags):
+    def check_witness_program_v0(self, witness_solution_stack, witness_program):
         size = len(witness_program)
         if size == 32:
             if len(witness_solution_stack) == 0:
@@ -209,8 +209,7 @@ class BitcoinSolutionChecker(SolutionChecker):
 
     def check_witness_program(self, version, witness_program, tx_context, flags, traceback_f):
         if version == 0:
-            stack, puzzle_script = self.check_witness_program_v0(
-                tx_context.witness_solution_stack, witness_program, flags, tx_context)
+            stack, puzzle_script = self.check_witness_program_v0(tx_context.witness_solution_stack, witness_program)
         elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
             raise ScriptError(
                 "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
