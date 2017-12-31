@@ -25,8 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from ... import encoding
-
+from ...encoding.hash import hash160
 from ...serialize import b2h, b2h_rev, h2b
 from ...serialize.bitcoin_streamer import parse_struct, stream_struct
 from .ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE
@@ -74,14 +73,13 @@ class TxIn(object):
             return sec
         return None
 
-    def address(self, address_prefix=b'\0'):
+    def address(self, ui_context):
         if self.is_coinbase():
             return "(coinbase)"
         # attempt to return the source address
         sec = self.public_key_sec()
         if sec:
-            address = encoding.hash160_sec_to_bitcoin_address(
-                encoding.hash160(sec), address_prefix=address_prefix)
+            address = ui_context.address_for_p2pkh(hash160(sec))
             return address
         return "(unknown)"
 
