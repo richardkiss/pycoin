@@ -106,82 +106,6 @@ class BitcoinSolutionChecker(SolutionChecker):
         solution_stack = vm.eval_script()
         return solution_stack
 
-    def check_solution(self, tx_context, flags=None, traceback_f=None):
-        """
-        tx_context: information about the transaction that the VM may need
-        flags: gives the VM hints about which additional constraints to check
-        """
-
-        if flags is None:
-            flags = VERIFY_P2SH | VERIFY_WITNESS
-
-        solution_stack = self.solution_script_to_stack(tx_context, flags=flags, traceback_f=traceback_f)
-
-        stack = self._check_solution(tx_context, solution_stack, flags, traceback_f)
-
-        had_witness = False
-        if flags & VERIFY_WITNESS:
-            had_witness = self.check_witness(tx_context, solution_stack, flags, traceback_f)
-
-        had_p2sh = False
-        if flags & VERIFY_P2SH:
-            had_p2sh = self.check_p2sh(tx_context, solution_stack, flags, traceback_f)
-
-        if had_p2sh:
-            return
-
-        if flags & VERIFY_CLEANSTACK and len(stack) != 1:
-            raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
-
-        if (flags & VERIFY_WITNESS) and not had_witness and len(tx_context.witness_solution_stack) > 0:
-            raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
-
-    def _check_solution(self, tx_context, solution_stack, flags, traceback_f):
-        puzzle_script = tx_context.puzzle_script
-
-        # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
-        f1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
-
-        vm = self.VM(puzzle_script, tx_context, self.make_sighash_f(tx_context.tx_in_idx), f1, initial_stack=solution_stack[:])
-
-        vm.is_solution_script = False
-        vm.traceback_f = traceback_f
-
-        # work on a copy of the solution stack
-        stack = vm.eval_script()
-        if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
-            raise ScriptError("eval false", errno.EVAL_FALSE)
-
-        return stack
-
-    def check_p2sh(self, tx_context, solution_stack, flags, traceback_f):
-        if self.is_pay_to_script_hash(tx_context.puzzle_script):
-            self._check_p2sh(tx_context, solution_stack[:-1], solution_stack[-1], flags=flags, traceback_f=traceback_f)
-            return True
-        return False
-
-    def _check_p2sh(self, tx_context, solution_stack, puzzle_script, flags, traceback_f):
-        self.check_script_push_only(tx_context.solution_script)
-
-        flags &= ~VERIFY_P2SH
-        p2sh_tx_context = TxContext()
-        p2sh_tx_context.puzzle_script = puzzle_script
-        p2sh_tx_context.solution_script = tx_context.solution_script
-        p2sh_tx_context.witness_solution_stack = tx_context.witness_solution_stack
-        p2sh_tx_context.sequence = tx_context.sequence
-        p2sh_tx_context.version = tx_context.version
-        p2sh_tx_context.lock_time = tx_context.lock_time
-        p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
-
-        stack = self._check_solution(p2sh_tx_context, solution_stack, flags, traceback_f)
-
-        if flags & VERIFY_CLEANSTACK and len(stack) != 1:
-            raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
-
-        had_witness = False
-        if flags & VERIFY_WITNESS:
-            had_witness = self.check_witness(p2sh_tx_context, solution_stack, flags, traceback_f)
-
     def check_script_push_only(self, script):
         scriptStreamer = self.VM.ScriptStreamer
         pc = 0
@@ -213,36 +137,6 @@ class BitcoinSolutionChecker(SolutionChecker):
             raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
         return stack, puzzle_script
 
-    def check_witness_program(self, version, witness_program, tx_context, flags, traceback_f):
-        if version == 0:
-            stack, puzzle_script = self.check_witness_program_v0(tx_context.witness_solution_stack, witness_program)
-        elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
-            raise ScriptError(
-                "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
-        else:
-            return
-
-        def witness_signature_for_hash_type(hash_type, sig_blobs, vm):
-            return self.signature_for_hash_type_segwit(
-                vm.script[vm.begin_code_hash:], tx_context.tx_in_idx, hash_type)
-
-        vm = self.VM(
-            puzzle_script, tx_context, witness_signature_for_hash_type, flags, initial_stack=stack)
-        vm.traceback_f = traceback_f
-        vm.is_solution_script = False
-
-        for s in stack:
-            if len(s) > vm.MAX_BLOB_LENGTH:
-                raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
-
-        stack = vm.eval_script()
-
-        if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
-            raise ScriptError("eval false", errno.EVAL_FALSE)
-
-        if len(stack) != 1:
-            raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
-
     def witness_program_version(self, script):
         size = len(script)
         if size < 4 or size > 42:
@@ -255,19 +149,6 @@ class BitcoinSolutionChecker(SolutionChecker):
         if OP_1 <= first_opcode <= OP_16:
             return first_opcode - OP_1 + 1
         return None
-
-    def check_witness(self, tx_context, solution_stack, flags, traceback_f):
-        witness_version = self.witness_program_version(tx_context.puzzle_script)
-        had_witness = False
-        if witness_version is not None:
-            had_witness = True
-            witness_program = tx_context.puzzle_script[2:]
-            if len(solution_stack) > 0:
-                err = errno.WITNESS_MALLEATED if flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
-                raise ScriptError("script sig is not blank on segwit input", err)
-            self.check_witness_program(
-                witness_version, witness_program, tx_context, flags, traceback_f)
-        return had_witness
 
     def _tx_in_for_idx(self, idx, tx_in, tx_out_script, unsigned_txs_out_idx):
         if idx == unsigned_txs_out_idx:
@@ -409,6 +290,36 @@ class BitcoinSolutionChecker(SolutionChecker):
     def signature_for_hash_type_segwit(self, script, tx_in_idx, hash_type):
         return from_bytes_32(double_sha256(self.segwit_signature_preimage(script, tx_in_idx, hash_type)))
 
+    def p2s_program(self, tx_context, puzzle_script, solution_stack, flags, sighash_f):
+        if self.is_pay_to_script_hash(puzzle_script):
+            self.check_script_push_only(tx_context.solution_script)
+            puzzle_script, solution_stack = solution_stack[-1], solution_stack[:-1]
+            return puzzle_script, solution_stack, flags & ~VERIFY_P2SH, sighash_f
+
+    def witness_program(self, tx_context, puzzle_script, solution_stack, flags, is_p2sh):
+        witness_version = self.witness_program_version(puzzle_script)
+        if witness_version is None:
+            if len(tx_context.witness_solution_stack) > 0:
+                raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
+        else:
+            witness_program = puzzle_script[2:]
+            if len(solution_stack) > 0:
+                err = errno.WITNESS_MALLEATED_P2SH if is_p2sh else errno.WITNESS_MALLEATED
+                raise ScriptError("script sig is not blank on segwit input", err)
+
+            for s in tx_context.witness_solution_stack:
+                if len(s) > self.VM.MAX_BLOB_LENGTH:
+                    raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
+
+            if witness_version == 0:
+                stack, puzzle_script = self.check_witness_program_v0(
+                    tx_context.witness_solution_stack, witness_program)
+                sighash_f = self.make_sighash_f(tx_context.tx_in_idx, is_witness=True)
+                return puzzle_script, stack, flags | VERIFY_CLEANSTACK, sighash_f
+            elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
+                raise ScriptError(
+                    "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
+
     def tx_context_for_idx(self, tx_in_idx):
         """
         solution_script: alleged solution to the puzzle_script
@@ -438,36 +349,19 @@ class BitcoinSolutionChecker(SolutionChecker):
         yield puzzle_script, solution_stack, f1, sighash_f
 
         is_p2sh = False
-        if flags & VERIFY_P2SH and self.is_pay_to_script_hash(puzzle_script):
-            is_p2sh = True
-            self.check_script_push_only(tx_context.solution_script)
-            puzzle_script, solution_stack = solution_stack[-1], solution_stack[:-1]
-            yield puzzle_script, solution_stack, f1 & ~VERIFY_P2SH, sighash_f
+        if flags & VERIFY_P2SH:
+            p2sh_tuple = self.p2s_program(tx_context, puzzle_script, solution_stack, f1, sighash_f)
+            if p2sh_tuple:
+                yield p2sh_tuple
+                puzzle_script, solution_stack = p2sh_tuple[:2]
+                is_p2sh = True
 
         if flags & VERIFY_WITNESS:
-            witness_version = self.witness_program_version(puzzle_script)
-            if witness_version is None:
-                if len(tx_context.witness_solution_stack) > 0:
-                    raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
-            else:
-                witness_program = puzzle_script[2:]
-                if len(solution_stack) > 0:
-                    err = errno.WITNESS_MALLEATED_P2SH if is_p2sh else errno.WITNESS_MALLEATED
-                    raise ScriptError("script sig is not blank on segwit input", err)
+            witness_tuple = self.witness_program(tx_context, puzzle_script, solution_stack, flags, is_p2sh)
+            if witness_tuple:
+                yield witness_tuple
 
-                for s in tx_context.witness_solution_stack:
-                    if len(s) > self.VM.MAX_BLOB_LENGTH:
-                        raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
-
-                if witness_version == 0:
-                    stack, puzzle_script = self.check_witness_program_v0(tx_context.witness_solution_stack, witness_program)
-                    sighash_f = self.make_sighash_f(tx_context.tx_in_idx, is_witness=True)
-                    yield puzzle_script, stack, flags | VERIFY_CLEANSTACK, sighash_f
-                elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
-                    raise ScriptError(
-                        "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
-
-    def check_solution_new(self, tx_context, flags=None, traceback_f=None):
+    def check_solution(self, tx_context, flags=None, traceback_f=None):
         """
         tx_context: information about the transaction that the VM may need
         flags: gives the VM hints about which additional constraints to check
@@ -490,5 +384,3 @@ class BitcoinSolutionChecker(SolutionChecker):
 
         if flags & VERIFY_CLEANSTACK and len(stack) != 1:
             raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
-
-    check_solution = check_solution_new
