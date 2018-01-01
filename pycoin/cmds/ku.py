@@ -85,6 +85,14 @@ def parse_as_public_pair(s):
                     return (v0, v1)
 
 
+def ethereum_address_for_public_pair(pair):
+    import sha3
+    from pycoin.encoding import to_bytes_32
+    public_blob = b''.join(to_bytes_32(p) for p in pair)
+    address = b2h(sha3.keccak_256(public_blob).digest()[12:])
+    return "0x%s" % address
+
+
 def create_wallet_key_output(key, subkey_path, add_output):
     if hasattr(key, "wallet_key"):
         if subkey_path:
@@ -121,6 +129,7 @@ def create_public_pair_output(key, add_output):
 
         add_output("key_pair_as_sec", b2h(key.sec(use_uncompressed=False)))
         add_output("key_pair_as_sec_uncompressed", b2h(key.sec(use_uncompressed=True)), " uncompressed")
+        add_output("ethereum_address", ethereum_address_for_public_pair(public_pair))
 
 
 def create_hash160_output(key, add_output, output_dict):
