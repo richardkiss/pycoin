@@ -79,6 +79,14 @@ def parse_as_public_pair(s):
                     return (v0, v1)
 
 
+def ethereum_address_for_public_pair(pair):
+    import sha3
+    from pycoin.encoding import to_bytes_32
+    public_blob = b''.join(to_bytes_32(p) for p in pair)
+    address = b2h(sha3.keccak_256(public_blob).digest()[12:])
+    return "0x%s" % address
+
+
 def create_output(item, key, subkey_path=None):
     output_dict = {}
     output_order = []
@@ -136,7 +144,7 @@ def create_output(item, key, subkey_path=None):
 
         add_output("key_pair_as_sec", b2h(key.sec(use_uncompressed=False)))
         add_output("key_pair_as_sec_uncompressed", b2h(key.sec(use_uncompressed=True)), " uncompressed")
-
+        add_output("ethereum_address", ethereum_address_for_public_pair(public_pair))
     hash160_c = key.hash160(use_uncompressed=False)
     if hash160_c:
         add_output("hash160", b2h(hash160_c))
