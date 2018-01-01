@@ -96,7 +96,7 @@ class BuildTxTest(unittest.TestCase):
         tx_out_script_to_check = the_coinbase_tx.txs_out[0].script
         idx = 0
         solution_checker = BitcoinSolutionChecker(unsigned_coinbase_spend_tx)
-        actual_hash = solution_checker.signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
+        actual_hash = solution_checker._signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
         self.assertEqual(actual_hash, 29819170155392455064899446505816569230970401928540834591675173488544269166940)
 
     def test_standard_tx_out(self):

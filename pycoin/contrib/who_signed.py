@@ -26,7 +26,7 @@ class WhoSigned(object):
         sc = tx.SolutionChecker(tx)
         if sc.is_pay_to_script_hash(parent_tx_out_script):
             tx_context = sc.tx_context_for_idx(tx_in_idx)
-            solution_stack = sc.solution_script_to_stack(tx_context, flags=0, traceback_f=None)
+            solution_stack = sc._solution_script_to_stack(tx_context, flags=0, traceback_f=None)
             parent_tx_out_script = solution_stack[-1]
         return parent_tx_out_script
 
@@ -43,7 +43,7 @@ class WhoSigned(object):
                 continue
             try:
                 sig_pair, sig_type = parse_signature_blob(data)
-                sig_hash = sc.signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
+                sig_hash = sc._signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
                 yield (data, sig_hash)
             except (ValueError, TypeError, UnexpectedDER):
                 continue
