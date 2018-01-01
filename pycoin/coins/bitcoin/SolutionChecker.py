@@ -75,7 +75,11 @@ class BitcoinSolutionChecker(SolutionChecker):
                 new_script.extend(section)
         return bytes(new_script)
 
-    def make_sighash_f(self, tx_in_idx):
+    def make_sighash_f(self, tx_in_idx, is_witness=False):
+
+        def witness_signature_for_hash_type(hash_type, sig_blobs, vm):
+            return self.signature_for_hash_type_segwit(
+                vm.script[vm.begin_code_hash:], tx_in_idx, hash_type)
 
         def sig_for_hash_type_f(hash_type, sig_blobs, vm):
             script = vm.script[vm.begin_code_hash:]
@@ -83,6 +87,8 @@ class BitcoinSolutionChecker(SolutionChecker):
                 script = self._delete_signature(script, sig_blob)
             return self.signature_hash(script, tx_in_idx, hash_type)
 
+        if is_witness:
+            return witness_signature_for_hash_type
         return sig_for_hash_type_f
 
     def solution_script_to_stack(self, tx_context, flags, traceback_f):
@@ -428,7 +434,7 @@ class BitcoinSolutionChecker(SolutionChecker):
 
         solution_stack = self.solution_script_to_stack(tx_context, flags=flags, traceback_f=None)
         puzzle_script = tx_context.puzzle_script
-        sighash_f = self.make_sighash_f(tx_context.tx_in_idx)
+        sighash_f = self.make_sighash_f(tx_context.tx_in_idx, is_witness=False)
         yield puzzle_script, solution_stack, f1, sighash_f
 
         is_p2sh = False
@@ -449,17 +455,14 @@ class BitcoinSolutionChecker(SolutionChecker):
                     err = errno.WITNESS_MALLEATED_P2SH if is_p2sh else errno.WITNESS_MALLEATED
                     raise ScriptError("script sig is not blank on segwit input", err)
 
-                def witness_signature_for_hash_type(hash_type, sig_blobs, vm):
-                    return self.signature_for_hash_type_segwit(
-                        vm.script[vm.begin_code_hash:], tx_context.tx_in_idx, hash_type)
-
                 for s in tx_context.witness_solution_stack:
                     if len(s) > self.VM.MAX_BLOB_LENGTH:
                         raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
                 if witness_version == 0:
                     stack, puzzle_script = self.check_witness_program_v0(tx_context.witness_solution_stack, witness_program)
-                    yield puzzle_script, stack, flags | VERIFY_CLEANSTACK, witness_signature_for_hash_type
+                    sighash_f = self.make_sighash_f(tx_context.tx_in_idx, is_witness=True)
+                    yield puzzle_script, stack, flags | VERIFY_CLEANSTACK, sighash_f
                 elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
                     raise ScriptError(
                         "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
