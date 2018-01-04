@@ -192,6 +192,7 @@ def create_output(item, key, subkey_path=None):
     if secret_exponent:
         add_output("secret_exponent", '%d' % secret_exponent)
         add_output("secret_exponent_hex", '%x' % secret_exponent, " hex")
+        add_output("ethereum_secret_key", '%064x' % secret_exponent)
         add_output("wif", key.wif(use_uncompressed=False))
         add_output("wif_uncompressed", key.wif(use_uncompressed=True), " uncompressed")
 
