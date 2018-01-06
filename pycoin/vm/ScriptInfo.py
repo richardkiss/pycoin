@@ -1,7 +1,7 @@
 import collections
 import hashlib
 
-from pycoin import encoding
+from pycoin.encoding.hash import hash160
 from pycoin.serialize import b2h
 
 
@@ -37,7 +37,7 @@ class ScriptInfo(object):
     # BRAIN DAMAGE: the stuff above is redundant
 
     def script_for_p2s(self, underlying_script):
-        return self.script_for_p2sh(encoding.hash160(underlying_script))
+        return self.script_for_p2sh(hash160(underlying_script))
 
     def script_for_p2s_wit(self, underlying_script):
         return self.script_for_p2sh_wit(hashlib.sha256(underlying_script).digest())
