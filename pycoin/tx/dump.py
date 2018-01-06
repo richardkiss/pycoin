@@ -97,12 +97,12 @@ def dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f, disassembly_le
         for sig_pair, sig_type in signatures:
             print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
-                print("      z{}: {:#x} {}".format(i, sc.signature_hash(tx_out.script, idx, sig_type),
+                print("      z{}: {:#x} {}".format(i, sc._signature_hash(tx_out.script, idx, sig_type),
                                                    network.extras.disassembler.sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:
-            print("      z:{} {:#x} {}".format(' ' if i else '', sc.signature_hash(
+            print("      z:{} {:#x} {}".format(' ' if i else '', sc._signature_hash(
                 tx_out.script, idx, sig_type), network.extras.disassembler.sighash_type_to_string(sig_type)))
 
 

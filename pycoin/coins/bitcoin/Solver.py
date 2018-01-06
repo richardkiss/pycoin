@@ -54,7 +54,7 @@ class Solver(object):
         tx_context = self.solution_checker.tx_context_for_idx(tx_in_idx)
         tx_context.witness_solution_stack = DynamicStack([Atom("w_%d" % (1-_)) for _ in range(2)], fill_template="w_%d")
         script_hash = self.solution_checker.script_hash_from_script(tx_context.puzzle_script)
-        witness_version = self.solution_checker.witness_program_version(tx_context.puzzle_script)
+        witness_version = self.solution_checker._witness_program_version(tx_context.puzzle_script)
         tx_context.solution_script = b''
         solution_reserve_count = 0
         fill_template = "x_%d"
@@ -64,7 +64,7 @@ class Solver(object):
                 raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
             tx_context.solution_script = self.ScriptTools.compile_push_data_list([underlying_script])
             solution_reserve_count = 1
-            witness_version = self.solution_checker.witness_program_version(underlying_script)
+            witness_version = self.solution_checker._witness_program_version(underlying_script)
         if witness_version == 0:
             witness_program = (underlying_script if script_hash else tx_context.puzzle_script)[2:]
             if len(witness_program) == 32:

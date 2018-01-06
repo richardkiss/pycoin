@@ -1,20 +1,10 @@
-import io
-
-from hashlib import sha256
-
 from .ScriptTools import BitcoinScriptTools
 from .VM import BitcoinVM
 
-from ...encoding.hash import double_sha256
 from ...encoding.bytes32 import from_bytes_32
-from ...intbytes import byte2int, indexbytes
 
-from ..SolutionChecker import SolutionChecker, ScriptError
+from ..SolutionChecker import ScriptError
 from pycoin.satoshi import errno
-
-from ...serialize.bitcoin_streamer import (
-    stream_struct, stream_bc_string
-)
 
 from pycoin.satoshi.flags import (
     SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
@@ -23,25 +13,15 @@ from pycoin.satoshi.flags import (
     VERIFY_WITNESS, VERIFY_MINIMALIF, VERIFY_WITNESS_PUBKEYTYPE
 )
 
-
-V0_len20_prefix = BitcoinScriptTools.compile("OP_DUP OP_HASH160")
-V0_len20_postfix = BitcoinScriptTools.compile("OP_EQUALVERIFY OP_CHECKSIG")
-OP_EQUAL = BitcoinScriptTools.int_for_opcode("OP_EQUAL")
-OP_HASH160 = BitcoinScriptTools.int_for_opcode("OP_HASH160")
-
-OP_0 = BitcoinScriptTools.int_for_opcode("OP_0")
-OP_1 = BitcoinScriptTools.int_for_opcode("OP_1")
-OP_16 = BitcoinScriptTools.int_for_opcode("OP_16")
-
-
-ZERO32 = b'\0' * 32
+from .SegwitChecker import SegwitChecker
+from .P2SChecker import P2SChecker
 
 
 class TxContext(object):
     pass
 
 
-class BitcoinSolutionChecker(SolutionChecker):
+class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
     VM = BitcoinVM
     ScriptTools = BitcoinScriptTools
 
@@ -49,177 +29,53 @@ class BitcoinSolutionChecker(SolutionChecker):
         self.tx = tx
         # self.sighash_cache = {}
 
-    @classmethod
-    def is_pay_to_script_hash(class_, script_public_key):
-        return (len(script_public_key) == 23 and byte2int(script_public_key) == OP_HASH160 and
-                indexbytes(script_public_key, -1) == OP_EQUAL)
-
-    @classmethod
-    def script_hash_from_script(class_, puzzle_script):
-        if class_.is_pay_to_script_hash(puzzle_script):
-            return puzzle_script[2:-1]
-        return False
-
-    def check_solution(self, tx_context, flags=None, traceback_f=None):
+    def _delete_signature(self, script, sig_blob):
         """
-        tx_context: information about the transaction that the VM may need
-        flags: gives the VM hints about which additional constraints to check
+        Returns a script with the given subscript removed. The subscript
+        must appear in the main script aligned to opcode boundaries for it
+        to be removed.
         """
-        if flags is None:
-            flags = VERIFY_P2SH | VERIFY_WITNESS
+        subscript = self.ScriptTools.compile_push_data_list([sig_blob])
+        new_script = bytearray()
+        pc = 0
+        for opcode, data, pc, new_pc in self.ScriptTools.get_opcodes(script):
+            section = script[pc:new_pc]
+            if section != subscript:
+                new_script.extend(section)
+        return bytes(new_script)
 
-        stack, solution_stack = self._check_solution(tx_context, flags, traceback_f)
+    def _make_sighash_f(self, tx_in_idx):
 
-        had_witness = False
-        if flags & VERIFY_WITNESS:
-            had_witness = self.check_witness(tx_context, flags, traceback_f)
+        def sig_for_hash_type_f(hash_type, sig_blobs, vm):
+            script = vm.script[vm.begin_code_hash:]
+            for sig_blob in sig_blobs:
+                script = self._delete_signature(script, sig_blob)
+            return self._signature_hash(script, tx_in_idx, hash_type)
 
-        if self.is_pay_to_script_hash(tx_context.puzzle_script) and (flags & VERIFY_P2SH):
-            self._check_p2sh(tx_context, solution_stack[:-1], solution_stack[-1], flags=flags, traceback_f=traceback_f)
-            return
+        return sig_for_hash_type_f
 
-        if flags & VERIFY_CLEANSTACK and len(stack) != 1:
-            raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
-
-        if (flags & VERIFY_WITNESS) and not had_witness and len(tx_context.witness_solution_stack) > 0:
-            raise ScriptError("witness unexpected", errno.WITNESS_UNEXPECTED)
-
-    def _check_solution(self, tx_context, flags, traceback_f):
-        solution_script = tx_context.solution_script
-        puzzle_script = tx_context.puzzle_script
-
+    def _solution_script_to_stack(self, tx_context, flags, traceback_f):
         if flags & VERIFY_SIGPUSHONLY:
-            self.check_script_push_only(solution_script)
+            self._check_script_push_only(tx_context.solution_script)
 
         # never use VERIFY_MINIMALIF or VERIFY_WITNESS_PUBKEYTYPE except in segwit
         f1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
 
-        def sig_for_hash_type_f(hash_type, sig_blobs, vmc):
-            script = vmc.script[vmc.begin_code_hash:]
-            for sig_blob in sig_blobs:
-                script = self.delete_signature(script, sig_blob)
-            return self.signature_hash(script, tx_context.tx_in_idx, hash_type)
-
-        vm = self.VM(solution_script, tx_context, sig_for_hash_type_f, f1)
+        vm = self.VM(tx_context.solution_script, tx_context, self._make_sighash_f(tx_context.tx_in_idx), f1)
 
         vm.is_solution_script = True
         vm.traceback_f = traceback_f
 
         solution_stack = vm.eval_script()
+        return solution_stack
 
-        vm = self.VM(puzzle_script, tx_context, sig_for_hash_type_f, f1, initial_stack=solution_stack[:])
-
-        vm.is_solution_script = False
-        vm.traceback_f = traceback_f
-
-        # work on a copy of the solution stack
-        stack = vm.eval_script()
-        if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
-            raise ScriptError("eval false", errno.EVAL_FALSE)
-
-        return stack, solution_stack
-
-    def _check_p2sh(self, tx_context, solution_blob, puzzle_script, flags, traceback_f):
-        self.check_script_push_only(tx_context.solution_script)
-        solution_script = self.ScriptTools.compile_push_data_list(solution_blob)
-        flags &= ~VERIFY_P2SH
-        p2sh_tx_context = TxContext()
-        p2sh_tx_context.puzzle_script = puzzle_script
-        p2sh_tx_context.solution_script = solution_script
-        p2sh_tx_context.witness_solution_stack = tx_context.witness_solution_stack
-        p2sh_tx_context.sequence = tx_context.sequence
-        p2sh_tx_context.version = tx_context.version
-        p2sh_tx_context.lock_time = tx_context.lock_time
-        p2sh_tx_context.tx_in_idx = tx_context.tx_in_idx
-        self.check_solution(p2sh_tx_context, flags=flags, traceback_f=traceback_f)
-
-    def check_script_push_only(self, script):
+    def _check_script_push_only(self, script):
         scriptStreamer = self.VM.ScriptStreamer
         pc = 0
         while pc < len(script):
             opcode, data, pc = scriptStreamer.get_opcode(script, pc)
             if opcode not in scriptStreamer.data_opcodes:
                 raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
-
-    def _puzzle_script_for_len20_segwit(self, witness_program):
-        return V0_len20_prefix + self.ScriptTools.compile_push_data_list(
-            [witness_program]) + V0_len20_postfix
-
-    def check_witness_program_v0(self, witness_solution_stack, witness_program, tx_context, flags):
-        size = len(witness_program)
-        if size == 32:
-            if len(witness_solution_stack) == 0:
-                raise ScriptError("witness program witness empty", errno.WITNESS_PROGRAM_WITNESS_EMPTY)
-            puzzle_script = witness_solution_stack[-1]
-            if sha256(puzzle_script).digest() != witness_program:
-                raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-            stack = list(witness_solution_stack[:-1])
-        elif size == 20:
-            # special case for pay-to-pubkeyhash; signature + pubkey in witness
-            if len(witness_solution_stack) != 2:
-                raise ScriptError("witness program mismatch", errno.WITNESS_PROGRAM_MISMATCH)
-            puzzle_script = self._puzzle_script_for_len20_segwit(witness_program)
-            stack = list(witness_solution_stack)
-        else:
-            raise ScriptError("witness program wrong length", errno.WITNESS_PROGRAM_WRONG_LENGTH)
-        return stack, puzzle_script
-
-    def check_witness_program(self, version, witness_program, tx_context, flags, traceback_f):
-        if version == 0:
-            stack, puzzle_script = self.check_witness_program_v0(
-                tx_context.witness_solution_stack, witness_program, flags, tx_context)
-        elif flags & VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM:
-            raise ScriptError(
-                "this version witness program not yet supported", errno.DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)
-        else:
-            return
-
-        def witness_signature_for_hash_type(hash_type, sig_blobs, vmc):
-            return self.signature_for_hash_type_segwit(
-                vmc.script[vmc.begin_code_hash:], tx_context.tx_in_idx, hash_type)
-
-        vm = self.VM(
-            puzzle_script, tx_context, witness_signature_for_hash_type, flags, initial_stack=stack)
-        vm.traceback_f = traceback_f
-        vm.is_solution_script = False
-
-        for s in stack:
-            if len(s) > vm.MAX_BLOB_LENGTH:
-                raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
-
-        stack = vm.eval_script()
-
-        if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
-            raise ScriptError("eval false", errno.EVAL_FALSE)
-
-        if len(stack) != 1:
-            raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
-
-    def witness_program_version(self, script):
-        size = len(script)
-        if size < 4 or size > 42:
-            return None
-        first_opcode = byte2int(script)
-        if indexbytes(script, 1) + 2 != size:
-            return None
-        if first_opcode == OP_0:
-            return 0
-        if OP_1 <= first_opcode <= OP_16:
-            return first_opcode - OP_1 + 1
-        return None
-
-    def check_witness(self, tx_context, flags, traceback_f):
-        witness_version = self.witness_program_version(tx_context.puzzle_script)
-        had_witness = False
-        if witness_version is not None:
-            had_witness = True
-            witness_program = tx_context.puzzle_script[2:]
-            if len(tx_context.solution_script) > 0:
-                err = errno.WITNESS_MALLEATED if flags & VERIFY_P2SH else errno.WITNESS_MALLEATED_P2SH
-                raise ScriptError("script sig is not blank on segwit input", err)
-            self.check_witness_program(
-                witness_version, witness_program, tx_context, flags, traceback_f)
-        return had_witness
 
     def _tx_in_for_idx(self, idx, tx_in, tx_out_script, unsigned_txs_out_idx):
         if idx == unsigned_txs_out_idx:
@@ -241,7 +97,7 @@ class BitcoinSolutionChecker(SolutionChecker):
                 new_script.extend(section)
         return bytes(new_script)
 
-    def signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
+    def _signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
         """
         Return the canonical hash for a transaction. We need to
         remove references to the signature, since it's a signature
@@ -304,79 +160,6 @@ class BitcoinSolutionChecker(SolutionChecker):
         tmp_tx = self.tx.__class__(self.tx.version, txs_in, txs_out, self.tx.lock_time)
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
-    def hash_prevouts(self, hash_type):
-        if hash_type & SIGHASH_ANYONECANPAY:
-            return ZERO32
-        f = io.BytesIO()
-        for tx_in in self.tx.txs_in:
-            f.write(tx_in.previous_hash)
-            stream_struct("L", f, tx_in.previous_index)
-        return double_sha256(f.getvalue())
-
-    def hash_sequence(self, hash_type):
-        if (
-                (hash_type & SIGHASH_ANYONECANPAY) or
-                ((hash_type & 0x1f) == SIGHASH_SINGLE) or
-                ((hash_type & 0x1f) == SIGHASH_NONE)
-        ):
-            return ZERO32
-
-        f = io.BytesIO()
-        for tx_in in self.tx.txs_in:
-            stream_struct("L", f, tx_in.sequence)
-        return double_sha256(f.getvalue())
-
-    def hash_outputs(self, hash_type, tx_in_idx):
-        txs_out = self.tx.txs_out
-        if hash_type & 0x1f == SIGHASH_SINGLE:
-            if tx_in_idx >= len(txs_out):
-                return ZERO32
-            txs_out = txs_out[tx_in_idx:tx_in_idx+1]
-        elif hash_type & 0x1f == SIGHASH_NONE:
-            return ZERO32
-        f = io.BytesIO()
-        for tx_out in txs_out:
-            stream_struct("Q", f, tx_out.coin_value)
-            self.ScriptTools.write_push_data([tx_out.script], f)
-        return double_sha256(f.getvalue())
-
-    def segwit_signature_preimage(self, script, tx_in_idx, hash_type):
-        f = io.BytesIO()
-        stream_struct("L", f, self.tx.version)
-        # calculate hash prevouts
-        f.write(self.hash_prevouts(hash_type))
-        f.write(self.hash_sequence(hash_type))
-        tx_in = self.tx.txs_in[tx_in_idx]
-        f.write(tx_in.previous_hash)
-        stream_struct("L", f, tx_in.previous_index)
-        tx_out = self.tx.unspents[tx_in_idx]
-        stream_bc_string(f, script)
-        stream_struct("Q", f, tx_out.coin_value)
-        stream_struct("L", f, tx_in.sequence)
-        f.write(self.hash_outputs(hash_type, tx_in_idx))
-        stream_struct("L", f, self.tx.lock_time)
-        stream_struct("L", f, hash_type)
-        return f.getvalue()
-
-    def signature_for_hash_type_segwit(self, script, tx_in_idx, hash_type):
-        return from_bytes_32(double_sha256(self.segwit_signature_preimage(script, tx_in_idx, hash_type)))
-
-    @classmethod
-    def delete_signature(class_, script, sig_blob):
-        """
-        Returns a script with the given subscript removed. The subscript
-        must appear in the main script aligned to opcode boundaries for it
-        to be removed.
-        """
-        subscript = class_.ScriptTools.compile_push_data_list([sig_blob])
-        new_script = bytearray()
-        pc = 0
-        for opcode, data, pc, new_pc in class_.ScriptTools.get_opcodes(script):
-            section = script[pc:new_pc]
-            if section != subscript:
-                new_script.extend(section)
-        return bytes(new_script)
-
     def tx_context_for_idx(self, tx_in_idx):
         """
         solution_script: alleged solution to the puzzle_script
@@ -393,3 +176,51 @@ class BitcoinSolutionChecker(SolutionChecker):
         tx_context.sequence = tx_in.sequence
         tx_context.tx_in_idx = tx_in_idx
         return tx_context
+
+    def check_solution(self, tx_context, flags=None, traceback_f=None):
+        """
+        tx_context: information about the transaction that the VM may need
+        flags: gives the VM hints about which additional constraints to check
+        """
+
+        for t in self.puzzle_and_solution_iterator(tx_context, flags=flags, traceback_f=traceback_f):
+            puzzle_script, solution_stack, flags, sighash_f = t
+
+            vm = self.VM(puzzle_script, tx_context, sighash_f, flags=flags, initial_stack=solution_stack[:])
+
+            vm.is_solution_script = False
+            vm.traceback_f = traceback_f
+
+            stack = vm.eval_script()
+            if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
+                raise ScriptError("eval false", errno.EVAL_FALSE)
+
+        if flags & VERIFY_CLEANSTACK and len(stack) != 1:
+            raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
+
+    def main_program_tuple(self, tx_context, puzzle_script, solution_stack, flags):
+        sighash_f = self._make_sighash_f(tx_context.tx_in_idx)
+        return puzzle_script, solution_stack, flags, sighash_f
+
+    def puzzle_and_solution_iterator(self, tx_context, flags=None, traceback_f=None):
+        if flags is None:
+            flags = VERIFY_P2SH | VERIFY_WITNESS
+
+        solution_stack = self._solution_script_to_stack(tx_context, flags=flags, traceback_f=traceback_f)
+        puzzle_script = tx_context.puzzle_script
+
+        flags_1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
+
+        main_tuple = self.main_program_tuple(tx_context, puzzle_script, solution_stack, flags_1)
+        yield main_tuple
+        sighash_f = main_tuple[3]
+
+        p2sh_tuple = self.p2s_program_tuple(tx_context, puzzle_script, solution_stack, flags_1, sighash_f)
+        if p2sh_tuple:
+            yield p2sh_tuple
+            puzzle_script, solution_stack = p2sh_tuple[:2]
+
+        is_p2sh = p2sh_tuple is not None
+        witness_tuple = self.witness_program_tuple(tx_context, puzzle_script, solution_stack, flags, is_p2sh)
+        if witness_tuple:
+            yield witness_tuple
