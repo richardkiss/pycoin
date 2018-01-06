@@ -9,58 +9,34 @@ class WhoSigned(object):
     def __init__(self, script_tools):
         self._script_tools = script_tools
 
-    def public_pairs_for_script(self, script, generator):
+    def solution_blobs(self, tx, tx_in_idx):
         """
-        For a given script, iterate over and pull out public pairs encoded as sec values.
+        This iterator yields data blobs that appear in the the last solution_script or the witness.
         """
-        public_pairs = []
-        for opcode, data, pc, new_pc in self._script_tools.get_opcodes(script):
-            if data:
-                try:
-                    public_pairs.append(sec_to_public_pair(data, generator))
-                except EncodingError:
-                    pass
-        return public_pairs
-
-    def solution_values(self, tx, tx_in_idx):
-        """
-        This is a gross hack that returns the final list of data blobs that
-        appear in the the solution_script or the witness.
-        BRAIN DAMAGE: clean up, or move to SolutionChecker somehow
-        """
-        if len(tx.unspents) <= tx_in_idx or tx.unspents[tx_in_idx] is None:
-            raise ValueError("no unspents")
-        parent_tx_out_script = tx.unspents[tx_in_idx].script
         sc = tx.SolutionChecker(tx)
         tx_context = sc.tx_context_for_idx(tx_in_idx)
-        stack, solution_stack = sc._check_solution(tx_context, flags=0, traceback_f=None)
-        if sc.is_pay_to_script_hash(parent_tx_out_script):
-            parent_tx_out_script = solution_stack[-1]
-            solution_stack = solution_stack[:-1]
-        if sc.witness_program_version(parent_tx_out_script) is not None:
-            solution_stack = tx_context.witness_solution_stack
-        return solution_stack
-
-    def extract_parent_tx_out_script(self, tx, tx_in_idx):
-        if len(tx.unspents) <= tx_in_idx or tx.unspents[tx_in_idx] is None:
-            return b''
-        parent_tx_out_script = tx.unspents[tx_in_idx].script
-        sc = tx.SolutionChecker(tx)
-        if sc.is_pay_to_script_hash(parent_tx_out_script):
-            tx_context = sc.tx_context_for_idx(tx_in_idx)
-            solution_stack = sc._solution_script_to_stack(tx_context, flags=0, traceback_f=None)
-            parent_tx_out_script = solution_stack[-1]
-        return parent_tx_out_script
+        # set solution_stack in case there are no results from puzzle_and_solution_iterator
+        solution_stack = []
+        for puzzle_script, solution_stack, flags, sighash_f in sc.puzzle_and_solution_iterator(tx_context):
+            pass
+            # we only care about the last one
+        for s in solution_stack:
+            yield s
 
     def extract_signatures(self, tx, tx_in_idx):
         sc = tx.SolutionChecker(tx)
-        parent_tx_out_idx = tx.txs_in[tx_in_idx].previous_index
-        parent_tx_out_script = self.extract_parent_tx_out_script(tx, tx_in_idx)
+        tx_context = sc.tx_context_for_idx(tx_in_idx)
+        # set solution_stack in case there are no results from puzzle_and_solution_iterator
+        solution_stack = []
+        for puzzle_script, solution_stack, flags, sighash_f in sc.puzzle_and_solution_iterator(tx_context):
+            pass
+            # we only care about the last one
 
-        for data in self.solution_values(tx, tx_in_idx):
+        vm = sc.VM(puzzle_script, tx_context, sighash_f, flags=flags, initial_stack=solution_stack[:])
+        for data in self.solution_blobs(tx, tx_in_idx):
             try:
                 sig_pair, sig_type = parse_signature_blob(data)
-                sig_hash = sc._signature_hash(parent_tx_out_script, parent_tx_out_idx, sig_type)
+                sig_hash = sighash_f(sig_type, sig_blobs=[], vm=vm)
                 yield (data, sig_hash)
             except (ValueError, TypeError, UnexpectedDER):
                 continue
@@ -69,29 +45,34 @@ class WhoSigned(object):
         """
         For a given script solution, iterate yield its sec blobs
         """
-        for data in self.solution_values(tx, tx_in_idx):
-            if is_sec(data):
-                yield data
-
-    def blobs_for_solution(self, tx, tx_in_idx):
         sc = tx.SolutionChecker(tx)
-        tx_in = tx.txs_in[tx_in_idx]
-        script = tx_in.script
-        if sc.is_pay_to_script_hash(script):
-            tx_context = sc.tx_context_for_idx(tx_in_idx)
-            stack, solution_stack = sc._check_solution(tx_context, flags=0, traceback_f=None)
-            for data in stack:
-                yield data
-            parent_tx_out_script = solution_stack[-1]
-        for opcode, data, pc, new_pc in self._script_tools.get_opcodes(script):
-            if data is not None:
-                yield data
+        tx_context = sc.tx_context_for_idx(tx_in_idx)
+        # set solution_stack in case there are no results from puzzle_and_solution_iterator
+        solution_stack = []
+        for puzzle_script, solution_stack, flags, sighash_f in sc.puzzle_and_solution_iterator(tx_context):
+            for opcode, data, pc, new_pc in self._script_tools.get_opcodes(puzzle_script):
+                if data and is_sec(data):
+                    yield data
+            for data in solution_stack:
+                if is_sec(data):
+                    yield data
+
+    def public_pairs_for_script(self, tx, tx_in_idx, generator):
+        """
+        For a given script, iterate over and pull out public pairs encoded as sec values.
+        """
+        public_pairs = []
+        for sec in self.extract_secs(tx, tx_in_idx):
+            try:
+                public_pairs.append(sec_to_public_pair(sec, generator))
+            except EncodingError:
+                pass
+        return public_pairs
 
     def public_pairs_signed(self, tx, tx_in_idx):
         signed_by = []
 
-        parent_tx_out_script = self.extract_parent_tx_out_script(tx, tx_in_idx)
-        public_pairs = self.public_pairs_for_script(parent_tx_out_script, secp256k1_generator)
+        public_pairs = self.public_pairs_for_script(tx, tx_in_idx, secp256k1_generator)
 
         for signature, sig_hash in self.extract_signatures(tx, tx_in_idx):
             sig_pair, sig_type = parse_signature_blob(signature)
