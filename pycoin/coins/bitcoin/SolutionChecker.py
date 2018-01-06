@@ -25,6 +25,8 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
     VM = BitcoinVM
     ScriptTools = BitcoinScriptTools
 
+    DEFAULT_FLAGS = VERIFY_P2SH | VERIFY_WITNESS
+
     def __init__(self, tx):
         self.tx = tx
         # self.sighash_cache = {}
@@ -204,7 +206,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
 
     def puzzle_and_solution_iterator(self, tx_context, flags=None, traceback_f=None):
         if flags is None:
-            flags = VERIFY_P2SH | VERIFY_WITNESS
+            flags = self.DEFAULT_FLAGS
 
         solution_stack = self._solution_script_to_stack(tx_context, flags=flags, traceback_f=traceback_f)
         puzzle_script = tx_context.puzzle_script
