@@ -183,7 +183,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         flags: gives the VM hints about which additional constraints to check
         """
 
-        for t in self.puzzle_and_solution_iterator(tx_context, flags=flags):
+        for t in self.puzzle_and_solution_iterator(tx_context, flags=flags, traceback_f=traceback_f):
             puzzle_script, solution_stack, flags, sighash_f = t
 
             vm = self.VM(puzzle_script, tx_context, sighash_f, flags=flags, initial_stack=solution_stack[:])
@@ -202,11 +202,11 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         sighash_f = self._make_sighash_f(tx_context.tx_in_idx)
         return puzzle_script, solution_stack, flags, sighash_f
 
-    def puzzle_and_solution_iterator(self, tx_context, flags=None):
+    def puzzle_and_solution_iterator(self, tx_context, flags=None, traceback_f=None):
         if flags is None:
             flags = VERIFY_P2SH | VERIFY_WITNESS
 
-        solution_stack = self._solution_script_to_stack(tx_context, flags=flags, traceback_f=None)
+        solution_stack = self._solution_script_to_stack(tx_context, flags=flags, traceback_f=traceback_f)
         puzzle_script = tx_context.puzzle_script
 
         flags_1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
