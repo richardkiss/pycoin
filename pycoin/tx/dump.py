@@ -4,7 +4,6 @@ import datetime
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.convention import satoshi_to_mbtc
-from pycoin.networks.registry import address_prefix_for_netcode
 from pycoin.serialize import b2h_rev, h2b, stream_to_bytes
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
@@ -48,7 +47,6 @@ def make_trace_script(do_trace, use_pdb):
 
 
 def dump_inputs(tx, network, verbose_signature, traceback_f, disassembly_level):
-    address_prefix = address_prefix_for_netcode(network.code)
     for idx, tx_in in enumerate(tx.txs_in):
         if tx.is_coinbase():
             print("%4d: COINBASE  %12.5f mBTC" % (idx, satoshi_to_mbtc(tx.total_in())))
