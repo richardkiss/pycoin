@@ -36,7 +36,7 @@ BUILT_IN_NETWORKS = [
     # LTC litecoin mainnet : Ltpv/Ltub
     Network(
         "LTC", "Litecoin", "mainnet",
-        b'\xb0', b'\x30', b'\5',
+        b'\xb0', b'\x30', b'\x32',
         h2b('019d9cfe'), h2b('019da462'),
         tx=BitcoinTx, block=BitcoinBlock,
         bech32_hrp='lc'
@@ -45,7 +45,7 @@ BUILT_IN_NETWORKS = [
     # LTC litecoin testnet : ttpv/ttub
     Network(
         "XLT", "Litecoin", "testnet",
-        b'\xef', b'\x6f', b'\xc4',
+        b'\xef', b'\x6f', b'\x3a',
         h2b('0436ef7d'), h2b('0436f6e1'),
         tx=BitcoinTx, block=BitcoinBlock,
         bech32_hrp='tl'
