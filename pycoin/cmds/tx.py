@@ -528,7 +528,10 @@ def print_output(tx, include_unspents, output_file, show_unspents,
     else:
         if not tx.missing_unspents():
             check_fees(tx)
-        dump_tx(tx, network, verbose_signature, disassembly_level, trace, pdb)
+        output = []
+        dump_tx(output, tx, network, verbose_signature, disassembly_level, trace, pdb)
+        for line in output:
+            print(line)
         if include_unspents:
             print("including unspents in hex dump since transaction not fully signed")
         print(tx_as_hex)
