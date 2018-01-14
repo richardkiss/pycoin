@@ -67,7 +67,7 @@ def dump_inputs(tx, network, verbose_signature, traceback_f, disassembly_level):
             dump_disassembly(tx, idx, network.extras.disassembler)
 
         if verbose_signature:
-            dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f, disassembly_level)
+            dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f)
 
 
 def dump_disassembly(tx, tx_in_idx, disassembler):
@@ -81,7 +81,7 @@ def dump_disassembly(tx, tx_in_idx, disassembler):
             print("           %s" % l)
 
 
-def dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f, disassembly_level):
+def dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f):
     sc = tx.SolutionChecker(tx)
     signatures = []
     for opcode in BitcoinScriptTools.opcode_list(tx_in.script):
