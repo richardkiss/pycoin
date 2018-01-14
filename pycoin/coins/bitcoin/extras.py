@@ -1,12 +1,12 @@
 
 
 from pycoin.contrib.who_signed import WhoSigned
-from pycoin.vm.disassemble import Disassemble
+from pycoin.vm.annotate import Annotate
 
 
 class Extras(object):
     def __init__(self, script_tools, ui):
-        self.disassembler = Disassemble(script_tools, ui)
+        self.annotate = Annotate(script_tools, ui)
         self.Key = ui._key_class
         self.BIP32Node = ui._bip32node_class
         self.ElectrumKey = ui._electrum_class

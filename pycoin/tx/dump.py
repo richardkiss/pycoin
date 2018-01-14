@@ -64,15 +64,15 @@ def dump_inputs(tx, network, verbose_signature, traceback_f, disassembly_level):
                                           tx_in.previous_index, suffix)
         print(t.rstrip())
         if disassembly_level > 0:
-            dump_disassembly(tx, idx, network.extras.disassembler)
+            dump_disassembly(tx, idx, network.extras.annotate)
 
         if verbose_signature:
             dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f)
 
 
-def dump_disassembly(tx, tx_in_idx, disassembler):
+def dump_disassembly(tx, tx_in_idx, annotate):
     for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-            disassembler.annotate_scripts(tx, tx_in_idx):
+            annotate.annotate_scripts(tx, tx_in_idx):
         for l in pre_annotations:
             print("           %s" % l)
         if 1:
@@ -92,12 +92,12 @@ def dump_signatures(tx, tx_in, tx_out, idx, network, traceback_f):
             print("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
                 print("      z{}: {:#x} {}".format(i, sc._signature_hash(tx_out.script, idx, sig_type),
-                                                   network.extras.disassembler.sighash_type_to_string(sig_type)))
+                                                   network.extras.annotate.sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:
             print("      z:{} {:#x} {}".format(' ' if i else '', sc._signature_hash(
-                tx_out.script, idx, sig_type), network.extras.disassembler.sighash_type_to_string(sig_type)))
+                tx_out.script, idx, sig_type), network.extras.annotate.sighash_type_to_string(sig_type)))
 
 
 def dump_footer(tx, missing_unspents):
@@ -124,7 +124,7 @@ def dump_tx(tx, network, verbose_signature, disassembly_level, do_trace, use_pdb
         print("%4d: %34s receives %12.5f mBTC" % (idx, address, amount_mbtc))
         if disassembly_level > 0:
             for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-                    network.extras.disassembler.annotate_spendable(tx.__class__, tx_out):
+                    network.extras.annotate.annotate_spendable(tx.__class__, tx_out):
                 for l in pre_annotations:
                     print("           %s" % l)
                 if 1:
