@@ -97,6 +97,10 @@ class Optimizations:
         OpenSSL.BN_CTX_free(ctx)
         return self.Point(bn_x.to_int(), bn_y.to_int())
 
+    def raw_mul(self, e):
+        """Multiply the generator by an integer."""
+        return self.multiply(self, e)
+
     def inverse_mod(self, a, p):
         ctx = OpenSSL.BN_CTX_new()
         a1 = OpenSSL.BignumType(a)
