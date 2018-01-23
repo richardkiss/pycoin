@@ -20,7 +20,7 @@ THREAD_LOCALS = threading.local()
 
 
 # PYCOIN_BTC_PROVIDERS="blockchain.info blockexplorer.com blockcypher.com chain.so"
-# PYCOIN_BTC_PROVIDERS="insight:http(s?)://hostname/url bitcoinrpc://user:passwd@hostname:8333"
+# PYCOIN_BTC_PROVIDERS="insight:http(s?)://hostname/url bitcoinrpc://user:passwd@hostname:8332"
 
 
 def service_provider_methods(method_name, service_providers):
