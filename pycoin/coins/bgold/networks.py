@@ -1,52 +1,29 @@
-
-from pycoin.serialize import h2b
-
+from pycoin.block import Block as BgoldBlock
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.networks.bitcoinish import create_bitcoinish_network
+
 from .Tx import Tx as BGoldTx
-from ..bitcoin.extras import Extras
-from pycoin.block import Block as BGoldBlock
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.networks.network import Network
-from pycoin.ui.uiclass import UI
-from pycoin.vm.ScriptInfo import ScriptInfo
 
-# BRAIN DAMAGE
-_script_info = ScriptInfo(BitcoinScriptTools)
-
-# BRAIN DAMAGE
-mainnet_ui = UI(
-    _script_info, secp256k1_generator,
-    bip32_prv_prefix=h2b("0488ade4"), bip32_pub_prefix=h2b("0488B21E"),
-    wif_prefix=h2b("80"), sec_prefix="BTCSEC:", address_prefix=h2b("26"),
-    pay_to_script_prefix=h2b("17"), bech32_hrp='bc')
-
-mainnet_extras = Extras(BitcoinScriptTools, mainnet_ui)
-
-BGoldMainnet = Network(
-    'BTG', "BGold", "mainnet",
-    BGoldTx, BGoldBlock,
-    h2b('e1476d44'), 8338, [
+BGoldMainnet = create_bitcoinish_network(
+    netcode="BTG", network_name="Bgold", subnet_name="mainnet", tx=BGoldTx, block=BgoldBlock,
+    wif_prefix_hex="80", sec_prefix="BTCSEC:", address_prefix_hex="26", pay_to_script_prefix_hex="17",
+    bip32_prv_prefix_hex="0488ade4", bip32_pub_prefix_hex="0488B21E",
+    magic_header_hex="e1476d44", default_port=8338,
+    dns_bootstrap = [
         "eu-dnsseed.bitcoingold-official.org", "dnsseed.bitcoingold.org",
         "dnsseed.btcgpu.org",
     ],
-    ui=mainnet_ui, extras=mainnet_extras
-)
+    scriptTools=BitcoinScriptTools)
 
-testnet_ui = UI(
-    _script_info, secp256k1_generator,
-    bip32_prv_prefix=h2b("04358394"), bip32_pub_prefix=h2b("043587CF"),
-    wif_prefix=h2b("ef"), sec_prefix="XTNSEC:", address_prefix=h2b("6f"),
-    pay_to_script_prefix=h2b("c4"), bech32_hrp='tb')
 
-testnet_extras = Extras(BitcoinScriptTools, testnet_ui)
-
-BGoldTestnet = Network(
-    "XTG", "BGold", "testnet3",
-    BGoldTx, BGoldBlock,
-    h2b('e1476d44'), 18333, [
+BGoldTestnet = create_bitcoinish_network(
+    netcode="XTG", network_name="Bgold", subnet_name="testnet", tx=BGoldTx, block=BgoldBlock,
+    wif_prefix_hex="ef", sec_prefix="XTNSEC:", address_prefix_hex="6f", pay_to_script_prefix_hex="c4",
+    bip32_prv_prefix_hex="0488ade4", bip32_pub_prefix_hex="0488B21E", bech32_hrp="tb",
+    magic_header_hex="e1476d44", default_port=18338,
+    dns_bootstrap = [
         "eu-test-dnsseed.bitcoingold-official.org", "test-dnsseed.bitcoingold.org",
         "test-dnsseed.btcgpu.org", "btg.dnsseed.minertopia.org"
     ],
-    ui=testnet_ui, extras=testnet_extras
-)
+    scriptTools=BitcoinScriptTools)

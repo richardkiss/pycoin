@@ -1,4 +1,3 @@
-
 DEFAULT_ARGS_ORDER = (
     'code', 'network_name', 'subnet_name',
     'tx', 'block',
