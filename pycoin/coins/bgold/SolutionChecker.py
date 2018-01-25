@@ -6,7 +6,7 @@ from pycoin.satoshi.flags import SIGHASH_FORKID
 from ..bitcoin.SolutionChecker import BitcoinSolutionChecker
 
 
-class BGoldSolutionChecker(BitcoinSolutionChecker):
+class BgoldSolutionChecker(BitcoinSolutionChecker):
 
     FORKID_BTG = 79  # atomic number for Au (gold)
 

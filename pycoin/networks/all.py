@@ -5,12 +5,12 @@ from .legacy_networks import NETWORKS
 
 from pycoin.block import Block as BitcoinBlock
 
-from pycoin.coins.bcash.networks import BCashMainnet
+from pycoin.coins.bcash.networks import BcashMainnet
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 from pycoin.coins.litecoin.networks import LitecoinMainnet, LitecoinTestnet
 
-from pycoin.coins.bcash.Tx import Tx as BCashTx
-from pycoin.coins.bgold.networks import BGoldMainnet, BGoldTestnet
+from pycoin.coins.bcash.Tx import Tx as BcashTx
+from pycoin.coins.bgold.networks import BgoldMainnet, BgoldTestnet
 
 
 BUILT_IN_NETWORKS = [
@@ -20,9 +20,9 @@ BUILT_IN_NETWORKS = [
     BitcoinTestnet,
     LitecoinMainnet,
     LitecoinTestnet,
-    BCashMainnet,
-    BGoldMainnet,
-    BGoldTestnet,
+    BcashMainnet,
+    BgoldMainnet,
+    BgoldTestnet,
 
 ]
 
