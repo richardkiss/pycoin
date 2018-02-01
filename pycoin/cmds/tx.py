@@ -106,6 +106,12 @@ def parse_fee(fee):
     return int(fee)
 
 
+def parse_script_index_hex(input):
+    index_s, opcodes = input.split("/", 1)
+    index = int(index_s)
+    return (index, h2b(opcodes))
+
+
 def create_parser():
     codes = network_codes()
     EPILOG = ('Files are binary by default unless they end with the suffix ".hex". ' +
@@ -337,7 +343,8 @@ def parse_parts(tx_class, arg, spendables, payables, network):
 
     if len(parts) == 2 and is_address_valid(parts[0], allowable_netcodes=[network]):
         try:
-            payables.append(parts)
+            script = network.ui.script_for_address(parts[0])
+            payables.append((script, parts[1]))
             return True
         except ValueError:
             pass
@@ -348,7 +355,7 @@ def key_found(arg, payables, key_iters):
         key = key_from_text(arg)
         # TODO: check network
         if key.wif() is None:
-            payables.append((key.address(), 0))
+            payables.append((network.ui.script_for_address(key.address()), 0))
             return True
         key_iters.append(iter([key.wif()]))
         return True
@@ -393,7 +400,7 @@ def parse_context(args, parser):
 
         if is_address_valid(arg, allowable_netcodes=[args.network], allowable_types=[
                 "address", "pay_to_script", "segwit"]):
-            payables.append((arg, 0))
+            payables.append((network.ui.script_for_address(arg), 0))
             continue
 
         if key_found(arg, payables, key_iters):
@@ -406,6 +413,15 @@ def parse_context(args, parser):
 
         if parse_parts(tx_class, arg, spendables, payables, args.network):
             continue
+
+        try:
+            import pdb
+            pdb.set_trace()
+            compiled_script = network.extras.ScriptTools.compile(arg)
+            payables.append((compiled_script, 0))
+            continue
+        except Exception:
+            pass
 
         parser.error("can't parse %s" % arg)
 
@@ -440,8 +456,7 @@ def merge_txs(network, txs, spendables, payables):
     for spendable in spendables:
         txs_in.append(spendable.tx_in())
         unspents.append(spendable)
-    for address, coin_value in payables:
-        script = network.ui.script_for_address(address)
+    for script, coin_value in payables:
         txs_out.append(tx_class.TxOut(coin_value, script))
 
     return txs_in, txs_out, unspents
