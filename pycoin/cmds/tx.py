@@ -159,6 +159,9 @@ def create_parser():
     parser.add_argument("--remove-tx-out", metavar="tx_out_index_to_delete", action="append", type=int,
                         help='remove a tx_out')
 
+    parser.add_argument("--replace-input-script", metavar="tx_in_script_slash_hex", action="append", default=[],
+                        type=parse_script_index_hex, help='replace an input script: arg looks like "1/796a"')
+
     parser.add_argument('-F', "--fee", help='fee, in satoshis, to pay on transaction, or '
                         '"standard" to auto-calculate. This is only useful if the "split pool" '
                         'is used; otherwise, the fee is automatically set to the unclaimed funds.',
@@ -489,6 +492,11 @@ def remove_indices(items, indices):
     return items
 
 
+def replace_input_scripts(txs_in, replacements):
+    for index, blob in replacements:
+        txs_in[index].script = blob
+
+
 def wif_iter(iters):
     while len(iters) > 0:
         for idx, iter in enumerate(iters):
@@ -505,6 +513,7 @@ def generate_tx(network, txs, spendables, payables, args):
     lock_time, version = calculate_lock_time_and_version(args, txs)
     if len(unspents) == len(txs_in):
         unspents = remove_indices(unspents, args.remove_tx_in)
+    replace_input_scripts(txs_in, args.replace_input_script)
     txs_in = remove_indices(txs_in, args.remove_tx_in)
     txs_out = remove_indices(txs_out, args.remove_tx_out)
     tx = network.tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
