@@ -14,7 +14,6 @@ import sys
 
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding.hash import hash160
-from pycoin.ui.validate import is_address_valid
 from pycoin.networks.registry import full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode
@@ -214,8 +213,8 @@ def create_parser():
                         ' a transaction as a hex string; a path name to a transaction to be loaded;'
                         ' a spendable 4-tuple of the form tx_id/tx_out_idx/script_hex/satoshi_count '
                         'to be added to TxIn list; an address/satoshi_count to be added to the TxOut '
-                        'list; an address to be added to the TxOut list and placed in the "split'
-                        ' pool".')
+                        'list; an address or script to be added to the TxOut list and placed in the '
+                        '"split pool".')
 
     return parser
 
@@ -344,16 +343,14 @@ def parse_parts(tx_class, arg, spendables, payables, network):
         except Exception:
             pass
 
-    if len(parts) == 2 and is_address_valid(parts[0], allowable_netcodes=[network]):
-        try:
-            script = network.ui.script_for_address(parts[0])
+    if len(parts) == 2:
+        script = script_for_address_or_opcodes(network, parts[0])
+        if script is not None:
             payables.append((script, parts[1]))
             return True
-        except ValueError:
-            pass
 
 
-def key_found(arg, payables, key_iters):
+def key_found(arg, payables, key_iters, network):
     try:
         key = key_from_text(arg)
         # TODO: check network
@@ -366,6 +363,17 @@ def key_found(arg, payables, key_iters):
         pass
 
     return False
+
+
+def script_for_address_or_opcodes(network, text):
+    try:
+        return network.ui.script_for_address(text)
+    except Exception:
+        pass
+    try:
+        return network.extras.ScriptTools.compile(text)
+    except Exception:
+        pass
 
 
 def parse_context(args, parser):
@@ -400,31 +408,21 @@ def parse_context(args, parser):
     warning_spendables = None
 
     for arg in args.argument:
-
-        if is_address_valid(arg, allowable_netcodes=[args.network], allowable_types=[
-                "address", "pay_to_script", "segwit"]):
-            payables.append((network.ui.script_for_address(arg), 0))
+        payable = script_for_address_or_opcodes(network, arg)
+        if payable is not None:
+            payables.append((payable, 0))
             continue
 
-        if key_found(arg, payables, key_iters):
+        if key_found(arg, payables, key_iters, network):
             continue
 
-        tx, tx_db = parse_tx(tx_class, arg, parser, tx_db, args.network)
+        tx, tx_db = parse_tx(tx_class, arg, parser, tx_db, network)
         if tx:
             txs.append(tx)
             continue
 
-        if parse_parts(tx_class, arg, spendables, payables, args.network):
+        if parse_parts(tx_class, arg, spendables, payables, network):
             continue
-
-        try:
-            import pdb
-            pdb.set_trace()
-            compiled_script = network.extras.ScriptTools.compile(arg)
-            payables.append((compiled_script, 0))
-            continue
-        except Exception:
-            pass
 
         parser.error("can't parse %s" % arg)
 
