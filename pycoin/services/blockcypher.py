@@ -22,8 +22,6 @@ class BlockcypherProvider(object):
         self.network_path = NETWORK_PATHS.get(netcode)
         self.api_key = api_key
 
-        print(netcode)
-
     def base_url(self, args):
         return "https://api.blockcypher.com/v1/%s/%s" % (self.network_path, args)
 
