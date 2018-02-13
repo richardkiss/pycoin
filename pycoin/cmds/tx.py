@@ -563,7 +563,8 @@ def do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, netcode):
     unsigned_after = unsigned_before
     if unsigned_before > 0 and (key_iters or sec_hints or signature_hints):
         print("signing...", file=sys.stderr)
-        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup, netcode=netcode, sec_hints=sec_hints, signature_hints=signature_hints)
+        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup,
+                netcode=netcode, sec_hints=sec_hints, signature_hints=signature_hints)
 
         unsigned_after = tx.bad_signature_count()
         if unsigned_after > 0:
