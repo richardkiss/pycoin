@@ -1,4 +1,5 @@
 import collections
+import itertools
 
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec
@@ -63,7 +64,7 @@ class Annotate(object):
         try:
             self.annotate_pubkey(vmc.pop(), da)
             self.annotate_signature(vmc.pop(), da, vmc)
-        except IndexError:
+        except (IndexError, ValueError):
             pass
         vmc.stack = s
 
@@ -116,6 +117,13 @@ class Annotate(object):
             tx.check_solution(tx_in_idx, traceback_f=traceback_f)
         except ScriptError:
             pass
+
+        # the script may have ended early, so let's just double-check
+        for idx, (opcode, data, pc, new_pc) in enumerate(itertools.chain(
+            self._script_tools.get_opcodes(tx.unspents[tx_in_idx].script),
+            self._script_tools.get_opcodes(tx.txs_in[tx_in_idx].script))):
+            if idx >= len(r):
+                r.append(([], pc, opcode, self.instruction_for_opcode(opcode, data), []))
 
         return r
 
