@@ -9,6 +9,7 @@ from .ToolTest import ToolTest
 # be sure to do a "git diff" to validate that you're getting the changes you expect
 
 REPAIR_FAILURES = False
+REPAIR_FAILURES = 1
 
 
 def get_test_cases():

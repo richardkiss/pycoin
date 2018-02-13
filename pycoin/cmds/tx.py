@@ -327,7 +327,7 @@ def invoke_p2sh_lookup(args):
 
 
 def create_tx_db(network):
-    tx_db = get_tx_db(network)
+    tx_db = get_tx_db(network.code)
     tx_db.warning_tx_cache = message_about_tx_cache_env()
     tx_db.warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(network)
     return tx_db
@@ -392,7 +392,7 @@ def parse_context(args, parser):
             parser.error("can't parse ")
         the_ram_tx_db = dict((tx.hash(), tx) for tx in txs)
         if tx_db is None:
-            tx_db = create_tx_db(args.network)
+            tx_db = create_tx_db(network)
         tx_db.lookup_methods.append(the_ram_tx_db.get)
 
     # defaults
@@ -632,7 +632,7 @@ def tx(args, parser):
     for tx in txs:
         if tx.missing_unspents() and (args.augment or tx_db):
             if tx_db is None:
-                tx_db = create_tx_db(args.network)
+                tx_db = create_tx_db(network)
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
     # build p2sh_lookup
