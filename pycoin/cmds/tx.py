@@ -367,7 +367,9 @@ def key_found(arg, payables, key_iters, network):
 
 def script_for_address_or_opcodes(network, text):
     try:
-        return network.ui.script_for_address(text)
+        script = network.ui.script_for_address(text)
+        if script:
+            return script
     except Exception:
         pass
     try:
@@ -408,20 +410,20 @@ def parse_context(args, parser):
     warning_spendables = None
 
     for arg in args.argument:
-        payable = script_for_address_or_opcodes(network, arg)
-        if payable is not None:
-            payables.append((payable, 0))
-            continue
-
-        if key_found(arg, payables, key_iters, network):
-            continue
-
         tx, tx_db = parse_tx(tx_class, arg, parser, tx_db, network)
         if tx:
             txs.append(tx)
             continue
 
+        if key_found(arg, payables, key_iters, network):
+            continue
+
         if parse_parts(tx_class, arg, spendables, payables, network):
+            continue
+
+        payable = script_for_address_or_opcodes(network, arg)
+        if payable is not None:
+            payables.append((payable, 0))
             continue
 
         parser.error("can't parse %s" % arg)
