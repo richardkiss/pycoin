@@ -35,3 +35,4 @@ Total output    123.35678 mBTC
 Total fees        0.10000 mBTC
 including unspents in hex dump since transaction not fully signed
 01000000012a6ca22af83bc447f74b1f475c9bd2e99ccef7347144572a9de5bcf5a5a21ad60100000000ffffffff02e0aebb00000000000a51529a02d0076ba6a9a45e8b0000000000000a697f9d04646f6773b3b2000000004e61bc00000000001976a91491b24bf9f5288532960ac687abb035127b1d28a588ac
+all incoming transaction values validated
