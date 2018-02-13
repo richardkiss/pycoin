@@ -659,7 +659,7 @@ def tx(args, parser):
     print_output(tx, include_unspents, args.output_file, args.show_unspents, network,
                  args.verbose_signature, args.disassemble, args.trace, args.pdb)
 
-    tx_db = cache_result(tx, tx_db, args.cache, args.network)
+    tx_db = cache_result(tx, tx_db, args.cache, network)
 
     tx_db = validate_against_bitcoind(tx, tx_db, args.network, args.bitcoind_url)
 
