@@ -22,7 +22,11 @@ def set_api(library, api_info):
 
 def load_library():
     system = platform.system()
-    if system == 'Windows':
+    PYCOIN_LIBCRYPTO_PATH = os.getenv("PYCOIN_LIBCRYPTO_PATH")
+
+    if PYCOIN_LIBCRYPTO_PATH:
+        library_path = PYCOIN_LIBCRYPTO_PATH
+    elif system == 'Windows':
         if platform.architecture()[0] == '64bit':
             library_path = ctypes.util.find_library('libeay64')
         else:
