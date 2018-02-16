@@ -70,5 +70,5 @@ class BlockcypherProvider(object):
         """
         url = self.base_url("txs/push")
         data = {"tx": tx.as_hex()}
-        result = json.loads(urlopen(url, data=json.dumps(data).encode('utf8')).read().decode("utf8"))
+        result = json.loads(urlopen(url, data=json.dumps(data)).read().decode("utf8"))
         return result
