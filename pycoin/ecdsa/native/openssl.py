@@ -46,7 +46,6 @@ def load_library():
     BN_CTX = ctypes.POINTER(BignumContext)
 
     BIGNUM_API = [
-        ("BN_init", [BN_P], None),
         ("BN_new", [], BN_P),
         ("BN_set_word", [BN_P, ctypes.c_ulong], ctypes.c_int),
         ("BN_clear_free", [BN_P], None),
