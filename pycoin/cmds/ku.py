@@ -329,7 +329,6 @@ def ku(args, parser):
     PREFIX_TRANSFORMS = prefix_transforms_for_network(args.network)
 
     def parse_stdin():
-        import sys
         return [item for item in sys.stdin.readline().strip().split(' ') if len(item) > 0]
 
     items = args.item if len(args.item) > 0 else parse_stdin()
