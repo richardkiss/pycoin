@@ -45,7 +45,7 @@ def make_bad_opcode(opcode, even_outside_conditional=False, err=errno.BAD_OPCODE
 
 
 def do_OP_CODESEPARATOR(vm):
-    vm.begin_code_hash = vm.pc + 1
+    vm.begin_code_hash = vm.pc
 
 
 def do_OP_TOALTSTACK(vm):
