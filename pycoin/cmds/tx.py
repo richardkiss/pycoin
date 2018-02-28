@@ -558,13 +558,13 @@ def print_output(tx, include_unspents, output_file, show_unspents,
         print(tx_as_hex)
 
 
-def do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, netcode):
+def do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, network):
     unsigned_before = tx.bad_signature_count()
     unsigned_after = unsigned_before
     if unsigned_before > 0 and (key_iters or sec_hints or signature_hints):
         print("signing...", file=sys.stderr)
         sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup,
-                netcode=netcode, sec_hints=sec_hints, signature_hints=signature_hints)
+                network=network, sec_hints=sec_hints, signature_hints=signature_hints)
 
         unsigned_after = tx.bad_signature_count()
         if unsigned_after > 0:
@@ -643,7 +643,7 @@ def tx(args, parser):
     signature_hints = [h2b(sig) for sig in (args.signature or [])]
     sec_hints = build_sec_lookup([h2b(sec) for sec in (args.sec or [])])
 
-    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, args.network)
+    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, network)
 
     include_unspents = not is_fully_signed
 
