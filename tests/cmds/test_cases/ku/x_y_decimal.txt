@@ -13,6 +13,7 @@ y parity                     : even
 key pair as sec              : 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
  uncompressed                : 0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798\
                                  483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
+ethereum address             : 0x7e5f4552091a69125d5dfcb7b8c2659029395bdf
 hash160                      : 751e76e8199196d454941c45d1b3a323f1433bd6
  uncompressed                : 91b24bf9f5288532960ac687abb035127b1d28a5
 Bitcoin address              : 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH

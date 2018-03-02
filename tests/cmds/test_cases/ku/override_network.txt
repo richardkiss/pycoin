@@ -20,6 +20,7 @@ y parity                     : even
 key pair as sec              : 0286bdcf59220fecccfdcfc33a354ceb15c1ded616ce1dc40634ee8ff2d72f0bb2
  uncompressed                : 0486bdcf59220fecccfdcfc33a354ceb15c1ded616ce1dc40634ee8ff2d72f0bb2\
                                  b7f714b12aa17eddb43d3c1bdfbc5b010b4b0ed318e5b0c00bb682bb69f71296
+ethereum address             : 0x04cfd9ce19cf352ad3a081a603fb15b1e56961e6
 hash160                      : e4ca25713330031e60b3268973bad0c31754ddd0
  uncompressed                : 24d12d50fd9102bcf3464e7561573984955d5f9d
 Bitcoin address              : n2NgXADFpST7cjjUVKi17hboVKo19MLgj9
@@ -48,6 +49,7 @@ y parity                     : odd
 key pair as sec              : 034d8c297cc36d5e05d84b15dfb3cde2be39bf2886e55a106d1e22ecdd853841a8
  uncompressed                : 044d8c297cc36d5e05d84b15dfb3cde2be39bf2886e55a106d1e22ecdd853841a8\
                                  5a8b852614c5e772f5ead25726ead70b76aca3da100365e5bbc2cea2c1d64c6d
+ethereum address             : 0xc0eea843065d41363e2c10e27969fa9673761725
 hash160                      : 6b568a729476bd697b8291196b3dcbe18369c776
  uncompressed                : d16e7dd3170087df8fb921b7fea06c6cda0ad461
 Bitcoin address              : mqJWGYKbis64H6kkpZhPUTYGfWGerSwWNY
@@ -76,6 +78,7 @@ y parity                     : even
 key pair as sec              : 0219a9685511be929b26213456ef4b87a4d90360632cf317c516c743a057acf03a
  uncompressed                : 0419a9685511be929b26213456ef4b87a4d90360632cf317c516c743a057acf03a\
                                  de3153dc8a939b44f6f39969dabc749e3cddfd0794ad3578afdddfd094525740
+ethereum address             : 0x0d8436e791ca493c2573c5da21d4bac20ac752f9
 hash160                      : aa5f479146571894485b9e5919da2ab40805851d
  uncompressed                : 87eeac353b9bc19400eb9aa258a409d3b5473107
 Bitcoin address              : mw3oJoeemFSWPRaB8n4Ffm4BwYGdtqCt65
