@@ -86,6 +86,6 @@ NETWORKS = (
     NetworkValues("PIVX", "mainnet", "PIVX", b'\xd4', b'\x1e', b'\0d', h2b('0221312b'), h2b('022d2533')),
 
     # PIVX testnet : tprv/tpub
-    NetworkValues("PIVX", "testnet", "TPIVX", b'\xef', b'\x8b', b'\x13', h2b('3a805837'), h2b('3a8061a0')),
+    NetworkValues("PIVX", "testnet", "TPIVX", b'\xef', b'\x8b', b'\x13', h2b('3a8061a0'), h2b('3a805837')),
 
 )
