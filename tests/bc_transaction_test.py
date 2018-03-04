@@ -127,8 +127,8 @@ def make_f(tx, flag_mask, comments, expect_ok=True):
             why = "bad sig count = %d" % bs
         if (why is not None) == expect_ok:
             why = why or "tx unexpectedly validated"
-            f = open("tx-%s-%x-%s.bin" % (tx.w_id(), flag_mask, "valid" if expect_ok else "invalid"), "wb")
-            f.write(tx.as_bin(include_unspents=True))
+            f = open("tx-%s-%x-%s.hex" % (tx.w_id(), flag_mask, "valid" if expect_ok else "invalid"), "w")
+            f.write(tx_hex)
             f.close()
             self.fail("fail on %s because of %s with hex %s: %s" % (tx.w_id(), why, tx_hex, comments))
     if DEBUG_TX_ID_LIST and tx.w_id() not in DEBUG_TX_ID_LIST:
