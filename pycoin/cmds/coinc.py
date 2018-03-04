@@ -42,6 +42,14 @@ def coinc(args, parser):
         compiled_script = script_tools.compile(arg)
         print(b2h(compiled_script))
 
+        address_p2s = network.ui.address_for_p2s(compiled_script)
+        print(address_p2s)
+        print(b2h(network.ui.script_for_address(address_p2s)))
+
+        address_p2s_wit = network.ui.address_for_p2s_wit(compiled_script)
+        print(address_p2s_wit)
+        print(b2h(network.ui.script_for_address(address_p2s_wit)))
+
 
 def main():
     parser = create_parser()
