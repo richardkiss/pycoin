@@ -19,7 +19,7 @@ def register_network(network_info):
     by its netcode.
     """
     assert isinstance(network_info, Network)
-    code = network_info.code
+    code = network_info.code.upper()
     if code in _NETWORK_NAME_LOOKUP:
         if _NETWORK_NAME_LOOKUP[code] == network_info:
             return
@@ -48,7 +48,7 @@ def network_for_netcode(netcode):
     """
     Return the given Network object for the given netcode (or None).
     """
-    return _NETWORK_NAME_LOOKUP.get(netcode)
+    return _NETWORK_NAME_LOOKUP.get(netcode.upper())
 
 
 def network_codes():
