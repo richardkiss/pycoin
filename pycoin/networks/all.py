@@ -33,6 +33,15 @@ BUILT_IN_NETWORKS = [
         bech32_hrp='tb'
     ),
 
+    # BTC bitcoin regtest : tprv/tpub
+    Network(
+        'XRT', "Bitcoin", "regtest",
+        b'\xef', b'\x6f', b'\xc4', h2b("04358394"), h2b("043587CF"),
+        BitcoinTx, BitcoinBlock,
+        h2b('FABFB5DA'), 18444, [],
+        bech32_hrp='bcrt'
+    ),
+
     # LTC litecoin mainnet : Ltpv/Ltub
     Network(
         "LTC", "Litecoin", "mainnet",
