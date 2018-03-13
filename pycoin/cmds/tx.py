@@ -142,6 +142,8 @@ def create_parser():
                         help='Add all unspent spendables for the given bitcoin address. This information'
                         ' is fetched from web services. With no outputs, incoming spendables will be printed.')
 
+    parser.add_argument("-I", "--dump-inputs", action='store_true', help='Dump inputs to this transaction.')
+
     parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append", default=[],
                         help='file containing WIF or BIP0032 private keys. If file name ends with .gpg, '
                         '"gpg -d" will be invoked automatically. File is read one line at a time, and if '
@@ -626,6 +628,14 @@ def dump_secs_hex(tx, network):
         print(b2h(sec))
 
 
+def dump_inputs(tx, network):
+    for _, tx_out in enumerate(tx.unspents):
+        if tx_out:
+            print("%d: %s %s" % (_, tx_out.coin_value, network.extras.ScriptTools.disassemble(tx_out.script)))
+        else:
+            print("%d: (missing spendable)" % _)
+
+
 def tx(args, parser):
     (network, txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
 
@@ -662,6 +672,9 @@ def tx(args, parser):
     tx_db = cache_result(tx, tx_db, args.cache, network)
 
     tx_db = validate_against_bitcoind(tx, tx_db, args.network, args.bitcoind_url)
+
+    if args.dump_inputs:
+        dump_inputs(tx, network)
 
     if not args.show_unspents:
         tx_db = validate_tx(tx, tx_db, network)
