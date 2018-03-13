@@ -1,0 +1,38 @@
+# trace
+tx -d d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a/1/76a91491b24bf9f5288532960ac687abb035127b1d28a588ac/12345678 '1 2 BOOLAND 2000 TOALTSTACK RIPEMD160 OP_HASH160 OP_MAX/12300000' "OP_VERIFY OP_SUBSTR OP_NUMEQUALVERIFY 'dogs' OP_NOP4 OP_CHECKSEQUENCEVERIFY"
+Version:  1  tx hash 4104cb28de5bf25b835e5704de61036f18f468e2615267c5e972663f4e88c841  89 bytes
+TxIn count: 1; TxOut count: 2
+Lock time: 0 (valid anytime)
+Input:
+   0: 1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm from d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a:1       123.45678 mBTC  BAD SIG
+           --- PUBLIC KEY SCRIPT START
+       0: 76  OP_DUP
+       1: a9  OP_HASH160
+       2: 14  [PUSH_20] 91b24bf9f5288532960ac687abb035127b1d28a5
+      17: 88  OP_EQUALVERIFY
+      18: ac  OP_CHECKSIG
+Outputs:
+   0:                                ??? receives    123.00000 mBTC
+           --- PUBLIC KEY SCRIPT START
+       0: 51  [PUSH_81] 01
+       1: 52  [PUSH_82] 02
+       2: 9a  OP_BOOLAND
+       3: 02  [PUSH_2] d007
+       6: 6b  OP_TOALTSTACK
+       7: a6  OP_RIPEMD160
+       8: a9  OP_HASH160
+       9: a4  OP_MAX
+   1:                                ??? receives      0.35678 mBTC
+           --- PUBLIC KEY SCRIPT START
+       0: 69  OP_VERIFY
+       1: 7f  OP_SUBSTR
+       2: 9d  OP_NUMEQUALVERIFY
+       3: 04  [PUSH_4] 646f6773
+       8: b3  OP_NOP4
+       9: b2  OP_CHECKSEQUENCEVERIFY
+Total input     123.45678 mBTC
+Total output    123.35678 mBTC
+Total fees        0.10000 mBTC
+including unspents in hex dump since transaction not fully signed
+01000000012a6ca22af83bc447f74b1f475c9bd2e99ccef7347144572a9de5bcf5a5a21ad60100000000ffffffff02e0aebb00000000000a51529a02d0076ba6a9a45e8b0000000000000a697f9d04646f6773b3b2000000004e61bc00000000001976a91491b24bf9f5288532960ac687abb035127b1d28a588ac
+all incoming transaction values validated

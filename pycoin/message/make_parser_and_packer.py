@@ -17,12 +17,13 @@ from .PeerAddress import PeerAddress
 # A: PeerAddress object
 # B: Block object
 # T: Tx object
+# O: optional boolean
 
 
 STANDARD_P2P_MESSAGES = {
     'version': (
         "version:L services:Q timestamp:Q remote_address:A local_address:A"
-        " nonce:Q subversion:S last_block_index:L"
+        " nonce:Q subversion:S last_block_index:L relay:O"
     ),
     'verack': "",
     'addr': "date_address_tuples:[LA]",
@@ -127,17 +128,6 @@ def post_unpack_merkleblock(d, f):
     return d
 
 
-def post_unpack_version(d, f):
-    """
-    Post-processor to "version" message, to add a "relay" boolean.
-    """
-    if d["version"] >= 70001:
-        b = f.read(1)
-        if len(b) > 0:
-            d["relay"] = (ord(b) != 0)
-    return d
-
-
 def _make_parser(streamer, the_struct):
     "Return a function that parses the given structure into a dict"
     struct_items = [s.split(":") for s in the_struct.split()]
@@ -190,6 +180,7 @@ def standard_parsing_functions(Block, Tx):
         ("B", (Block.parse, stream_block)),
         ("z", (Block.parse_as_header, stream_blockheader)),
         ("1", (lambda f: struct.unpack("B", f.read(1))[0], lambda f, b: f.write(struct.pack("B", b)))),
+        ("O", (lambda f: True if f.read(1) else False, lambda f, b: f.write(b'\1' if b else b''))),
     ]
     all_items = list(bitcoin_streamer.STREAMER_FUNCTIONS.items())
     all_items.extend(more_parsing)
@@ -212,8 +203,7 @@ def standard_message_post_unpacks(streamer):
     The standard message post-processors: one for the version message,
     one for the alert message, and one for the merkleblock message.
     """
-    return dict(version=post_unpack_version,
-                alert=make_post_unpack_alert(streamer), merkleblock=post_unpack_merkleblock)
+    return dict(alert=make_post_unpack_alert(streamer), merkleblock=post_unpack_merkleblock)
 
 
 def make_parser_and_packer(streamer, message_dict, message_post_unpacks):

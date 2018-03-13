@@ -2,16 +2,13 @@ sudo: false
 language: python
 python:
   - "2.7"
-  - "3.4"
   - "3.5"
   - "3.6"
-  - "3.6-dev"
   - "3.7-dev"
   - "pypy"
 install: pip install tox-travis
 matrix:
   allow_failures:
     python:
-      - "3.6-dev"
       - "3.7-dev"
 script: tox

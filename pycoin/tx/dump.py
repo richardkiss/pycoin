@@ -4,9 +4,8 @@ import datetime
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.convention import satoshi_to_mbtc
-from pycoin.serialize import b2h_rev, h2b, stream_to_bytes
+from pycoin.serialize import b2h_rev, stream_to_bytes
 from pycoin.satoshi.checksigops import parse_signature_blob
-from pycoin.satoshi.der import UnexpectedDER
 
 
 LOCKTIME_THRESHOLD = 500000000
