@@ -329,8 +329,7 @@ class Tx(object):
             return ZERO32
         f = io.BytesIO()
         for tx_out in txs_out:
-            stream_struct("Q", f, tx_out.coin_value)
-            tools.write_push_data([tx_out.script], f)
+            stream_struct("QS", f, tx_out.coin_value, tx_out.script)
         return double_sha256(f.getvalue())
 
     def segwit_signature_preimage(self, script, tx_in_idx, hash_type):
