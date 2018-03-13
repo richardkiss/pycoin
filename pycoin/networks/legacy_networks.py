@@ -81,6 +81,9 @@ NETWORKS = (
 
     # DCR Decred testnet : tprv/tpub
     NetworkValues("Decred", "testnet", "DCRT", b'\x23\x0E', b'\x0F\x21', b'\x0E\x6C', h2b('04358397'), h2b('043587D1')),
+  
+    # AXE Axe mainnet : xprv/xpub
+    NetworkValues("Axe", "mainnet", "AXE", b'\xcc', b'\x37', b'\x10', h2b('0488ADE4'), h2b('0488B21E')),
 
     # PIVX mainnet : dprv/dpub
     NetworkValues("PIVX", "mainnet", "PIVX", b'\xd4', b'\x1e', b'\0d', h2b('0221312b'), h2b('022d2533')),
