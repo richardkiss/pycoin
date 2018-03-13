@@ -234,7 +234,7 @@ def create_parser():
                         default=None, choices=codes)
 
     parser.add_argument(
-        'item', nargs="+", help='a BIP0032 wallet key string;'
+        'item', nargs="*", help='a BIP0032 wallet key string;'
         ' a WIF;'
         ' a bitcoin address;'
         ' an SEC (ie. a 66 hex chars starting with 02, 03 or a 130 hex chars starting with 04);'
@@ -244,7 +244,8 @@ def create_parser():
         ' E:electrum value (either a master public, master private, or initial data);'
         ' secret_exponent (in decimal or hex);'
         ' x,y where x,y form a public pair (y is a number or one of the strings "even" or "odd");'
-        ' hash160 (as 40 hex characters)')
+        ' hash160 (as 40 hex characters).'
+        ' If this argument is missing, input data will be read from stdin.')
     return parser
 
 
@@ -327,7 +328,12 @@ def ku(args, parser):
 
     PREFIX_TRANSFORMS = prefix_transforms_for_network(args.network)
 
-    for item in args.item:
+    def parse_stdin():
+        return [item for item in sys.stdin.readline().strip().split(' ') if len(item) > 0]
+
+    items = args.item if len(args.item) > 0 else parse_stdin()
+
+    for item in items:
         key = parse_key(item, PREFIX_TRANSFORMS, args.network)
 
         if key is None:
