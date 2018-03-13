@@ -10,22 +10,20 @@ from pycoin.networks.registry import network_for_netcode
 from pycoin.serialize import b2h, b2h_rev, stream_to_bytes
 
 
-def dump_block(block, network):
+def dump_block(output, block, network):
     blob = stream_to_bytes(block.stream)
-    print("%d bytes   block hash %s" % (len(blob), block.id()))
-    print("version %d" % block.version)
-    print("prior block hash %s" % b2h_rev(block.previous_block_hash))
-    print("merkle root %s" % b2h(block.merkle_root))
-    print("timestamp %s" % datetime.datetime.utcfromtimestamp(block.timestamp).isoformat())
-    print("difficulty %d" % block.difficulty)
-    print("nonce %s" % block.nonce)
-    print("%d transaction%s" % (len(block.txs), "s" if len(block.txs) != 1 else ""))
+    output.append("%d bytes   block hash %s" % (len(blob), block.id()))
+    output.append("version %d" % block.version)
+    output.append("prior block hash %s" % b2h_rev(block.previous_block_hash))
+    output.append("merkle root %s" % b2h(block.merkle_root))
+    output.append("timestamp %s" % datetime.datetime.utcfromtimestamp(block.timestamp).isoformat())
+    output.append("difficulty %d" % block.difficulty)
+    output.append("nonce %s" % block.nonce)
+    output.append("%d transaction%s" % (len(block.txs), "s" if len(block.txs) != 1 else ""))
     for idx, tx in enumerate(block.txs):
-        print("Tx #%d:" % idx)
-        output = []
+        output.append("Tx #%d:" % idx)
         dump_tx(output, tx, network=network, verbose_signature=False, disassembly_level=0, do_trace=False, use_pdb=False)
-        for line in output:
-            print(line)
+    output.append("")
 
 
 def create_parser():
@@ -39,9 +37,11 @@ def block(args, parser):
     network = network_for_netcode(get_current_netcode())
     for f in args.block_file:
         block = Block.parse(f)
-        dump_block(block, network)
-        print('')
+        output = []
+        dump_block(output, block, network)
 
+        for line in output:
+            print(line)
 
 def main():
     parser = create_parser()
