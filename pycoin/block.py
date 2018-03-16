@@ -25,7 +25,7 @@ class Block(object):
     Tx = Tx
 
     @classmethod
-    def parse(class_, f, include_transactions=True, include_offsets=None):
+    def parse(class_, f, include_transactions=True, include_offsets=None, check_merkle_hash=True):
         """
         Parse the Block from the file-like object
         """
@@ -33,7 +33,7 @@ class Block(object):
         if include_transactions:
             count = parse_struct("I", f)[0]
             txs = block._parse_transactions(f, count, include_offsets=include_offsets)
-            block.set_txs(txs)
+            block.set_txs(txs, check_merkle_hash=check_merkle_hash)
         return block
 
     @classmethod
@@ -89,13 +89,14 @@ class Block(object):
                 tx.offset_in_block = offset_in_block
         return txs
 
-    def set_txs(self, txs):
+    def set_txs(self, txs, check_merkle_hash=True):
         self.txs = txs
         if not txs:
             return
         for tx in txs:
             tx.block = self
-        self.check_merkle_hash()
+        if check_merkle_hash:
+            self.check_merkle_hash()
 
     def as_blockheader(self):
         return Block(self.version, self.previous_block_hash, self.merkle_root,

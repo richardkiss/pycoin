@@ -48,6 +48,10 @@ class BlockTest(unittest.TestCase):
 
         block.check_merkle_hash()
 
+        # parse already validated block
+        block = Block.parse(io.BytesIO(block_data), check_merkle_hash=False)
+        assert block.as_bin() == block_data
+
 
 def main():
     unittest.main()
