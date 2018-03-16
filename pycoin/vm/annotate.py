@@ -43,7 +43,10 @@ class Annotate(object):
 
     def annotate_signature(self, blob, da, vmc):
         lst = da[blob]
-        sig_pair, sig_type = parse_signature_blob(blob)
+        try:
+            sig_pair, sig_type = parse_signature_blob(blob)
+        except ValueError:
+            return
         lst.append("r: {0:#066x}".format(sig_pair[0]))
         lst.append("s: {0:#066x}".format(sig_pair[1]))
         sig_hash = vmc.signature_for_hash_type_f(sig_type, [blob], vmc)
