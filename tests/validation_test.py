@@ -2,12 +2,17 @@ import binascii
 import unittest
 
 from pycoin.block import Block
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import h2b
 from pycoin.tx.Tx import Tx
 
 
 class ValidationTest(unittest.TestCase):
+
+    def setUp(self):
+        self._key = BitcoinMainnet.extras.Key(1, secp256k1_generator)
 
     def test_validate_multisig_tx(self):
         # this is a transaction in the block chain
@@ -215,6 +220,58 @@ class ValidationTest(unittest.TestCase):
         TX_DB[original_tx_hash] = tx_from_b64(TX_2_HEX)
         tx_to_validate.unspents_from_db(TX_DB)
         self.assertEqual(tx_to_validate.bad_signature_count(), 0)
+
+    def _make_tx(self, input_script, other_scripts=[]):
+        from pycoin.tx.tx_utils import create_signed_tx
+        from pycoin.solve.utils import build_p2sh_lookup
+
+        cv = int(50*1e8)
+
+        key = self._key
+        sec = key.sec()
+        wif = key.wif()
+        address = key.address()
+        p2sh_lookup = build_p2sh_lookup(other_scripts)
+
+        coinbase_tx = Tx.coinbase_tx(public_key_sec=sec, coin_value=cv)
+        coinbase_tx.txs_out[0].script = input_script
+        spendable = coinbase_tx.tx_outs_as_spendable()[0]
+        payables = [(address, cv)]
+        tx = create_signed_tx(spendables=[spendable], payables=payables, wifs=[wif], p2sh_lookup=p2sh_lookup)
+        tx.unspents = [spendable]
+        print(tx.as_hex(include_unspents=True))
+        return tx
+
+    def test_validate_p2pkh(self):
+        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh(self._key.hash160())
+        tx = self._make_tx(us_1)
+        tx.check_solution(0)
+
+    def test_validate_p2s_of_p2pkh(self):
+        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh(self._key.hash160())
+        us_2 = BitcoinMainnet.ui._script_info.script_for_p2s(us_1)
+        tx = self._make_tx(us_2, [us_1])
+        tx.check_solution(0)
+
+    def test_validate_p2pkh_wit(self):
+        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh_wit(self._key.hash160())
+        tx = self._make_tx(us_1)
+        tx.check_solution(0)
+
+    def test_validate_p2s_wit_of_p2pkh(self):
+        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh_wit(self._key.hash160())
+        us_2 = BitcoinMainnet.ui._script_info.script_for_p2s(us_1)
+        tx = self._make_tx(us_2, [us_1])
+        self.assertEqual(tx.id(), "1e5d967a3778bfa4e0d90f35f59530e8033a36bd7fd1d9e617c504054b89bd3a")
+        tx.check_solution(0)
+
+    def test_validate_p2s_of_p2s_wit_of_p2pkh(self):
+        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh(self._key.hash160())
+        us_2 = BitcoinMainnet.ui._script_info.script_for_p2s_wit(us_1)
+        us_3 = BitcoinMainnet.ui._script_info.script_for_p2s(us_2)
+        tx = self._make_tx(us_3, [us_1, us_2])
+        self.assertEqual(tx.id(), "54a518b82b464744951531270c1bcec133c515fcdbe9d70c6141e067a62ff640")
+        tx.check_solution(0)
 
 
 if __name__ == "__main__":

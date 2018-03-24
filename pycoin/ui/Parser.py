@@ -56,7 +56,8 @@ def parse_all_to_info(metadata, parsers):
         for p in parsers:
             f_name = "_parse_%s" % key
             f = getattr(p, f_name)
-            yield from f(*v)
+            for _ in f(*v):
+                yield _
 
 
 def parse_to_info(metadata, parsers):

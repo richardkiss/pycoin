@@ -1,4 +1,5 @@
 import collections
+import itertools
 
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec
@@ -10,7 +11,7 @@ from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.coins.SolutionChecker import ScriptError
 
 
-class Disassemble(object):
+class Annotate(object):
     BIT_LIST = [(SIGHASH_ANYONECANPAY, "SIGHASH_ANYONECANPAY"), (SIGHASH_FORKID, "SIGHASH_FORKID")]
     BASE_LOOKUP = {SIGHASH_ALL: "SIGHASH_ALL", SIGHASH_SINGLE: "SIGHASH_SINGLE", SIGHASH_NONE: "SIGHASH_NONE"}
 
@@ -42,7 +43,10 @@ class Disassemble(object):
 
     def annotate_signature(self, blob, da, vmc):
         lst = da[blob]
-        sig_pair, sig_type = parse_signature_blob(blob)
+        try:
+            sig_pair, sig_type = parse_signature_blob(blob)
+        except ValueError:
+            return
         lst.append("r: {0:#066x}".format(sig_pair[0]))
         lst.append("s: {0:#066x}".format(sig_pair[1]))
         sig_hash = vmc.signature_for_hash_type_f(sig_type, [blob], vmc)
@@ -63,7 +67,7 @@ class Disassemble(object):
         try:
             self.annotate_pubkey(vmc.pop(), da)
             self.annotate_signature(vmc.pop(), da, vmc)
-        except IndexError:
+        except (IndexError, ValueError):
             pass
         vmc.stack = s
 
@@ -116,6 +120,13 @@ class Disassemble(object):
             tx.check_solution(tx_in_idx, traceback_f=traceback_f)
         except ScriptError:
             pass
+
+        # the script may have ended early, so let's just double-check
+        for idx, (opcode, data, pc, new_pc) in enumerate(itertools.chain(
+            self._script_tools.get_opcodes(tx.unspents[tx_in_idx].script),
+                self._script_tools.get_opcodes(tx.txs_in[tx_in_idx].script))):
+            if idx >= len(r):
+                r.append(([], pc, opcode, self.instruction_for_opcode(opcode, data), []))
 
         return r
 

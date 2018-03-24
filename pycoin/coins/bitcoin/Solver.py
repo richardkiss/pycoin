@@ -54,7 +54,7 @@ class Solver(object):
         tx_context = self.solution_checker.tx_context_for_idx(tx_in_idx)
         tx_context.witness_solution_stack = DynamicStack([Atom("w_%d" % (1-_)) for _ in range(2)], fill_template="w_%d")
         script_hash = self.solution_checker.script_hash_from_script(tx_context.puzzle_script)
-        witness_version = self.solution_checker.witness_program_version(tx_context.puzzle_script)
+        witness_version = self.solution_checker._witness_program_version(tx_context.puzzle_script)
         tx_context.solution_script = b''
         solution_reserve_count = 0
         fill_template = "x_%d"
@@ -64,13 +64,13 @@ class Solver(object):
                 raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
             tx_context.solution_script = self.ScriptTools.compile_push_data_list([underlying_script])
             solution_reserve_count = 1
-            witness_version = self.solution_checker.witness_program_version(underlying_script)
+            witness_version = self.solution_checker._witness_program_version(underlying_script)
         if witness_version == 0:
             witness_program = (underlying_script if script_hash else tx_context.puzzle_script)[2:]
             if len(witness_program) == 32:
                 underlying_script_wit = p2sh_lookup.get(witness_program, None)
                 if underlying_script_wit is None:
-                    raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(script_hash))
+                    raise ValueError("p2sh_lookup not set or does not have script hash for %s" % b2h(witness_program))
                 fill_template = "w_%d"
                 solution_reserve_count = 1
                 tx_context.witness_solution_stack = [underlying_script_wit]
@@ -120,7 +120,7 @@ class Solver(object):
         witness_list = [solved_values.get(k) for k in w_keys]
         return solution_list, witness_list
 
-    def solve_new(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
+    def solve(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
         """
         Sign a standard transaction.
         hash160_lookup:
@@ -143,6 +143,7 @@ class Solver(object):
                 data for opcode, data, pc, new_pc in self.ScriptTools.get_opcodes(
                     self.tx.txs_in[tx_in_idx].script) if data is not None]
         kwargs["signature_type"] = hash_type
+        kwargs["generator_for_signature_type_f"] = self.SolutionChecker.VM.generator_for_signature_type
         constraints = self.determine_constraints(tx_in_idx, p2sh_lookup=kwargs.get("p2sh_lookup"))
         solution_list, witness_list = self.solve_for_constraints(constraints, **kwargs)
         solution_script = self.ScriptTools.compile_push_data_list(solution_list)
@@ -150,10 +151,56 @@ class Solver(object):
             return solution_script, witness_list
         return solution_script
 
-    def solve(self, *args, **kwargs):
-        # BRAIN DAMAGE
+    def solve_old(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
+        """
+        Sign a standard transaction.
+        hash160_lookup:
+            An object with a get method that accepts a hash160 and returns the
+            corresponding (secret exponent, public_pair, is_compressed) tuple or
+            None if it's unknown (in which case the script will obviously not be signed).
+            A standard dictionary will do nicely here.
+        tx_in_idx:
+            the index of the tx_in we are currently signing
+        """
+        from ...tx.pay_to import script_obj_from_script, ScriptPayToScript
+
+        tx_out_script = self.tx.unspents[tx_in_idx].script
+        if hash_type is None:
+            hash_type = SIGHASH_ALL
+        tx_in = self.tx.txs_in[tx_in_idx]
+
+        is_p2h = self.solution_checker.is_pay_to_script_hash(tx_out_script)
+        if is_p2h:
+            hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
+            p2sh_lookup = kwargs.get("p2sh_lookup")
+            if p2sh_lookup is None:
+                raise ValueError("p2sh_lookup not set")
+            if hash160 not in p2sh_lookup:
+                raise ValueError("hash160=%s not found in p2sh_lookup" %
+                                 b2h(hash160))
+
+            script_to_hash = p2sh_lookup[hash160]
+        else:
+            script_to_hash = tx_out_script
+
+        # Leave out the signature from the hash, since a signature can't sign itself.
+        # The checksig op will also drop the signatures from its hash.
+        def signature_for_hash_type_f(hash_type, script):
+            return self.solution_checker.signature_hash(script, tx_in_idx, hash_type)
+
+        def witness_signature_for_hash_type(hash_type, script):
+            return self.solution_checker.signature_for_hash_type_segwit(script, tx_in_idx, hash_type)
+        witness_signature_for_hash_type.skip_delete = True
+
+        signature_for_hash_type_f.witness = witness_signature_for_hash_type
+
+        the_script = script_obj_from_script(tx_out_script)
         kwargs["generator_for_signature_type_f"] = self.SolutionChecker.VM.generator_for_signature_type
-        return self.solve_new(*args, **kwargs)
+        solution = the_script.solve(
+            hash160_lookup=hash160_lookup, signature_type=hash_type,
+            existing_script=self.tx.txs_in[tx_in_idx].script, existing_witness=tx_in.witness,
+            script_to_hash=script_to_hash, signature_for_hash_type_f=signature_for_hash_type_f, **kwargs)
+        return solution
 
     def sign(self, hash160_lookup, tx_in_idx_set=None, hash_type=None, **kwargs):
         """
@@ -180,7 +227,7 @@ class Solver(object):
                 try:
                     self.sign_tx_in(
                         hash160_lookup, idx, self.tx.unspents[idx].script, hash_type=hash_type, **kwargs)
-                except SolvingError:
+                except (SolvingError, ValueError):
                     pass
 
         return self

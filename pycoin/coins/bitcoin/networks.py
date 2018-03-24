@@ -50,3 +50,21 @@ BitcoinTestnet = Network(
     ],
     ui=testnet_ui, extras=testnet_extras
 )
+
+
+# BTC bitcoin regtest : tprv/tpub
+
+regtest_ui = UI(
+    _script_info, secp256k1_generator,
+    bip32_prv_prefix=h2b("04358394"), bip32_pub_prefix=h2b("043587CF"),
+    wif_prefix=h2b("ef"), sec_prefix="XRTSEC:", address_prefix=h2b("6f"),
+    pay_to_script_prefix=h2b("c4"), bech32_hrp='bcrt')
+
+regtest_extras = Extras(BitcoinScriptTools, regtest_ui)
+
+BitcoinRegtest = Network(
+    "XRT", "Bitcoin", "testnet3",
+    BitcoinTx, BitcoinBlock,
+    h2b('0B110907'), 18444, [],
+    ui=regtest_ui, extras=regtest_extras
+)

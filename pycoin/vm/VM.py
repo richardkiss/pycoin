@@ -112,10 +112,10 @@ class VM(object):
         if data is not None and all_if_true:
             self.stack.append(data)
 
+        self.pc = pc
+
         if all_if_true or getattr(f, "outside_conditional", False):
             f(self)
-
-        self.pc = pc
 
         if self.op_count > self.MAX_OP_COUNT:
             raise ScriptError("script contains too many operations", errno.OP_COUNT)

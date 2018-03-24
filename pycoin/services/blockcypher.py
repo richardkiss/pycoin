@@ -11,8 +11,9 @@ from pycoin.tx.Tx import Spendable, Tx
 class BlockcypherProvider(object):
     def __init__(self, api_key="", netcode=None):
         NETWORK_PATHS = {
-            "BTC": "main",
-            "XTN": "test3"
+            "BTC": "btc/main",
+            "XTN": "btc/test3",
+            "DASH": "dash/main",
         }
 
         if netcode is None:
@@ -22,7 +23,7 @@ class BlockcypherProvider(object):
         self.api_key = api_key
 
     def base_url(self, args):
-        return "https://api.blockcypher.com/v1/btc/%s/%s" % (self.network_path, args)
+        return "https://api.blockcypher.com/v1/%s/%s" % (self.network_path, args)
 
     def spendables_for_address(self, address):
         """

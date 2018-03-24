@@ -5,7 +5,7 @@ from ..bitcoin.SolutionChecker import BitcoinSolutionChecker
 
 
 class BCashSolutionChecker(BitcoinSolutionChecker):
-    def signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
+    def _signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
         """
         Return the canonical hash for a transaction. We need to
         remove references to the signature, since it's a signature
@@ -20,4 +20,4 @@ class BCashSolutionChecker(BitcoinSolutionChecker):
         if hash_type & SIGHASH_FORKID != SIGHASH_FORKID:
             raise ScriptError()
 
-        return self.signature_for_hash_type_segwit(tx_out_script, unsigned_txs_out_idx, hash_type)
+        return self._signature_for_hash_type_segwit(tx_out_script, unsigned_txs_out_idx, hash_type)

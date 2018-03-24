@@ -142,16 +142,16 @@ class SegwitTest(unittest.TestCase):
         )
 
         sc = tx_s1.SolutionChecker(tx_s1)
-        self.assertEqual(b2h(sc.hash_prevouts(SIGHASH_ALL)),
+        self.assertEqual(b2h(sc._hash_prevouts(SIGHASH_ALL)),
                          "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
-        self.assertEqual(b2h(sc.hash_sequence(SIGHASH_ALL)),
+        self.assertEqual(b2h(sc._hash_sequence(SIGHASH_ALL)),
                          "52b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3b")
-        self.assertEqual(b2h(sc.hash_outputs(SIGHASH_ALL, 0)),
+        self.assertEqual(b2h(sc._hash_outputs(SIGHASH_ALL, 0)),
                          "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
 
         script = BitcoinMainnet.ui._script_info.script_for_p2pkh(tx_s1.unspents[1].script[2:])
         self.assertEqual(
-            b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
+            b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
             "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd"
             "3752b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3bef51"
             "e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000019"
@@ -159,7 +159,7 @@ class SegwitTest(unittest.TestCase):
             "ffff863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e511"
             "00000001000000")
 
-        self.assertEqual(b2h(to_bytes_32(sc.signature_for_hash_type_segwit(script, 1, 1))),
+        self.assertEqual(b2h(to_bytes_32(sc._signature_for_hash_type_segwit(script, 1, 1))),
                          "c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670")
         self.check_tx_can_be_signed(tx_u1, tx_s1, [
             0xbbc27228ddcb9209d7fd6f36b02f7dfa6252af40bb2f1cbc7a557da8027ff866,
@@ -311,17 +311,17 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(tx_hex, tx_s_hex)
 
         sc = tx_s5.SolutionChecker(tx_s5)
-        self.assertEqual(b2h(sc.hash_prevouts(SIGHASH_ALL)),
+        self.assertEqual(b2h(sc._hash_prevouts(SIGHASH_ALL)),
                          "74afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aaa0")
-        self.assertEqual(b2h(sc.hash_sequence(SIGHASH_ALL)),
+        self.assertEqual(b2h(sc._hash_sequence(SIGHASH_ALL)),
                          "3bb13029ce7b1f559ef5e747fcac439f1455a2ec7c5f09b72290795e70665044")
-        self.assertEqual(b2h(sc.hash_outputs(SIGHASH_ALL, 0)),
+        self.assertEqual(b2h(sc._hash_outputs(SIGHASH_ALL, 0)),
                          "bc4d309071414bed932f98832b27b4d76dad7e6c1346f487a8fdbb8eb90307cc")
-        self.assertEqual(b2h(sc.hash_outputs(SIGHASH_SINGLE, 0)),
+        self.assertEqual(b2h(sc._hash_outputs(SIGHASH_SINGLE, 0)),
                          "9efe0c13a6b16c14a41b04ebe6a63f419bdacb2f8705b494a43063ca3cd4f708")
         script = tx_s5.txs_in[0].witness[-1]
         self.assertEqual(
-            b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_ALL)),
+            b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_ALL)),
             "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aa"
             "a03bb13029ce7b1f559ef5e747fcac439f1455a2ec7c5f09b72290795e706650443664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -335,7 +335,7 @@ class SegwitTest(unittest.TestCase):
             "bb8eb90307cc0000000001000000")
 
         self.assertEqual(
-            b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_NONE)),
+            b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_NONE)),
             "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aa"
             "a000000000000000000000000000000000000000000000000000000000000000003664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -349,7 +349,7 @@ class SegwitTest(unittest.TestCase):
             "0000000000000000000002000000")
 
         self.assertEqual(
-            b2h(sc.segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE)),
+            b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE)),
             "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aa"
             "a000000000000000000000000000000000000000000000000000000000000000003664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -363,7 +363,7 @@ class SegwitTest(unittest.TestCase):
             "63ca3cd4f7080000000003000000")
 
         self.assertEqual(
-            b2h(sc.segwit_signature_preimage(
+            b2h(sc._segwit_signature_preimage(
                 script=script, tx_in_idx=0, hash_type=SIGHASH_ALL | SIGHASH_ANYONECANPAY)),
             "0100000000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000003664"
@@ -378,7 +378,7 @@ class SegwitTest(unittest.TestCase):
             "bb8eb90307cc0000000081000000")
 
         self.assertEqual(
-            b2h(sc.segwit_signature_preimage(
+            b2h(sc._segwit_signature_preimage(
                 script=script, tx_in_idx=0, hash_type=SIGHASH_NONE | SIGHASH_ANYONECANPAY)),
             "0100000000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000003664"
@@ -393,7 +393,7 @@ class SegwitTest(unittest.TestCase):
             "0000000000000000000082000000")
 
         self.assertEqual(
-            b2h(sc.segwit_signature_preimage(
+            b2h(sc._segwit_signature_preimage(
                 script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE | SIGHASH_ANYONECANPAY)),
             "0100000000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000003664"

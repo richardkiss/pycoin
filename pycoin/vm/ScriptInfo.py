@@ -1,7 +1,7 @@
 import collections
 import hashlib
 
-from pycoin import encoding
+from pycoin.encoding.hash import hash160
 from pycoin.serialize import b2h
 
 
@@ -37,7 +37,7 @@ class ScriptInfo(object):
     # BRAIN DAMAGE: the stuff above is redundant
 
     def script_for_p2s(self, underlying_script):
-        return self.script_for_p2sh(encoding.hash160(underlying_script))
+        return self.script_for_p2sh(hash160(underlying_script))
 
     def script_for_p2s_wit(self, underlying_script):
         return self.script_for_p2sh_wit(hashlib.sha256(underlying_script).digest())
@@ -62,6 +62,10 @@ class ScriptInfo(object):
                 if l1 != 160/8:
                     break
                 r["PUBKEYHASH_LIST"].append(data1)
+            elif data2 == b'SEGWIT':
+                if l1 not in (256/8, 160/8):
+                    break
+                r["SEGWIT_LIST"].append(data1)
             elif data2 == b'DATA':
                 r["DATA_LIST"].append(data1)
             elif (opcode1, data1) != (opcode2, data2):
@@ -94,9 +98,9 @@ class ScriptInfo(object):
         if d:
             return dict(type="p2pkh", hash160=d["PUBKEYHASH_LIST"][0])
 
-        d = self.match("OP_0 'PUBKEYHASH'", script)
+        d = self.match("OP_0 'SEGWIT'", script)
         if d:
-            data = d["PUBKEYHASH_LIST"][0]
+            data = d["SEGWIT_LIST"][0]
             if len(data) == 20:
                 return dict(type="p2pkh_wit", hash160=data)
             if len(data) == 32:
