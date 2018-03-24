@@ -14,7 +14,6 @@ import sys
 
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding.hash import hash160
-from pycoin.ui.validate import is_address_valid
 from pycoin.networks.registry import full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode
@@ -106,6 +105,12 @@ def parse_fee(fee):
     return int(fee)
 
 
+def parse_script_index_hex(input):
+    index_s, opcodes = input.split("/", 1)
+    index = int(index_s)
+    return (index, h2b(opcodes))
+
+
 def create_parser():
     codes = network_codes()
     EPILOG = ('Files are binary by default unless they end with the suffix ".hex". ' +
@@ -137,6 +142,8 @@ def create_parser():
                         help='Add all unspent spendables for the given bitcoin address. This information'
                         ' is fetched from web services. With no outputs, incoming spendables will be printed.')
 
+    parser.add_argument("-I", "--dump-inputs", action='store_true', help='Dump inputs to this transaction.')
+
     parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append", default=[],
                         help='file containing WIF or BIP0032 private keys. If file name ends with .gpg, '
                         '"gpg -d" will be invoked automatically. File is read one line at a time, and if '
@@ -152,6 +159,9 @@ def create_parser():
 
     parser.add_argument("--remove-tx-out", metavar="tx_out_index_to_delete", action="append", type=int,
                         help='remove a tx_out')
+
+    parser.add_argument("--replace-input-script", metavar="tx_in_script_slash_hex", action="append", default=[],
+                        type=parse_script_index_hex, help='replace an input script: arg looks like "1/796a"')
 
     parser.add_argument('-F', "--fee", help='fee, in satoshis, to pay on transaction, or '
                         '"standard" to auto-calculate. This is only useful if the "split pool" '
@@ -205,8 +215,8 @@ def create_parser():
                         ' a transaction as a hex string; a path name to a transaction to be loaded;'
                         ' a spendable 4-tuple of the form tx_id/tx_out_idx/script_hex/satoshi_count '
                         'to be added to TxIn list; an address/satoshi_count to be added to the TxOut '
-                        'list; an address to be added to the TxOut list and placed in the "split'
-                        ' pool".')
+                        'list; an address or script to be added to the TxOut list and placed in the '
+                        '"split pool".')
 
     return parser
 
@@ -319,7 +329,7 @@ def invoke_p2sh_lookup(args):
 
 
 def create_tx_db(network):
-    tx_db = get_tx_db(network)
+    tx_db = get_tx_db(network.code)
     tx_db.warning_tx_cache = message_about_tx_cache_env()
     tx_db.warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(network)
     return tx_db
@@ -335,20 +345,19 @@ def parse_parts(tx_class, arg, spendables, payables, network):
         except Exception:
             pass
 
-    if len(parts) == 2 and is_address_valid(parts[0], allowable_netcodes=[network]):
-        try:
-            payables.append(parts)
+    if len(parts) == 2:
+        script = script_for_address_or_opcodes(network, parts[0])
+        if script is not None:
+            payables.append((script, parts[1]))
             return True
-        except ValueError:
-            pass
 
 
-def key_found(arg, payables, key_iters):
+def key_found(arg, payables, key_iters, network):
     try:
         key = key_from_text(arg)
         # TODO: check network
         if key.wif() is None:
-            payables.append((key.address(), 0))
+            payables.append((network.ui.script_for_address(key.address()), 0))
             return True
         key_iters.append(iter([key.wif()]))
         return True
@@ -356,6 +365,19 @@ def key_found(arg, payables, key_iters):
         pass
 
     return False
+
+
+def script_for_address_or_opcodes(network, text):
+    try:
+        script = network.ui.script_for_address(text)
+        if script:
+            return script
+    except Exception:
+        pass
+    try:
+        return network.extras.ScriptTools.compile(text)
+    except Exception:
+        pass
 
 
 def parse_context(args, parser):
@@ -372,7 +394,7 @@ def parse_context(args, parser):
             parser.error("can't parse ")
         the_ram_tx_db = dict((tx.hash(), tx) for tx in txs)
         if tx_db is None:
-            tx_db = create_tx_db(args.network)
+            tx_db = create_tx_db(network)
         tx_db.lookup_methods.append(the_ram_tx_db.get)
 
     # defaults
@@ -390,21 +412,20 @@ def parse_context(args, parser):
     warning_spendables = None
 
     for arg in args.argument:
-
-        if is_address_valid(arg, allowable_netcodes=[args.network], allowable_types=[
-                "address", "pay_to_script", "segwit"]):
-            payables.append((arg, 0))
-            continue
-
-        if key_found(arg, payables, key_iters):
-            continue
-
-        tx, tx_db = parse_tx(tx_class, arg, parser, tx_db, args.network)
+        tx, tx_db = parse_tx(tx_class, arg, parser, tx_db, network)
         if tx:
             txs.append(tx)
             continue
 
-        if parse_parts(tx_class, arg, spendables, payables, args.network):
+        if key_found(arg, payables, key_iters, network):
+            continue
+
+        if parse_parts(tx_class, arg, spendables, payables, network):
+            continue
+
+        payable = script_for_address_or_opcodes(network, arg)
+        if payable is not None:
+            payables.append((payable, 0))
             continue
 
         parser.error("can't parse %s" % arg)
@@ -440,8 +461,7 @@ def merge_txs(network, txs, spendables, payables):
     for spendable in spendables:
         txs_in.append(spendable.tx_in())
         unspents.append(spendable)
-    for address, coin_value in payables:
-        script = network.ui.script_for_address(address)
+    for script, coin_value in payables:
         txs_out.append(tx_class.TxOut(coin_value, script))
 
     return txs_in, txs_out, unspents
@@ -474,6 +494,11 @@ def remove_indices(items, indices):
     return items
 
 
+def replace_input_scripts(txs_in, replacements):
+    for index, blob in replacements:
+        txs_in[index].script = blob
+
+
 def wif_iter(iters):
     while len(iters) > 0:
         for idx, iter in enumerate(iters):
@@ -490,6 +515,7 @@ def generate_tx(network, txs, spendables, payables, args):
     lock_time, version = calculate_lock_time_and_version(args, txs)
     if len(unspents) == len(txs_in):
         unspents = remove_indices(unspents, args.remove_tx_in)
+    replace_input_scripts(txs_in, args.replace_input_script)
     txs_in = remove_indices(txs_in, args.remove_tx_in)
     txs_out = remove_indices(txs_out, args.remove_tx_out)
     tx = network.tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
@@ -534,12 +560,13 @@ def print_output(tx, include_unspents, output_file, show_unspents,
         print(tx_as_hex)
 
 
-def do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, netcode):
+def do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, network):
     unsigned_before = tx.bad_signature_count()
     unsigned_after = unsigned_before
     if unsigned_before > 0 and (key_iters or sec_hints or signature_hints):
         print("signing...", file=sys.stderr)
-        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup, netcode=netcode, sec_hints=sec_hints, signature_hints=signature_hints)
+        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup,
+                network=network, sec_hints=sec_hints, signature_hints=signature_hints)
 
         unsigned_after = tx.bad_signature_count()
         if unsigned_after > 0:
@@ -601,13 +628,21 @@ def dump_secs_hex(tx, network):
         print(b2h(sec))
 
 
+def dump_inputs(tx, network):
+    for _, tx_out in enumerate(tx.unspents):
+        if tx_out:
+            print("%d: %s %s" % (_, tx_out.coin_value, network.extras.ScriptTools.disassemble(tx_out.script)))
+        else:
+            print("%d: (missing spendable)" % _)
+
+
 def tx(args, parser):
     (network, txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
 
     for tx in txs:
         if tx.missing_unspents() and (args.augment or tx_db):
             if tx_db is None:
-                tx_db = create_tx_db(args.network)
+                tx_db = create_tx_db(network)
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
     # build p2sh_lookup
@@ -618,7 +653,7 @@ def tx(args, parser):
     signature_hints = [h2b(sig) for sig in (args.signature or [])]
     sec_hints = build_sec_lookup([h2b(sec) for sec in (args.sec or [])])
 
-    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, args.network)
+    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, network)
 
     include_unspents = not is_fully_signed
 
@@ -634,12 +669,15 @@ def tx(args, parser):
     print_output(tx, include_unspents, args.output_file, args.show_unspents, network,
                  args.verbose_signature, args.disassemble, args.trace, args.pdb)
 
-    tx_db = cache_result(tx, tx_db, args.cache, args.network)
+    tx_db = cache_result(tx, tx_db, args.cache, network)
 
     tx_db = validate_against_bitcoind(tx, tx_db, args.network, args.bitcoind_url)
 
+    if args.dump_inputs:
+        dump_inputs(tx, network)
+
     if not args.show_unspents:
-        tx_db = validate_tx(tx, tx_db, args.network)
+        tx_db = validate_tx(tx, tx_db, network)
 
     # print warnings
     if tx_db:

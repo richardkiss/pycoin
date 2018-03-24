@@ -6,7 +6,7 @@ from .legacy_networks import NETWORKS
 from pycoin.block import Block as BitcoinBlock
 
 from pycoin.coins.bcash.networks import BcashMainnet
-from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
+from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet, BitcoinRegtest
 from pycoin.coins.litecoin.networks import LitecoinMainnet, LitecoinTestnet
 
 from pycoin.coins.bcash.Tx import Tx as BcashTx
@@ -18,12 +18,12 @@ BUILT_IN_NETWORKS = [
     # BTC bitcoin mainnet : xprv/xpub
     BitcoinMainnet,
     BitcoinTestnet,
+    BitcoinRegtest,
     LitecoinMainnet,
     LitecoinTestnet,
     BcashMainnet,
     BgoldMainnet,
     BgoldTestnet,
-
 ]
 
 

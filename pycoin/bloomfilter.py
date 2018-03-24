@@ -1,7 +1,7 @@
 import math
 import struct
 
-from pycoin.encoding import bitcoin_address_to_hash160_sec
+from pycoin.intbytes import indexbytes
 
 LOG_2 = math.log(2)
 
@@ -18,10 +18,12 @@ def filter_size_required(element_count, false_positive_probability):
 
 def hash_function_count_required(filter_size, element_count):
     # The number of hash functions required is given by S * 8 / N * log(2).
-    return int(filter_size * 8 / element_count * LOG_2 + 0.5)
+    return int(filter_size * 8.0 / element_count * LOG_2 + 0.5)
 
 
 class BloomFilter(object):
+    MASK_ARRAY = [1 << _ for _ in range(8)]
+
     def __init__(self, size_in_bytes, hash_function_count, tweak):
         if size_in_bytes > 36000:
             raise ValueError("too large")
@@ -35,8 +37,7 @@ class BloomFilter(object):
             seed = hash_index * 0xFBA4C795 + self.tweak
             self.set_bit(murmur3(item_bytes, seed=seed) % self.bit_count)
 
-    def add_address(self, address, address_prefix=b'\0'):
-        the_hash160 = bitcoin_address_to_hash160_sec(address, address_prefix=address_prefix)
+    def add_hash160(self, the_hash160):
         self.add_item(the_hash160)
 
     def add_spendable(self, spendable):
@@ -46,7 +47,7 @@ class BloomFilter(object):
     def _index_for_bit(self, v):
         v %= self.bit_count
         byte_index, mask_index = divmod(v, 8)
-        mask = [1, 2, 4, 8, 16, 32, 64, 128][mask_index]
+        mask = self.MASK_ARRAY[mask_index]
         return byte_index, mask
 
     def set_bit(self, v):
@@ -72,8 +73,8 @@ def murmur3(data, seed=0):
     roundedEnd = (length & 0xfffffffc)  # round down to 4 byte block
     for i in range(0, roundedEnd, 4):
         # little endian load order
-        k1 = (data[i] & 0xff) | ((data[i + 1] & 0xff) << 8) | \
-            ((data[i + 2] & 0xff) << 16) | (data[i + 3] << 24)
+        k1 = (indexbytes(data, i) & 0xff) | ((indexbytes(data, i + 1) & 0xff) << 8) | \
+            ((indexbytes(data, i + 2) & 0xff) << 16) | (indexbytes(data, i + 3) << 24)
         k1 *= c1
         k1 = (k1 << 15) | ((k1 & 0xffffffff) >> 17)  # ROTL32(k1,15)
         k1 *= c2
@@ -87,13 +88,13 @@ def murmur3(data, seed=0):
 
     val = length & 0x03
     if val == 3:
-        k1 = (data[roundedEnd + 2] & 0xff) << 16
+        k1 = (indexbytes(data, roundedEnd + 2) & 0xff) << 16
     # fallthrough
     if val in [2, 3]:
-        k1 |= (data[roundedEnd + 1] & 0xff) << 8
+        k1 |= (indexbytes(data, roundedEnd + 1) & 0xff) << 8
     # fallthrough
     if val in [1, 2, 3]:
-        k1 |= data[roundedEnd] & 0xff
+        k1 |= indexbytes(data, roundedEnd) & 0xff
         k1 *= c1
         k1 = (k1 << 15) | ((k1 & 0xffffffff) >> 17)  # ROTL32(k1,15)
         k1 *= c2
