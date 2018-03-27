@@ -15,6 +15,7 @@ import sys
 
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding.hash import hash160
+from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.keychain.Keychain import Keychain
 from pycoin.networks.registry import full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
@@ -149,7 +150,8 @@ def create_parser():
     parser.add_argument("-k", "--keychain", default=":memory:",
         help="path to keychain file for hierarchical key hints (SQLite3 file created with keychain tool)")
 
-    parser.add_argument("-K", "--key-paths", help="Key path hints to search hiearachical private keys (example: 0/0H/0-20)")
+    parser.add_argument("-K", "--key-paths", default="",
+        help="Key path hints to search hiearachical private keys (example: 0/0H/0-20)")
 
     parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append", default=[],
                         help='file containing WIF or BIP0032 private keys. If file name ends with .gpg, '
@@ -238,7 +240,6 @@ def replace_with_gpg_pipe(args, f):
 
 
 def parse_private_key_file(args, keychain):
-    key_paths = args.key_paths
     wif_re = re.compile(r"[1-9a-km-zA-LMNP-Z]{51,111}")
     # address_re = re.compile(r"[1-9a-kmnp-zA-KMNP-Z]{27-31}")
     for f in args.private_key_file:
@@ -260,11 +261,8 @@ def parse_private_key_file(args, keychain):
             keys = [make_key(x) for x in possible_keys]
             for key in keys:
                 if key:
-                    keychain.add_secrets(k for k in key.subkeys(key_paths))
-
-            # if len(keys) == 1 and key.hierarchical_wallet() is None:
-            #    # we have exactly 1 WIF. Let's look for an address
-            #   potential_addresses = address_re.findall(line)
+                    keychain.add_secrets([key])
+                    keychain.add_key_paths(key, subpaths_for_path_range(args.key_paths))
 
 
 TX_ID_RE = re.compile(r"^[0-9a-fA-F]{64}$")
@@ -360,7 +358,7 @@ def parse_parts(tx_class, arg, spendables, payables, network):
             return True
 
 
-def key_found(arg, payables, keychain, network):
+def key_found(arg, payables, keychain, key_paths, network):
     try:
         key = key_from_text(arg)
         # TODO: check network
@@ -368,6 +366,7 @@ def key_found(arg, payables, keychain, network):
             payables.append((network.ui.script_for_address(key.address()), 0))
             return True
         keychain.add_secrets([key])
+        keychain.add_key_paths(key, subpaths_for_path_range(key_paths))
         return True
     except Exception:
         pass
@@ -425,7 +424,7 @@ def parse_context(args, parser):
             txs.append(tx)
             continue
 
-        if key_found(arg, payables, keychain, network):
+        if key_found(arg, payables, keychain, args.key_paths, network):
             continue
 
         if parse_parts(tx_class, arg, spendables, payables, network):
