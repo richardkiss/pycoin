@@ -46,9 +46,6 @@ class ElectrumWallet(Key):
     def master_public_key(self):
         return self.sec(use_uncompressed=True)[1:]
 
-    def fingerprint(self):
-        return public_pair_to_hash160_sec(self.public_pair(), compressed=True)[:4]
-
     def subkey(self, path):
         """
         path:
