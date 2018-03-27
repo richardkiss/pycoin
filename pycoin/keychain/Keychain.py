@@ -51,20 +51,15 @@ class Keychain(object):
             self._secret_exponent_cache[hash160] = (secret_exponent, public_pair, not use_uncompressed, key._generator)
 
     def get(self, hash160):
-        if hash160 in self._secret_exponent_cache:
-            return self._secret_exponent_cache[hash160]
+        if hash160 not in self._secret_exponent_cache:
+            v = self.path_for_hash160(hash160)
+            if v:
+                fingerprint, path = v
+                for key in self._secrets.get(fingerprint):
+                    subkey = key.subkey_for_path(path)
+                    self.add_key_to_cache(subkey)
 
-        v = self.path_for_hash160(hash160)
-        if not v:
-            return
-
-        fingerprint, path = v
-        for key in self._secrets.get(fingerprint):
-            subkey = key.subkey_for_path(path)
-            self.add_key_to_cache(subkey)
-
-        if hash160 in self._secret_exponent_cache:
-            return self._secret_exponent_cache[hash160]
+        return self._secret_exponent_cache.get(hash160)
 
     def add_secrets(self, private_keys):
         self._secrets = defaultdict(set)

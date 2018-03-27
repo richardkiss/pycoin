@@ -9,11 +9,13 @@ import datetime
 import io
 import os.path
 import re
+import sqlite3
 import subprocess
 import sys
 
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding.hash import hash160
+from pycoin.keychain.Keychain import Keychain
 from pycoin.networks.registry import full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode
@@ -24,7 +26,7 @@ from pycoin.services.providers import message_about_tx_cache_env, \
 from pycoin.solve.utils import build_p2sh_lookup, build_sec_lookup
 from pycoin.tx.dump import dump_tx
 from pycoin.tx.exceptions import BadSpendableError
-from pycoin.tx.tx_utils import distribute_from_split_pool, sign_tx
+from pycoin.tx.tx_utils import distribute_from_split_pool
 from pycoin.ui.key_from_text import key_from_text
 
 
@@ -144,6 +146,11 @@ def create_parser():
 
     parser.add_argument("-I", "--dump-inputs", action='store_true', help='Dump inputs to this transaction.')
 
+    parser.add_argument("-k", "--keychain", default=":memory:",
+        help="path to keychain file for hierarchical key hints (SQLite3 file created with keychain tool)")
+
+    parser.add_argument("-K", "--key-paths", help="Key path hints to search hiearachical private keys (example: 0/0H/0-20)")
+
     parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append", default=[],
                         help='file containing WIF or BIP0032 private keys. If file name ends with .gpg, '
                         '"gpg -d" will be invoked automatically. File is read one line at a time, and if '
@@ -230,7 +237,8 @@ def replace_with_gpg_pipe(args, f):
     return popen.stdout
 
 
-def parse_private_key_file(args, key_list):
+def parse_private_key_file(args, keychain):
+    key_paths = args.key_paths
     wif_re = re.compile(r"[1-9a-km-zA-LMNP-Z]{51,111}")
     # address_re = re.compile(r"[1-9a-kmnp-zA-KMNP-Z]{27-31}")
     for f in args.private_key_file:
@@ -252,7 +260,7 @@ def parse_private_key_file(args, key_list):
             keys = [make_key(x) for x in possible_keys]
             for key in keys:
                 if key:
-                    key_list.append((k.wif() for k in key.subkeys("")))
+                    keychain.add_secrets(k for k in key.subkeys(key_paths))
 
             # if len(keys) == 1 and key.hierarchical_wallet() is None:
             #    # we have exactly 1 WIF. Let's look for an address
@@ -352,14 +360,14 @@ def parse_parts(tx_class, arg, spendables, payables, network):
             return True
 
 
-def key_found(arg, payables, key_iters, network):
+def key_found(arg, payables, keychain, network):
     try:
         key = key_from_text(arg)
         # TODO: check network
         if key.wif() is None:
             payables.append((network.ui.script_for_address(key.address()), 0))
             return True
-        key_iters.append(iter([key.wif()]))
+        keychain.add_secrets([key])
         return True
     except Exception:
         pass
@@ -403,7 +411,7 @@ def parse_context(args, parser):
     spendables = []
     payables = []
 
-    key_iters = []
+    keychain = Keychain(sqlite3.connect(args.keychain))
 
     # there are a few warnings we might optionally print out, but only if
     # they are relevant. We don't want to print them out multiple times, so we
@@ -417,7 +425,7 @@ def parse_context(args, parser):
             txs.append(tx)
             continue
 
-        if key_found(arg, payables, key_iters, network):
+        if key_found(arg, payables, keychain, network):
             continue
 
         if parse_parts(tx_class, arg, spendables, payables, network):
@@ -430,14 +438,14 @@ def parse_context(args, parser):
 
         parser.error("can't parse %s" % arg)
 
-    parse_private_key_file(args, key_iters)
+    parse_private_key_file(args, keychain)
 
     if args.fetch_spendables:
         warning_spendables = message_about_spendables_for_address_env(args.network)
         for address in args.fetch_spendables:
             spendables.extend(spendables_for_address(address, args.network))
 
-    return (network, txs, spendables, payables, key_iters, tx_db, warning_spendables)
+    return (network, txs, spendables, payables, keychain, tx_db, warning_spendables)
 
 
 def merge_txs(network, txs, spendables, payables):
@@ -560,13 +568,13 @@ def print_output(tx, include_unspents, output_file, show_unspents,
         print(tx_as_hex)
 
 
-def do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, network):
+def do_signing(tx, keychain, p2sh_lookup, sec_hints, signature_hints, network):
     unsigned_before = tx.bad_signature_count()
     unsigned_after = unsigned_before
-    if unsigned_before > 0 and (key_iters or sec_hints or signature_hints):
+    if unsigned_before > 0 and (keychain.has_secrets() or sec_hints or signature_hints):
         print("signing...", file=sys.stderr)
-        sign_tx(tx, wif_iter(key_iters), p2sh_lookup=p2sh_lookup,
-                network=network, sec_hints=sec_hints, signature_hints=signature_hints)
+        solver = tx.Solver(tx)
+        solver.sign(keychain, p2sh_lookup=p2sh_lookup, sec_hints=sec_hints, signature_hints=signature_hints)
 
         unsigned_after = tx.bad_signature_count()
         if unsigned_after > 0:
@@ -637,7 +645,7 @@ def dump_inputs(tx, network):
 
 
 def tx(args, parser):
-    (network, txs, spendables, payables, key_iters, tx_db, warning_spendables) = parse_context(args, parser)
+    (network, txs, spendables, payables, keychain, tx_db, warning_spendables) = parse_context(args, parser)
 
     for tx in txs:
         if tx.missing_unspents() and (args.augment or tx_db):
@@ -653,7 +661,7 @@ def tx(args, parser):
     signature_hints = [h2b(sig) for sig in (args.signature or [])]
     sec_hints = build_sec_lookup([h2b(sec) for sec in (args.sec or [])])
 
-    is_fully_signed = do_signing(tx, key_iters, p2sh_lookup, sec_hints, signature_hints, network)
+    is_fully_signed = do_signing(tx, keychain, p2sh_lookup, sec_hints, signature_hints, network)
 
     include_unspents = not is_fully_signed
 

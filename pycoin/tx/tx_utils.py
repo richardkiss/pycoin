@@ -1,5 +1,6 @@
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.keychain.Keychain import Keychain
 
 from ..convention import tx_fee
 
@@ -12,6 +13,9 @@ class SecretExponentMissing(Exception):
 
 class LazySecretExponentDB(object):
     """
+    THIS CLASS IS DEPRECATED in favour of pycoin.keychain.Keychain,
+    which handles hierarachical keys.
+
     The pycoin pure python implementation that converts secret exponents
     into public pairs is very slow, so this class does the conversion lazily
     and caches the results to optimize for the case of a large number
@@ -146,16 +150,10 @@ def distribute_from_split_pool(tx, fee):
     return zero_count
 
 
-def sign_tx(tx, wifs=[], secret_exponent_db=None, network=BitcoinMainnet, **kwargs):
+def sign_tx(tx, wifs=[], network=BitcoinMainnet, **kwargs):
     """
     :param tx: a transaction
     :param wifs: the list of WIFs required to sign this transaction.
-    :param secret_exponent_db: (optional) a dictionary (or any object with a .get method) that contains
-        a bitcoin address => (secret_exponent, public_pair, is_compressed) tuple lookup.
-        This will be built automatically lazily with the list of WIFs.
-        You can pass in an empty dictionary and as WIFs are processed, they
-        will be cached here. If you have multiple transactions to sign, each with
-        the same WIF list, passing a cache dictionary in may speed things up a bit.
     :return: :class:`Tx <Tx>` object, modified in place
 
     This is a convenience function used to sign a transaction.
@@ -163,21 +161,18 @@ def sign_tx(tx, wifs=[], secret_exponent_db=None, network=BitcoinMainnet, **kwar
 
     Returns the signed Tx transaction, or raises an exception.
 
-    At least one of "wifs" and "secret_exponent_db" must be included for there
-    to be any hope of signing the transaction.
-
     Usage::
 
         >> sign_tx(tx, wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
-    secret_exponent_db = secret_exponent_db or {}
+    keychain = Keychain()
+    keychain.add_secrets((network.ui.parse(_) for _ in wifs))
     solver = tx.Solver(tx)
-    solver.sign(LazySecretExponentDB(wifs, secret_exponent_db, tx.SolutionChecker.generators, network), **kwargs)
+    solver.sign(keychain, **kwargs)
 
 
 def create_signed_tx(spendables, payables, wifs=[], fee="standard",
-                     lock_time=0, version=1, secret_exponent_db={},
-                     netcode='BTC', network=BitcoinMainnet, **kwargs):
+                     lock_time=0, version=1, netcode='BTC', network=BitcoinMainnet, **kwargs):
     """
     This convenience function calls :func:`create_tx` and :func:`sign_tx` in turn. Read the documentation
     for those functions for information on the parameters.
@@ -195,8 +190,7 @@ def create_signed_tx(spendables, payables, wifs=[], fee="standard",
     """
 
     tx = create_tx(spendables, payables, fee=fee, lock_time=lock_time, version=version, network=network)
-    sign_tx(tx, wifs=wifs, secret_exponent_db=secret_exponent_db,
-            netcode=netcode, **kwargs)
+    sign_tx(tx, wifs=wifs, netcode=netcode, **kwargs)
     for idx, tx_out in enumerate(tx.txs_in):
         if not tx.is_signature_ok(idx):
             raise SecretExponentMissing("failed to sign spendable for %s" %
