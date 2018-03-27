@@ -16,7 +16,7 @@ class SQLKeychain(RAMKeychain):
 
     def _init_table_hash160(self):
         SQL = [textwrap.dedent(_) for _ in [
-            "create table if not exists HASH160 (hash160 blob, path text, fingerprint blob)",
+            "create table if not exists HASH160 (hash160 blob primary key, path text, fingerprint blob)",
             ]]
 
         for sql in SQL:
@@ -28,10 +28,13 @@ class SQLKeychain(RAMKeychain):
 
     def add_key_paths(self, key, path_iterator=[""]):
         fingerprint = key.fingerprint()
+        total = 0
         for path in path_iterator:
             hash160 = key.subkey_for_path(path).hash160()
-            self._exec_sql("insert or replace into HASH160 values (?, ?, ?)", hash160, path, fingerprint)
+            self._exec_sql("insert or ignore into HASH160 values (?, ?, ?)", hash160, path, fingerprint)
+            total += 1
         self._db.commit()
+        return total
 
     def path_for_hash160(self, hash160):
         SQL = "select fingerprint, path from HASH160 where hash160 = ?"
