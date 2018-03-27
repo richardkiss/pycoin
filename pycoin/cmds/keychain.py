@@ -5,7 +5,7 @@ from __future__ import print_function
 import argparse
 import sqlite3
 
-from pycoin.keychain.SQLKeychain import SQLKeychain
+from pycoin.keychain.Keychain import Keychain
 from pycoin.key.paths import path_iterator_for_path
 from pycoin.networks.registry import (
     full_network_name_for_netcode, network_codes, network_for_netcode
@@ -15,7 +15,7 @@ from pycoin.networks.registry import (
 def create_parser():
     codes = network_codes()
     parser = argparse.ArgumentParser(
-        description='Cache look-up information into an SQLKeychain for use with tx.',
+        description='Cache look-up information into a Keychain for use with tx.',
         epilog=('Known networks codes:\n  ' +
                 ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
     )
@@ -30,7 +30,7 @@ def keychain(args, parser):
     parse = network_for_netcode(args.netcode).ui.parse
 
     new_keys = total_paths = 0
-    keychain = SQLKeychain(sqlite3.connect(args.keychain))
+    keychain = Keychain(sqlite3.connect(args.keychain))
     for key_text in args.key:
         key = parse(key_text, types=["electrum", "bip32"])
         if not key:
