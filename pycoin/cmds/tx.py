@@ -360,9 +360,9 @@ def parse_parts(tx_class, arg, spendables, payables, network):
 
 def key_found(arg, payables, keychain, key_paths, network):
     try:
-        key = key_from_text(arg)
+        key = network.ui.parse(arg)
         # TODO: check network
-        if key.wif() is None:
+        if not hasattr(key, "secret_exponent") or key.secret_exponent() is None:
             payables.append((network.ui.script_for_address(key.address()), 0))
             return True
         keychain.add_secrets([key])

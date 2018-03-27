@@ -189,6 +189,9 @@ class Key(object):
         return self.__class__(public_pair=self.public_pair(), prefer_uncompressed=self._prefer_uncompressed,
                               is_compressed=(self._hash160_compressed is not None))
 
+    def subkey_for_path(self, path):
+        return self
+
     def subkey(self, path_to_subkey):
         """
         Return the Key corresponding to the hierarchical wallet's subkey

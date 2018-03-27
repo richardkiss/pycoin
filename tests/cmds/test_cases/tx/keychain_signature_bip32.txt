@@ -1,0 +1,13 @@
+# test using the -K functionality. This allows using a BIP32 key and hints as to where to down into the hierarchy.
+tx a4311534476619a9edb1ac583b325459bdc38c2bed2b22eadf1e0638c842961d/0/76a914b2030e0781c6a69cf3bba396d0a946217c69d92288ac/5000000/0/0/0 1HEEwQ37xdHthWWt8VtNbpZRBbmqhmjgcw xprv9s21ZrQH143K31AgNK5pyVvW23gHnkBq2wh5aEk6g1s496M8ZMjxncCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtq -K 0-200
+Version:  1  tx hash bdcafd8ce231b5b6b9d0d5e8e43c5a62a4706c28250ef79703de73dd55c7a80d  192 bytes
+TxIn count: 1; TxOut count: 1
+Lock time: 0 (valid anytime)
+Input:
+   0: 1HEEwQ37xdHthWWt8VtNbpZRBbmqhmjgcw from a4311534476619a9edb1ac583b325459bdc38c2bed2b22eadf1e0638c842961d:0        50.00000 mBTC  sig ok
+Output:
+   0: 1HEEwQ37xdHthWWt8VtNbpZRBbmqhmjgcw receives     49.90000 mBTC
+Total input      50.00000 mBTC
+Total output     49.90000 mBTC
+Total fees        0.10000 mBTC
+01000000011d9642c838061edfea222bed2b8cc3bd5954323b58acb1eda9196647341531a4000000006b483045022100b6dc0871c5276631c1cc4c8bd5daf2b56932e8cc295547618108bc259b318abc02202f03418fa6874ebda61b384780e90ec7d6c81f8201278f90af3c4d87b169354b012103fe4a038220f1e6acc90eff187b7a6d4909d8d119600e3c4057e9bffd6e920922ffffffff0130244c00000000001976a914b2030e0781c6a69cf3bba396d0a946217c69d92288ac00000000
