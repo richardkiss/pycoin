@@ -219,6 +219,8 @@ def create_parser():
     parser.add_argument("--dump-secs", action="store_true",
                         help="print secs (for use with --sec)")
 
+    parser.add_argument("--coinbase", type=str, help="add an input as a coinbase from the given address")
+
     parser.add_argument("argument", nargs="*", help='generic argument: can be a hex transaction id '
                         '(exactly 64 characters) to be fetched from cache or a web service;'
                         ' a transaction as a hex string; a path name to a transaction to be loaded;'
@@ -387,28 +389,40 @@ def script_for_address_or_opcodes(network, text):
         pass
 
 
+def build_coinbase_tx(network, address_or_opcodes):
+    puzzle_script = script_for_address_or_opcodes(network, address_or_opcodes)
+    tx = network.tx(1, [network.tx.TxIn.coinbase_tx_in(b'')], [network.tx.TxOut(int(50*1e8), puzzle_script)])
+    return tx
+
+
 def parse_context(args, parser):
     network = network_for_netcode(args.network)
     tx_class = network.tx
-
-    # we create the tx_db lazily
-    tx_db = None
-
-    if args.db:
-        try:
-            txs = [tx_class.from_hex(tx_hex) for tx_hex in args.db]
-        except Exception:
-            parser.error("can't parse ")
-        the_ram_tx_db = dict((tx.hash(), tx) for tx in txs)
-        if tx_db is None:
-            tx_db = create_tx_db(network)
-        tx_db.lookup_methods.append(the_ram_tx_db.get)
 
     # defaults
 
     txs = []
     spendables = []
     payables = []
+
+    # we create the tx_db lazily
+    tx_db = None
+
+    if args.db or args.coinbase:
+
+        try:
+            txs = [tx_class.from_hex(tx_hex) for tx_hex in args.db or []]
+        except Exception:
+            parser.error("can't parse ")
+
+        if args.coinbase:
+            coinbase_tx = build_coinbase_tx(network, args.coinbase)
+            spendables.extend(coinbase_tx.tx_outs_as_spendable())
+
+        the_ram_tx_db = dict((tx.hash(), tx) for tx in txs)
+        if tx_db is None:
+            tx_db = create_tx_db(network)
+        tx_db.lookup_methods.append(the_ram_tx_db.get)
 
     keychain = Keychain(sqlite3.connect(args.keychain))
 
