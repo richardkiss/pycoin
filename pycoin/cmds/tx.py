@@ -301,13 +301,12 @@ def parse_tx(tx_class, arg, parser, tx_db, network):
     return tx, tx_db
 
 
-def parse_scripts(args):
-    scripts = []
+def parse_scripts(args, keychain):
     warnings = []
 
     for p2s in args.pay_to_script or []:
         try:
-            scripts.append(h2b(p2s))
+            keychain.add_p2s_script(h2b(p2s))
         except Exception:
             warnings.append("warning: error parsing pay-to-script value %s" % p2s)
 
@@ -319,21 +318,14 @@ def parse_scripts(args):
                 m = hex_re.search(l)
                 if m:
                     p2s = m.group(0)
-                    scripts.append(h2b(p2s))
+                    keychain.add_p2s_script(h2b(p2s))
                     count += 1
             except Exception:
                 warnings.append("warning: error parsing pay-to-script file %s" % f.name)
         if count == 0:
             warnings.append("warning: no scripts found in %s" % f.name)
-    return scripts, warnings
-
-
-def invoke_p2sh_lookup(args):
-    scripts, warnings = parse_scripts(args)
-    for w in warnings:
-        print(w)
-
-    return build_p2sh_lookup(scripts)
+    keychain.commit()
+    return warnings
 
 
 def create_tx_db(network):
@@ -401,7 +393,6 @@ def parse_context(args, parser):
 
     # defaults
 
-    txs = []
     spendables = []
     payables = []
 
@@ -418,11 +409,14 @@ def parse_context(args, parser):
         if args.coinbase:
             coinbase_tx = build_coinbase_tx(network, args.coinbase)
             spendables.extend(coinbase_tx.tx_outs_as_spendable())
+            txs.append(coinbase_tx)
 
         the_ram_tx_db = dict((tx.hash(), tx) for tx in txs)
         if tx_db is None:
             tx_db = create_tx_db(network)
         tx_db.lookup_methods.append(the_ram_tx_db.get)
+
+    txs = []
 
     keychain = Keychain(sqlite3.connect(args.keychain))
 
@@ -667,14 +661,16 @@ def tx(args, parser):
             tx.unspents_from_db(tx_db, ignore_missing=True)
 
     # build p2sh_lookup
-    p2sh_lookup = invoke_p2sh_lookup(args)
+    warnings = parse_scripts(args, keychain)
+    for w in warnings:
+        print(w)
 
     tx = generate_tx(network, txs, spendables, payables, args)
 
     signature_hints = [h2b(sig) for sig in (args.signature or [])]
     sec_hints = build_sec_lookup([h2b(sec) for sec in (args.sec or [])])
 
-    is_fully_signed = do_signing(tx, keychain, p2sh_lookup, sec_hints, signature_hints, network)
+    is_fully_signed = do_signing(tx, keychain, keychain, sec_hints, signature_hints, network)
 
     include_unspents = not is_fully_signed
 
