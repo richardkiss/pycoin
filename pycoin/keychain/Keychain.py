@@ -7,6 +7,7 @@ from collections import defaultdict
 class Keychain(object):
     def __init__(self, sqlite3_db=None):
         self._db = sqlite3_db or sqlite3.connect(":memory:")
+        self._db.text_factory = type(b'')
         self._init_tables()
         self.clear_secrets()
 
@@ -41,7 +42,8 @@ class Keychain(object):
         SQL = "select fingerprint, path from HASH160 where hash160 = ?"
         c = self._exec_sql(SQL, hash160)
         r = c.fetchone()
-        return r
+        if r is not None:
+            return r[0], r[1].decode("utf8")
 
     def add_key_to_cache(self, key):
         secret_exponent = key.secret_exponent()
