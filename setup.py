@@ -41,6 +41,7 @@ setup(
                 'ku = pycoin.cmds.ku:main',
                 'tx = pycoin.cmds.tx:main',
                 'msg = pycoin.cmds.msg:main',
+                'keychain = pycoin.cmds.keychain:main',
                 # these scripts are obsolete
                 'genwallet = pycoin.cmds.genwallet:main',
                 'spend = pycoin.cmds.spend:main',
