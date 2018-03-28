@@ -5,7 +5,7 @@ from __future__ import print_function
 import argparse
 import sqlite3
 
-from pycoin.keychain.Keychain import Keychain
+from pycoin.key.Keychain import Keychain
 from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.networks.registry import (
     full_network_name_for_netcode, network_codes, network_for_netcode

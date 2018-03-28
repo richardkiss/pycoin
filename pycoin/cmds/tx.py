@@ -16,7 +16,7 @@ import sys
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding.hash import hash160
 from pycoin.key.subpaths import subpaths_for_path_range
-from pycoin.keychain.Keychain import Keychain
+from pycoin.key.Keychain import Keychain
 from pycoin.networks.registry import full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode

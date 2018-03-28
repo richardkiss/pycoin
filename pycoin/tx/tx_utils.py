@@ -1,6 +1,6 @@
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
-from pycoin.keychain.Keychain import Keychain
+from pycoin.key.Keychain import Keychain
 
 from ..convention import tx_fee
 

@@ -3,7 +3,7 @@ import unittest
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.keychain.Keychain import Keychain
+from pycoin.key.Keychain import Keychain
 from pycoin.key.subpaths import subpaths_for_path_range
 
 BIP32 = BitcoinMainnet.ui._bip32node_class
