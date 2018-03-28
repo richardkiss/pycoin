@@ -78,7 +78,10 @@ class Generator(Curve, Point):
         inv_r = self.inverse(r)
         s_over_r = s * inv_r
         minus_E_over_r = -(inv_r * value) * self
-        return [s_over_r * self.Point(r, y) + minus_E_over_r for y in y_vals]
+        try:
+            return [s_over_r * self.Point(r, y) + minus_E_over_r for y in y_vals]
+        except ValueError:
+            return []
 
     def raw_mul(self, e):
         """Multiply the generator by an integer."""
