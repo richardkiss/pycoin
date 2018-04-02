@@ -91,4 +91,9 @@ NETWORKS = (
     # PIVX testnet : tprv/tpub
     NetworkValues("PIVX", "testnet", "TPIVX", b'\xef', b'\x8b', b'\x13', h2b('3a8061a0'), h2b('3a805837')),
 
+    # FLO mainnet : xprv/xpub                        176       35        8
+    NetworkValues("Florincoin", "mainnet", "FLO", b'\xb0', b'\x23', b'\x08', h2b('0488ADE4'), h2b('0488B21E')),
+    # FLO testnet : tprv/tpub                        239      115      198
+    NetworkValues("Florincoin", "testnet", "XFL", b'\xef', b'\x73', b'\xc6', h2b('04358394'), h2b('043587CF')),
+
 )
