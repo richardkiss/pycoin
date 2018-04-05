@@ -90,5 +90,7 @@ NETWORKS = (
 
     # PIVX testnet : tprv/tpub
     NetworkValues("PIVX", "testnet", "TPIVX", b'\xef', b'\x8b', b'\x13', h2b('3a8061a0'), h2b('3a805837')),
-
-)
+   
+    # POLIS mainnet :  xprv/xpub
+    NetworkValues("POLIS", "mainnet", "POLIS", b'\x3c', b'\x37', b'\x38', h2b("0488ADE4"), h2b("0488B21E")),
+  )
