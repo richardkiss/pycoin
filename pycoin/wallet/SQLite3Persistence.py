@@ -1,6 +1,6 @@
 from pycoin.serialize import b2h, h2b, b2h_rev, h2b_rev
 from pycoin.key.BIP32Node import BIP32Node
-from pycoin.tx import Spendable
+from pycoin.tx.Spendable import Spendable
 
 
 class SQLite3Persistence(object):
@@ -158,7 +158,7 @@ unique(tx_hash, tx_out_index)
         # we alternate between "biggest" and "smallest" spendables
         SQL = ("select tx_hash, tx_out_index, coin_value, script, block_index_available, "
                "does_seem_spent, block_index_spent from Spendable where "
-               "does_seem_spent = 0 and block_index_spent is null "
+               "does_seem_spent = 0 and block_index_spent = 0 "
                "%s order by coin_value %s")
 
         if confirmations > 0:
@@ -187,14 +187,14 @@ unique(tx_hash, tx_out_index)
 
     def unspent_spendable_count(self):
         SQL = ("select count(*) from Spendable where does_seem_spent = 0"
-               " and block_index_spent is null")
+               " and block_index_available > 0 and block_index_spent = 0")
         c = self._exec_sql(SQL)
         r = c.fetchone()
         return r[0]
 
-    def invalidate_block_index_for_spendables(self, block_index):
-        SQL1 = ("update Spendable set block_index_available = null where block_index_available = ?")
+    def rewind_spendables(self, block_index):
+        SQL1 = ("update Spendable set block_index_available = 0 where block_index_available > ?")
         self._exec_sql(SQL1, block_index)
 
-        SQL2 = ("update Spendable set block_index_spent = null where block_index_spent = ?")
+        SQL2 = ("update Spendable set block_index_spent = 0 where block_index_spent > ?")
         self._exec_sql(SQL2, block_index)
