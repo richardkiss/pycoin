@@ -167,7 +167,7 @@ def standard_parsing_functions(Block, Tx):
 
     def stream_blockheader(f, blockheader):
         assert isinstance(blockheader, Block)
-        blockheader.stream_as_header(f)
+        blockheader.stream_header(f)
 
     def stream_tx(f, tx):
         assert isinstance(tx, Tx)

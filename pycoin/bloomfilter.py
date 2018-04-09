@@ -1,6 +1,7 @@
 import math
 import struct
 
+from pycoin.encoding.b58 import a2b_hashed_base58
 from pycoin.intbytes import indexbytes
 
 LOG_2 = math.log(2)
@@ -37,11 +38,15 @@ class BloomFilter(object):
             seed = hash_index * 0xFBA4C795 + self.tweak
             self.set_bit(murmur3(item_bytes, seed=seed) % self.bit_count)
 
+    def add_address(self, address):
+        the_hash160 = a2b_hashed_base58(address)[1:]
+        self.add_item(the_hash160)
+
     def add_hash160(self, the_hash160):
         self.add_item(the_hash160)
 
     def add_spendable(self, spendable):
-        item_bytes = spendable.tx_hash + struct.pack("!L", spendable.tx_out_index)
+        item_bytes = spendable.tx_hash + struct.pack("<L", spendable.tx_out_index)
         self.add_item(item_bytes)
 
     def _index_for_bit(self, v):
