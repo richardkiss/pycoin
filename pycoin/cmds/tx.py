@@ -331,7 +331,7 @@ def invoke_p2sh_lookup(args):
 def create_tx_db(network):
     tx_db = get_tx_db(network.code)
     tx_db.warning_tx_cache = message_about_tx_cache_env()
-    tx_db.warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(network)
+    tx_db.warning_tx_for_tx_hash = message_about_tx_for_tx_hash_env(network.code)
     return tx_db
 
 
