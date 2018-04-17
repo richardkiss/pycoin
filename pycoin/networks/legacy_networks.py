@@ -45,10 +45,7 @@ NETWORKS = (
     NetworkValues("Megacoin", "mainnet", "MEC", b'\xb2', b'\x32', None, h2b("03a04db7"), h2b("03a04d8b")),
 
     NetworkValues(
-        "Myriadcoin", "mainnet", "MYR", b'\xb2', b'\x32', b'\x09', h2b('0488ADE4'), h2b('0488B21E')),
-
-    NetworkValues(
-        "Unobtanium", "mainnet", "UNO", b'\xe0', b'\x82', b'\x1e', h2b('0488ADE4'), h2b('0488B21E')),
+        "Myriadcoin", "mainnet", "XMY", b'\xb2', b'\x32', b'\x09', h2b('0488ADE4'), h2b('0488B21E')),
 
     # JBS Jumbucks mainnet : jprv/jpub
     NetworkValues("Jumbucks", "mainnet", "JBS", b'\xab', b'\x2b', None, h2b('037a6460'), h2b('037a689a')),
