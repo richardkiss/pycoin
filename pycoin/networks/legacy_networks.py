@@ -44,8 +44,7 @@ NETWORKS = (
     # MEC Megacoin mainnet : mecv/mecp
     NetworkValues("Megacoin", "mainnet", "MEC", b'\xb2', b'\x32', None, h2b("03a04db7"), h2b("03a04d8b")),
 
-    NetworkValues(
-        "Myriadcoin", "mainnet", "XMY", b'\xb2', b'\x32', b'\x09', h2b('0488ADE4'), h2b('0488B21E')),
+    NetworkValues("Myriadcoin", "mainnet", "XMY", b'\xb2', b'\x32', b'\x09', h2b('0488ADE4'), h2b('0488B21E')),
 
     # JBS Jumbucks mainnet : jprv/jpub
     NetworkValues("Jumbucks", "mainnet", "JBS", b'\xab', b'\x2b', None, h2b('037a6460'), h2b('037a689a')),
@@ -53,8 +52,7 @@ NETWORKS = (
     # MZC Mazacoin mainnet: xprv/xpub
     NetworkValues("Mazacoin", "mainnet", "MZC", b'\xe0', b'\x32', b'\9', h2b("0488ADE4"), h2b("0488B21E")),
 
-    NetworkValues(
-        "Riecoin", "mainnet", "RIC", b'\x80', b'\x3c', b'\x05', h2b('0488ADE4'), h2b('0488B21E')),
+    NetworkValues("Riecoin", "mainnet", "RIC", b'\x80', b'\x3c', b'\x05', h2b('0488ADE4'), h2b('0488B21E')),
 
     # DFC Defcoin mainnet: dfcv/dfcp
     NetworkValues("DEFCOIN", "mainnet", "DFC", b'\x9e', b'\x1e', b'\5', h2b("02FA54D7"), h2b("02FA54AD")),
