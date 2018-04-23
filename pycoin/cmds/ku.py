@@ -302,7 +302,7 @@ def generate_output(args, output_dict, output_order):
 
     if len(output_order) == 0:
         print("no output: use -j option to see keys")
-    elif len(output_order) == 1:
+    elif len(output_dict) == 1:
         print(output_dict[output_order[0][0]])
     else:
         dump_output(output_dict, output_order)
