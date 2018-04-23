@@ -286,7 +286,7 @@ View the famous "pizza" transaction [PIZZA]:
 Oops! We don't have web services set up. Let's do that now:
 
     $ PYCOIN_CACHE_DIR=~/.pycoin_cache
-    $ PYCOIN_BTC_PROVIDERS="block.io blockchain.info blockexplorer.com"
+    $ PYCOIN_BTC_PROVIDERS="blockchain.info blockexplorer.com"
     $ export PYCOIN_CACHE_DIR PYCOIN_BTC_PROVIDERS
 
 It's not done automatically so a command-line tool won't leak potentially private information about what transactions you're interested in to a third-party website. If you don't care, you could put these lines into your `.profile`.
