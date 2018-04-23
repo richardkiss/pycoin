@@ -40,7 +40,7 @@ def create_parser():
 
     verify = subparsers.add_parser('verify')
     verify.add_argument('signature', help='the signature to verify')
-    verify.add_argument('address', nargs="?", help='the signature to verify')
+    verify.add_argument('address', nargs="?", help='the address to verify against')
     add_read_msg_arguments(verify, "verified")
 
     return parser
