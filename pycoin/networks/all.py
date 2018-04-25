@@ -8,19 +8,9 @@ from pycoin.block import Block as BitcoinBlock
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet, BitcoinRegtest
 from pycoin.coins.litecoin.networks import LitecoinMainnet, LitecoinTestnet
 
-from pycoin.coins.bcash.Tx import Tx as BCashTx
+from pycoin.coins.bcash.networks import BcashMainnet
 from pycoin.coins.bgold.networks import BGoldMainnet, BGoldTestnet
 
-
-# BCH bcash mainnet : xprv/xpub
-BcashMainnet = Network(
-    'BCH', "Bcash", "mainnet",
-    BCashTx, BitcoinBlock,
-    h2b('F9BEB4D9'), 8333, [
-        "seed.bitcoinabc.org", "seed-abc.bitcoinforks.org",
-        "btccash-seeder.bitcoinunlimited.info", "seed.bitprim.org",
-    ], ui=BitcoinMainnet.ui
-)
 
 BUILT_IN_NETWORKS = [
 
