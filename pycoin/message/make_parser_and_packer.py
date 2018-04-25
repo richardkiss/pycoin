@@ -8,7 +8,8 @@ from .InvItem import InvItem
 from .PeerAddress import PeerAddress
 
 # definitions of message structures and types
-# L: 4 byte long integer
+# L: 4 byte integer
+# 6: 6 byte integer
 # Q: 8 byte long integer
 # S: unicode string encoded using utf-8
 # [v]: array of InvItem objects
@@ -32,11 +33,17 @@ STANDARD_P2P_MESSAGES = {
     'notfound': "items:[v]",
     'getblocks': "version:L hashes:[#] hash_stop:#",
     'getheaders': "version:L hashes:[#] hash_stop:#",
+    'sendheaders': "",
     'tx': "tx:T",
     'block': "block:B",
     'headers': "headers:[zI]",
     'getaddr': "",
     'mempool': "",
+    'feefilter': "fee_filter_value:Q",
+    'sendcmpct': "enabled:b version:Q",
+    'cmpctblock': "header_hash:# nonce:Q short_ids:[6] prefilled_txs:[IT]",
+    'getblocktxn': "header_hash:# indices:[I]",
+    'blocktxn': "header_hash:# txs:[T]",
     # 'checkorder': obsolete
     # 'submitorder': obsolete
     # 'reply': obsolete
@@ -173,14 +180,23 @@ def standard_parsing_functions(Block, Tx):
         assert isinstance(tx, Tx)
         tx.stream(f)
 
+    def parse_int_6(f):
+        b = f.read(6) + b'\0\0'
+        return struct.unpack(b, "<L")[0]
+
+    def stream_int_6(f, v):
+        f.write(struct.pack(v, "<L")[:6])
+
     more_parsing = [
         ("A", (PeerAddress.parse, lambda f, peer_addr: peer_addr.stream(f))),
         ("v", (InvItem.parse, lambda f, inv_item: inv_item.stream(f))),
         ("T", (Tx.parse, stream_tx)),
         ("B", (Block.parse, stream_block)),
         ("z", (Block.parse_as_header, stream_blockheader)),
-        ("1", (lambda f: struct.unpack("B", f.read(1))[0], lambda f, b: f.write(struct.pack("B", b)))),
-        ("O", (lambda f: True if f.read(1) else False, lambda f, b: f.write(b'\1' if b else b''))),
+        ("1", (lambda f: struct.unpack("B", f.read(1))[0], lambda f, v: f.write(struct.pack("B", v)))),
+        ("6", (parse_int_6, stream_int_6)),
+        ("O", (lambda f: True if f.read(1) else False,
+            lambda f, v: f.write(b'' if v is None else struct.pack("B", v)))),
     ]
     all_items = list(bitcoin_streamer.STREAMER_FUNCTIONS.items())
     all_items.extend(more_parsing)
@@ -226,7 +242,7 @@ def make_parser_and_packer(streamer, message_dict, message_post_unpacks):
         message_stream = io.BytesIO(data)
         parser = message_parsers.get(message_name)
         if parser is None:
-            raise LookupError("unknown message: %s" % message_name)
+            raise KeyError("unknown message: %s" % message_name)
         d = parser(message_stream)
         post_unpack = message_post_unpacks.get(message_name)
         if post_unpack:

@@ -95,8 +95,10 @@ class VM(object):
 
         # don't actually check for minimal data unless data will be pushed onto the stack
         verify_minimal_data = self.flags & VERIFY_MINIMALDATA and all_if_true
-        opcode, data, pc = self.ScriptStreamer.get_opcode(
+        opcode, data, pc, is_ok = self.ScriptStreamer.get_opcode(
             self.script, self.pc, verify_minimal_data=verify_minimal_data)
+        if not is_ok:
+            raise ScriptError("malformed data", errno.BAD_OPCODE)
         if data and len(data) > self.MAX_BLOB_LENGTH:
             raise ScriptError("pushing too much data onto stack", errno.PUSH_SIZE)
 
