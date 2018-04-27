@@ -18,8 +18,8 @@ _script_info = ScriptInfo(BitcoinScriptTools)
 mainnet_ui = UI(
     _script_info, secp256k1_generator,
     bip32_prv_prefix=h2b("0488ade4"), bip32_pub_prefix=h2b("0488B21E"),
-    wif_prefix=h2b("80"), sec_prefix="BTCSEC:", address_prefix=h2b("26"),
-    pay_to_script_prefix=h2b("17"), bech32_hrp='bc')
+    wif_prefix=h2b("80"), sec_prefix="BCHSEC:", address_prefix=h2b("00"),
+    pay_to_script_prefix=h2b("05"))
 
 mainnet_extras = Extras(BitcoinScriptTools, mainnet_ui)
 
