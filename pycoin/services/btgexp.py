@@ -8,7 +8,7 @@ from pycoin.serialize import b2h_rev
 
 class BTGExpProvider(object):
     def __init__(self):
-        self.base_url = "https://btgexp.com/api/"
+        self.base_url = "http://btgexp.com/api/"
 
     def tx_for_tx_hash(self, tx_hash):
         URL = "%s/getrawtransaction?txid=%s&decrypt=0" % (self.base_url, b2h_rev(tx_hash))

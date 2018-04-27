@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import argparse
 import sqlite3
+import sys
 
 from pycoin.key.Keychain import Keychain
 from pycoin.key.subpaths import subpaths_for_path_range
@@ -61,7 +62,7 @@ def keychain(args, parser):
             print(network.ui.address_for_p2s(script))
         total_paths += keychain.add_keys_path(keys, path)
     keychain.commit()
-    print("%d total paths" % total_paths)
+    print("%d total paths" % total_paths, file=sys.stderr)
 
 
 def main():
