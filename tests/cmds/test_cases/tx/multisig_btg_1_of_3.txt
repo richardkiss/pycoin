@@ -1,0 +1,42 @@
+# check that we can partially sign a btg transaction. xprv is P:1 P:2 P:3, path is 0
+tx -n BTG  -p 5321025540b1be0fa622c16c35347dc8f03fb2f10bb9c08f59e39aa49d83f0b9b1fa0f2102673717a66d62e8e9d5b7751a1107fd3990bf18cc312ff0037347b0b170462c3d2102c29794ab45b4c98896e16b191ef182a3bbf5813e362a481b621f0d5c7b55900553ae 3759c187f8145f5f8e820d17ae3ebf00b71d9df3778042040545021d1d01be80/0/a914ba3aeafd237bc9334e5b6f627aef94d61cabc65287/5000000000/0/0/0 AYkZusJAWcKQf8FWJx2THgmXav1HWLqjdu L1fB8KfKAkYZS4jGjAuRM1ZHAwZKqjAAtypRFuAkUURXpEUv5ysJ -d
+Version:  1  tx hash f8e7ca45bf10c65f262687fc984aabb1f597c6906f14653be497a17e2cf65189  412 bytes
+TxIn count: 1; TxOut count: 1
+Lock time: 0 (valid anytime)
+Input:
+   0: AYkZusJAWcKQf8FWJx2THgmXav1HWLqjdu from 3759c187f8145f5f8e820d17ae3ebf00b71d9df3778042040545021d1d01be80:0     50000.00000 mBTC  BAD SIG
+           --- SIGNATURE SCRIPT START
+       0: 00  OP_0
+       1: 48  [PUSH_72] 3045022100baf09b28f97f7713f75256ca22f7c72158da5bc0b0bddb3dfa27bfd25611ce47022053a8047a601131e5af2a4223defc6e95ec0f3fbd834896a8f39866709ea9141d41
+      4a: 48  [PUSH_72] 3045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001
+           r: 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140
+           s: 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0
+      93: 48  [PUSH_72] 3045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001
+           r: 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140
+           s: 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0
+      dc: 4c  [PUSH_76] 5321025540b1be0fa622c16c35347dc8f03fb2f10bb9c08f59e39aa49d83f0b9b1fa0f2102673717a66d62e8e9d5b7751a1107fd3990bf18cc312ff0037347b0b170462c3d2102c29794ab45b4c98896e16b191ef182a3bbf5813e362a481b621f0d5c7b55900553ae
+           --- PUBLIC KEY SCRIPT START
+       0: a9  OP_HASH160
+       1: 14  [PUSH_20] ba3aeafd237bc9334e5b6f627aef94d61cabc652
+      16: 87  OP_EQUAL
+           --- PUBLIC KEY SCRIPT START
+       0: 53  [PUSH_83] 03
+       1: 21  [PUSH_33] 025540b1be0fa622c16c35347dc8f03fb2f10bb9c08f59e39aa49d83f0b9b1fa0f
+           SEC for compressed GPcvCW5LCCy56KBVC4RXGP2pBntZpPCko1
+      23: 21  [PUSH_33] 02673717a66d62e8e9d5b7751a1107fd3990bf18cc312ff0037347b0b170462c3d
+           SEC for compressed GKg8aCw6jPQeMiqyeG8NBHSzJA5wXhKLhL
+      45: 21  [PUSH_33] 02c29794ab45b4c98896e16b191ef182a3bbf5813e362a481b621f0d5c7b559005
+           SEC for compressed GKq9c2ajkAYaSSASCE97TH6TdMb4Qi6rvR
+      67: 53  [PUSH_83] 03
+      68: ae  OP_CHECKMULTISIG
+Output:
+   0: AYkZusJAWcKQf8FWJx2THgmXav1HWLqjdu receives  49999.90000 mBTC
+           --- PUBLIC KEY SCRIPT START
+       0: a9  OP_HASH160
+       1: 14  [PUSH_20] ba3aeafd237bc9334e5b6f627aef94d61cabc652
+      16: 87  OP_EQUAL
+Total input   50000.00000 mBTC
+Total output  49999.90000 mBTC
+Total fees        0.10000 mBTC
+including unspents in hex dump since transaction not fully signed
+010000000180be011d1d02450504428077f39d1db700bf3eae170d828e5f5f14f887c1593700000000fd470100483045022100baf09b28f97f7713f75256ca22f7c72158da5bc0b0bddb3dfa27bfd25611ce47022053a8047a601131e5af2a4223defc6e95ec0f3fbd834896a8f39866709ea9141d41483045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001483045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0014c695321025540b1be0fa622c16c35347dc8f03fb2f10bb9c08f59e39aa49d83f0b9b1fa0f2102673717a66d62e8e9d5b7751a1107fd3990bf18cc312ff0037347b0b170462c3d2102c29794ab45b4c98896e16b191ef182a3bbf5813e362a481b621f0d5c7b55900553aeffffffff01f0ca052a0100000017a914ba3aeafd237bc9334e5b6f627aef94d61cabc652870000000000f2052a0100000017a914ba3aeafd237bc9334e5b6f627aef94d61cabc65287

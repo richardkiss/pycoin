@@ -31,6 +31,7 @@ STANDARD_P2P_MESSAGES = {
     'inv': "items:[v]",
     'getdata': "items:[v]",
     'notfound': "items:[v]",
+    'reject': "message:S code:1 reason:S data:#",
     'getblocks': "version:L hashes:[#] hash_stop:#",
     'getheaders': "version:L hashes:[#] hash_stop:#",
     'sendheaders': "",
