@@ -42,10 +42,6 @@ setup(
                 'tx = pycoin.cmds.tx:main',
                 'msg = pycoin.cmds.msg:main',
                 'keychain = pycoin.cmds.keychain:main',
-                # these scripts are obsolete
-                'genwallet = pycoin.cmds.genwallet:main',
-                'spend = pycoin.cmds.spend:main',
-                'bu = pycoin.cmds.bitcoin_utils:main',
             ]
         },
     author_email="him@richardkiss.com",
