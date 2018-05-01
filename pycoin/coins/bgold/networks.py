@@ -23,6 +23,7 @@ mainnet_ui = UI(
 
 mainnet_extras = Extras(BitcoinScriptTools, mainnet_ui)
 
+# fork at block 491407
 BGoldMainnet = Network(
     'BTG', "BGold", "mainnet",
     BGoldTx, BGoldBlock,
