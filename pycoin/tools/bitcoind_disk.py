@@ -11,18 +11,28 @@ from pycoin.serialize import h2b
 logger = logging.getLogger(__file__)
 
 
+# f9beb4d9 (big-endian magic)
+# 011d (little-endian size)
+# (block data)
+# f9beb4d9 (big-endian magic)
+# (etc)
+
+
 class Blockfiles(object):
-    def __init__(self, base_dir=None, start_info=(0, 0)):
+    def __init__(self, base_dir=None, start_info=(0, 0), MAGIC=h2b("f9beb4d9")):
         if base_dir is None:
             base_dir = self.default_base()
         self.base_dir = base_dir
+        self._file_index = None
+        self._magic = MAGIC
         self.jump_to(start_info)
 
     def jump_to(self, start_info):
         file_index, offset = start_info
-        self._file_index = file_index
-        full_path = self._path_for_file_index()
-        self.f = open(full_path, "rb")
+        if self._file_index != file_index:
+            self._file_index = file_index
+            full_path = self._path_for_file_index()
+            self.f = open(full_path, "rb")
         self.f.seek(offset)
 
     def close(self):
@@ -40,7 +50,7 @@ class Blockfiles(object):
         d = self.f.read(N)
         if len(d) >= N:
             return d
-        if self.next_file():
+        if self._next_file():
             d1 = d + self.f.read(N-len(d))
             return d1
         return b""
@@ -68,47 +78,34 @@ class Blockfiles(object):
         self.f = open(full_path, "r+b")
         return True
 
+    def next_offset(self, current_offset):
+        self.jump_to(current_offset)
+        magic = self.read(4)
+        if magic == b"\0\0\0\0":
+            if not self._next_file():
+                return None
+            magic = self.read(4)
+        if len(magic) == 0:
+            return None
+        if magic != self._magic:
+            offset_info = self.offset_info()
+            logger.error("bad magic: %s at %s", magic, offset_info)
+            raise ValueError("bad magic at %s" % str(offset_info))
+        size = struct.unpack("<L", self.read(4))[0]
+        block_offset = self.offset_info()
+        self.skip(size)
+        next_offset = self.offset_info()
+        return block_offset, next_offset
+
     def offset_info(self):
         return self._file_index, self.f.tell()
 
 
-def block_info_iterator(start_info=(0, 0), base_dir=None, MAGIC=h2b("f9beb4d9")):
-    f = Blockfiles(base_dir, start_info)
-    while 1:
-        magic = f.read(4)
-        if magic == b"\0\0\0\0":
-            if not f._next_file():
-                break
-            magic = f.read(4)
-        if len(magic) == 0:
-            break
-        size = struct.unpack("<L", f.read(4))[0]
-        offset_info = f.offset_info()
-        f.skip(size)
-        if magic != MAGIC:
-            logger.error("bad magic: %s at %s", magic, offset_info)
-            raise ValueError("bad magic at %s" % str(offset_info))
-        yield offset_info
-
-
-def blockheader_for_offset_info(offset_info, base_dir=None):
-    f = Blockfiles(base_dir, offset_info)
-    block = Block.parse_as_header(f)
-    f.close()
-    return block
-
-
-def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, base_dir=None,
-                           headers_only=False):
+def locked_blocks_iterator(blockfile, start_info=(0, 0), cached_headers=50, batch_size=50):
     """
     This method loads blocks from disk, skipping any orphan blocks.
     """
-    parse_method = Block.parse_as_header if headers_only else Block.parse
-    f = Blockfiles(base_dir, start_info)
-    for initial_location in block_info_iterator(start_info, base_dir):
-        f.jump_to(initial_location)
-        parse_method(f)
-        break
+    f = blockfile
     current_state = []
 
     def change_state(bc, ops):
@@ -122,18 +119,24 @@ def locked_blocks_iterator(start_info=(0, 0), cached_headers=50, batch_size=50, 
     bc.add_change_callback(change_state)
     bhs = []
     index = 0
-    for info in block_info_iterator(start_info, base_dir):
-        bh = blockheader_for_offset_info(info, base_dir)
-        bh.info = info
+    info_offset = start_info
+    while 1:
+        v = blockfile.next_offset(info_offset)
+        if v is None:
+            break
+        block_offset, info_offset = v
+        f.jump_to(block_offset)
+        bh = Block.parse_as_header(f)
+        bh.info = block_offset
+
         bhs.append(bh)
         if len(bhs) > batch_size:
             bc.add_headers(bhs)
             bhs = []
             if len(current_state) > cached_headers:
                 for bh in current_state[:cached_headers]:
-                    f.jump_to(bh.info)
-                    block = parse_method(f)
-                    yield block
+                    bh.index = index
+                    yield bh
                     index += 1
                     bc.lock_to_index(index)
                 current_state = current_state[cached_headers:]
