@@ -4,12 +4,13 @@ from pycoin.serialize import h2b
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from .Tx import Tx as BGoldTx
 from ..bitcoin.extras import Extras
-from pycoin.block import Block as BGoldBlock
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.networks.network import Network
 from pycoin.ui.uiclass import UI
 from pycoin.vm.ScriptInfo import ScriptInfo
+
+from .Block import Block as BGoldBlock
 
 # BRAIN DAMAGE
 _script_info = ScriptInfo(BitcoinScriptTools)
