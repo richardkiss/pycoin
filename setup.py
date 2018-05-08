@@ -42,6 +42,7 @@ setup(
                 'tx = pycoin.cmds.tx:main',
                 'msg = pycoin.cmds.msg:main',
                 'keychain = pycoin.cmds.keychain:main',
+                'b58 = pycoin.cmds.b58:main',
             ]
         },
     author_email="him@richardkiss.com",
