@@ -91,4 +91,10 @@ NETWORKS = (
     # PIVX testnet : tprv/tpub
     NetworkValues("PIVX", "testnet", "TPIVX", b'\xef', b'\x8b', b'\x13', h2b('3a8061a0'), h2b('3a805837')),
 
+    # STAK mainnet : xprv/xpub
+    NetworkValues("STRAKS", "mainnet", "STAK", b'\xcc', b'\x3f', b'\x05', h2b('0488aDe4'), h2b('0488b21e')),
+
+    # STAK testnet : xprv/xpub
+    NetworkValues("STRAKS", "testnet", "TSTAK", b'\xef', b'\x7f', b'\13', h2b('46002a10'), h2b('a2aec9a6')),
+
 )
