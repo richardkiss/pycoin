@@ -10,18 +10,22 @@ from pycoin.encoding.hexbytes import b2h, h2b, b2h_rev
 
 class BlockchainInfoProvider(object):
     def __init__(self, netcode):
-        if netcode != 'BTC':
-            raise ValueError("BlockchainInfo only supports mainnet")
+        if netcode == 'BTC':
+            self.api_domain = "https://blockchain.info"
+        elif netcode == "XTN":
+            self.api_domain = "https://testnet.blockchain.info"
+        else:
+            raise ValueError("unsupported netcode %s" % netcode)
 
     def tx_for_tx_hash(self, tx_hash):
         "Get a Tx by its hash."
-        URL = "https://blockchain.info/rawtx/%s?format=hex" % b2h_rev(tx_hash)
+        URL = self.api_domain + ("/rawtx/%s?format=hex" % b2h_rev(tx_hash))
         tx = Tx.from_hex(urlopen(URL).read().decode("utf8"))
         return tx
 
     def payments_for_address(self, address):
         "return an array of (TX ids, net_payment)"
-        URL = "https://blockchain.info/address/%s?format=json" % address
+        URL = self.api_domain + ("/address/%s?format=json" % address)
         d = urlopen(URL).read()
         json_response = json.loads(d.decode("utf8"))
         response = []
@@ -39,7 +43,7 @@ class BlockchainInfoProvider(object):
         Return a list of Spendable objects for the
         given bitcoin address.
         """
-        URL = "https://blockchain.info/unspent?active=%s" % address
+        URL = self.api_domain + "/unspent?active=%s" % address
         r = json.loads(urlopen(URL).read().decode("utf8"))
         spendables = []
         for u in r["unspent_outputs"]:
@@ -55,7 +59,7 @@ class BlockchainInfoProvider(object):
         tx.stream(s)
         tx_as_hex = b2h(s.getvalue())
         data = urlencode(dict(tx=tx_as_hex)).encode("utf8")
-        URL = "https://blockchain.info/pushtx"
+        URL = self.api_domain + "/pushtx"
         try:
             d = urlopen(URL, data=data).read()
             return d
