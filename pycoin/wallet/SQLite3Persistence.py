@@ -158,7 +158,7 @@ unique(tx_hash, tx_out_index)
         # we alternate between "biggest" and "smallest" spendables
         SQL = ("select tx_hash, tx_out_index, coin_value, script, block_index_available, "
                "does_seem_spent, block_index_spent from Spendable where "
-               "does_seem_spent = 0 and block_index_spent = 0 "
+               "block_index_available > 0 and does_seem_spent = 0 and block_index_spent = 0 "
                "%s order by coin_value %s")
 
         if confirmations > 0:
