@@ -33,13 +33,21 @@ NETWORKS = (
     # BC BlackCoin mainnet : bcpv/bcpb
     NetworkValues("Blackcoin", "mainnet", "BC", b'\x99', b'\x19', None, h2b("02cfbf60"), h2b("02cfbede")),
 
-    # DRK Dash mainnet : drkv/drkp
+      # CHC Chaincoin mainnet : xprv/xpub
     NetworkValues(
-        "Dash", "mainnet", "DASH", b'\xcc', b'\x4c', b'\x10', h2b("02fe52f8"), h2b("02fe52cc")),
+        "Chaincoin", "mainnet", "CHC", b'\x9c', b'\x1c', b'\x04', h2b("0488ADE4"), h2b("0488B21E")),
 
-    # DRK Dash testnet : DRKV/DRKP
+    # CHC Chaincoin testnet : tprv/tpub
     NetworkValues(
-        "Dash", "testnet", "tDASH", b'\xef', b'\x8c', b'\x13', h2b("3a8061a0"), h2b("3a805837")),
+        "Chaincoin", "testnet", "tCHC", b'\xd8', b'\x50', b'\x2c', h2b('04358394'), h2b('043587CF')),
+
+    # DRK Dash mainnet : xprv/xpub
+    NetworkValues(
+        "Dash", "mainnet", "DASH", b'\xcc', b'\x4c', b'\x10', h2b("0488ADE4"), h2b("0488B21E")),
+
+    # DRK Dash testnet : tprv/tpub
+    NetworkValues(
+        "Dash", "testnet", "tDASH", b'\xef', b'\x8c', b'\x13', h2b('04358394'), h2b('043587CF')),
 
     # MEC Megacoin mainnet : mecv/mecp
     NetworkValues("Megacoin", "mainnet", "MEC", b'\xb2', b'\x32', None, h2b("03a04db7"), h2b("03a04d8b")),
