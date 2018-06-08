@@ -137,14 +137,14 @@ class ScriptInfo(object):
             return None
         m = opcode + (1 - OP_1)
         sec_keys = []
-        while 1:
-            if pc >= len(script):
-                return None
+        while pc < len(script):
             opcode, data, pc, is_ok = scriptStreamer.get_opcode(script, pc)
             size = len(data) if data else 0
             if size < 33 or size > 120:
                 break
             sec_keys.append(data)
+        if pc >= len(script):
+            return None
         n = opcode + (1 - OP_1)
         if m > n or len(sec_keys) != n:
             return None
