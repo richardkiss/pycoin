@@ -1,10 +1,13 @@
 from .network import Network
 
+from pycoin.block import Block
+from pycoin.coins.bitcoin.extras import Extras
+from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import h2b
 from pycoin.ui.uiclass import UI
 from pycoin.vm.ScriptInfo import ScriptInfo
-from pycoin.coins.bitcoin.extras import Extras
 
 
 def create_bitcoinish_network(**kwargs):
@@ -20,16 +23,17 @@ def create_bitcoinish_network(**kwargs):
         if k_hex in kwargs:
             kwargs[k] = h2b(kwargs[k_hex])
 
-    if "scriptTools" in kwargs:
-        scriptTools = kwargs["scriptTools"]
-        _script_info = ScriptInfo(scriptTools)
-        UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
-                   "address_prefix pay_to_script_prefix bech32_hrp").split()
-        ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
-        mainnet_ui = UI(_script_info, kwargs.get("generator", secp256k1_generator), **ui_kwargs)
-        mainnet_extras = Extras(kwargs["scriptTools"], mainnet_ui)
-        kwargs["ui"] = mainnet_ui
-        kwargs["extras"] = mainnet_extras
+    scriptTools = kwargs.get("scriptTools", BitcoinScriptTools)
+    _script_info = ScriptInfo(scriptTools)
+    UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
+               "address_prefix pay_to_script_prefix bech32_hrp").split()
+    ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
+    mainnet_ui = UI(_script_info, kwargs.get("generator", secp256k1_generator), **ui_kwargs)
+    mainnet_extras = Extras(scriptTools, mainnet_ui)
+    kwargs["ui"] = mainnet_ui
+    kwargs["extras"] = mainnet_extras
+    kwargs.setdefault("tx", Tx)
+    kwargs.setdefault("block", Block)
 
     NETWORK_KEYS = "network_name subnet_name tx block ui extras".split()
     network_kwargs = {k: kwargs.get(k) for k in NETWORK_KEYS if k in kwargs}
