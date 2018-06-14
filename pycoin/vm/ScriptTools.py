@@ -65,7 +65,8 @@ class ScriptTools(object):
         Iterator. Return opcode, data, pc, new_pc at each step
         """
         while pc < len(script):
-            opcode, data, new_pc = self.scriptStreamer.get_opcode(script, pc, verify_minimal_data=verify_minimal_data)
+            opcode, data, new_pc, is_ok = self.scriptStreamer.get_opcode(
+                script, pc, verify_minimal_data=verify_minimal_data)
             yield opcode, data, pc, new_pc
             pc = new_pc
 

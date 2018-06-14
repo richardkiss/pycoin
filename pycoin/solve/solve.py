@@ -2,6 +2,7 @@
 
 import pdb
 
+from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi.checksigops import parse_signature_blob
 from ..serialize import b2h
 
@@ -46,7 +47,7 @@ def _find_signatures(script_blobs, generator_for_signature_type_f, signature_for
                     signatures.append((idx, data))
                     secs_solved.add(sec_key)
                     break
-        except (ValueError, EncodingError, der.UnexpectedDER):
+        except (ValueError, EncodingError, der.UnexpectedDER, ScriptError):
             # if public_pair is invalid, we just ignore it
             pass
     return signatures, secs_solved

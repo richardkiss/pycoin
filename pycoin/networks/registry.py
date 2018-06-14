@@ -1,3 +1,7 @@
+import importlib
+import os
+import warnings
+
 from .all import BUILT_IN_NETWORKS
 from .network import Network
 
@@ -42,6 +46,15 @@ def register_network(network_info):
 def _register_default_networks():
     for network in BUILT_IN_NETWORKS:
         register_network(network)
+    extra_paths = os.getenv("PYCOIN_NETWORK_PATHS")
+    if extra_paths:
+        try:
+            for _ in extra_paths.split(":"):
+                coin_module = importlib.import_module(_, "networks")
+                for _ in coin_module.all_networks:
+                    register_network(_)
+        except ImportError as ex:
+            warnings.warn("check environment variable PYCOIN_NETWORK_PATHS: problems importing %s" % _)
 
 
 def network_for_netcode(netcode):
@@ -101,34 +114,9 @@ def full_network_name_for_netcode(netcode):
         return "%s %s" % (network.network_name, network.subnet_name)
 
 
-def wif_prefix_for_netcode(netcode):
-    "Return the 1 byte prefix for WIFs for the given netcode (or None)"
-    return _lookup(netcode, "wif")
-
-
-def address_prefix_for_netcode(netcode):
-    "Return the 1 byte prefix for addresses for the given netcode (or None)"
-    return _NETWORK_NAME_LOOKUP.get(netcode).ui._address_prefix
-
-
-def bech32_hrp_for_netcode(netcode):
-    "Return the bech32 hrp prefix for addresses for the given netcode (or None)"
-    return _NETWORK_NAME_LOOKUP.get(netcode).ui._bech32_hrp
-
-
 def pay_to_script_prefix_for_netcode(netcode):
     "Return the 1 byte prefix for pay-to-script addresses for the given netcode (or None)"
     return _NETWORK_NAME_LOOKUP.get(netcode).ui._pay_to_script_prefix
-
-
-def prv32_prefix_for_netcode(netcode):
-    "Return the 4 byte prefix for private BIP32 addresses for the given netcode (or None)"
-    return _lookup(netcode, "prv32")
-
-
-def pub32_prefix_for_netcode(netcode):
-    "Return the 4 byte prefix for public BIP32 addresses for the given netcode (or None)"
-    return _lookup(netcode, "pub32")
 
 
 _register_default_networks()

@@ -104,9 +104,6 @@ class BIP32Node(Key):
             ba += self.sec(use_uncompressed=False)
         return bytes(ba)
 
-    def fingerprint(self):
-        return public_pair_to_hash160_sec(self.public_pair(), compressed=True)[:4]
-
     def hwif(self, as_private=False, ui_context=None):
         """Yield a 111-byte string corresponding to this node."""
         return b2a_hashed_base58(self.serialize(as_private=as_private, ui_context=ui_context))

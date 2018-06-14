@@ -75,7 +75,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         scriptStreamer = self.VM.ScriptStreamer
         pc = 0
         while pc < len(script):
-            opcode, data, pc = scriptStreamer.get_opcode(script, pc)
+            opcode, data, pc, is_ok = scriptStreamer.get_opcode(script, pc)
             if opcode not in scriptStreamer.data_opcodes:
                 raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 

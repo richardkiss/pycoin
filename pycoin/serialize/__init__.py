@@ -37,10 +37,10 @@ def stream_to_bytes(stream_f):
 
 class bytes_as_revhex(bytes):
     def __str__(self):
-        return "<%s>" % b2h_rev(self)
+        return "<R:%s>" % b2h_rev(self)
 
     def __repr__(self):
-        return "<%s>" % b2h_rev(self)
+        return "<R:%s>" % b2h_rev(self)
 
 
 class bytes_as_hex(bytes):

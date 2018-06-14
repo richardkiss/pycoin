@@ -24,7 +24,7 @@ def make_opcode_variable_list():
             try:
                 size = struct.unpack(struct_data, script[pc:pc+struct_size])[0]
             except Exception:
-                raise ScriptError("unexpected end of data when size expected", errno.BAD_OPCODE)
+                return 0, pc
             pc += struct_size
             return size, pc
         return decode_OP_PUSHDATA
@@ -35,10 +35,6 @@ def make_opcode_variable_list():
         ("OP_PUSHDATA4", (1 << 32)-1, lambda d: struct.pack("<L", d), make_variable_decoder("<L"))
     ]
     return OPCODE_VARIABLE_LIST
-
-
-def end_of_data_f(msg):
-    raise ScriptError(msg, errno.BAD_OPCODE)
 
 
 def non_minimal_f(msg):
@@ -52,7 +48,7 @@ def make_script_streamer():
     OPCODE_LOOKUP = dict(o for o in opcodes.OPCODE_LIST)
 
     return ScriptStreamer(
-        OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP, end_of_data_f, non_minimal_f)
+        OPCODE_CONST_LIST, OPCODE_SIZED_LIST, OPCODE_VARIABLE_LIST, OPCODE_LOOKUP, non_minimal_f)
 
 
 BitcoinScriptStreamer = make_script_streamer()

@@ -5,6 +5,8 @@ from pycoin.networks.bitcoinish import create_bitcoinish_network
 from .Tx import Tx as BgoldTx
 
 
+# fork at block 491407
+
 BgoldMainnet = create_bitcoinish_network(
     netcode="BTG", network_name="Bgold", subnet_name="mainnet", tx=BgoldTx, block=BgoldBlock,
     wif_prefix_hex="80", sec_prefix="BTCSEC:", address_prefix_hex="26", pay_to_script_prefix_hex="17",

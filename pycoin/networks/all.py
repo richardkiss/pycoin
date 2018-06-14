@@ -9,7 +9,7 @@ from pycoin.coins.bcash.networks import BcashMainnet
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet, BitcoinRegtest
 from pycoin.coins.litecoin.networks import LitecoinMainnet, LitecoinTestnet
 
-from pycoin.coins.bcash.Tx import Tx as BcashTx
+from pycoin.coins.bcash.networks import BcashMainnet
 from pycoin.coins.bgold.networks import BgoldMainnet, BgoldTestnet
 
 
