@@ -2,7 +2,6 @@ import unittest
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.tx.Tx import Tx
 from pycoin.solve.utils import build_hash160_lookup
 
 
@@ -14,6 +13,7 @@ script_for_p2pk = BitcoinMainnet.ui._script_info.script_for_p2pk
 script_for_nulldata = BitcoinMainnet.ui._script_info.script_for_nulldata
 script_for_nulldata_push = BitcoinMainnet.ui._script_info.script_for_nulldata_push
 
+Tx = BitcoinMainnet.tx
 Key = BitcoinMainnet.extras.Key
 
 

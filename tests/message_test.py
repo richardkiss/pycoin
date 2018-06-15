@@ -1,16 +1,14 @@
 import io
 import unittest
 
-from pycoin.block import Block
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.message.make_parser_and_packer import (
     make_parser_and_packer, standard_messages, standard_message_post_unpacks,
     standard_parsing_functions, standard_streamer
 )
 from pycoin.message.PeerAddress import ip_bin_to_ip4_addr, ip_bin_to_ip6_addr, PeerAddress, IP4_HEADER
 from pycoin.message.InvItem import InvItem, ITEM_TYPE_BLOCK, ITEM_TYPE_TX
-
 from pycoin.serialize import h2b
-from pycoin.tx.Tx import Tx
 
 
 def to_bin(obj):
@@ -27,7 +25,7 @@ def from_bin(cls, blob):
 class MessageTest(unittest.TestCase):
 
     def test_make_parser_and_packer(self):
-        streamer = standard_streamer(standard_parsing_functions(Block, Tx))
+        streamer = standard_streamer(standard_parsing_functions(BitcoinMainnet.block, BitcoinMainnet.tx))
         btc_parser, btc_packer = make_parser_and_packer(
             streamer, standard_messages(), standard_message_post_unpacks(streamer))
         parser, packer = make_parser_and_packer(streamer, standard_messages(), standard_message_post_unpacks(streamer))

@@ -33,7 +33,7 @@ def create_bitcoinish_network(**kwargs):
     kwargs["ui"] = mainnet_ui
     kwargs["extras"] = mainnet_extras
     kwargs.setdefault("tx", Tx)
-    kwargs.setdefault("block", Block)
+    kwargs.setdefault("block", Block.make_subclass(kwargs["tx"]))
 
     NETWORK_KEYS = "network_name subnet_name tx block ui extras".split()
     network_kwargs = {k: kwargs.get(k) for k in NETWORK_KEYS if k in kwargs}

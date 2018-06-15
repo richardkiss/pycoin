@@ -1,12 +1,10 @@
 import unittest
 
+from pycoin.coins import tx_utils
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import h2b
-from pycoin.tx import tx_utils
-from pycoin.tx.Spendable import Spendable
-from pycoin.tx.Tx import Tx, TxIn, TxOut
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.ui.key_from_text import key_from_text
 
@@ -16,6 +14,10 @@ address_for_p2s = BitcoinMainnet.ui.address_for_p2s
 script_for_address = BitcoinMainnet.ui.script_for_address
 script_for_multisig = BitcoinMainnet.ui._script_info.script_for_multisig
 
+Spendable = BitcoinMainnet.tx.Spendable
+Tx = BitcoinMainnet.tx
+TxIn = BitcoinMainnet.tx.TxIn
+TxOut = BitcoinMainnet.tx.TxOut
 Key = BitcoinMainnet.extras.Key
 
 

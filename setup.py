@@ -28,7 +28,6 @@ setup(
         "pycoin.serialize",
         "pycoin.services",
         "pycoin.solve",
-        "pycoin.tx",
         "pycoin.ui",
         "pycoin.vm",
         "pycoin.wallet"

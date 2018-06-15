@@ -1,8 +1,10 @@
 import io
 import unittest
 
-from pycoin.block import Block
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.serialize import b2h_rev, h2b
+
+Block = BitcoinMainnet.block
 
 
 class BlockTest(unittest.TestCase):

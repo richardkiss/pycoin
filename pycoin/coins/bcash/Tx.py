@@ -2,7 +2,7 @@
 from .SolutionChecker import BcashSolutionChecker
 from .Solver import BcashSolver
 
-from pycoin.tx.Tx import Tx as BaseTx
+from pycoin.coins.bitcoin.Tx import Tx as BaseTx
 
 
 class Tx(BaseTx):

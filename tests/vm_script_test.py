@@ -2,12 +2,15 @@ import json
 import unittest
 import os
 
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi import errno
 from pycoin.satoshi import flags
 from pycoin.serialize import h2b
-from pycoin.tx.Tx import TxIn, TxOut, Tx
+
+
+Tx = BitcoinMainnet.tx
+BitcoinScriptTools = BitcoinMainnet.extras.ScriptTools
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
@@ -26,14 +29,14 @@ def parse_flags(flag_string):
 
 
 def build_credit_tx(script_out_bin, coin_value=0):
-    txs_in = [TxIn(b'\0'*32, 4294967295, b'\0\0', sequence=4294967295)]
-    txs_out = [TxOut(coin_value, script_out_bin)]
+    txs_in = [Tx.TxIn(b'\0'*32, 4294967295, b'\0\0', sequence=4294967295)]
+    txs_out = [Tx.TxOut(coin_value, script_out_bin)]
     return Tx(1, txs_in, txs_out)
 
 
 def build_spending_tx(script_in_bin, credit_tx):
-    txs_in = [TxIn(credit_tx.hash(), 0, script_in_bin, sequence=4294967295)]
-    txs_out = [TxOut(credit_tx.txs_out[0].coin_value, b'')]
+    txs_in = [Tx.TxIn(credit_tx.hash(), 0, script_in_bin, sequence=4294967295)]
+    txs_out = [Tx.TxOut(credit_tx.txs_out[0].coin_value, b'')]
     spend_tx = Tx(1, txs_in, txs_out, unspents=credit_tx.tx_outs_as_spendable())
     return spend_tx
 

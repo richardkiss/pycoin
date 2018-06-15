@@ -2,7 +2,7 @@
 from .SolutionChecker import BgoldSolutionChecker
 from .Solver import BgoldSolver
 
-from pycoin.tx.Tx import Tx as BaseTx
+from pycoin.coins.bitcoin.Tx import Tx as BaseTx
 
 
 class Tx(BaseTx):

@@ -10,10 +10,13 @@ from pycoin.encoding.exceptions import EncodingError
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.sec import public_pair_to_sec, sec_to_public_pair
 from pycoin.intbytes import indexbytes, int2byte
-from pycoin.tx.exceptions import SolvingError
 from pycoin.satoshi import der
 
 from .constraints import Atom, Operator
+
+
+class SolvingError(Exception):
+    pass
 
 
 DEFAULT_PLACEHOLDER_SIGNATURE = b''

@@ -13,8 +13,11 @@ import sqlite3
 import subprocess
 import sys
 
+from .dump import dump_tx
+
+from pycoin.coins.exceptions import BadSpendableError
+from pycoin.coins.tx_utils import distribute_from_split_pool
 from pycoin.convention import tx_fee, satoshi_to_mbtc
-from pycoin.encoding.hash import hash160
 from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.key.Keychain import Keychain
 from pycoin.networks.registry import full_network_name_for_netcode, network_codes
@@ -24,10 +27,7 @@ from pycoin.serialize import b2h, h2b, h2b_rev
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
-from pycoin.solve.utils import build_p2sh_lookup, build_sec_lookup
-from pycoin.tx.dump import dump_tx
-from pycoin.tx.exceptions import BadSpendableError
-from pycoin.tx.tx_utils import distribute_from_split_pool
+from pycoin.solve.utils import build_sec_lookup
 from pycoin.ui.key_from_text import key_from_text
 
 
@@ -147,10 +147,12 @@ def create_parser():
 
     parser.add_argument("-I", "--dump-inputs", action='store_true', help='Dump inputs to this transaction.')
 
-    parser.add_argument("-k", "--keychain", default=":memory:",
+    parser.add_argument(
+        "-k", "--keychain", default=":memory:",
         help="path to keychain file for hierarchical key hints (SQLite3 file created with keychain tool)")
 
-    parser.add_argument("-K", "--key-paths", default="",
+    parser.add_argument(
+        "-K", "--key-paths", default="",
         help="Key path hints to search hiearachical private keys (example: 0/0H/0-20)")
 
     parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append", default=[],
@@ -383,7 +385,9 @@ def script_for_address_or_opcodes(network, text):
 
 def build_coinbase_tx(network, address_or_opcodes):
     puzzle_script = script_for_address_or_opcodes(network, address_or_opcodes)
-    tx = network.tx(1, [network.tx.TxIn.coinbase_tx_in(b'fake-pycoin-coinbase')], [network.tx.TxOut(int(50*1e8), puzzle_script)])
+    txs_in = [network.tx.TxIn.coinbase_tx_in(b'fake-pycoin-coinbase')]
+    txs_out = [network.tx.TxOut(int(50*1e8), puzzle_script)]
+    tx = network.tx(1, txs_in, txs_out)
     return tx
 
 

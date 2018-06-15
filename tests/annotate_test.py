@@ -1,11 +1,10 @@
 import unittest
 
-from pycoin.tx.Tx import Tx
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.vm.annotate import Annotate
 
-
+Tx = BitcoinMainnet.tx
 annotate_scripts = Annotate(BitcoinScriptTools, BitcoinMainnet.ui).annotate_scripts
 
 
