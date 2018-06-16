@@ -1,6 +1,5 @@
 from pycoin.serialize import b2h, h2b, b2h_rev, h2b_rev
 from pycoin.key.BIP32Node import BIP32Node
-from pycoin.tx.Spendable import Spendable
 
 
 class SQLite3Persistence(object):
@@ -135,7 +134,7 @@ unique(tx_hash, tx_out_index)
         self._exec_sql("delete from Spendable where tx_hash = ? and tx_out_index = ?",
                        b2h_rev(tx_hash), tx_out_index)
 
-    def spendable_for_hash_index(self, tx_hash, tx_out_index):
+    def spendable_for_hash_index(self, tx_hash, tx_out_index, spendable_class):
         tx_hash_hex = b2h_rev(tx_hash)
         SQL = ("select coin_value, script, block_index_available, "
                "does_seem_spent, block_index_spent from Spendable where "
@@ -144,16 +143,24 @@ unique(tx_hash, tx_out_index)
         r = c.fetchone()
         if r is None:
             return r
-        return Spendable(coin_value=r[0], script=h2b(r[1]), tx_hash=tx_hash,
-                         tx_out_index=tx_out_index, block_index_available=r[2],
-                         does_seem_spent=r[3], block_index_spent=r[4])
+        return spendable_class(coin_value=r[0], script=h2b(r[1]), tx_hash=tx_hash,
+                                 tx_out_index=tx_out_index, block_index_available=r[2],
+                                 does_seem_spent=r[3], block_index_spent=r[4])
 
     @staticmethod
-    def spendable_for_row(r):
-        return Spendable(coin_value=r[2], script=h2b(r[3]), tx_hash=h2b_rev(r[0]), tx_out_index=r[1],
-                         block_index_available=r[4], does_seem_spent=r[5], block_index_spent=r[6])
+    def spendable_for_row(r, spendable_class):
+        return spendable_class(coin_value=r[2], script=h2b(r[3]), tx_hash=h2b_rev(r[0]), tx_out_index=r[1],
+                               block_index_available=r[4], does_seem_spent=r[5], block_index_spent=r[6])
 
-    def unspent_spendables(self, last_block, confirmations=0):
+    def all_spendables(self, spendable_class, qualifier_sql=""):
+        SQL = ("select tx_hash, tx_out_index, coin_value, script, block_index_available, "
+               "does_seem_spent, block_index_spent from Spendable " + qualifier_sql)
+        c1 = self._exec_sql(SQL)
+        while 1:
+            r = next(c1)
+            yield self.spendable_for_row(r, spendable_class)
+
+    def unspent_spendables(self, last_block, spendable_class, confirmations=0):
         # we fetch spendables "old enough"
         # we alternate between "biggest" and "smallest" spendables
         SQL = ("select tx_hash, tx_out_index, coin_value, script, block_index_available, "
@@ -172,14 +179,14 @@ unique(tx_hash, tx_out_index)
 
         seen = set()
         while 1:
-            r = next(c2)
-            s = self.spendable_for_row(r)
+            r = next(c1)
+            s = self.spendable_for_row(r, spendable_class)
             name = (s.tx_hash, s.tx_out_index)
             if name not in seen:
                 yield s
             seen.add(name)
             r = next(c1)
-            s = self.spendable_for_row(r)
+            s = self.spendable_for_row(r, spendable_class)
             name = (s.tx_hash, s.tx_out_index)
             if name not in seen:
                 yield s

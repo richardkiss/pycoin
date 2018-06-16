@@ -10,4 +10,5 @@ network = create_bitcoinish_network(
     dns_bootstrap=[
         "seed.bitcoinabc.org", "seed-abc.bitcoinforks.org",
         "btccash-seeder.bitcoinunlimited.info", "seed.bitprim.org",
+        "seed.deadalnix.me", "seeder.criptolayer.net"
     ])

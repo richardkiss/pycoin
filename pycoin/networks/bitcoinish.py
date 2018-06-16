@@ -49,14 +49,14 @@ def create_bitcoinish_network(**kwargs):
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
-    mainnet_ui = UI(_script_info, kwargs.get("generator", secp256k1_generator), **ui_kwargs)
-    mainnet_extras = Extras(scriptTools, mainnet_ui)
-    kwargs["ui"] = mainnet_ui
-    kwargs["extras"] = mainnet_extras
+    ui = UI(_script_info, kwargs.get("generator", secp256k1_generator), **ui_kwargs)
+    extras = Extras(scriptTools, ui)
+    kwargs["ui"] = ui
+    kwargs["extras"] = extras
     kwargs.setdefault("tx", Tx)
     kwargs.setdefault("block", Block.make_subclass(kwargs["tx"]))
 
-    NETWORK_KEYS = "network_name subnet_name tx block ui extras".split()
+    NETWORK_KEYS = "network_name subnet_name tx block ui extras dns_bootstrap default_port magic_header".split()
     network_kwargs = {k: kwargs.get(k) for k in NETWORK_KEYS if k in kwargs}
     network_kwargs["code"] = kwargs["netcode"]  # BRAIN DAMAGE
     network = Network(**network_kwargs)
