@@ -312,7 +312,7 @@ def ku(args, parser):
     generator = secp256k1_generator
 
     fallback_network = network_for_netcode(args.network or get_current_netcode())
-    parse_networks = [network_for_netcode(netcode) for netcode in network_codes()]
+    parse_networks = [fallback_network] + [network_for_netcode(netcode) for netcode in network_codes()]
     if args.network:
         parse_networks = [network_for_netcode(args.network)]
 

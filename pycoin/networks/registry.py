@@ -1,122 +1,49 @@
 import importlib
 import os
-import warnings
-
-from .all import BUILT_IN_NETWORKS
-from .network import Network
+import pkgutil
 
 
-def clear_all_networks():
-    global _NETWORK_NAME_LOOKUP, _NETWORK_PREFIXES, _NETWORK_CODES, _BECH32_PREFIXES
-    _NETWORK_NAME_LOOKUP = {}
-    _NETWORK_PREFIXES = {}
-    _BECH32_PREFIXES = {}
-    _NETWORK_CODES = []
+def search_prefixes():
+    prefixes = ["pycoin.symbols"]
+    try:
+        prefixes = os.getenv("PYCOIN_NETWORK_PATHS", "").split() + prefixes
+    except Exception:
+        pass
+    return prefixes
 
 
-clear_all_networks()
-
-
-def register_network(network_info):
-    """
-    Accept a Network instance and register it in the database
-    by its netcode.
-    """
-    assert isinstance(network_info, Network)
-    code = network_info.code.upper()
-    if code in _NETWORK_NAME_LOOKUP:
-        if _NETWORK_NAME_LOOKUP[code] == network_info:
-            return
-        raise ValueError("code %s already defined" % code)
-    _NETWORK_NAME_LOOKUP[code] = network_info
-    _NETWORK_CODES.append(code)
-    for prop in "wif address pay_to_script prv32 pub32".split():
-        v = getattr(network_info, prop, None)
-        if v is not None:
-            if v not in _NETWORK_PREFIXES:
-                _NETWORK_PREFIXES[v] = []
-            _NETWORK_PREFIXES[v].append((code, prop))
-    v = getattr(network_info, "bech32_hrp", None)
-    if v is not None:
-        if v not in _BECH32_PREFIXES:
-            _BECH32_PREFIXES[v] = []
-        _BECH32_PREFIXES[v].append(code)
-
-
-def _register_default_networks():
-    for network in BUILT_IN_NETWORKS:
-        register_network(network)
-    extra_paths = os.getenv("PYCOIN_NETWORK_PATHS")
-    if extra_paths:
+def network_for_netcode(symbol):
+    symbol = symbol.upper()
+    netcode = symbol.lower()
+    for prefix in search_prefixes():
         try:
-            for _ in extra_paths.split(":"):
-                coin_module = importlib.import_module(_, "networks")
-                for _ in coin_module.all_networks:
-                    register_network(_)
-        except ImportError as ex:
-            warnings.warn("check environment variable PYCOIN_NETWORK_PATHS: problems importing %s" % _)
+            module = importlib.import_module("%s.%s" % (prefix, netcode))
+            if module.network.code.upper() == symbol:
+                module.symbol = symbol
+                return module.network
+        except (AttributeError, ModuleNotFoundError):
+            pass
+    raise ValueError("no network with symbol %s found" % netcode)
 
 
-def network_for_netcode(netcode):
+def available_symbols():
     """
-    Return the given Network object for the given netcode (or None).
+    Return a list of registered netcodes.
     """
-    return _NETWORK_NAME_LOOKUP.get(netcode.upper())
+    for prefix in search_prefixes():
+        package = importlib.import_module(prefix)
+        for importer, modname, ispkg in pkgutil.walk_packages(path=package.__path__, onerror=lambda x: None):
+            network = network_for_netcode(modname)
+            if network:
+                yield network.code.upper()
 
 
 def network_codes():
-    """
-    Return a list of registered netcodes, in the order they were registered.
-    """
-    return _NETWORK_CODES
-
-
-def network_prefixes():
-    """
-    Return a dictionary of 1 and 4 byte prefixes that returns a list of pairs (a, b) where
-    a is the netcode and b is one of "wif", "address", "pay_to_script", "prv32", "pub32" or "segwit".
-    """
-    return _NETWORK_PREFIXES
-
-
-def bech32_prefixes():
-    """
-    Return a dictionary of 2 byte prefixes that returns a list of netcodes that have this prefix.
-    """
-    return _BECH32_PREFIXES
-
-
-def _lookup(netcode, property):
-    # Lookup a specific value needed for a specific network
-    network = _NETWORK_NAME_LOOKUP.get(netcode)
-    if network:
-        return getattr(network, property)
-    return None
-
-
-def network_name_for_netcode(netcode):
-    "Return the network name for the given netcode (or None)"
-    return _lookup(netcode, "network_name")
-
-
-def subnet_name_for_netcode(netcode):
-    """
-    Return the subnet network name for the given netcode (or None).
-    This is usually "testnet" or "mainnet".
-    """
-    return _lookup(netcode, "subnet_name")
+    return list(available_symbols())
 
 
 def full_network_name_for_netcode(netcode):
     "Return the full network name for the given netcode (or None)"
-    network = _NETWORK_NAME_LOOKUP[netcode]
+    network = network_for_netcode(netcode)
     if network:
         return "%s %s" % (network.network_name, network.subnet_name)
-
-
-def pay_to_script_prefix_for_netcode(netcode):
-    "Return the 1 byte prefix for pay-to-script addresses for the given netcode (or None)"
-    return _NETWORK_NAME_LOOKUP.get(netcode).ui._pay_to_script_prefix
-
-
-_register_default_networks()

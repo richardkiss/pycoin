@@ -1,5 +1,3 @@
-from .network import Network
-
 from pycoin.block import Block
 from pycoin.coins.bitcoin.extras import Extras
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
@@ -10,12 +8,35 @@ from pycoin.ui.uiclass import UI
 from pycoin.vm.ScriptInfo import ScriptInfo
 
 
+DEFAULT_ARGS_ORDER = (
+    'code', 'network_name', 'subnet_name',
+    'tx', 'block',
+    'magic_header', 'default_port', 'dns_bootstrap',
+    'ui', 'extras'
+)
+
+
+class Network(object):
+    def __init__(self, *args, **kwargs):
+        for arg, name in zip(args, DEFAULT_ARGS_ORDER):
+            kwargs[name] = arg
+        for k, v in kwargs.items():
+            if k not in DEFAULT_ARGS_ORDER:
+                raise TypeError("unexpected argument %s" % k)
+        for name in DEFAULT_ARGS_ORDER:
+            setattr(self, name, kwargs.get(name, None))
+
+    def __repr__(self):
+        return "<Network %s %s>" % (self.network_name, self.subnet_name)
+
+
 def create_bitcoinish_network(**kwargs):
     # potential kwargs:
     #   netcode, network_name, subnet_name, tx, block, magic_header_hex, default_port, dns_bootstrap,
     #   wif_prefix_hex, address_prefix_hex, pay_to_script_prefix_hex, bip32_prv_prefix_hex, bip32_pub_prefix_hex,
     #   sec_prefix, scriptTools
 
+    kwargs.setdefault("sec_prefix", "%sSEC" % kwargs["netcode"].upper())
     KEYS_TO_H2B = ("bip32_prv_prefix bip32_pub_prefix wif_prefix address_prefix "
                    "pay_to_script_prefix sec_prefix magic_header").split()
     for k in KEYS_TO_H2B:

@@ -249,11 +249,11 @@ class Bip0032TestCase(unittest.TestCase):
         wallet = XTNBIP32Node.from_master_secret(secp256k1_generator, bytes(key.wif().encode('ascii')))
 
         address = wallet.address()
-        pub_k = key_from_text(address)
+        pub_k = key_from_text(address, networks=[BitcoinTestnet])
         self.assertEqual(repr(pub_k),  '<myb5gZNXePNf2E2ksrjnHRFCwyuvt7oEay>')
 
         wif = wallet.wif()
-        priv_k = key_from_text(wif)
+        priv_k = key_from_text(wif, networks=[BitcoinTestnet])
         self.assertEqual(repr(priv_k),
                          'private_for <XTNSEC:03ad094b1dc9fdce5d3648ca359b4e210a89d049532fdd39d9ccdd8ca393ac82f4>')
 
