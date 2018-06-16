@@ -5,7 +5,7 @@ from .agent import urlopen
 
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
-from pycoin.tx.Tx import Spendable, Tx
+from pycoin.coins.bitcoin.Tx import Tx
 
 
 class ChainSoProvider(object):
@@ -36,7 +36,7 @@ class ChainSoProvider(object):
             script = h2b(u["script_hex"])
             previous_hash = h2b_rev(u["txid"])
             previous_index = u["output_no"]
-            spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
+            spendables.append(Tx.Spendable(coin_value, script, previous_hash, previous_index))
 
         return spendables
 

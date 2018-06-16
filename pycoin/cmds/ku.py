@@ -139,12 +139,12 @@ def create_hash160_output(key, network, add_output, output_dict):
 
     address = ui_context.address_for_p2pkh(hash160 or hash160_c)
     add_output("address", address, "%s address" % network_name)
-    output_dict["%s_address" % network.code] = address
+    add_output("%s_address" % network.code, address, is_legacy_key=True)
 
     if hash160_c and hash160_u:
         address = key.address(ui_context=ui_context, use_uncompressed=True)
         add_output("address_uncompressed", address, "%s address uncompressed" % network_name)
-        output_dict["%s_address_uncompressed" % network.code] = address
+        add_output("%s_address_uncompressed" % network.code, address, is_legacy_key=True)
 
     # don't print segwit addresses unless we're sure we have a compressed key
     if hash160_c and hasattr(network, "ui") and getattr(network.ui, "_bech32_hrp"):
@@ -152,7 +152,7 @@ def create_hash160_output(key, network, add_output, output_dict):
         if address_segwit:
             # this network seems to support segwit
             add_output("address_segwit", address_segwit, "%s segwit address" % network_name)
-            output_dict["%s_address_segwit" % network.code] = address_segwit
+            add_output("%s_address_segwit" % network.code, address_segwit, is_legacy_key=True)
 
             p2sh_script = network.ui._script_info.script_for_p2pkh_wit(hash160_c)
             p2s_address = network.ui.address_for_p2s(p2sh_script)
@@ -163,17 +163,22 @@ def create_hash160_output(key, network, add_output, output_dict):
             add_output("p2sh_segwit_script", p2sh_script_hex, " corresponding p2sh script")
 
 
-def create_output(item, key, network, subkey_path=None):
+def create_output(item, key, network, output_key_set, subkey_path=None):
     ui_context = network.ui
     output_dict = {}
     output_order = []
 
-    def add_output(json_key, value=None, human_readable_key=None):
+    def add_output(json_key, value=None, human_readable_key=None, is_legacy_key=False):
+        if output_key_set and json_key not in output_key_set:
+            return
         if human_readable_key is None:
             human_readable_key = json_key.replace("_", " ")
         if value:
-            output_dict[json_key.strip().lower()] = value
-        output_order.append((json_key.lower(), human_readable_key))
+            if is_legacy_key:
+                output_dict[json_key.strip()] = value
+            else:
+                output_dict[json_key.strip().lower()] = value
+                output_order.append((json_key.lower(), human_readable_key))
 
     full_network_name = "%s %s" % (network.network_name, network.subnet_name)
     add_output("input", item)
@@ -229,6 +234,8 @@ def create_parser():
         action='store_true')
 
     parser.add_argument('-j', "--json", help='output as JSON', action='store_true')
+
+    parser.add_argument('-b', "--brief", nargs="*", help='brief output; display a single field')
 
     parser.add_argument('-s', "--subkey", help='subkey path (example: 0H/2/15-20)')
     parser.add_argument('-n', "--network", help='specify network', choices=codes)
@@ -291,12 +298,12 @@ def generate_output(args, output_dict, output_order):
         # the python2 version of json.dumps puts an extra blank prior to the end of each line
         # the "replace" is a hack to make python2 produce the same output as python3
         print(json.dumps(output_dict, indent=3, sort_keys=True).replace(" \n", "\n"))
-    elif args.wallet:
-        print(output_dict["wallet_key"])
-    elif args.wif:
-        print(output_dict["wif_uncompressed" if args.uncompressed else "wif"])
-    elif args.address:
-        print(output_dict["address" + ("_uncompressed" if args.uncompressed else "")])
+        return
+
+    if len(output_order) == 0:
+        print("no output: use -j option to see keys")
+    elif len(output_dict) == 1:
+        print(output_dict[output_order[0][0]])
     else:
         dump_output(output_dict, output_order)
 
@@ -305,7 +312,7 @@ def ku(args, parser):
     generator = secp256k1_generator
 
     fallback_network = network_for_netcode(args.network or get_current_netcode())
-    parse_networks = [network_for_netcode(netcode) for netcode in network_codes()]
+    parse_networks = [fallback_network] + [network_for_netcode(netcode) for netcode in network_codes()]
     if args.network:
         parse_networks = [network_for_netcode(args.network)]
 
@@ -317,6 +324,14 @@ def ku(args, parser):
 
     def parse_stdin():
         return [item for item in sys.stdin.readline().strip().split(' ') if len(item) > 0]
+
+    output_key_set = set(args.brief or [])
+    if args.wallet:
+        output_key_set.add("wallet_key")
+    elif args.wif:
+        output_key_set.add("wif_uncompressed" if args.uncompressed else "wif")
+    elif args.address:
+        output_key_set.add("address" + ("_uncompressed" if args.uncompressed else ""))
 
     items = args.item if len(args.item) > 0 else parse_stdin()
 
@@ -332,7 +347,7 @@ def ku(args, parser):
             if args.public:
                 key = key.public_copy()
 
-            output_dict, output_order = create_output(item, key, display_network)
+            output_dict, output_order = create_output(item, key, display_network, output_key_set)
 
             generate_output(args, output_dict, output_order)
 

@@ -46,6 +46,11 @@ class ElectrumWallet(Key):
     def master_public_key(self):
         return self.sec(use_uncompressed=True)[1:]
 
+    def public_copy(self):
+        if self.secret_exponent() is None:
+            return self
+        return self.__class__(self._generator, public_pair=self.public_pair())
+
     def subkey(self, path):
         """
         path:
@@ -78,5 +83,5 @@ class ElectrumWallet(Key):
         for _ in subpaths_for_path_range(path, hardening_chars="'pH"):
             yield self.subkey(_)
 
-    def __str__(self):
-        return "Electrum<%s>" % b2h(self.master_public_key)
+    def __repr__(self):
+        return "Electrum<E:%s>" % b2h(self.master_public_key())

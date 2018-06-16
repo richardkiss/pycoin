@@ -14,7 +14,7 @@ from pycoin.encoding.hash import double_sha256
 from pycoin.merkle import merkle
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
-from pycoin.tx.Tx import Spendable, Tx, TxIn, TxOut
+from pycoin.coins.bitcoin.Tx import Tx
 
 
 class InsightProvider(object):
@@ -80,7 +80,7 @@ class InsightProvider(object):
             script = h2b(u.get("scriptPubKey"))
             previous_hash = h2b_rev(u.get("txid"))
             previous_index = u.get("vout")
-            spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
+            spendables.append(Tx.Spendable(coin_value, script, previous_hash, previous_index))
         return spendables
 
     def spendables_for_addresses(self, bitcoin_addresses):
@@ -122,12 +122,12 @@ def tx_from_json_dict(r):
                 script = BitcoinScriptTools.compile(scriptSig.get("asm"))
             previous_index = vin.get("vout")
         sequence = vin.get("sequence")
-        txs_in.append(TxIn(previous_hash, previous_index, script, sequence))
+        txs_in.append(Tx.TxIn(previous_hash, previous_index, script, sequence))
     txs_out = []
     for vout in r.get("vout"):
         coin_value = btc_to_satoshi(decimal.Decimal(vout.get("value")))
         script = BitcoinScriptTools.compile(vout.get("scriptPubKey").get("asm"))
-        txs_out.append(TxOut(coin_value, script))
+        txs_out.append(Tx.TxOut(coin_value, script))
     tx = Tx(version, txs_in, txs_out, lock_time)
     bh = r.get("blockhash")
     if bh:

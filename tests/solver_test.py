@@ -9,7 +9,6 @@ from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
-from pycoin.tx.Tx import Tx, TxIn, TxOut
 
 
 address_for_p2s = BitcoinMainnet.ui.address_for_p2s
@@ -19,6 +18,9 @@ script_for_p2pk = BitcoinMainnet.ui._script_info.script_for_p2pk
 
 # BRAIN DAMAGE
 Key = BitcoinMainnet.extras.Key
+Tx = BitcoinMainnet.tx
+TxIn = Tx.TxIn
+TxOut = Tx.TxOut
 
 
 class SolverTest(unittest.TestCase):

@@ -91,7 +91,7 @@ def bitcoin_rpc_init(match, netcode):
 
 
 def insight_init(match, netcode):
-    return InsightProvider(base_url=match.group("url"))
+    return InsightProvider(base_url=match.group("url"), netcode=netcode)
 
 
 DESCRIPTOR_CRE_INIT_TUPLES = [

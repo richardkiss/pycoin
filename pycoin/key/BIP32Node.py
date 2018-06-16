@@ -22,7 +22,6 @@ import struct
 from ..encoding.b58 import b2a_hashed_base58
 from ..encoding.bytes32 import from_bytes_32, to_bytes_32
 from ..encoding.exceptions import EncodingError
-from ..encoding.sec import public_pair_to_hash160_sec
 from .Key import Key
 from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
 from .subpaths import subpaths_for_path_range
@@ -103,9 +102,6 @@ class BIP32Node(Key):
         else:
             ba += self.sec(use_uncompressed=False)
         return bytes(ba)
-
-    def fingerprint(self):
-        return public_pair_to_hash160_sec(self.public_pair(), compressed=True)[:4]
 
     def hwif(self, as_private=False, ui_context=None):
         """Yield a 111-byte string corresponding to this node."""

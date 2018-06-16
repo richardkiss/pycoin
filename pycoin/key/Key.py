@@ -156,6 +156,9 @@ class Key(object):
             self._hash160_compressed = hash160(self.sec(use_uncompressed=use_uncompressed))
         return self._hash160_compressed
 
+    def fingerprint(self, use_uncompressed=None):
+        return self.hash160(use_uncompressed=use_uncompressed)[:4]
+
     def address(self, use_uncompressed=None, ui_context=None):
         """
         Return the public address representation of this key, if available.
@@ -185,6 +188,9 @@ class Key(object):
 
         return self.__class__(public_pair=self.public_pair(), prefer_uncompressed=self._prefer_uncompressed,
                               is_compressed=(self._hash160_compressed is not None))
+
+    def subkey_for_path(self, path):
+        return self
 
     def subkey(self, path_to_subkey):
         """

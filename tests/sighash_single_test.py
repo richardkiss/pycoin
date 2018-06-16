@@ -8,8 +8,8 @@ from pycoin.intbytes import int2byte
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_ANYONECANPAY, SIGHASH_SINGLE
 from pycoin.satoshi.der import sigdecode_der, sigencode_der
 from pycoin.serialize import b2h, b2h_rev
-from pycoin.tx.Tx import Tx
 
+Tx = BitcoinMainnet.tx
 TxIn = Tx.TxIn
 TxOut = Tx.TxOut
 
