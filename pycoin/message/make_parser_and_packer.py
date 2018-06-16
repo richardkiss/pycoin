@@ -57,6 +57,7 @@ STANDARD_P2P_MESSAGES = {
         "header:z total_transactions:L hashes:[#] flags:[1]"
     ),
     'alert': "payload:S signature:S",
+    'sendheaders': ""
 }
 
 
