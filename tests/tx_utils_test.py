@@ -3,11 +3,11 @@ import struct
 import unittest
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.coins.exceptions import BadSpendableError
+from pycoin.coins.tx_utils import create_signed_tx
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 
-from pycoin.tx.exceptions import BadSpendableError
-from pycoin.tx.tx_utils import create_signed_tx
 
 
 Key = BitcoinMainnet.ui._key_class

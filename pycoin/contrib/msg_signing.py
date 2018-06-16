@@ -4,10 +4,9 @@ import re
 from binascii import b2a_base64, a2b_base64
 
 from pycoin.intbytes import byte2int, int2byte
+from pycoin.satoshi.satoshi_string import stream_satoshi_string
 
-from ..serialize.bitcoin_streamer import stream_bc_string
 from ..ecdsa.secp256k1 import secp256k1_generator
-
 from ..encoding.bytes32 import to_bytes_32, from_bytes_32
 from ..encoding.exceptions import EncodingError
 from ..encoding.hash import double_sha256
@@ -237,8 +236,8 @@ class MessageSigner(object):
         magic = self.msg_magic_for_netcode()
 
         fd = io.BytesIO()
-        stream_bc_string(fd, magic.encode('utf8'))
-        stream_bc_string(fd, msg.encode('utf8'))
+        stream_satoshi_string(fd, magic.encode('utf8'))
+        stream_satoshi_string(fd, msg.encode('utf8'))
 
         # return as a number, since it's an input to signing algos like that anyway
         return from_bytes_32(double_sha256(fd.getvalue()))

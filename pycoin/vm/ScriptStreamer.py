@@ -1,4 +1,4 @@
-from ..serialize import bytes_as_hex
+from ..encoding.hexbytes import bytes_as_hex
 from ..intbytes import indexbytes, int2byte
 
 
@@ -13,7 +13,7 @@ def make_const_handler(data):
     return constant_data_opcode_handler
 
 
-def make_sized_handler(size, const_values, end_of_data_handler, non_minimal_data_handler):
+def make_sized_handler(size, const_values, non_minimal_data_handler):
     """
     Create a handler for a data opcode that returns literal data of a fixed size.
     """
@@ -23,14 +23,14 @@ def make_sized_handler(size, const_values, end_of_data_handler, non_minimal_data
         pc += 1
         data = bytes_as_hex(script[pc:pc+size])
         if len(data) < size:
-            end_of_data_handler("unexpected end of data when literal expected")
+            return pc+1, None
         if verify_minimal_data and data in const_values:
             non_minimal_data_handler("not minimal push of %s" % repr(data))
         return pc+size, data
     return constant_size_opcode_handler
 
 
-def make_variable_handler(dec_f, sized_values, min_size, end_of_data_handler, non_minimal_data_handler):
+def make_variable_handler(dec_f, sized_values, min_size, non_minimal_data_handler):
     """
     Create a handler for a data opcode that returns literal data of a variable size
     that's fetched and decoded by the function dec_f.
@@ -41,7 +41,7 @@ def make_variable_handler(dec_f, sized_values, min_size, end_of_data_handler, no
         size, pc = dec_f(script, pc)
         data = bytes_as_hex(script[pc:pc+size])
         if len(data) < size:
-            end_of_data_handler("unexpected end of data when literal expected")
+            return pc+1, None
         if verify_minimal_data:
             if size in sized_values or size <= min_size:
                 non_minimal_data_handler("not minimal push of data with size %d" % size)
@@ -78,7 +78,7 @@ class ScriptStreamer(object):
     help reduce the impact of malleability.
     """
     def __init__(self, opcode_const_list, opcode_sized_list, opcode_variable_list,
-                 opcode_lookup, end_of_data_handler, non_minimal_data_handler):
+                 opcode_lookup, non_minimal_data_handler):
         """
         :param opcode_const_list: list of ("OPCODE_NAME", const_value) pairs, where
             OPCODE_NAME is the name of an opcode and const_value is the value to be pushed
@@ -94,7 +94,6 @@ class ScriptStreamer(object):
                 offset is the integer count of bytes consumed and data the decoded result
 
         :param opcode_lookup: dictionary with entries "OPCODE_NAME" => byte
-        :param end_of_data_handler: function called when not enough data remains in script for opcode
         :param non_minimal_data_handler: function called when data encoded non-minimally
         """
 
@@ -118,14 +117,14 @@ class ScriptStreamer(object):
         min_size = 0
         for o, max_size, enc_f, dec_f in opcode_variable_list:
             self.decoder[opcode_lookup.get(o)] = make_variable_handler(
-                dec_f, self.sized_encoder.keys(), min_size, end_of_data_handler, non_minimal_data_handler)
+                dec_f, self.sized_encoder.keys(), min_size, non_minimal_data_handler)
             min_size = max_size + 1
 
         # deal with sized data opcodes
 
         self.decoder.update(
             {o: make_sized_handler(
-                v, self.const_encoder.keys(), end_of_data_handler, non_minimal_data_handler) for o, v in sized_pairs})
+                v, self.const_encoder.keys(), non_minimal_data_handler) for o, v in sized_pairs})
 
         # deal with constant data opcodes
 
@@ -136,12 +135,20 @@ class ScriptStreamer(object):
     def get_opcode(self, script, pc, verify_minimal_data=False):
         """
         Step through the script, returning a tuple with the next opcode, the next
-        piece of data (if the opcode represents data), and the new PC.
+        piece of data (if the opcode represents data), the new PC, and a boolean indicated
+        valid parsing.
         """
         opcode = indexbytes(script, pc)
-        f = self.decoder.get(opcode, lambda s, p, verify_minimal_data: (p+1, None))
-        pc, data = f(script, pc, verify_minimal_data=verify_minimal_data)
-        return opcode, data, pc
+        decoder = self.decoder.get(opcode)
+        # lambda s, p, verify_minimal_data: (p+1, None))
+        if decoder:
+            pc, data = decoder(script, pc, verify_minimal_data=verify_minimal_data)
+            is_ok = (data is not None)
+        else:
+            pc += 1
+            data = None
+            is_ok = True
+        return opcode, data, pc, is_ok
 
     def compile_push_data(self, data):
         # return bytes that causes the given data to be pushed onto the stack

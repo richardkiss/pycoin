@@ -1,8 +1,6 @@
 import io
 import unittest
 
-from pycoin.block import Block
-
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
@@ -10,13 +8,12 @@ from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.encoding.sec import public_pair_to_sec, public_pair_to_hash160_sec
 from pycoin.serialize import h2b
 
-from pycoin.tx.Tx import Tx
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup
-from pycoin.tx.TxIn import TxIn
-from pycoin.tx.TxOut import TxOut
 
 script_for_address = BitcoinMainnet.ui.script_for_address
+Block = BitcoinMainnet.block
+Tx = BitcoinMainnet.tx
 
 # block 80971
 block_80971_cs = h2b('00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC')
@@ -60,12 +57,12 @@ def standard_tx(coins_from, coins_to):
     txs_in = []
     unspents = []
     for h, idx, tx_out in coins_from:
-        txs_in.append(TxIn(h, idx))
+        txs_in.append(Tx.TxIn(h, idx))
         unspents.append(tx_out)
 
     txs_out = []
     for coin_value, address in coins_to:
-        txs_out.append(TxOut(coin_value, script_for_address(address)))
+        txs_out.append(Tx.TxOut(coin_value, script_for_address(address)))
 
     version, lock_time = 1, 0
     tx = Tx(version, txs_in, txs_out, lock_time)

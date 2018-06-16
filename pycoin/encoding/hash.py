@@ -1,7 +1,7 @@
 
 import hashlib
 
-from ..serialize import bytes_as_revhex
+from .hexbytes import bytes_as_revhex
 
 
 def ripemd160(data):

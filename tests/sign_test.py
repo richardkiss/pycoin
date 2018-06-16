@@ -1,13 +1,10 @@
 import unittest
 
+from pycoin.coins import tx_utils
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import h2b
-from pycoin.tx import tx_utils
-from pycoin.tx.Spendable import Spendable
-from pycoin.tx.Tx import Tx, TxIn, TxOut
-from pycoin.tx.tx_utils import LazySecretExponentDB
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.ui.key_from_text import key_from_text
 
@@ -17,6 +14,10 @@ address_for_p2s = BitcoinMainnet.ui.address_for_p2s
 script_for_address = BitcoinMainnet.ui.script_for_address
 script_for_multisig = BitcoinMainnet.ui._script_info.script_for_multisig
 
+Spendable = BitcoinMainnet.tx.Spendable
+Tx = BitcoinMainnet.tx
+TxIn = BitcoinMainnet.tx.TxIn
+TxOut = BitcoinMainnet.tx.TxOut
 Key = BitcoinMainnet.extras.Key
 
 
@@ -88,8 +89,8 @@ class SignTest(unittest.TestCase):
                      'block_index_spent': 0, 'coin_value': 10000, 'block_index_available': 0, 'tx_out_index': 0,
                      'tx_hash_hex': '0ca152ba6b88db87a7ef1afd24554102aca1ab86cf2c10ccbc374472145dc943'}
 
-        key_1 = 'Kz6pytJCigYHeMsGLmfHQPJhN5og2wpeSVrU43xWwgHLCAvpsprh'
-        key_2 = 'Kz7NHgX7MBySA3RSKj9GexUSN6NepEDoPNugSPr5absRDoKgn2dT'
+        key_1 = key_from_text('Kz6pytJCigYHeMsGLmfHQPJhN5og2wpeSVrU43xWwgHLCAvpsprh')
+        key_2 = key_from_text('Kz7NHgX7MBySA3RSKj9GexUSN6NepEDoPNugSPr5absRDoKgn2dT')
         for ordered_keys in [(key_1, key_2), (key_2, key_1)]:
             txs_in = [TxIn(previous_hash=h2b('43c95d14724437bccc102ccf86aba1ac02415524fd1aefa787db886bba52a10c'),
                            previous_index=0)]
@@ -99,7 +100,7 @@ class SignTest(unittest.TestCase):
             for key in ordered_keys:
                 self.assertEqual(tx.bad_signature_count(), 1)
                 p2sh_lookup = build_p2sh_lookup(raw_scripts)
-                tx.sign(LazySecretExponentDB([key], {}, [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
+                tx.sign(build_hash160_lookup([key.secret_exponent()], [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
             self.assertEqual(tx.bad_signature_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):

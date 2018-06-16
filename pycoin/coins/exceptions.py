@@ -4,7 +4,3 @@ class ValidationFailureError(Exception):
 
 class BadSpendableError(Exception):
     pass
-
-
-class SolvingError(Exception):
-    pass

@@ -3,10 +3,8 @@ import io
 
 from .encoding.hash import double_sha256
 from .merkle import merkle
-from .serialize.bitcoin_streamer import parse_struct, stream_struct
+from .satoshi.satoshi_struct import parse_struct, stream_struct
 from .serialize import b2h, b2h_rev
-
-from .tx.Tx import Tx
 
 
 class BadMerkleRootError(Exception):
@@ -22,10 +20,16 @@ def difficulty_max_mask_for_bits(bits):
 class Block(object):
     """A Block is an element of the Bitcoin chain."""
 
-    Tx = Tx
+    @classmethod
+    def make_subclass(class_, tx):
+
+        class Block(class_):
+            Tx = tx
+
+        return Block
 
     @classmethod
-    def parse(class_, f, include_transactions=True, include_offsets=None):
+    def parse(class_, f, include_transactions=True, include_offsets=None, check_merkle_hash=True):
         """
         Parse the Block from the file-like object
         """
@@ -33,7 +37,7 @@ class Block(object):
         if include_transactions:
             count = parse_struct("I", f)[0]
             txs = block._parse_transactions(f, count, include_offsets=include_offsets)
-            block.set_txs(txs)
+            block.set_txs(txs, check_merkle_hash=check_merkle_hash)
         return block
 
     @classmethod
@@ -89,13 +93,14 @@ class Block(object):
                 tx.offset_in_block = offset_in_block
         return txs
 
-    def set_txs(self, txs):
+    def set_txs(self, txs, check_merkle_hash=True):
         self.txs = txs
         if not txs:
             return
         for tx in txs:
             tx.block = self
-        self.check_merkle_hash()
+        if check_merkle_hash:
+            self.check_merkle_hash()
 
     def as_blockheader(self):
         return Block(self.version, self.previous_block_hash, self.merkle_root,

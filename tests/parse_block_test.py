@@ -1,8 +1,10 @@
 import io
 import unittest
 
-from pycoin.block import Block
+from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.serialize import b2h_rev, h2b
+
+Block = BitcoinMainnet.block
 
 
 class BlockTest(unittest.TestCase):
@@ -37,3 +39,7 @@ class BlockTest(unittest.TestCase):
         block = Block.parse(io.BytesIO(block_data))
         assert b2h_rev(block.hash()) == expected_checksum
         block.check_merkle_hash()
+
+        # parse already validated block
+        block = Block.parse(io.BytesIO(block_data), check_merkle_hash=False)
+        assert block.as_bin() == block_data

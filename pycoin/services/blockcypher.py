@@ -5,7 +5,7 @@ from .agent import urlopen
 
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h_rev, h2b, h2b_rev
-from pycoin.tx.Tx import Spendable, Tx
+from pycoin.coins.bitcoin.Tx import Tx
 
 
 class BlockcypherProvider(object):
@@ -39,7 +39,7 @@ class BlockcypherProvider(object):
             script = h2b(txn.get("script"))
             previous_hash = h2b_rev(txn.get("tx_hash"))
             previous_index = txn.get("tx_output_n")
-            spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
+            spendables.append(Tx.Spendable(coin_value, script, previous_hash, previous_index))
         return spendables
 
     def tx_for_tx_hash(self, tx_hash):

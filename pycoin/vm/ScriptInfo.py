@@ -51,8 +51,8 @@ class ScriptInfo(object):
                 return r
             if pc1 >= len(script) or pc2 >= len(template):
                 break
-            opcode1, data1, pc1 = self._scriptTools.scriptStreamer.get_opcode(script, pc1)
-            opcode2, data2, pc2 = self._scriptTools.scriptStreamer.get_opcode(template, pc2)
+            opcode1, data1, pc1, is_ok2 = self._scriptTools.scriptStreamer.get_opcode(script, pc1)
+            opcode2, data2, pc2, is_ok2 = self._scriptTools.scriptStreamer.get_opcode(template, pc2)
             l1 = 0 if data1 is None else len(data1)
             if data2 == b'PUBKEY':
                 if l1 < 33 or l1 > 120:
@@ -131,25 +131,25 @@ class ScriptInfo(object):
         pc = 0
         if len(script) == 0:
             return None
-        opcode, data, pc = scriptStreamer.get_opcode(script, pc)
+        opcode, data, pc, is_ok = scriptStreamer.get_opcode(script, pc)
 
         if not OP_1 <= opcode < OP_16:
             return None
         m = opcode + (1 - OP_1)
         sec_keys = []
-        while 1:
-            if pc >= len(script):
-                return None
-            opcode, data, pc = scriptStreamer.get_opcode(script, pc)
+        while pc < len(script):
+            opcode, data, pc, is_ok = scriptStreamer.get_opcode(script, pc)
             size = len(data) if data else 0
             if size < 33 or size > 120:
                 break
             sec_keys.append(data)
+        if pc >= len(script):
+            return None
         n = opcode + (1 - OP_1)
         if m > n or len(sec_keys) != n:
             return None
 
-        opcode, data, pc = scriptStreamer.get_opcode(script, pc)
+        opcode, data, pc, is_ok = scriptStreamer.get_opcode(script, pc)
         OP_CHECKMULTISIG = scriptTools.int_for_opcode("OP_CHECKMULTISIG")
         if opcode != OP_CHECKMULTISIG:
             return None

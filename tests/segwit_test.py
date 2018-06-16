@@ -1,19 +1,19 @@
 import unittest
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.coins.tx_utils import create_tx, sign_tx
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.hash import double_sha256
 from pycoin.serialize import b2h, b2h_rev, h2b
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
-from pycoin.tx.Tx import Tx
-from pycoin.tx.TxOut import TxOut
-from pycoin.tx.tx_utils import LazySecretExponentDB, create_tx, sign_tx
 
 
 # BRAIN DAMAGE
 Key = BitcoinMainnet.extras.Key
+Tx = BitcoinMainnet.tx
+TxOut = BitcoinMainnet.tx.TxOut
 script_for_p2pkh = BitcoinMainnet.ui._script_info.script_for_p2pkh
 script_for_p2pkh_wit = BitcoinMainnet.ui._script_info.script_for_p2pkh_wit
 
@@ -39,10 +39,9 @@ class SegwitTest(unittest.TestCase):
         tx_u_prime = self.unsigned_copy(tx_s)
         tx_s_hex = tx_s.as_hex()
         tx_u_prime.set_unspents(tx_s.unspents)
-        key_list = [Key(pk, generator=secp256k1_generator).wif() for pk in private_keys]
         p2sh_lookup = build_p2sh_lookup([h2b(x) for x in p2sh_values])
-        tx_u_prime.sign(
-            hash160_lookup=LazySecretExponentDB(key_list, {}, [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
+        hash160_lookup = build_hash160_lookup(private_keys, [secp256k1_generator])
+        tx_u_prime.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.check_signed(tx_u_prime)
         tx_hex = tx_u_prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)

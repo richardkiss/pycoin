@@ -6,13 +6,13 @@ from pycoin.cmds import tx
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import h2b
-from pycoin.tx.Tx import Tx
 
 from .ToolTest import ToolTest
 
 
 # BRAIN DAMAGE
 Key = BitcoinMainnet.ui._key_class
+Tx = BitcoinMainnet.tx
 
 
 class TxTest(ToolTest):

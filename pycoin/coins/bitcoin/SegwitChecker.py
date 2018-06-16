@@ -9,9 +9,8 @@ from ...intbytes import byte2int, indexbytes
 from ..SolutionChecker import SolutionChecker, ScriptError
 from pycoin.satoshi import errno
 
-from ...serialize.bitcoin_streamer import (
-    stream_struct, stream_bc_string
-)
+from pycoin.satoshi.satoshi_struct import stream_struct
+from pycoin.satoshi.satoshi_string import stream_satoshi_string
 
 from pycoin.satoshi.flags import (
     SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
@@ -21,22 +20,19 @@ from pycoin.satoshi.flags import (
 from .ScriptTools import BitcoinScriptTools
 
 
-V0_len20_prefix = BitcoinScriptTools.compile("OP_DUP OP_HASH160")
-V0_len20_postfix = BitcoinScriptTools.compile("OP_EQUALVERIFY OP_CHECKSIG")
-OP_EQUAL = BitcoinScriptTools.int_for_opcode("OP_EQUAL")
-OP_HASH160 = BitcoinScriptTools.int_for_opcode("OP_HASH160")
-
-OP_0 = BitcoinScriptTools.int_for_opcode("OP_0")
-OP_1 = BitcoinScriptTools.int_for_opcode("OP_1")
-OP_16 = BitcoinScriptTools.int_for_opcode("OP_16")
-
-
 ZERO32 = b'\0' * 32
 
 
 class SegwitChecker(SolutionChecker):
     # you must set VM
     # you must set ScriptTools
+
+    V0_len20_prefix = BitcoinScriptTools.compile("OP_DUP OP_HASH160")
+    V0_len20_postfix = BitcoinScriptTools.compile("OP_EQUALVERIFY OP_CHECKSIG")
+
+    OP_0 = BitcoinScriptTools.int_for_opcode("OP_0")
+    OP_1 = BitcoinScriptTools.int_for_opcode("OP_1")
+    OP_16 = BitcoinScriptTools.int_for_opcode("OP_16")
 
     def _make_witness_sighash_f(self, tx_in_idx):
 
@@ -47,8 +43,8 @@ class SegwitChecker(SolutionChecker):
         return witness_signature_for_hash_type
 
     def _puzzle_script_for_len20_segwit(self, witness_program):
-        return V0_len20_prefix + self.ScriptTools.compile_push_data_list(
-            [witness_program]) + V0_len20_postfix
+        return self.V0_len20_prefix + self.ScriptTools.compile_push_data_list(
+            [witness_program]) + self.V0_len20_postfix
 
     def _check_witness_program_v0(self, witness_solution_stack, witness_program):
         size = len(witness_program)
@@ -76,10 +72,10 @@ class SegwitChecker(SolutionChecker):
         first_opcode = byte2int(script)
         if indexbytes(script, 1) + 2 != size:
             return None
-        if first_opcode == OP_0:
+        if first_opcode == self.OP_0:
             return 0
-        if OP_1 <= first_opcode <= OP_16:
-            return first_opcode - OP_1 + 1
+        if self.OP_1 <= first_opcode <= self.OP_16:
+            return first_opcode - self.OP_1 + 1
         return None
 
     def _hash_prevouts(self, hash_type):
@@ -127,7 +123,7 @@ class SegwitChecker(SolutionChecker):
         f.write(tx_in.previous_hash)
         stream_struct("L", f, tx_in.previous_index)
         tx_out = self.tx.unspents[tx_in_idx]
-        stream_bc_string(f, script)
+        stream_satoshi_string(f, script)
         stream_struct("Q", f, tx_out.coin_value)
         stream_struct("L", f, tx_in.sequence)
         f.write(self._hash_outputs(hash_type, tx_in_idx))

@@ -2,13 +2,16 @@ import io
 import struct
 
 from pycoin.encoding.hash import double_sha256
-from pycoin.serialize import b2h_rev, bitcoin_streamer
+from pycoin.serialize import b2h_rev
+from pycoin.satoshi.satoshi_int import parse_satoshi_int
+from pycoin.satoshi.satoshi_streamer import Streamer, STREAMER_FUNCTIONS
 
 from .InvItem import InvItem
 from .PeerAddress import PeerAddress
 
 # definitions of message structures and types
-# L: 4 byte long integer
+# L: 4 byte integer
+# 6: 6 byte integer
 # Q: 8 byte long integer
 # S: unicode string encoded using utf-8
 # [v]: array of InvItem objects
@@ -30,13 +33,20 @@ STANDARD_P2P_MESSAGES = {
     'inv': "items:[v]",
     'getdata': "items:[v]",
     'notfound': "items:[v]",
+    'reject': "message:S code:1 reason:S data:#",
     'getblocks': "version:L hashes:[#] hash_stop:#",
     'getheaders': "version:L hashes:[#] hash_stop:#",
+    'sendheaders': "",
     'tx': "tx:T",
     'block': "block:B",
     'headers': "headers:[zI]",
     'getaddr': "",
     'mempool': "",
+    'feefilter': "fee_filter_value:Q",
+    'sendcmpct': "enabled:b version:Q",
+    'cmpctblock': "header_hash:# nonce:Q short_ids:[6] prefilled_txs:[IT]",
+    'getblocktxn': "header_hash:# indices:[I]",
+    'blocktxn': "header_hash:# txs:[T]",
     # 'checkorder': obsolete
     # 'submitorder': obsolete
     # 'reply': obsolete
@@ -49,6 +59,7 @@ STANDARD_P2P_MESSAGES = {
         "header:z total_transactions:L hashes:[#] flags:[1]"
     ),
     'alert': "payload:S signature:S",
+    'sendheaders': ""
 }
 
 
@@ -167,11 +178,18 @@ def standard_parsing_functions(Block, Tx):
 
     def stream_blockheader(f, blockheader):
         assert isinstance(blockheader, Block)
-        blockheader.stream_as_header(f)
+        blockheader.stream_header(f)
 
     def stream_tx(f, tx):
         assert isinstance(tx, Tx)
         tx.stream(f)
+
+    def parse_int_6(f):
+        b = f.read(6) + b'\0\0'
+        return struct.unpack(b, "<L")[0]
+
+    def stream_int_6(f, v):
+        f.write(struct.pack(v, "<L")[:6])
 
     more_parsing = [
         ("A", (PeerAddress.parse, lambda f, peer_addr: peer_addr.stream(f))),
@@ -179,21 +197,23 @@ def standard_parsing_functions(Block, Tx):
         ("T", (Tx.parse, stream_tx)),
         ("B", (Block.parse, stream_block)),
         ("z", (Block.parse_as_header, stream_blockheader)),
-        ("1", (lambda f: struct.unpack("B", f.read(1))[0], lambda f, b: f.write(struct.pack("B", b)))),
-        ("O", (lambda f: True if f.read(1) else False, lambda f, b: f.write(b'\1' if b else b''))),
+        ("1", (lambda f: struct.unpack("B", f.read(1))[0], lambda f, v: f.write(struct.pack("B", v)))),
+        ("6", (parse_int_6, stream_int_6)),
+        ("O", (lambda f: True if f.read(1) else False,
+                lambda f, v: f.write(b'' if v is None else struct.pack("B", v)))),
     ]
-    all_items = list(bitcoin_streamer.STREAMER_FUNCTIONS.items())
+    all_items = list(STREAMER_FUNCTIONS.items())
     all_items.extend(more_parsing)
     return all_items
 
 
-def standard_streamer(parsing_functions, parse_bc_int=bitcoin_streamer.parse_bc_int):
+def standard_streamer(parsing_functions, parse_satoshi_int=parse_satoshi_int):
     """
-    Create a bitcoin_streamer, which parses and packs using the bitcoin protocol
+    Create a satoshi_streamer, which parses and packs using the bitcoin protocol
     (mostly the custom way arrays and integers are parsed and packed).
     """
-    streamer = bitcoin_streamer.Streamer()
-    streamer.register_array_count_parse(bitcoin_streamer.parse_bc_int)
+    streamer = Streamer()
+    streamer.register_array_count_parse(parse_satoshi_int)
     streamer.register_functions(parsing_functions)
     return streamer
 
@@ -226,7 +246,7 @@ def make_parser_and_packer(streamer, message_dict, message_post_unpacks):
         message_stream = io.BytesIO(data)
         parser = message_parsers.get(message_name)
         if parser is None:
-            raise LookupError("unknown message: %s" % message_name)
+            raise KeyError("unknown message: %s" % message_name)
         d = parser(message_stream)
         post_unpack = message_post_unpacks.get(message_name)
         if post_unpack:

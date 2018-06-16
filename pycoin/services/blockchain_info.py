@@ -5,7 +5,7 @@ import warnings
 from .agent import request, urlencode, urlopen
 
 from pycoin.serialize import b2h, h2b, b2h_rev
-from pycoin.tx.Tx import Spendable, Tx
+from pycoin.coins.bitcoin.Tx import Tx
 
 
 class BlockchainInfoProvider(object):
@@ -47,7 +47,7 @@ class BlockchainInfoProvider(object):
             script = h2b(u["script"])
             previous_hash = h2b(u["tx_hash"])
             previous_index = u["tx_output_n"]
-            spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
+            spendables.append(Tx.Spendable(coin_value, script, previous_hash, previous_index))
         return spendables
 
     def broadcast_tx(self, tx):

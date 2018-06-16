@@ -1,12 +1,14 @@
 import binascii
 import unittest
 
-from pycoin.block import Block
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import h2b
-from pycoin.tx.Tx import Tx
+
+
+Block = BitcoinMainnet.block
+Tx = BitcoinMainnet.tx
+BitcoinScriptTools = BitcoinMainnet.extras.ScriptTools
 
 
 class ValidationTest(unittest.TestCase):
@@ -222,7 +224,7 @@ class ValidationTest(unittest.TestCase):
         self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
     def _make_tx(self, input_script, other_scripts=[]):
-        from pycoin.tx.tx_utils import create_signed_tx
+        from pycoin.coins.tx_utils import create_signed_tx
         from pycoin.solve.utils import build_p2sh_lookup
 
         cv = int(50*1e8)

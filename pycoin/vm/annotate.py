@@ -43,7 +43,10 @@ class Annotate(object):
 
     def annotate_signature(self, blob, da, vmc):
         lst = da[blob]
-        sig_pair, sig_type = parse_signature_blob(blob)
+        try:
+            sig_pair, sig_type = parse_signature_blob(blob)
+        except ValueError:
+            return
         lst.append("r: {0:#066x}".format(sig_pair[0]))
         lst.append("s: {0:#066x}".format(sig_pair[1]))
         sig_hash = vmc.signature_for_hash_type_f(sig_type, [blob], vmc)
@@ -119,11 +122,14 @@ class Annotate(object):
             pass
 
         # the script may have ended early, so let's just double-check
-        for idx, (opcode, data, pc, new_pc) in enumerate(itertools.chain(
-            self._script_tools.get_opcodes(tx.unspents[tx_in_idx].script),
-                self._script_tools.get_opcodes(tx.txs_in[tx_in_idx].script))):
-            if idx >= len(r):
-                r.append(([], pc, opcode, self.instruction_for_opcode(opcode, data), []))
+        try:
+            for idx, (opcode, data, pc, new_pc) in enumerate(itertools.chain(
+                self._script_tools.get_opcodes(tx.unspents[tx_in_idx].script),
+                    self._script_tools.get_opcodes(tx.txs_in[tx_in_idx].script))):
+                if idx >= len(r):
+                    r.append(([], pc, opcode, self.instruction_for_opcode(opcode, data), []))
+        except IndexError:
+            pass
 
         return r
 

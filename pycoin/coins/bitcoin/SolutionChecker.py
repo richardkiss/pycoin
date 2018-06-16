@@ -5,11 +5,13 @@ from ...encoding.bytes32 import from_bytes_32
 
 from ..SolutionChecker import ScriptError
 from pycoin.satoshi import errno
+from pycoin.satoshi.satoshi_struct import stream_struct
+from pycoin.satoshi.satoshi_string import stream_satoshi_string
+
 
 from pycoin.satoshi.flags import (
     SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
-    VERIFY_P2SH, VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM,
-    VERIFY_SIGPUSHONLY, VERIFY_CLEANSTACK,
+    VERIFY_P2SH, VERIFY_SIGPUSHONLY, VERIFY_CLEANSTACK,
     VERIFY_WITNESS, VERIFY_MINIMALIF, VERIFY_WITNESS_PUBKEYTYPE
 )
 
@@ -75,7 +77,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         scriptStreamer = self.VM.ScriptStreamer
         pc = 0
         while pc < len(script):
-            opcode, data, pc = scriptStreamer.get_opcode(script, pc)
+            opcode, data, pc, is_ok = scriptStreamer.get_opcode(script, pc)
             if opcode not in scriptStreamer.data_opcodes:
                 raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 
@@ -200,10 +202,6 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         if flags & VERIFY_CLEANSTACK and len(stack) != 1:
             raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
 
-    def main_program_tuple(self, tx_context, puzzle_script, solution_stack, flags):
-        sighash_f = self._make_sighash_f(tx_context.tx_in_idx)
-        return puzzle_script, solution_stack, flags, sighash_f
-
     def puzzle_and_solution_iterator(self, tx_context, flags=None, traceback_f=None):
         if flags is None:
             flags = self.DEFAULT_FLAGS
@@ -213,9 +211,8 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
 
         flags_1 = flags & ~(VERIFY_MINIMALIF | VERIFY_WITNESS_PUBKEYTYPE)
 
-        main_tuple = self.main_program_tuple(tx_context, puzzle_script, solution_stack, flags_1)
-        yield main_tuple
-        sighash_f = main_tuple[3]
+        sighash_f = self._make_sighash_f(tx_context.tx_in_idx)
+        yield puzzle_script, solution_stack, flags_1, sighash_f
 
         p2sh_tuple = self.p2s_program_tuple(tx_context, puzzle_script, solution_stack, flags_1, sighash_f)
         if p2sh_tuple:

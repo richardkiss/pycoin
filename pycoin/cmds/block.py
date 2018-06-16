@@ -3,8 +3,7 @@
 import argparse
 import datetime
 
-from pycoin.block import Block
-from pycoin.tx.dump import dump_tx
+from .dump import dump_tx
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_for_netcode
 from pycoin.serialize import b2h, b2h_rev, stream_to_bytes
@@ -28,15 +27,18 @@ def dump_block(output, block, network):
 
 def create_parser():
     parser = argparse.ArgumentParser(description="Dump a block in human-readable form.")
+    parser.add_argument('-n', "--network", default=get_current_netcode(), type=network_for_netcode,
+                        help=('Default network code (environment variable PYCOIN_DEFAULT_NETCODE '
+                              'or "BTC"=Bitcoin mainnet if unset'))
     parser.add_argument("block_file", nargs="+", type=argparse.FileType('rb'),
                         help='The file containing the binary block.')
     return parser
 
 
 def block(args, parser):
-    network = network_for_netcode(get_current_netcode())
+    network = args.network
     for f in args.block_file:
-        block = Block.parse(f)
+        block = network.block.parse(f)
         output = []
         dump_block(output, block, network)
 

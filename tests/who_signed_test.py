@@ -2,12 +2,9 @@ import unittest
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.coins import tx_utils
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
-from pycoin.tx import tx_utils
-from pycoin.tx.Tx import Tx
-from pycoin.tx.TxIn import TxIn
-from pycoin.tx.TxOut import TxOut
 
 
 # BRAIN DAMAGE
@@ -17,15 +14,16 @@ address_for_p2s = UI.address_for_p2s
 script_for_address = UI.script_for_address
 script_for_multisig = UI._script_info.script_for_multisig
 Key = UI._key_class
+Tx = BitcoinMainnet.tx
 
 
 class WhoSignedTest(unittest.TestCase):
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
-        tx_in = TxIn.coinbase_tx_in(script=b'')
+        tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
-        tx_out = TxOut(1000000, script)
+        tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
@@ -51,9 +49,9 @@ class WhoSignedTest(unittest.TestCase):
         M = 3
         N = 3
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
-        tx_in = TxIn.coinbase_tx_in(script=b'')
+        tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
-        tx_out = TxOut(1000000, script)
+        tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         ids = ["403e5bfc59e097bb197bf77a692d158dd3a4f7affb4a1fa41072dafe7bec7058",
@@ -74,12 +72,12 @@ class WhoSignedTest(unittest.TestCase):
     def test_sign_pay_to_script_multisig(self):
         M, N = 3, 3
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
-        tx_in = TxIn.coinbase_tx_in(script=b'')
+        tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         address = address_for_p2s(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = script_for_address(address)
-        tx_out = TxOut(1000000, script)
+        tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])
         hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:N]), [secp256k1_generator])
