@@ -3,6 +3,10 @@ from pycoin.coins.bitcoin.extras import Extras
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.message.make_parser_and_packer import (
+    make_parser_and_packer, standard_messages,
+    standard_message_post_unpacks, standard_streamer, standard_parsing_functions
+)
 from pycoin.encoding.hexbytes import h2b
 from pycoin.ui.uiclass import UI
 from pycoin.vm.ScriptInfo import ScriptInfo
@@ -36,8 +40,8 @@ class Network(object):
 def create_bitcoinish_network(**kwargs):
     # potential kwargs:
     #   netcode, network_name, subnet_name, tx, block, magic_header_hex, default_port, dns_bootstrap,
-    #   wif_prefix_hex, address_prefix_hex, pay_to_script_prefix_hex, bip32_prv_prefix_hex, bip32_pub_prefix_hex,
-    #   sec_prefix, scriptTools
+    #   wif_prefix_hex, address_prefix_hex, pay_to_script_prefix_hex
+    #   bip32_prv_prefix_hex, bip32_pub_prefix_hex, sec_prefix, scriptTools
 
     kwargs.setdefault("sec_prefix", "%sSEC" % kwargs["netcode"].upper())
     KEYS_TO_H2B = ("bip32_prv_prefix bip32_pub_prefix wif_prefix address_prefix "
@@ -59,8 +63,14 @@ def create_bitcoinish_network(**kwargs):
     kwargs.setdefault("tx", Tx)
     kwargs.setdefault("block", Block.make_subclass(kwargs["tx"]))
 
-    NETWORK_KEYS = "network_name subnet_name tx block ui extras dns_bootstrap default_port magic_header".split()
+    NETWORK_KEYS = ("network_name subnet_name tx block ui extras "
+                    "dns_bootstrap default_port magic_header").split()
     network_kwargs = {k: kwargs.get(k) for k in NETWORK_KEYS if k in kwargs}
     network_kwargs["code"] = kwargs["netcode"]  # BRAIN DAMAGE
     network = Network(**network_kwargs)
+
+    streamer = standard_streamer(standard_parsing_functions(network.block, network.tx))
+    network.parse_message, network.pack_message = make_parser_and_packer(
+        streamer, standard_messages(), standard_message_post_unpacks(streamer))
+
     return network
