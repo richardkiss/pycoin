@@ -79,8 +79,8 @@ def parse_as_public_pair(s, generator):
                     return (v0, v1)
 
 
-def create_wallet_key_output(key, network, subkey_path, add_output):
-    if hasattr(key, "wallet_key"):
+def create_key_output(key, network, subkey_path, add_output):
+    if hasattr(key, "hwif"):
         if subkey_path:
             add_output("subkey_path", subkey_path)
 
@@ -180,7 +180,7 @@ def create_output(item, key, network, output_key_set, subkey_path=None):
     add_output("network", full_network_name)
     add_output("netcode", network.code)
 
-    create_wallet_key_output(key, network, subkey_path, add_output)
+    create_key_output(key, network, subkey_path, add_output)
 
     secret_exponent = key.secret_exponent()
     if secret_exponent:

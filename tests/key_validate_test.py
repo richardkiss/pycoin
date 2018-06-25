@@ -86,13 +86,13 @@ class KeyUtilsTest(unittest.TestCase):
             BIP32Node = network.ui._bip32node_class
             for wk in WALLET_KEYS:
                 wallet = BIP32Node.from_master_secret(wk.encode("utf8"))
-                text = wallet.wallet_key(as_private=True)
+                text = wallet.hwif(as_private=True)
                 self.assertEqual(is_private_bip32_valid(text, allowable_netcodes=NETCODES), netcode)
                 self.assertEqual(is_public_bip32_valid(text, allowable_netcodes=NETCODES), None)
                 a = text[:-1] + chr(ord(text[-1])+1)
                 self.assertEqual(is_private_bip32_valid(a, allowable_netcodes=NETCODES), None)
                 self.assertEqual(is_public_bip32_valid(a, allowable_netcodes=NETCODES), None)
-                text = wallet.wallet_key(as_private=False)
+                text = wallet.hwif(as_private=False)
                 self.assertEqual(is_private_bip32_valid(text, allowable_netcodes=NETCODES), None)
                 self.assertEqual(is_public_bip32_valid(text, allowable_netcodes=NETCODES), netcode)
                 a = text[:-1] + chr(ord(text[-1])+1)

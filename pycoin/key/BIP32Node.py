@@ -97,7 +97,10 @@ class BIP32Node(Key):
         return self._child_index
 
     def serialize(self, as_private=None):
-        """Yield a 78-byte binary blob corresponding to this node."""
+        """
+        Yield a 74-byte binary blob corresponding to this node.
+        You must add a 4-byte prefix before converting to base58.
+        """
         if as_private is None:
             as_private = self.secret_exponent() is not None
         if self.secret_exponent() is None and as_private:
@@ -117,7 +120,6 @@ class BIP32Node(Key):
         return self._ui_context.bip32_as_string(self.serialize(as_private=as_private), as_private=as_private)
 
     as_text = hwif
-    wallet_key = hwif
 
     def public_copy(self):
         """Yield the corresponding public node for this node."""
