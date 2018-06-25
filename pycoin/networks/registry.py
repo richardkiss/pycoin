@@ -40,10 +40,3 @@ def available_symbols():
 
 def network_codes():
     return list(available_symbols())
-
-
-def full_network_name_for_netcode(netcode):
-    "Return the full network name for the given netcode (or None)"
-    network = network_for_netcode(netcode)
-    if network:
-        return "%s %s" % (network.network_name, network.subnet_name)

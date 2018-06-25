@@ -26,6 +26,9 @@ class Network(object):
         for name in DEFAULT_ARGS_ORDER:
             setattr(self, name, kwargs.get(name, None))
 
+    def full_name(self):
+        return "%s %s" % (self.network_name, self.subnet_name)
+
     def __repr__(self):
         return "<Network %s %s>" % (self.network_name, self.subnet_name)
 

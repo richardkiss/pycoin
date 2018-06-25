@@ -11,9 +11,7 @@ import sys
 from pycoin.serialize import b2h, h2b
 from pycoin.ui.key_from_text import key_info_from_text
 from pycoin.networks.default import get_current_netcode
-from pycoin.networks.registry import (
-    full_network_name_for_netcode, network_codes, network_for_netcode
-)
+from pycoin.networks.registry import network_codes, network_for_netcode
 
 
 SEC_RE = re.compile(r"^(0[23][0-9a-fA-F]{64})|(04[0-9a-fA-F]{128})$")
@@ -218,7 +216,7 @@ def create_parser():
         description='Crypto coin utility ku ("key utility") to show'
         ' information about Bitcoin or other cryptocoin data structures.',
         epilog=('Known networks codes:\n  ' +
-                ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
+                ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
     )
     parser.add_argument('-w', "--wallet", help='show just Bitcoin wallet key', action='store_true')
     parser.add_argument('-W', "--wif", help='show just Bitcoin WIF', action='store_true')

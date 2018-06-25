@@ -20,7 +20,7 @@ from pycoin.coins.tx_utils import distribute_from_split_pool
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.key.Keychain import Keychain
-from pycoin.networks.registry import full_network_name_for_netcode, network_codes
+from pycoin.networks.registry import network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.serialize import b2h, h2b, h2b_rev
@@ -118,7 +118,7 @@ def create_parser():
     codes = network_codes()
     EPILOG = ('Files are binary by default unless they end with the suffix ".hex". ' +
               'Known networks codes:\n  ' +
-              ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
+              ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
 
     parser = argparse.ArgumentParser(
         description="Manipulate bitcoin (or alt coin) transactions.",

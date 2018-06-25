@@ -8,9 +8,8 @@ import sys
 from pycoin.encoding.exceptions import EncodingError
 from pycoin.encoding.sec import public_pair_to_hash160_sec
 from pycoin.contrib.msg_signing import MessageSigner
-from pycoin.networks.registry import (
-    full_network_name_for_netcode, network_for_netcode, network_codes
-)
+from pycoin.networks.registry import network_for_netcode, network_codes
+
 from .ku import parse_key
 
 
@@ -26,7 +25,7 @@ def create_parser():
     parser = argparse.ArgumentParser(
         description='Create or verify a text signature using bitcoin standards',
         epilog=('Known networks codes:\n  ' +
-                ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
+                ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
     )
     parser.add_argument('-n', "--network", help='specify network (default: BTC = Bitcoin)',
                         default='BTC', choices=codes)
