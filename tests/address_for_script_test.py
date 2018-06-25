@@ -1,8 +1,8 @@
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.solve.utils import build_hash160_lookup
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 
 # BRAIN DAMAGE

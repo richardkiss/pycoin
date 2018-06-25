@@ -1,9 +1,8 @@
-import sqlite3
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.key.Keychain import Keychain
 from pycoin.key.subpaths import subpaths_for_path_range
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 BIP32 = BitcoinMainnet.ui._bip32node_class
 

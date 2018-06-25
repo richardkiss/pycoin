@@ -2,12 +2,9 @@ import hashlib
 import struct
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.exceptions import BadSpendableError
 from pycoin.coins.tx_utils import create_signed_tx
-
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
-
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 
 Key = BitcoinMainnet.ui._key_class
@@ -15,9 +12,9 @@ Spendable = BitcoinMainnet.tx.Spendable
 
 script_for_address = BitcoinMainnet.ui.script_for_address
 
-BITCOIN_ADDRESSES = [Key(i, generator=secp256k1_generator).address() for i in range(1, 21)]
+BITCOIN_ADDRESSES = [Key(i).address() for i in range(1, 21)]
 
-WIFS = [Key(i, generator=secp256k1_generator).wif() for i in range(1, 21)]
+WIFS = [Key(i).wif() for i in range(1, 21)]
 
 FAKE_HASH = hashlib.sha256(struct.pack("Q", 1)).digest()
 

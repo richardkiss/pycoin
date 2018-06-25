@@ -1,8 +1,8 @@
 import io
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.serialize import b2h_rev, h2b
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 Block = BitcoinMainnet.block
 

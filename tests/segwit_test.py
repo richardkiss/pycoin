@@ -1,13 +1,13 @@
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.tx_utils import create_tx, sign_tx
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.hash import double_sha256
+from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
 from pycoin.serialize import b2h, b2h_rev, h2b
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
-from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 
 # BRAIN DAMAGE

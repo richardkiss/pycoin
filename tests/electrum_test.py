@@ -1,7 +1,7 @@
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.symbols.btc import network as BitcoinMainnet
 from pycoin.ui.key_from_text import key_from_text
 
 

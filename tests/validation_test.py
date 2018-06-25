@@ -1,9 +1,8 @@
 import binascii
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import h2b
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 
 Block = BitcoinMainnet.block
@@ -14,7 +13,7 @@ BitcoinScriptTools = BitcoinMainnet.extras.ScriptTools
 class ValidationTest(unittest.TestCase):
 
     def setUp(self):
-        self._key = BitcoinMainnet.extras.Key(1, secp256k1_generator)
+        self._key = BitcoinMainnet.extras.Key(1)
 
     def test_validate_multisig_tx(self):
         # this is a transaction in the block chain

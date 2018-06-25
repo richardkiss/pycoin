@@ -2,7 +2,7 @@ import unittest
 
 
 from pycoin.crack.bip32 import ascend_bip32, crack_bip32
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 
 class CrackBIP32Test(unittest.TestCase):

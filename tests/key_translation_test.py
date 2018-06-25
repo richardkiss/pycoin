@@ -1,14 +1,11 @@
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
-
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
-
 from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.sec import (
     is_sec_compressed, public_pair_to_sec, sec_to_public_pair, public_pair_to_hash160_sec
 )
 from pycoin.serialize import h2b
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 """
 http://sourceforge.net/mailarchive/forum.php?thread_name=CAPg%2BsBhDFCjAn1tRRQhaudtqwsh4vcVbxzm%2BAA2OuFxN71fwUA%40mail.gmail.com&forum_name=bitcoin-development
@@ -53,15 +50,15 @@ class KeyTranslationTest(unittest.TestCase):
             self.assertEqual(exponent, secret_exponent)
             self.assertTrue(compressed)
 
-            public_pair = secret_exponent * secp256k1_generator
+            public_pair = secret_exponent * key._default_generator
 
-            pk_public_pair = sec_to_public_pair(sec, secp256k1_generator)
+            pk_public_pair = sec_to_public_pair(sec, key._default_generator)
             compressed = is_sec_compressed(sec)
             self.assertEqual(pk_public_pair, public_pair)
             self.assertFalse(is_sec_compressed(sec))
             self.assertEqual(public_pair_to_sec(pk_public_pair, compressed=False), sec)
 
-            pk_public_pair = sec_to_public_pair(c_sec, secp256k1_generator)
+            pk_public_pair = sec_to_public_pair(c_sec, key._default_generator)
             compressed = is_sec_compressed(c_sec)
             self.assertEqual(pk_public_pair, public_pair)
             self.assertTrue(compressed)

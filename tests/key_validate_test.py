@@ -1,9 +1,10 @@
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 from pycoin.encoding.b58 import b2a_hashed_base58
 from pycoin.key.Key import InvalidSecretExponentError
 from pycoin.networks.registry import network_codes
+from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.xtn import network as BitcoinTestnet
 from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 
@@ -80,7 +81,7 @@ class KeyUtilsTest(unittest.TestCase):
         WALLET_KEYS = ["foo", "1", "2", "3", "4", "5"]
 
         # not all networks support BIP32 yet
-        for netcode in "BTC XTN DOGE".split():
+        for netcode in NETCODES:
             network = network_for_netcode(netcode)
             BIP32Node = network.ui._bip32node_class
             for wk in WALLET_KEYS:

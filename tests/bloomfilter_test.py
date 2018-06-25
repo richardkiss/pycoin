@@ -2,7 +2,7 @@ import binascii
 import unittest
 
 from pycoin.bloomfilter import filter_size_required, hash_function_count_required, BloomFilter, murmur3
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 Spendable = BitcoinMainnet.tx.Spendable
 

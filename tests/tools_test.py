@@ -1,13 +1,12 @@
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.bitcoin.SolutionChecker import TxContext
 from pycoin.coins.bitcoin.VM import BitcoinVM
-
+from pycoin.intbytes import int2byte
 from pycoin.satoshi.opcodes import OPCODE_LIST
 from pycoin.satoshi.IntStreamer import IntStreamer
 from pycoin.serialize import h2b
-from pycoin.intbytes import int2byte
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 # BRAIN DAMAGE
 ScriptTools = BitcoinMainnet.extras.ScriptTools

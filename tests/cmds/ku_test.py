@@ -1,7 +1,7 @@
 import unittest
 
 from pycoin.cmds import ku
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 from .ToolTest import ToolTest
 

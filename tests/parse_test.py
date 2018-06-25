@@ -1,6 +1,6 @@
 import unittest
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 
 ui = BitcoinMainnet.ui

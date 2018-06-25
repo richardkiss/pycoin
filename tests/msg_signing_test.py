@@ -2,10 +2,10 @@ import textwrap
 import unittest
 
 from pycoin.contrib.msg_signing import MessageSigner
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.xtn import network as BitcoinTestnet
 
 # BRAIN DAMAGE
-from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 
 Key = BitcoinMainnet.extras.Key
 message_signer = MessageSigner(BitcoinMainnet)

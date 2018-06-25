@@ -2,12 +2,11 @@ import json
 import unittest
 import os
 
-from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi import errno
 from pycoin.satoshi import flags
 from pycoin.serialize import h2b
-
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 Tx = BitcoinMainnet.tx
 BitcoinScriptTools = BitcoinMainnet.extras.ScriptTools
