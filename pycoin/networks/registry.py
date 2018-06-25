@@ -26,9 +26,9 @@ def network_for_netcode(symbol):
     raise ValueError("no network with symbol %s found" % netcode)
 
 
-def available_symbols():
+def iterate_symbols():
     """
-    Return a list of registered netcodes.
+    Return an iterator yielding registered netcodes.
     """
     for prefix in search_prefixes():
         package = importlib.import_module(prefix)
@@ -39,4 +39,4 @@ def available_symbols():
 
 
 def network_codes():
-    return list(available_symbols())
+    return list(iterate_symbols())

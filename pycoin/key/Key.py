@@ -31,7 +31,7 @@ class Key(object):
         return Key
 
     def __init__(self, secret_exponent=None, generator=None, public_pair=None, hash160=None, prefer_uncompressed=None,
-                 is_compressed=None, is_pay_to_script=False):
+                 is_compressed=None):
         """
         secret_exponent:
             a long representing the secret exponent
@@ -44,9 +44,6 @@ class Key(object):
 
         prefer_uncompressed:
             whether or not to produce text outputs as compressed or uncompressed.
-
-        is_pay_to_script:
-            whether or not this key is for a pay-to-script style transaction
 
         Include at most one of secret_exponent, public_pair or hash160.
         prefer_uncompressed, is_compressed (booleans) are optional.
@@ -100,7 +97,7 @@ class Key(object):
         """
         return self._secret_exponent
 
-    def wif(self, use_uncompressed=None, ui_context=None):
+    def wif(self, use_uncompressed=None):
         """
         Return the WIF representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
@@ -129,7 +126,7 @@ class Key(object):
             return None
         return public_pair_to_sec(public_pair, compressed=not self._use_uncompressed(use_uncompressed))
 
-    def sec_as_hex(self, use_uncompressed=None, ui_context=None):
+    def sec_as_hex(self, use_uncompressed=None):
         """
         Return the SEC representation of this key as hex text.
         If use_uncompressed is not set, the preferred representation is returned.
@@ -162,7 +159,7 @@ class Key(object):
     def fingerprint(self, use_uncompressed=None):
         return self.hash160(use_uncompressed=use_uncompressed)[:4]
 
-    def address(self, use_uncompressed=None, ui_context=None):
+    def address(self, use_uncompressed=None):
         """
         Return the public address representation of this key, if available.
         If use_uncompressed is not set, the preferred representation is returned.
@@ -174,16 +171,16 @@ class Key(object):
 
     bitcoin_address = address
 
-    def as_text(self, ui_context=None):
+    def as_text(self):
         """
         Return a textual representation of this key.
         """
         if self.secret_exponent():
-            return self.wif(ui_context=ui_context)
-        sec_hex = self.sec_as_hex(ui_context=ui_context)
+            return self.wif()
+        sec_hex = self.sec_as_hex()
         if sec_hex:
             return sec_hex
-        return self.address(ui_context=ui_context)
+        return self.address()
 
     def public_copy(self):
         if self.secret_exponent() is None:

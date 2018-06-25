@@ -66,7 +66,7 @@ class BIP32Node(Key):
         generator = generator or self._default_generator
         super(BIP32Node, self).__init__(
             secret_exponent=secret_exponent, generator=generator, public_pair=public_pair,
-            prefer_uncompressed=False, is_compressed=True, is_pay_to_script=False)
+            prefer_uncompressed=False, is_compressed=True)
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)

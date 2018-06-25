@@ -8,7 +8,7 @@ import re
 import subprocess
 import sys
 
-from pycoin.serialize import b2h, h2b
+from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.ui.key_from_text import key_info_from_text
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
