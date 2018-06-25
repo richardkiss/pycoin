@@ -1,7 +1,6 @@
 import unittest
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.b58 import b2a_hashed_base58
 from pycoin.key.Key import InvalidSecretExponentError
 from pycoin.networks.registry import network_codes
@@ -69,7 +68,7 @@ class KeyUtilsTest(unittest.TestCase):
             if not getattr(network, "key", None):
                 continue
             for se in range(1, 10):
-                key = network.key(secret_exponent=se, generator=secp256k1_generator)
+                key = network.key(secret_exponent=se)
                 for tv in [True, False]:
                     wif = key.wif(use_uncompressed=tv)
                     self.assertEqual(is_wif_valid(wif, allowable_netcodes=[netcode]), netcode)
@@ -85,7 +84,7 @@ class KeyUtilsTest(unittest.TestCase):
             network = network_for_netcode(netcode)
             BIP32Node = network.ui._bip32node_class
             for wk in WALLET_KEYS:
-                wallet = BIP32Node.from_master_secret(secp256k1_generator, wk.encode("utf8"))
+                wallet = BIP32Node.from_master_secret(wk.encode("utf8"))
                 text = wallet.wallet_key(as_private=True)
                 self.assertEqual(is_private_bip32_valid(text, allowable_netcodes=NETCODES), netcode)
                 self.assertEqual(is_public_bip32_valid(text, allowable_netcodes=NETCODES), None)
@@ -102,18 +101,18 @@ class KeyUtilsTest(unittest.TestCase):
     def test_key_limits(self):
         nc = 'BTC'
         cc = b'000102030405060708090a0b0c0d0e0f'
-        order = secp256k1_generator.order()
+        order = Key._default_generator.order()
 
         for k in -1, 0, order, order + 1:
-            self.assertRaises(InvalidSecretExponentError, Key, secret_exponent=k, generator=secp256k1_generator)
-            self.assertRaises(InvalidSecretExponentError, BIP32Node, secp256k1_generator, nc, cc, secret_exponent=k)
+            self.assertRaises(InvalidSecretExponentError, Key, secret_exponent=k)
+            self.assertRaises(InvalidSecretExponentError, BIP32Node, nc, cc, secret_exponent=k)
 
         for i in range(1, 512):
-            Key(secret_exponent=i, generator=secp256k1_generator)
-            BIP32Node(secp256k1_generator, cc, secret_exponent=i)
+            Key(secret_exponent=i)
+            BIP32Node(cc, secret_exponent=i)
 
     def test_repr(self):
-        key = XTNKey(secret_exponent=273, generator=secp256k1_generator)
+        key = XTNKey(secret_exponent=273)
 
         address = key.address()
         pub_k = key_from_text(address, networks=[BitcoinTestnet])

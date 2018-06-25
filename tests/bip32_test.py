@@ -1,5 +1,4 @@
 import unittest
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.networks import BitcoinMainnet, BitcoinTestnet
 from pycoin.serialize import h2b
 from pycoin.ui.key_from_text import key_from_text
@@ -12,7 +11,7 @@ XTNBIP32Node = BitcoinTestnet.ui._bip32node_class
 class Bip0032TestCase(unittest.TestCase):
 
     def test_vector_1(self):
-        master = BIP32Node.from_master_secret(secp256k1_generator, h2b("000102030405060708090a0b0c0d0e0f"))
+        master = BIP32Node.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"))
         self.assertEqual(
             master.hwif(as_private=True),
             "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPG"
@@ -103,7 +102,7 @@ class Bip0032TestCase(unittest.TestCase):
                          pub_m0p1_1_2p_2_1000000000.hwif())
 
     def test_vector_2(self):
-        master = BIP32Node.from_master_secret(secp256k1_generator, h2b(
+        master = BIP32Node.from_master_secret(h2b(
             "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c99"
             "9693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542"))
         self.assertEqual(
@@ -187,7 +186,7 @@ class Bip0032TestCase(unittest.TestCase):
 
     def test_testnet(self):
         # WARNING: these values have not been verified independently. TODO: do so
-        master = XTNBIP32Node.from_master_secret(secp256k1_generator, h2b("000102030405060708090a0b0c0d0e0f"))
+        master = XTNBIP32Node.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"))
         self.assertEqual(
             master.hwif(as_private=True),
             "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5kh"
@@ -196,7 +195,7 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertEqual(master.wif(), "cVPXTF2TnozE1PenpP3x9huctiATZmp27T9Ue1d8nqLSExoPwfN5")
 
     def test_streams(self):
-        m0 = BIP32Node.from_master_secret(secp256k1_generator, b"foo bar baz")
+        m0 = BIP32Node.from_master_secret(b"foo bar baz")
         pm0 = m0.public_copy()
         self.assertEqual(m0.hwif(), pm0.hwif())
         m1 = m0.subkey()
@@ -223,7 +222,7 @@ class Bip0032TestCase(unittest.TestCase):
                 print("   %s %s" % (k.address(), k.wif()))
 
     def test_public_subkey(self):
-        my_prv = BIP32Node.from_master_secret(secp256k1_generator, b"foo")
+        my_prv = BIP32Node.from_master_secret(b"foo")
         uag = my_prv.subkey(i=0, is_hardened=True, as_private=True)
         self.assertEqual(None, uag.subkey(i=0, as_private=False).secret_exponent())
 
@@ -245,8 +244,8 @@ class Bip0032TestCase(unittest.TestCase):
 
     def test_repr(self):
         Key = BitcoinTestnet.ui._key_class
-        key = Key(secret_exponent=273, generator=secp256k1_generator)
-        wallet = XTNBIP32Node.from_master_secret(secp256k1_generator, bytes(key.wif().encode('ascii')))
+        key = Key(secret_exponent=273)
+        wallet = XTNBIP32Node.from_master_secret(bytes(key.wif().encode('ascii')))
 
         address = wallet.address()
         pub_k = key_from_text(address, networks=[BitcoinTestnet])

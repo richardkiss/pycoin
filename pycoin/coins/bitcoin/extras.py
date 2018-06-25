@@ -10,7 +10,7 @@ class Extras(object):
         self.Key = ui._key_class
         self.BIP32Node = ui._bip32node_class
         self.ElectrumKey = ui._electrum_class
-        who_signed = WhoSigned(script_tools)
+        who_signed = WhoSigned(script_tools, self.Key._default_generator)
         self.who_signed_tx = who_signed.who_signed_tx
         self.public_pairs_signed = who_signed.public_pairs_signed
         self.extract_secs = who_signed.extract_secs

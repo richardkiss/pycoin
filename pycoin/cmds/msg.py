@@ -8,7 +8,6 @@ import sys
 from pycoin.encoding.exceptions import EncodingError
 from pycoin.encoding.sec import public_pair_to_hash160_sec
 from pycoin.contrib.msg_signing import MessageSigner
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.networks.registry import (
     full_network_name_for_netcode, network_for_netcode, network_codes
 )
@@ -55,9 +54,9 @@ def get_message_hash(args, message_signer):
 
 def msg_sign(args, parser):
     network = network_for_netcode(args.network)
-    message_signer = MessageSigner(network.network_name, network.ui, secp256k1_generator)
+    message_signer = MessageSigner(network)
     message_hash = get_message_hash(args, message_signer)
-    network, key = parse_key(args.WIF, [network], secp256k1_generator)
+    network, key = parse_key(args.WIF, [network])
     is_compressed = not key._use_uncompressed()
     sig = message_signer.signature_for_message_hash(
         key.secret_exponent(), msg_hash=message_hash, is_compressed=is_compressed)
@@ -66,7 +65,7 @@ def msg_sign(args, parser):
 
 def msg_verify(args, parser):
     network = network_for_netcode(args.network)
-    message_signer = MessageSigner(network.network_name, network.ui, secp256k1_generator)
+    message_signer = MessageSigner(network)
     message_hash = get_message_hash(args, message_signer)
     try:
         pair, is_compressed = message_signer.pair_for_message_hash(args.signature, msg_hash=message_hash)

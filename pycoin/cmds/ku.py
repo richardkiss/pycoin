@@ -8,11 +8,8 @@ import re
 import subprocess
 import sys
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.serialize import b2h, h2b
-from pycoin.key import Key
 from pycoin.ui.key_from_text import key_info_from_text
-from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import (
     full_network_name_for_netcode, network_codes, network_for_netcode
@@ -85,14 +82,13 @@ def parse_as_public_pair(s, generator):
 
 
 def create_wallet_key_output(key, network, subkey_path, add_output):
-    ui_context = network.ui
     if hasattr(key, "wallet_key"):
         if subkey_path:
             add_output("subkey_path", subkey_path)
 
-        add_output("wallet_key", key.hwif(ui_context=ui_context, as_private=key.is_private()))
+        add_output("wallet_key", key.hwif(as_private=key.is_private()))
         if key.is_private():
-            add_output("public_version", key.hwif(ui_context=ui_context, as_private=False))
+            add_output("public_version", key.hwif(as_private=False))
 
         child_number = key.child_index()
         if child_number >= 0x80000000:
@@ -165,6 +161,7 @@ def create_hash160_output(key, network, add_output, output_dict):
 
 def create_output(item, key, network, output_key_set, subkey_path=None):
     ui_context = network.ui
+    key._ui_context = ui_context
     output_dict = {}
     output_order = []
 
@@ -258,20 +255,23 @@ def create_parser():
     return parser
 
 
-def _create_bip32(generator):
+def _create_bip32(network):
     max_retries = 64
     for _ in range(max_retries):
         try:
-            return BIP32Node.from_master_secret(secp256k1_generator, get_entropy())
+            return network.extras.BIP32Node.from_master_secret(get_entropy())
         except ValueError as e:
             continue
     # Probably a bug if we get here
     raise RuntimeError("can't create BIP32 key")
 
 
-def parse_key(item, networks, generator):
+def parse_key(item, networks):
+    default_network = networks[0]
+    Key = default_network.extras.Key
+    generator = Key._default_generator
     if item == 'create':
-        return None, _create_bip32(generator)
+        return None, _create_bip32(default_network)
 
     for network, key_info in key_info_from_text(item, networks=networks):
         return network, key_info["create_f"]()
@@ -281,10 +281,10 @@ def parse_key(item, networks, generator):
 
     secret_exponent = parse_as_secret_exponent(item, generator)
     if secret_exponent:
-        return None, Key(secret_exponent=secret_exponent, generator=generator)
+        return None, Key(secret_exponent=secret_exponent)
 
     if SEC_RE.match(item):
-        return None, Key.from_sec(h2b(item), generator)
+        return None, Key.from_sec(h2b(item))
 
     public_pair = parse_as_public_pair(item, generator)
     if public_pair:
@@ -309,8 +309,6 @@ def generate_output(args, output_dict, output_order):
 
 
 def ku(args, parser):
-    generator = secp256k1_generator
-
     fallback_network = network_for_netcode(args.network or get_current_netcode())
     parse_networks = [fallback_network] + [network_for_netcode(netcode) for netcode in network_codes()]
     if args.network:
@@ -336,7 +334,7 @@ def ku(args, parser):
     items = args.item if len(args.item) > 0 else parse_stdin()
 
     for item in items:
-        key_network, key = parse_key(item, parse_networks, generator)
+        key_network, key = parse_key(item, parse_networks)
         if key is None:
             print("can't parse %s" % item, file=sys.stderr)
             continue

@@ -2,13 +2,12 @@ import unittest
 
 from pycoin.coins.bitcoin.networks import BitcoinMainnet
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.key import Key
-from pycoin.key.electrum import ElectrumWallet
 from pycoin.ui.key_from_text import key_from_text
 
 
 # BRAIN DAMAGE
-ElectrumWallet = ElectrumWallet.make_subclass(default_ui_context=BitcoinMainnet.ui)
+ElectrumWallet = BitcoinMainnet.extras.ElectrumKey
+Key = BitcoinMainnet.extras.Key
 
 
 class ElectrumTest(unittest.TestCase):

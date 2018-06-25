@@ -18,15 +18,16 @@ class InvalidSecretExponentError(ValueError):
 
 class Key(object):
 
-    _default_ui_context = None
+    _ui_context = None
+    _default_generator = None
 
     @classmethod
-    def make_subclass(class_, default_ui_context):
+    def make_subclass(class_, ui_context, generator):
 
         class Key(class_):
-            pass
+            _ui_context = ui_context
+            _default_generator = generator
 
-        Key._default_ui_context = default_ui_context
         return Key
 
     def __init__(self, secret_exponent=None, generator=None, public_pair=None, hash160=None, prefer_uncompressed=None,
@@ -52,6 +53,7 @@ class Key(object):
         """
         if [secret_exponent, public_pair, hash160].count(None) != 2:
             raise ValueError("exactly one of secret_exponent, public_pair, hash160 must be passed.")
+        generator = generator or self._default_generator
         if secret_exponent and not generator:
             raise ValueError("generator not specified when secret exponent specified")
         if prefer_uncompressed is None and is_compressed is not None:
@@ -81,10 +83,11 @@ class Key(object):
                 raise InvalidPublicPairError()
 
     @classmethod
-    def from_sec(class_, sec, generator):
+    def from_sec(class_, sec, generator=None):
         """
         Create a key from an sec bytestream (which is an encoding of a public pair).
         """
+        generator = generator or class_._default_generator
         public_pair = sec_to_public_pair(sec, generator)
         return class_(public_pair=public_pair, is_compressed=is_sec_compressed(sec))
 
@@ -108,7 +111,7 @@ class Key(object):
         blob = to_bytes_32(secret_exponent)
         if not self._use_uncompressed(use_uncompressed):
             blob += b'\01'
-        return self._ui_context(ui_context).wif_for_blob(blob)
+        return self._ui_context.wif_for_blob(blob)
 
     def public_pair(self):
         """
@@ -134,7 +137,7 @@ class Key(object):
         sec = self.sec(use_uncompressed=use_uncompressed)
         if sec is None:
             return None
-        return self._ui_context(ui_context).sec_text_for_blob(sec)
+        return self._ui_context.sec_text_for_blob(sec)
 
     def hash160(self, use_uncompressed=None):
         """
@@ -166,7 +169,7 @@ class Key(object):
         """
         hash160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash160:
-            return self._ui_context(ui_context).address_for_p2pkh(hash160)
+            return self._ui_context.address_for_p2pkh(hash160)
         return None
 
     bitcoin_address = address
@@ -243,13 +246,6 @@ class Key(object):
                 return False
         return generator.verify(pubkey, val, rs)
 
-    def _ui_context(self, ui_context):
-        if ui_context is None:
-            ui_context = getattr(self, "_default_ui_context", None)
-        if ui_context is None:
-            raise ValueError("ui_context not set")
-        return ui_context
-
     def _use_uncompressed(self, use_uncompressed=None):
         if use_uncompressed:
             return use_uncompressed
@@ -259,7 +255,7 @@ class Key(object):
 
     def __repr__(self):
         r = self.public_copy()
-        if getattr(r, "_default_ui_context", None):
+        if r._ui_context:
             s = r.as_text()
         elif r.sec():
             s = b2h(r.sec())

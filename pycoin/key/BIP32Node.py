@@ -22,6 +22,7 @@ import struct
 from ..encoding.b58 import b2a_hashed_base58
 from ..encoding.bytes32 import from_bytes_32, to_bytes_32
 from ..encoding.exceptions import EncodingError
+from ..encoding.sec import sec_to_public_pair
 from .Key import Key
 from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
 from .subpaths import subpaths_for_path_range
@@ -38,18 +39,31 @@ class BIP32Node(Key):
     """
 
     @classmethod
-    def from_master_secret(class_, generator, master_secret):
+    def from_master_secret(class_, master_secret, generator=None):
         """Generate a Wallet from a master password."""
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
         return class_(generator=generator, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
 
-    def __init__(self, generator, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0', child_index=0,
-                 secret_exponent=None, public_pair=None):
+    @classmethod
+    def deserialize(class_, data):
+        parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
+        d = dict(chain_code=data[13:45], depth=ord(data[4:5]), parent_fingerprint=parent_fingerprint,
+                 child_index=child_index)
+        is_private = (data[45:46] == b'\0')
+        if is_private:
+            d["secret_exponent"] = from_bytes_32(data[46:])
+        else:
+            d["public_pair"] = sec_to_public_pair(data[45:], generator=class_._default_generator)
+        return class_(**d)
+
+    def __init__(self, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0', child_index=0,
+                 secret_exponent=None, public_pair=None, generator=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
 
         if [secret_exponent, public_pair].count(None) != 1:
             raise ValueError("must include exactly one of public_pair and secret_exponent")
 
+        generator = generator or self._default_generator
         super(BIP32Node, self).__init__(
             secret_exponent=secret_exponent, generator=generator, public_pair=public_pair,
             prefer_uncompressed=False, is_compressed=True, is_pay_to_script=False)
@@ -82,19 +96,14 @@ class BIP32Node(Key):
     def child_index(self):
         return self._child_index
 
-    def serialize(self, as_private=None, ui_context=None):
+    def serialize(self, as_private=None):
         """Yield a 78-byte binary blob corresponding to this node."""
         if as_private is None:
             as_private = self.secret_exponent() is not None
         if self.secret_exponent() is None and as_private:
             raise PublicPrivateMismatchError("public key has no private parts")
 
-        ui_context = self._ui_context(ui_context)
         ba = bytearray()
-        if as_private:
-            ba.extend(ui_context.bip32_private_prefix())
-        else:
-            ba.extend(ui_context.bip32_public_prefix())
         ba.extend([self._depth])
         ba.extend(self._parent_fingerprint + struct.pack(">L", self._child_index) + self._chain_code)
         if as_private:
@@ -103,9 +112,9 @@ class BIP32Node(Key):
             ba += self.sec(use_uncompressed=False)
         return bytes(ba)
 
-    def hwif(self, as_private=False, ui_context=None):
+    def hwif(self, as_private=False):
         """Yield a 111-byte string corresponding to this node."""
-        return b2a_hashed_base58(self.serialize(as_private=as_private, ui_context=ui_context))
+        return self._ui_context.bip32_as_string(self.serialize(as_private=as_private), as_private=as_private)
 
     as_text = hwif
     wallet_key = hwif

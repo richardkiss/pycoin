@@ -6,7 +6,6 @@ from binascii import b2a_base64, a2b_base64
 from pycoin.intbytes import byte2int, int2byte
 from pycoin.satoshi.satoshi_string import stream_satoshi_string
 
-from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding.bytes32 import to_bytes_32, from_bytes_32
 from ..encoding.exceptions import EncodingError
 from ..encoding.hash import double_sha256
@@ -21,10 +20,10 @@ class MessageSigner(object):
     signature_template = ('-----BEGIN {net_name} SIGNED MESSAGE-----\n{msg}\n-----BEGIN '
                           'SIGNATURE-----\n{addr}\n{sig}\n-----END {net_name} SIGNED MESSAGE-----')
 
-    def __init__(self, network_name, ui, generator):
-        self._ui = ui
-        self._network_name = network_name
-        self._generator = generator
+    def __init__(self, network):
+        self._ui = network.ui
+        self._network_name = network.network_name
+        self._generator = network.extras.Key._default_generator
 
     @classmethod
     def parse_sections(class_, msg_in):
@@ -105,7 +104,7 @@ class MessageSigner(object):
         """
         Return a signature, encoded in Base64, of msg_hash.
         """
-        r, s, recid = secp256k1_generator.sign_with_recid(secret_exponent, msg_hash)
+        r, s, recid = self._generator.sign_with_recid(secret_exponent, msg_hash)
 
         # See http://bitcoin.stackexchange.com/questions/14263 and key.cpp
         # for discussion of the proprietary format used for the signature
@@ -149,10 +148,10 @@ class MessageSigner(object):
 
         # Calculate the specific public key used to sign this message.
         y_parity = recid & 1
-        q = secp256k1_generator.possible_public_pairs_for_signature(msg_hash, (r, s), y_parity=y_parity)[0]
+        q = self._generator.possible_public_pairs_for_signature(msg_hash, (r, s), y_parity=y_parity)[0]
         if recid > 1:
-            order = secp256k1_generator.order()
-            q = secp256k1_generator.Point(q[0] + order, q[1])
+            order = self._generator.order()
+            q = self._generator.Point(q[0] + order, q[1])
         return q, is_compressed
 
     def pair_matches_key(self, pair, key, is_compressed):

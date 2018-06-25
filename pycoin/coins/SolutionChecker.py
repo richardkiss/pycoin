@@ -1,7 +1,4 @@
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
-
-
 class ScriptError(Exception):
     def error_code(self):
         if len(self.args) > 1:
@@ -10,8 +7,6 @@ class ScriptError(Exception):
 
 
 class SolutionChecker(object):
-
-    generators = [secp256k1_generator]
 
     def __init__(self, *args, **kwargs):
         raise

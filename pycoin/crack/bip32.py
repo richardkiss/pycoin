@@ -2,12 +2,9 @@ import hmac
 import hashlib
 import struct
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.encoding.sec import public_pair_to_sec
 
-
-ORDER = secp256k1_generator.order()
 
 
 def ascend_bip32(bip32_pub_node, secret_exponent, child):
@@ -20,7 +17,7 @@ def ascend_bip32(bip32_pub_node, secret_exponent, child):
     data = sec + i_as_bytes
     I64 = hmac.HMAC(key=bip32_pub_node._chain_code, msg=data, digestmod=hashlib.sha512).digest()
     I_left_as_exponent = from_bytes_32(I64[:32])
-    return (secret_exponent - I_left_as_exponent) % ORDER
+    return (secret_exponent - I_left_as_exponent) % bip32_pub_node._generator.order()
 
 
 def crack_bip32(bip32_pub_node, secret_exponent, path):
@@ -29,5 +26,5 @@ def crack_bip32(bip32_pub_node, secret_exponent, path):
         path = int(paths.pop())
         secret_exponent = ascend_bip32(bip32_pub_node.subkey_for_path("/".join(paths)), secret_exponent, path)
     return bip32_pub_node.__class__(
-        bip32_pub_node._generator, bip32_pub_node._chain_code, bip32_pub_node._depth,
-        bip32_pub_node._parent_fingerprint, bip32_pub_node._child_index, secret_exponent=secret_exponent)
+        bip32_pub_node._chain_code, bip32_pub_node._depth, bip32_pub_node._parent_fingerprint,
+        bip32_pub_node._child_index, secret_exponent=secret_exponent)

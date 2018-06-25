@@ -1,4 +1,3 @@
-from ..ecdsa.secp256k1 import secp256k1_generator
 from ..encoding.sec import is_sec, public_pair_to_hash160_sec, sec_to_public_pair, EncodingError
 
 from pycoin.coins.SolutionChecker import ScriptError
@@ -7,8 +6,9 @@ from pycoin.satoshi.der import UnexpectedDER
 
 
 class WhoSigned(object):
-    def __init__(self, script_tools):
+    def __init__(self, script_tools, generator):
         self._script_tools = script_tools
+        self._generator = generator
 
     def solution_blobs(self, tx, tx_in_idx):
         """
@@ -73,13 +73,13 @@ class WhoSigned(object):
     def public_pairs_signed(self, tx, tx_in_idx):
         signed_by = []
 
-        public_pairs = self.public_pairs_for_script(tx, tx_in_idx, secp256k1_generator)
+        public_pairs = self.public_pairs_for_script(tx, tx_in_idx, self._generator)
 
         for signature, sig_hash in self.extract_signatures(tx, tx_in_idx):
             sig_pair, sig_type = parse_signature_blob(signature)
 
             for public_pair in public_pairs:
-                if secp256k1_generator.verify(public_pair, sig_hash, sig_pair):
+                if self._generator.verify(public_pair, sig_hash, sig_pair):
                     signed_by.append((public_pair, sig_pair, sig_type))
         return signed_by
 

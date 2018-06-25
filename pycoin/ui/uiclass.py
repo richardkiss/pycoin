@@ -27,9 +27,9 @@ class UI(object):
     def __init__(self, puzzle_scripts, generator, bip32_prv_prefix=None, bip32_pub_prefix=None,
                  wif_prefix=None, sec_prefix=None, address_prefix=None, pay_to_script_prefix=None, bech32_hrp=None):
         self._script_info = puzzle_scripts
-        self._key_class = Key.make_subclass(default_ui_context=self)
-        self._electrum_class = ElectrumWallet.make_subclass(default_ui_context=self)
-        self._bip32node_class = BIP32Node.make_subclass(default_ui_context=self)
+        self._key_class = Key.make_subclass(ui_context=self, generator=generator)
+        self._electrum_class = ElectrumWallet.make_subclass(ui_context=self, generator=generator)
+        self._bip32node_class = BIP32Node.make_subclass(ui_context=self, generator=generator)
         self._parsers = [
             WIFParser(generator, wif_prefix, address_prefix, self._key_class),
             ElectrumParser(generator, self._electrum_class),
@@ -48,11 +48,9 @@ class UI(object):
 
     # ui_context stuff (used with Key, BIP32Node)
 
-    def bip32_private_prefix(self):
-        return self._bip32_prv_prefix
-
-    def bip32_public_prefix(self):
-        return self._bip32_pub_prefix
+    def bip32_as_string(self, blob, as_private):
+        prefix = self._bip32_prv_prefix if as_private else self._bip32_pub_prefix
+        return b2a_hashed_base58(prefix + blob)
 
     def wif_for_blob(self, blob):
         return b2a_hashed_base58(self._wif_prefix + blob)
