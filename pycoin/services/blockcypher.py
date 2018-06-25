@@ -52,7 +52,7 @@ class BlockcypherProvider(object):
             result = json.loads(urlopen(url).read().decode("utf8"))
             tx = Tx.parse(io.BytesIO(h2b(result.get("hex"))))
             return tx
-        except:
+        except Exception:
             raise Exception
 
     def get_balance(self, address):

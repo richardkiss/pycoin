@@ -94,7 +94,7 @@ def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
             output.append("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
                 output.append("      z{}: {:#x} {}".format(i, sc._signature_hash(tx_out.script, idx, sig_type),
-                                                   network.extras.annotate.sighash_type_to_string(sig_type)))
+                              network.extras.annotate.sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:

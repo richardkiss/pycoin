@@ -5,10 +5,6 @@ from ...encoding.bytes32 import from_bytes_32
 
 from ..SolutionChecker import ScriptError
 from pycoin.satoshi import errno
-from pycoin.satoshi.satoshi_struct import stream_struct
-from pycoin.satoshi.satoshi_string import stream_satoshi_string
-
-
 from pycoin.satoshi.flags import (
     SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
     VERIFY_P2SH, VERIFY_SIGPUSHONLY, VERIFY_CLEANSTACK,

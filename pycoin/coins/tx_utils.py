@@ -3,7 +3,6 @@ from pycoin.key.Keychain import Keychain
 from pycoin.symbols.btc import network as BitcoinMainnet
 
 from ..convention import tx_fee
-from ..solve.utils import build_hash160_lookup
 
 
 class SecretExponentMissing(Exception):

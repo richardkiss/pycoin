@@ -19,7 +19,6 @@ import hashlib
 import hmac
 import struct
 
-from ..encoding.b58 import b2a_hashed_base58
 from ..encoding.bytes32 import from_bytes_32, to_bytes_32
 from ..encoding.exceptions import EncodingError
 from ..encoding.sec import sec_to_public_pair

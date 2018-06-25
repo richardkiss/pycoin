@@ -144,8 +144,8 @@ unique(tx_hash, tx_out_index)
         if r is None:
             return r
         return spendable_class(coin_value=r[0], script=h2b(r[1]), tx_hash=tx_hash,
-                                 tx_out_index=tx_out_index, block_index_available=r[2],
-                                 does_seem_spent=r[3], block_index_spent=r[4])
+                               tx_out_index=tx_out_index, block_index_available=r[2],
+                               does_seem_spent=r[3], block_index_spent=r[4])
 
     @staticmethod
     def spendable_for_row(r, spendable_class):
@@ -179,7 +179,7 @@ unique(tx_hash, tx_out_index)
 
         seen = set()
         while 1:
-            r = next(c1)
+            r = next(c2)
             s = self.spendable_for_row(r, spendable_class)
             name = (s.tx_hash, s.tx_out_index)
             if name not in seen:

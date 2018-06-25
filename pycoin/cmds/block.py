@@ -22,7 +22,8 @@ def dump_block(output, block, network):
     output.append("%d transaction%s" % (len(block.txs), "s" if len(block.txs) != 1 else ""))
     for idx, tx in enumerate(block.txs):
         output.append("Tx #%d:" % idx)
-        dump_tx(output, tx, network=network, verbose_signature=False, disassembly_level=0, do_trace=False, use_pdb=False)
+        dump_tx(
+            output, tx, network=network, verbose_signature=False, disassembly_level=0, do_trace=False, use_pdb=False)
     output.append("")
 
 
@@ -45,6 +46,7 @@ def block(args, parser):
 
         for line in output:
             print(line)
+
 
 def main():
     parser = create_parser()

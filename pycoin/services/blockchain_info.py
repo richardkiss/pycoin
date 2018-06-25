@@ -63,7 +63,7 @@ class BlockchainInfoProvider(object):
             try:
                 d = ex.read()
                 ex.message = d
-            except:
+            except Exception:
                 pass
             raise ex
 

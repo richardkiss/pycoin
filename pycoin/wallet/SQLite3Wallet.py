@@ -76,12 +76,14 @@ class SQLite3Wallet(object):
                     self.persistence.save_spendable(s)
             for spendable in tx.tx_outs_as_spendable():
                 if self.keychain.is_spendable_interesting(spendable):
-                    s = self.persistence.spendable_for_hash_index(tx_in.previous_hash, tx_in.previous_index, tx.Spendable)
+                    s = self.persistence.spendable_for_hash_index(
+                        tx_in.previous_hash, tx_in.previous_index, tx.Spendable)
                     self.persistence.save_spendable(spendable)
 
     def _process_confirmed_tx(self, tx, blockheader, block_index):
         for tx_in in tx.txs_in:
-            spendable = self.persistence.spendable_for_hash_index(tx_in.previous_hash, tx_in.previous_index, tx.Spendable)
+            spendable = self.persistence.spendable_for_hash_index(
+                tx_in.previous_hash, tx_in.previous_index, tx.Spendable)
             if spendable:
                 spendable.block_index_spent = block_index
                 self.persistence.save_spendable(spendable)

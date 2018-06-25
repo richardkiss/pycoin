@@ -200,7 +200,7 @@ def standard_parsing_functions(Block, Tx):
         ("1", (lambda f: struct.unpack("B", f.read(1))[0], lambda f, v: f.write(struct.pack("B", v)))),
         ("6", (parse_int_6, stream_int_6)),
         ("O", (lambda f: True if f.read(1) else False,
-                lambda f, v: f.write(b'' if v is None else struct.pack("B", v)))),
+               lambda f, v: f.write(b'' if v is None else struct.pack("B", v)))),
     ]
     all_items = list(STREAMER_FUNCTIONS.items())
     all_items.extend(more_parsing)

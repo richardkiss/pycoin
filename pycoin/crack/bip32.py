@@ -6,7 +6,6 @@ from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.encoding.sec import public_pair_to_sec
 
 
-
 def ascend_bip32(bip32_pub_node, secret_exponent, child):
     """
     Given a BIP32Node with public derivation child "child" with a known private key,
