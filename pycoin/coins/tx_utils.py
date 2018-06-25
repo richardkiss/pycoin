@@ -10,40 +10,6 @@ class SecretExponentMissing(Exception):
     pass
 
 
-class LazySecretExponentDB(object):
-    """
-    THIS CLASS IS DEPRECATED in favour of pycoin.keychain.Keychain,
-    which handles hierarachical keys.
-
-    The pycoin pure python implementation that converts secret exponents
-    into public pairs is very slow, so this class does the conversion lazily
-    and caches the results to optimize for the case of a large number
-    of secret exponents.
-    """
-    def __init__(self, wif_iterable, secret_exponent_db_cache, generators, network=BitcoinMainnet):
-        self._wif_iterable = iter(wif_iterable)
-        self._secret_exponent_db_cache = secret_exponent_db_cache
-        self._generators = generators
-        self._network = network
-
-    def get(self, v):
-        if v in self._secret_exponent_db_cache:
-            return self._secret_exponent_db_cache[v]
-        for wif in self._wif_iterable:
-            key = self._network.ui.parse(wif, types=["key"])
-            if key is None:
-                continue
-            secret_exponent = key.secret_exponent()
-            if secret_exponent is None:
-                continue
-            d = build_hash160_lookup([secret_exponent], self._generators)
-            self._secret_exponent_db_cache.update(d)
-            if v in self._secret_exponent_db_cache:
-                return self._secret_exponent_db_cache[v]
-        self._wif_iterable = []
-        return None
-
-
 def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, network=BitcoinMainnet):
     """
     This function provides the easiest way to create an unsigned transaction.
@@ -54,13 +20,13 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, netw
         Each item in the list can be a Spendable, or text from Spendable.as_text,
         or a dictionary from Spendable.as_dict (which might be easier for
         airgapped transactions, for example).
-    :param payables: a list where each entry is a bitcoin address, or a tuple of
-        (bitcoin address, coin_value). If the coin_value is missing or
+    :param payables: a list where each entry is a address, or a tuple of
+        (address, coin_value). If the coin_value is missing or
         zero, this address is thrown into the "split pool". Funds not
-        explicitly claimed by the fee or a bitcoin address are shared as
+        explicitly claimed by the fee or an address are shared as
         equally as possible among the split pool. All coins are consumed:
         if the amount to be split does not divide evenly, some of the earlier
-        bitcoin addresses will get an extra satoshi.
+        addresses will get an extra satoshi.
     :param fee: an integer, or the (deprecated) string "standard" for it to be calculated
     :param version: (optional) the version to use in the transaction. Defaults to 1.
     :param lock_time: (optional) the lock_time to use in the transaction. Defaults to 0.
@@ -92,11 +58,11 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, netw
     txs_out = []
     for payable in payables:
         if len(payable) == 2:
-            bitcoin_address, coin_value = payable
+            address, coin_value = payable
         else:
-            bitcoin_address = payable
+            address = payable
             coin_value = 0
-        script = network.ui.script_for_address(bitcoin_address)
+        script = network.ui.script_for_address(address)
         txs_out.append(Tx.TxOut(coin_value, script))
 
     tx = Tx(version=version, txs_in=txs_in, txs_out=txs_out, lock_time=lock_time)
@@ -193,5 +159,5 @@ def create_signed_tx(spendables, payables, wifs=[], fee="standard",
     for idx, tx_out in enumerate(tx.txs_in):
         if not tx.is_signature_ok(idx):
             raise SecretExponentMissing("failed to sign spendable for %s" %
-                                        tx.unspents[idx].bitcoin_address())
+                                        tx.unspents[idx].address())
     return tx
