@@ -3,7 +3,7 @@ import unittest
 from pycoin.coins import tx_utils
 from pycoin.cmds.tx import DEFAULT_VERSION
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.serialize import h2b
+from pycoin.encoding.hexbytes import h2b
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.symbols.btc import network as BitcoinMainnet
 from pycoin.ui.key_from_text import key_from_text

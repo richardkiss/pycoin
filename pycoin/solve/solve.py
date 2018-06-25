@@ -4,10 +4,9 @@ import pdb
 
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi.checksigops import parse_signature_blob
-from ..serialize import b2h
-
 from pycoin.encoding.exceptions import EncodingError
 from pycoin.encoding.hash import hash160
+from pycoin.encoding.hexbytes import b2h
 from pycoin.encoding.sec import public_pair_to_sec, sec_to_public_pair
 from pycoin.intbytes import indexbytes, int2byte
 from pycoin.satoshi import der

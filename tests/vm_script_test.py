@@ -3,9 +3,9 @@ import unittest
 import os
 
 from pycoin.coins.SolutionChecker import ScriptError
+from pycoin.encoding.hexbytes import h2b
 from pycoin.satoshi import errno
 from pycoin.satoshi import flags
-from pycoin.serialize import h2b
 from pycoin.symbols.btc import network as BitcoinMainnet
 
 Tx = BitcoinMainnet.tx

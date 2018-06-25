@@ -2,8 +2,7 @@
 from .agent import urlopen
 
 from pycoin.coins.bgold.Tx import Tx
-
-from pycoin.serialize import b2h_rev
+from pycoin.encoding.hexbytes import b2h_rev
 
 
 class BTGExpProvider(object):

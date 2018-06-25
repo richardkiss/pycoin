@@ -1,10 +1,10 @@
-from pycoin.encoding.hash import hash160
 from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
+from pycoin.encoding.hash import hash160
+from pycoin.encoding.hexbytes import b2h
 from pycoin.encoding.sec import (
     is_sec_compressed, public_pair_to_sec,
     public_pair_to_hash160_sec, sec_to_public_pair
 )
-from pycoin.serialize import b2h
 from pycoin.satoshi.der import sigencode_der, sigdecode_der
 
 

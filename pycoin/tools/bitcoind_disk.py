@@ -5,7 +5,7 @@ import os
 
 from pycoin.block import Block
 from pycoin.blockchain.BlockChain import BlockChain
-from pycoin.serialize import h2b
+from pycoin.encoding.hexbytes import h2b
 
 
 logger = logging.getLogger(__file__)

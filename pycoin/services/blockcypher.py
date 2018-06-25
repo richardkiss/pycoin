@@ -3,9 +3,9 @@ import io
 
 from .agent import urlopen
 
-from pycoin.networks.default import get_current_netcode
-from pycoin.serialize import b2h_rev, h2b, h2b_rev
 from pycoin.coins.bitcoin.Tx import Tx
+from pycoin.encoding.hexbytes import b2h_rev, h2b, h2b_rev
+from pycoin.networks.default import get_current_netcode
 
 
 class BlockcypherProvider(object):

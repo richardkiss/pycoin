@@ -1,10 +1,9 @@
 import hashlib
 
+from pycoin.contrib import segwit_addr
 from pycoin.encoding.b58 import b2a_hashed_base58
 from pycoin.encoding.hash import hash160
-from pycoin.serialize import b2h
-
-from pycoin.contrib import segwit_addr
+from pycoin.encoding.hexbytes import b2h
 from pycoin.intbytes import iterbytes
 from pycoin.key.Key import Key
 from pycoin.key.BIP32Node import BIP32Node

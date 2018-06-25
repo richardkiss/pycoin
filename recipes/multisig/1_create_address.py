@@ -7,7 +7,7 @@ import os
 import sys
 
 from pycoin.key.BIP32Node import BIP32Node
-from pycoin.serialize import b2h
+from pycoin.encoding.hexbytes import b2h
 from pycoin.ui.ui import address_for_p2s, script_for_multisig
 
 

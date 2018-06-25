@@ -2,9 +2,9 @@
 import io
 
 from .encoding.hash import double_sha256
+from .encoding.hexbytes import b2h, b2h_rev
 from .merkle import merkle
 from .satoshi.satoshi_struct import parse_struct, stream_struct
-from .serialize import b2h, b2h_rev
 
 
 class BadMerkleRootError(Exception):

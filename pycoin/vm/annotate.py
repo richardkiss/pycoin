@@ -2,10 +2,8 @@ import collections
 import itertools
 
 from pycoin.encoding.hash import hash160
+from pycoin.encoding.hexbytes import b2h
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec
-
-from pycoin.serialize import b2h
-
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, SIGHASH_FORKID
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.coins.SolutionChecker import ScriptError

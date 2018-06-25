@@ -136,7 +136,7 @@ def create_hash160_output(key, network, add_output, output_dict):
     add_output("%s_address" % network.code, address, is_legacy_key=True)
 
     if hash160_c and hash160_u:
-        address = key.address(ui_context=ui_context, use_uncompressed=True)
+        address = key.address(use_uncompressed=True)
         add_output("address_uncompressed", address, "%s address uncompressed" % network_name)
         add_output("%s_address_uncompressed" % network.code, address, is_legacy_key=True)
 
@@ -186,8 +186,8 @@ def create_output(item, key, network, output_key_set, subkey_path=None):
     if secret_exponent:
         add_output("secret_exponent", '%d' % secret_exponent)
         add_output("secret_exponent_hex", '%x' % secret_exponent, " hex")
-        add_output("wif", key.wif(ui_context=ui_context, use_uncompressed=False))
-        add_output("wif_uncompressed", key.wif(ui_context=ui_context, use_uncompressed=True), " uncompressed")
+        add_output("wif", key.wif(use_uncompressed=False))
+        add_output("wif_uncompressed", key.wif(use_uncompressed=True), " uncompressed")
 
     create_public_pair_output(key, add_output)
 

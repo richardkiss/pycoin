@@ -34,8 +34,8 @@ import os
 
 from pycoin.coins.exceptions import ValidationFailureError
 from pycoin.coins.SolutionChecker import ScriptError
+from pycoin.encoding.hexbytes import h2b_rev
 from pycoin.satoshi import flags
-from pycoin.serialize import h2b_rev
 from pycoin.symbols.btc import network as BitcoinMainnet
 
 

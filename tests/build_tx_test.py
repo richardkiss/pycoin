@@ -3,9 +3,9 @@ import unittest
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.encoding.hexbytes import h2b
 from pycoin.encoding.sec import public_pair_to_sec, public_pair_to_hash160_sec
 from pycoin.symbols.btc import network as BitcoinMainnet
-from pycoin.serialize import h2b
 
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup

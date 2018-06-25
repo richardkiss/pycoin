@@ -3,7 +3,7 @@ import struct
 
 from pycoin.intbytes import iterbytes
 from pycoin.satoshi.satoshi_struct import parse_struct
-from pycoin.serialize import h2b
+from pycoin.encoding.hexbytes import h2b
 
 
 IP4_HEADER = h2b("00000000000000000000FFFF")

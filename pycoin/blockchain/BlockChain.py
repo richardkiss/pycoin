@@ -1,8 +1,9 @@
 import logging
 import weakref
 
+from pycoin.encoding.hexbytes import b2h_rev
+
 from .ChainFinder import ChainFinder
-from ..serialize import b2h_rev
 
 logger = logging.getLogger(__name__)
 ZERO_HASH = b'\0' * 32

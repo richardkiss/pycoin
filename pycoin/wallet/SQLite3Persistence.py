@@ -1,4 +1,4 @@
-from pycoin.serialize import b2h, h2b, b2h_rev, h2b_rev
+from pycoin.encoding.hexbytes import b2h, h2b, b2h_rev, h2b_rev
 from pycoin.key.BIP32Node import BIP32Node
 
 

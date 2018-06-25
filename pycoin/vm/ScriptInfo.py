@@ -2,7 +2,7 @@ import collections
 import hashlib
 
 from pycoin.encoding.hash import hash160
-from pycoin.serialize import b2h
+from pycoin.encoding.hexbytes import b2h
 
 
 class ScriptInfo(object):

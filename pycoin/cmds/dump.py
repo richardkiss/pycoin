@@ -4,7 +4,8 @@ import datetime
 
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.convention import satoshi_to_mbtc
-from pycoin.serialize import b2h_rev, stream_to_bytes
+from pycoin.encoding.hexbytes import b2h, b2h_rev
+from pycoin.serialize import stream_to_bytes
 from pycoin.satoshi.checksigops import parse_signature_blob
 
 
@@ -33,7 +34,6 @@ def make_trace_script(output, do_trace, use_pdb):
         return None
 
     def trace_script(opcode, data, pc, vmc):
-        from pycoin.serialize import b2h
         output.append("stack: [%s]" % ' '.join(b2h(s) for s in vmc.stack))
         if len(vmc.altstack) > 0:
             output.append("altstack: %s" % vmc.altstack)

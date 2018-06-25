@@ -1,6 +1,6 @@
 import unittest
 
-from pycoin.serialize import h2b
+from pycoin.encoding.hexbytes import h2b
 from pycoin.ui.key_from_text import key_from_text
 from pycoin.symbols.btc import network as BitcoinMainnet
 from pycoin.symbols.xtn import network as BitcoinTestnet

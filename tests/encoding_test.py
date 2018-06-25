@@ -4,11 +4,11 @@ from pycoin.encoding.b58 import a2b_base58, b2a_base58, a2b_hashed_base58, b2a_h
 from pycoin.encoding.base_conversion import from_long, to_long, EncodingError
 from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.hash import double_sha256, hash160
+from pycoin.encoding.hexbytes import h2b
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec, public_pair_to_sec, sec_to_public_pair
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.ui.validate import is_address_valid
 from pycoin.intbytes import iterbytes
-from pycoin.serialize import h2b
 from pycoin.symbols.btc import network as BitcoinMainnet
 
 Key = BitcoinMainnet.ui._key_class

@@ -26,7 +26,7 @@ THE SOFTWARE.
 """
 
 from pycoin.encoding.hash import hash160
-from pycoin.serialize import b2h, b2h_rev, h2b
+from pycoin.encoding.hexbytes import b2h, b2h_rev, h2b
 from pycoin.satoshi.satoshi_struct import parse_struct, stream_struct
 
 from .ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE

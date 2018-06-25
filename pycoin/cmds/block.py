@@ -4,9 +4,10 @@ import argparse
 import datetime
 
 from .dump import dump_tx
+from pycoin.encoding.hexbytes import b2h, b2h_rev
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_for_netcode
-from pycoin.serialize import b2h, b2h_rev, stream_to_bytes
+from pycoin.serialize import stream_to_bytes
 
 
 def dump_block(output, block, network):

@@ -2,7 +2,7 @@ import io
 import struct
 
 from pycoin.encoding.hash import double_sha256
-from pycoin.serialize import b2h_rev
+from pycoin.encoding.hexbytes import b2h_rev
 from pycoin.satoshi.satoshi_int import parse_satoshi_int
 from pycoin.satoshi.satoshi_streamer import Streamer, STREAMER_FUNCTIONS
 

@@ -1,7 +1,7 @@
 import binascii
 import unittest
 
-from pycoin.serialize import h2b
+from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.btc import network as BitcoinMainnet
 
 

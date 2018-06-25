@@ -2,8 +2,8 @@
 
 import sys
 
+from pycoin.encoding.hexbytes import h2b
 from pycoin.key.validate import is_wif_valid
-from pycoin.serialize import h2b
 from pycoin.solve.utils import build_p2sh_lookup
 from pycoin.tx.Tx import Tx
 from pycoin.tx.tx_utils import sign_tx

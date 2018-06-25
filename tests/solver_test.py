@@ -6,7 +6,7 @@ from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Solver import Solver
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.serialize import b2h
+from pycoin.encoding.hexbytes import b2h
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.symbols.btc import network as BitcoinMainnet
 

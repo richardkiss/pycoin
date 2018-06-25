@@ -4,8 +4,8 @@ from .subpaths import subpaths_for_path_range
 
 from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.encoding.hash import double_sha256
+from pycoin.encoding.hexbytes import b2h
 from pycoin.key.Key import Key
-from pycoin.serialize import b2h
 
 
 def initial_key_to_master_key(initial_key):

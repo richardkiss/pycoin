@@ -34,10 +34,9 @@ from .ScriptTools import BitcoinScriptTools
 from .Solver import BitcoinSolver as Solver
 from .SolutionChecker import BitcoinSolutionChecker as SolutionChecker
 
-from ...convention import SATOSHI_PER_COIN
-from ...encoding.hash import double_sha256
-from ...serialize import b2h, b2h_rev, h2b_rev
-
+from pycoin.convention import SATOSHI_PER_COIN
+from pycoin.encoding.hash import double_sha256
+from pycoin.encoding.hexbytes import b2h, b2h_rev, h2b_rev
 from pycoin.satoshi.satoshi_struct import parse_struct, stream_struct
 from pycoin.satoshi.satoshi_int import parse_satoshi_int
 from pycoin.satoshi.satoshi_string import parse_satoshi_string, stream_satoshi_string

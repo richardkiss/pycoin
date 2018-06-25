@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
+from pycoin.encoding.hexbytes import b2h
 from pycoin.networks.registry import full_network_name_for_netcode, network_codes
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.default import get_current_netcode
-from pycoin.serialize import b2h
 
 
 def create_parser():

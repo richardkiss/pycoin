@@ -2,7 +2,7 @@
 import threading
 import unittest
 
-from pycoin.serialize import h2b_rev
+from pycoin.encoding.hexbytes import h2b_rev
 from pycoin.services import providers
 from pycoin.services.blockchain_info import BlockchainInfoProvider
 from pycoin.services.blockcypher import BlockcypherProvider

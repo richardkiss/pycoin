@@ -1,7 +1,7 @@
 import unittest
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.serialize import h2b
+from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.btc import network as BitcoinMainnet
 from pycoin.ui.key_from_text import key_from_text
 

@@ -3,7 +3,7 @@ from pycoin.coins.bitcoin.extras import Extras
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.serialize import h2b
+from pycoin.encoding.hexbytes import h2b
 from pycoin.ui.uiclass import UI
 from pycoin.vm.ScriptInfo import ScriptInfo
 

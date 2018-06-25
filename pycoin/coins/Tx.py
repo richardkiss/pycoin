@@ -4,7 +4,7 @@ from .SolutionChecker import SolutionChecker, ScriptError
 from .TxIn import TxIn
 from .TxOut import TxOut
 
-from ..serialize import b2h, b2h_rev, h2b
+from pycoin.encoding.hexbytes import b2h, b2h_rev, h2b
 
 
 class Tx(object):

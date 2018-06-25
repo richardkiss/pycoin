@@ -5,7 +5,7 @@ from __future__ import print_function
 import argparse
 
 from pycoin.encoding.b58 import a2b_base58, b2a_base58, a2b_hashed_base58, b2a_hashed_base58
-from pycoin.serialize import b2h, h2b
+from pycoin.encoding.hexbytes import b2h, h2b
 
 
 def create_parser():
