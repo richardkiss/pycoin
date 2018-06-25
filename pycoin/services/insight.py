@@ -67,12 +67,12 @@ class InsightProvider(object):
     def get_tx_confirmation_block(self, tx_hash):
         return self.get_tx(tx_hash).confirmation_block_hash
 
-    def spendables_for_address(self, bitcoin_address):
+    def spendables_for_address(self, address):
         """
         Return a list of Spendable objects for the
         given bitcoin address.
         """
-        URL = "%s/addr/%s/utxo" % (self.base_url, bitcoin_address)
+        URL = "%s/addr/%s/utxo" % (self.base_url, address)
         r = json.loads(urlopen(URL).read().decode("utf8"))
         spendables = []
         for u in r:
@@ -83,9 +83,9 @@ class InsightProvider(object):
             spendables.append(Tx.Spendable(coin_value, script, previous_hash, previous_index))
         return spendables
 
-    def spendables_for_addresses(self, bitcoin_addresses):
+    def spendables_for_addresses(self, addresses):
         spendables = []
-        for addr in bitcoin_addresses:
+        for addr in addresses:
             spendables.extend(self.spendables_for_address(addr))
         return spendables
 

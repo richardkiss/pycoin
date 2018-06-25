@@ -19,27 +19,27 @@ class BlockchainInfoProvider(object):
         tx = Tx.from_hex(urlopen(URL).read().decode("utf8"))
         return tx
 
-    def payments_for_address(self, bitcoin_address):
+    def payments_for_address(self, address):
         "return an array of (TX ids, net_payment)"
-        URL = "https://blockchain.info/address/%s?format=json" % bitcoin_address
+        URL = "https://blockchain.info/address/%s?format=json" % address
         d = urlopen(URL).read()
         json_response = json.loads(d.decode("utf8"))
         response = []
         for tx in json_response.get("txs", []):
             total_out = 0
             for tx_out in tx.get("out", []):
-                if tx_out.get("addr") == bitcoin_address:
+                if tx_out.get("addr") == address:
                     total_out += tx_out.get("value", 0)
             if total_out > 0:
                 response.append((tx.get("hash"), total_out))
         return response
 
-    def spendables_for_address(self, bitcoin_address):
+    def spendables_for_address(self, address):
         """
         Return a list of Spendable objects for the
         given bitcoin address.
         """
-        URL = "https://blockchain.info/unspent?active=%s" % bitcoin_address
+        URL = "https://blockchain.info/unspent?active=%s" % address
         r = json.loads(urlopen(URL).read().decode("utf8"))
         spendables = []
         for u in r["unspent_outputs"]:

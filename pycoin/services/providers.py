@@ -30,7 +30,7 @@ def service_provider_methods(method_name, service_providers):
     return methods
 
 
-def spendables_for_address(bitcoin_address, netcode, format=None):
+def spendables_for_address(address, netcode, format=None):
     """
     Return a list of Spendable objects for the
     given bitcoin address.
@@ -48,7 +48,7 @@ def spendables_for_address(bitcoin_address, netcode, format=None):
         method = "as_%s" % format
     for m in service_provider_methods("spendables_for_address", get_default_providers_for_netcode(netcode)):
         try:
-            spendables = m(bitcoin_address)
+            spendables = m(address)
             if format:
                 spendables = [getattr(s, method)() for s in spendables]
             return spendables

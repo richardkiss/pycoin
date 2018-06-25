@@ -169,8 +169,6 @@ class Key(object):
             return self._ui_context.address_for_p2pkh(hash160)
         return None
 
-    bitcoin_address = address
-
     def as_text(self):
         """
         Return a textual representation of this key.
