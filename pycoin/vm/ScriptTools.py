@@ -41,11 +41,12 @@ class ScriptTools(object):
         """
         f = io.BytesIO()
         for t in s.split():
-            if t in self.opcode_to_int:
+            t_up = t.upper()
+            if t_up in self.opcode_to_int:
                 f.write(int2byte(self.opcode_to_int[t]))
-            elif ("OP_%s" % t) in self.opcode_to_int:
+            elif ("OP_%s" % t_up) in self.opcode_to_int:
                 f.write(int2byte(self.opcode_to_int["OP_%s" % t]))
-            elif t.startswith("0x"):
+            elif t_up.startswith("0X"):
                 d = binascii.unhexlify(t[2:])
                 f.write(d)
             else:
