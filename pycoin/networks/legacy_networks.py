@@ -95,5 +95,5 @@ NETWORKS = (
     NetworkValues("POLIS", "mainnet", "POLIS", b'\x3c', b'\x37', b'\x38', h2b("03E25D7E"), h2b("03E25945")),
 
     # POLIS mainnet :  xprv/xpub
-    NetworkValues("POLIS", "testnet", "POLIS", b'\x7A', b'\x41', b'\x57', h2b("0488ADE4"), h2b("0488B21E")),
+    NetworkValues("POLIS", "testnet", "TPOLIS", b'\x7A', b'\x41', b'\x57', h2b("0488ADE4"), h2b("0488B21E")),
   )
