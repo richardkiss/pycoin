@@ -149,7 +149,7 @@ $ export PYCOIN_NATIVE
 Donate
 ------
 
-Want to donate? Feel free. Send to 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T.
+Want to donate? Feel free. Send to 1KissZi1jr5eD7Rb9fepRHiS4ur2hc9PwS.
 I'm also available for bitcoin consulting... him@richardkiss.com.
 
 

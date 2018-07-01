@@ -23,14 +23,14 @@ class TxTest(ToolTest):
         cls.tool_name = "tx"
 
     def test_tx_fetch_unspent(self):
-        P2 = "76a914cd5dc792f0abb0aa8ba4ca36c9fe5eda8e495ff988ac"
+        P2 = "76a914b3407d4b4d1fca87fb930abe3fa6c2baed6e6fd888ac"
         FETCH_UNSPENT_EXPECT = [
-            "3a1e5271dd30a7217059151bd455ba8ede466ce70f9753383db88ddb449f1d84/0/%s/100000/0/0/0" % P2,
-            "86f095d56bb5de23c7d0200e48c5bdbf45578a2719bf00eb5084b5b7bda95e09/0/%s/5000000/0/0/0" % P2,
-            "82a21bd8110755454bb7d3a37ad81889d656c29cb27dd5bfdc5044f2fd36abcb/0/%s/40000/0/0/0" % P2,
-            "49f95aa8340f8d791456467abf2a26d551783aea1069f571f5b4087eb8f7f42d/0/%s/164598/0/0/0" % P2
+            "5fd3d8275afb5b5cc202ae8480daefa4fe16d0cf480ce78545d6dc06c6fb101a/1/%s/1/0/0/0" % P2,
+            "b9a84cffd3766bb642a697065b477eed032e36c377db80faac79b18e61b43b0d/1/%s/1/0/0/0" % P2,
+            "0986d70aaa03213135998cf1a9b8a33012c033c6607584e84b8ae33d49fadce3/0/%s/1/0/0/0" % P2,
+            "d658ab87cc053b8dbcfd4aa2717fd23cc3edfe90ec75351fadd6a0f7993b461d/7/%s/911/0/0/0" % P2,
         ]
-        output = self.launch_tool("tx -i 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T").split("\n")
+        output = self.launch_tool("tx -i 1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1").split("\n")
         for k in FETCH_UNSPENT_EXPECT:
             self.assertIn(k, output)
 
