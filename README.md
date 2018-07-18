@@ -74,6 +74,7 @@ environment variables in your `.profile` like this:
     PYCOIN_CACHE_DIR=~/.pycoin_cache
     PYCOIN_BTC_PROVIDERS="blockchain.info blockexplorer.com chain.so"
     export PYCOIN_CACHE_DIR PYCOIN_BTC_PROVIDERS
+    export PYCOIN_XTN_PROVIDERS="blockchain.info"  # For Bitcoin testnet
 
 and then `tx` will automatically fetch transactions from the web sites listed and cache the results in
 `PYCOIN_CACHE_DIR` when they are needed.
