@@ -43,6 +43,7 @@ def create_bitcoinish_network(**kwargs):
     #   wif_prefix_hex, address_prefix_hex, pay_to_script_prefix_hex
     #   bip32_prv_prefix_hex, bip32_pub_prefix_hex, sec_prefix, scriptTools
 
+    generator = kwargs.get("generator", secp256k1_generator)
     kwargs.setdefault("sec_prefix", "%sSEC" % kwargs["netcode"].upper())
     KEYS_TO_H2B = ("bip32_prv_prefix bip32_pub_prefix wif_prefix address_prefix "
                    "pay_to_script_prefix sec_prefix magic_header").split()
@@ -56,7 +57,7 @@ def create_bitcoinish_network(**kwargs):
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
-    ui = UI(_script_info, kwargs.get("generator", secp256k1_generator), **ui_kwargs)
+    ui = UI(_script_info, kwargs.get("generator", generator), **ui_kwargs)
     extras = Extras(scriptTools, ui)
     kwargs["ui"] = ui
     kwargs["extras"] = extras

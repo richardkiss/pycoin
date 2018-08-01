@@ -2,7 +2,7 @@ pycoin -- Python Cryptocoin Utilities
 =====================================
 
 This is an implementation of a bunch of utility routines that may be useful when dealing with bitcoin and some
-alt-coins. It has been tested with Python 2.7, 3.5 and 3.6.
+alt-coins. It has been tested with Python 2.7, 3.6 and 3.7.
 
 See also [pycoinnet](http://github.com/richardkiss/pycoinnet/) for a library that speaks the bitcoin protocol.
 
@@ -74,6 +74,7 @@ environment variables in your `.profile` like this:
     PYCOIN_CACHE_DIR=~/.pycoin_cache
     PYCOIN_BTC_PROVIDERS="blockchain.info blockexplorer.com chain.so"
     export PYCOIN_CACHE_DIR PYCOIN_BTC_PROVIDERS
+    export PYCOIN_XTN_PROVIDERS="blockchain.info"  # For Bitcoin testnet
 
 and then `tx` will automatically fetch transactions from the web sites listed and cache the results in
 `PYCOIN_CACHE_DIR` when they are needed.
@@ -149,7 +150,7 @@ $ export PYCOIN_NATIVE
 Donate
 ------
 
-Want to donate? Feel free. Send to 1KissFDVu2wAYWPRm4UGh5ZCDU9sE9an8T.
+Want to donate? Feel free. Send to 1KissZi1jr5eD7Rb9fepRHiS4ur2hc9PwS.
 I'm also available for bitcoin consulting... him@richardkiss.com.
 
 
