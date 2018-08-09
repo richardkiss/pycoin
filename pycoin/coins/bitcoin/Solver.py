@@ -149,57 +149,6 @@ class Solver(object):
             return solution_script, witness_list
         return solution_script
 
-    def solve_old(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
-        """
-        Sign a standard transaction.
-        hash160_lookup:
-            An object with a get method that accepts a hash160 and returns the
-            corresponding (secret exponent, public_pair, is_compressed) tuple or
-            None if it's unknown (in which case the script will obviously not be signed).
-            A standard dictionary will do nicely here.
-        tx_in_idx:
-            the index of the tx_in we are currently signing
-        """
-        from ...tx.pay_to import script_obj_from_script, ScriptPayToScript
-
-        tx_out_script = self.tx.unspents[tx_in_idx].script
-        if hash_type is None:
-            hash_type = SIGHASH_ALL
-        tx_in = self.tx.txs_in[tx_in_idx]
-
-        is_p2h = self.solution_checker.is_pay_to_script_hash(tx_out_script)
-        if is_p2h:
-            hash160 = ScriptPayToScript.from_script(tx_out_script).hash160
-            p2sh_lookup = kwargs.get("p2sh_lookup")
-            if p2sh_lookup is None:
-                raise ValueError("p2sh_lookup not set")
-            if hash160 not in p2sh_lookup:
-                raise ValueError("hash160=%s not found in p2sh_lookup" %
-                                 b2h(hash160))
-
-            script_to_hash = p2sh_lookup[hash160]
-        else:
-            script_to_hash = tx_out_script
-
-        # Leave out the signature from the hash, since a signature can't sign itself.
-        # The checksig op will also drop the signatures from its hash.
-        def signature_for_hash_type_f(hash_type, script):
-            return self.solution_checker.signature_hash(script, tx_in_idx, hash_type)
-
-        def witness_signature_for_hash_type(hash_type, script):
-            return self.solution_checker.signature_for_hash_type_segwit(script, tx_in_idx, hash_type)
-        witness_signature_for_hash_type.skip_delete = True
-
-        signature_for_hash_type_f.witness = witness_signature_for_hash_type
-
-        the_script = script_obj_from_script(tx_out_script)
-        kwargs["generator_for_signature_type_f"] = self.SolutionChecker.VM.generator_for_signature_type
-        solution = the_script.solve(
-            hash160_lookup=hash160_lookup, signature_type=hash_type,
-            existing_script=self.tx.txs_in[tx_in_idx].script, existing_witness=tx_in.witness,
-            script_to_hash=script_to_hash, signature_for_hash_type_f=signature_for_hash_type_f, **kwargs)
-        return solution
-
     def sign(self, hash160_lookup, tx_in_idx_set=None, hash_type=None, **kwargs):
         """
         Sign a standard transaction.
@@ -211,34 +160,24 @@ class Solver(object):
         checker = self.SolutionChecker(self.tx)
         if tx_in_idx_set is None:
             tx_in_idx_set = range(len(self.tx.txs_in))
-        if hash_type is None:
-            hash_type = SIGHASH_ALL
         self.tx.check_unspents()
-        for idx in sorted(tx_in_idx_set):
-            if self.tx.is_signature_ok(idx):
-                continue
-            tx_context = checker.tx_context_for_idx(idx)
+        for tx_in_idx in sorted(tx_in_idx_set):
+            tx_context = checker.tx_context_for_idx(tx_in_idx)
             try:
                 checker.check_solution(tx_context, flags=None)
                 continue
             except ScriptError:
-                try:
-                    self.sign_tx_in(
-                        hash160_lookup, idx, self.tx.unspents[idx].script, hash_type=hash_type, **kwargs)
-                except (SolvingError, ValueError):
-                    pass
-
+                pass
+            try:
+                r = self.solve(hash160_lookup, tx_in_idx, hash_type=hash_type, **kwargs)
+                if isinstance(r, bytes):
+                    self.tx.txs_in[tx_in_idx].script = r
+                else:
+                    self.tx.txs_in[tx_in_idx].script = r[0]
+                    self.tx.set_witness(tx_in_idx, r[1])
+            except (SolvingError, ValueError):
+                pass
         return self
-
-    def sign_tx_in(self, hash160_lookup, tx_in_idx, tx_out_script, hash_type=None, **kwargs):
-        if hash_type is None:
-            hash_type = self.SIGHASH_ALL
-        r = self.solve(hash160_lookup, tx_in_idx, hash_type=hash_type, **kwargs)
-        if isinstance(r, bytes):
-            self.tx.txs_in[tx_in_idx].script = r
-        else:
-            self.tx.txs_in[tx_in_idx].script = r[0]
-            self.tx.set_witness(tx_in_idx, r[1])
 
 
 class BitcoinSolver(Solver):

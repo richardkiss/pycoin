@@ -21,7 +21,7 @@ def network_for_netcode(symbol):
             if module.network.code.upper() == symbol:
                 module.symbol = symbol
                 return module.network
-        except (AttributeError, ModuleNotFoundError):
+        except (AttributeError, ImportError):
             pass
     raise ValueError("no network with symbol %s found" % netcode)
 

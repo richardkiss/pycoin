@@ -131,10 +131,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         elif (hash_type & 0x1f) == SIGHASH_SINGLE:
             # This preserves the ability to validate existing legacy
             # transactions which followed a buggy path in Satoshi's
-            # original code; note that higher level functions for signing
-            # new transactions (e.g., is_signature_ok and sign_tx_in)
-            # check to make sure we never get here (or at least they
-            # should)
+            # original code.
             if unsigned_txs_out_idx >= len(txs_out):
                 # This should probably be moved to a constant, but the
                 # likelihood of ever getting here is already really small

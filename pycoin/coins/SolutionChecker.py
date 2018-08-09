@@ -8,6 +8,8 @@ class ScriptError(Exception):
 
 class SolutionChecker(object):
 
+    ScriptError = ScriptError
+
     def __init__(self, *args, **kwargs):
         raise
 
