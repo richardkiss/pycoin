@@ -1,27 +1,35 @@
 import unittest
 
 from pycoin.cmds import ku
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.networks.registry import network_for_netcode
 
 from .ToolTest import ToolTest
 
 
-# BRAIN DAMAGE
-Key = BitcoinMainnet.ui._key_class
+
+def make_tests_for_netcode(netcode):
+
+    network = network_for_netcode(netcode)
+    Key = network.extras.Key
+
+    class KuTest(ToolTest):
+
+        @classmethod
+        def setUpClass(cls):
+            cls.parser = ku.create_parser()
+            cls.tool_name = "ku"
+
+        def test_ku_create(self):
+            output = self.launch_tool("ku create -w -n %s" % netcode).split("\n")
+            bip32 = network.ui.parse(output[0])
+            bip32_as_text = bip32.hwif(as_private=True)
+            self.assertEqual(output[0], bip32_as_text)
+
+    return KuTest
 
 
-class KuTest(ToolTest):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.parser = ku.create_parser()
-        cls.tool_name = "ku"
-
-    def test_ku_create(self):
-        output = self.launch_tool("ku create -w").split("\n")
-        bip32 = BitcoinMainnet.ui.parse(output[0])
-        bip32_as_text = bip32.hwif(as_private=True)
-        self.assertEqual(output[0], bip32_as_text)
+for netcode in ["BTC", "LTC", "BCH", "DOGE", "XTN"]:
+    exec("%sTests = make_tests_for_netcode('%s')" % (netcode, netcode))
 
 
 def main():

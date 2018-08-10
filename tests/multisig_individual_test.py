@@ -4,12 +4,12 @@ import unittest
 from pycoin.coins.tx_utils import create_tx
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.solve.utils import build_hash160_lookup
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.btc import network
 
 
-Key = BitcoinMainnet.extras.Key
-script_for_multisig = BitcoinMainnet.ui._script_info.script_for_multisig
-Tx = BitcoinMainnet.tx
+Key = network.extras.Key
+script_for_multisig = network.ui._script_info.script_for_multisig
+Tx = network.tx
 
 
 class MultisigIndividualTest(unittest.TestCase):

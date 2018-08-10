@@ -54,13 +54,13 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(address, afs_address)
 
     def test_segwit_create_tx(self):
-        key1 = Key(1, generator=secp256k1_generator)
+        key1 = Key(1)
         coin_value = 5000000
         script = script_for_p2pkh_wit(key1.hash160())
         tx_hash = b'\ee' * 32
         tx_out_index = 0
         spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
-        key2 = Key(2, generator=secp256k1_generator)
+        key2 = Key(2)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()])
