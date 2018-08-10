@@ -4,23 +4,23 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins import tx_utils
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.btc import network
 
 
 # BRAIN DAMAGE
-who_signed_tx = BitcoinMainnet.extras.who_signed_tx
-UI = BitcoinMainnet.ui
+who_signed_tx = network.extras.who_signed_tx
+UI = network.ui
 address_for_p2s = UI.address_for_p2s
 script_for_address = UI.script_for_address
 script_for_multisig = UI._script_info.script_for_multisig
 Key = UI._key_class
-Tx = BitcoinMainnet.tx
+Tx = network.tx
 
 
 class WhoSignedTest(unittest.TestCase):
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
-        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)
@@ -48,7 +48,7 @@ class WhoSignedTest(unittest.TestCase):
     def test_multisig_one_at_a_time(self):
         M = 3
         N = 3
-        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)
@@ -71,7 +71,7 @@ class WhoSignedTest(unittest.TestCase):
 
     def test_sign_pay_to_script_multisig(self):
         M, N = 3, 3
-        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         address = address_for_p2s(underlying_script)

@@ -1,13 +1,15 @@
 import unittest
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.networks.registry import network_for_netcode
 from pycoin.ui.key_from_text import key_from_text
 
 
+network = network_for_netcode("BTC")
+
 # BRAIN DAMAGE
-ElectrumWallet = BitcoinMainnet.extras.ElectrumKey
-Key = BitcoinMainnet.extras.Key
+ElectrumWallet = network.extras.ElectrumKey
+Key = network.extras.Key
 
 
 class ElectrumTest(unittest.TestCase):

@@ -4,13 +4,13 @@ import unittest
 
 from pycoin.coins.exceptions import BadSpendableError
 from pycoin.coins.tx_utils import create_signed_tx
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.btc import network
 
 
-Key = BitcoinMainnet.ui._key_class
-Spendable = BitcoinMainnet.tx.Spendable
+Key = network.ui._key_class
+Spendable = network.tx.Spendable
 
-script_for_address = BitcoinMainnet.ui.script_for_address
+script_for_address = network.ui.script_for_address
 
 BITCOIN_ADDRESSES = [Key(i).address() for i in range(1, 21)]
 
@@ -49,7 +49,7 @@ class SpendTest(unittest.TestCase):
             self.assertEqual(tx.id(), EXPECTED_IDS[count-1])
             for idx in range(1, count+1):
                 script = tx.txs_out[idx-1].puzzle_script()
-                address = BitcoinMainnet.ui.address_for_script(script)
+                address = network.ui.address_for_script(script)
                 self.assertEqual(address, BITCOIN_ADDRESSES[idx])
             # TODO: add check that s + s < generator for each signature
             for i in range(count):

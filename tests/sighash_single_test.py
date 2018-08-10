@@ -1,18 +1,11 @@
 import unittest
 
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
-from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import b2h, b2h_rev
 from pycoin.intbytes import int2byte
+from pycoin.networks.registry import network_for_netcode
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_ANYONECANPAY, SIGHASH_SINGLE
 from pycoin.satoshi.der import sigdecode_der, sigencode_der
-from pycoin.symbols.btc import network as BitcoinMainnet
-from pycoin.symbols.xtn import network as BitcoinTestnet
-
-Tx = BitcoinMainnet.tx
-TxIn = Tx.TxIn
-TxOut = Tx.TxOut
 
 
 PRIV_KEYS = (
@@ -51,25 +44,25 @@ def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
 
 class SighashSingleTest(unittest.TestCase):
 
-    def test_sighash_single_mainnet(self):
-        self._test_sighash_single(BitcoinMainnet)
+    def test_sighash_single(self):
+        for netcode in ["BTC", "XTN"]:
+            self._test_sighash_single(netcode)
 
-    def test_sighash_single_testnet3(self):
-        self._test_sighash_single(BitcoinTestnet)
-
-    def _test_sighash_single(self, network):
+    def _test_sighash_single(self, netcode):
+        network = network_for_netcode(netcode)
         Key = network.ui._key_class
-        k0 = Key(secret_exponent=PRIV_KEYS[0], generator=secp256k1_generator, is_compressed=True)
-        k1 = Key(secret_exponent=PRIV_KEYS[1], generator=secp256k1_generator, is_compressed=True)
-        k2 = Key(secret_exponent=PRIV_KEYS[2], generator=secp256k1_generator, is_compressed=True)
-        k3 = Key(secret_exponent=PRIV_KEYS[3], generator=secp256k1_generator, is_compressed=True)
-        k4 = Key(secret_exponent=PRIV_KEYS[4], generator=secp256k1_generator, is_compressed=True)
-        k5 = Key(secret_exponent=PRIV_KEYS[5], generator=secp256k1_generator, is_compressed=True)
+        k0 = Key(secret_exponent=PRIV_KEYS[0], is_compressed=True)
+        k1 = Key(secret_exponent=PRIV_KEYS[1], is_compressed=True)
+        k2 = Key(secret_exponent=PRIV_KEYS[2], is_compressed=True)
+        k3 = Key(secret_exponent=PRIV_KEYS[3], is_compressed=True)
+        k4 = Key(secret_exponent=PRIV_KEYS[4], is_compressed=True)
+        k5 = Key(secret_exponent=PRIV_KEYS[5], is_compressed=True)
 
         # Fake a coinbase transaction
-        coinbase_tx = Tx.coinbase_tx(k0.sec(), 500000000)
-        coinbase_tx.txs_out.append(TxOut(1000000000, BitcoinScriptTools.compile('%s OP_CHECKSIG' % b2h(k1.sec()))))
-        coinbase_tx.txs_out.append(TxOut(1000000000, BitcoinScriptTools.compile('%s OP_CHECKSIG' % b2h(k2.sec()))))
+        coinbase_tx = network.tx.coinbase_tx(k0.sec(), 500000000)
+        for k in [k1, k2]:
+            coinbase_tx.txs_out.append(network.tx.TxOut(
+                1000000000, network.extras.ScriptTools.compile('%s OP_CHECKSIG' % b2h(k.sec()))))
 
         self.assertEqual('2acbe1006f7168bad538b477f7844e53de3a31ffddfcfc4c6625276dd714155a',
                          b2h_rev(coinbase_tx.hash()))
@@ -78,30 +71,30 @@ class SighashSingleTest(unittest.TestCase):
 
         # Make the test transaction
         txs_in = [
-            TxIn(coinbase_tx.hash(), 0),
-            TxIn(coinbase_tx.hash(), 1),
-            TxIn(coinbase_tx.hash(), 2),
+            network.tx.TxIn(coinbase_tx.hash(), 0),
+            network.tx.TxIn(coinbase_tx.hash(), 1),
+            network.tx.TxIn(coinbase_tx.hash(), 2),
         ]
         txs_out = [
-            TxOut(900000000, script_for_address(k3.address())),
-            TxOut(800000000, script_for_address(k4.address())),
-            TxOut(800000000, script_for_address(k5.address())),
+            network.tx.TxOut(900000000, script_for_address(k3.address())),
+            network.tx.TxOut(800000000, script_for_address(k4.address())),
+            network.tx.TxOut(800000000, script_for_address(k5.address())),
         ]
-        tx = Tx(1, txs_in, txs_out)
+        tx = network.tx(1, txs_in, txs_out)
         tx.set_unspents(coinbase_tx.txs_out)
 
         self.assertEqual('791b98ef0a3ac87584fe273bc65abd89821569fd7c83538ac0625a8ca85ba587', b2h_rev(tx.hash()))
 
         sig_type = SIGHASH_SINGLE
 
-        solution_checker = BitcoinSolutionChecker(tx)
+        solution_checker = network.tx.SolutionChecker(tx)
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[0].script, 0, sig_type)
         self.assertEqual(0xcc52d785a3b4133504d1af9e60cd71ca422609cb41df3a08bbb466b2a98a885e, sig_hash)
 
         sig = sigmake(k0, sig_hash, sig_type)
         self.assertTrue(sigcheck(k0, sig_hash, sig[:-1]))
 
-        tx.txs_in[0].script = BitcoinScriptTools.compile(b2h(sig))
+        tx.txs_in[0].script = network.extras.ScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(0))
 
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
@@ -110,7 +103,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k1, sig_hash, sig_type)
         self.assertTrue(sigcheck(k1, sig_hash, sig[:-1]))
 
-        tx.txs_in[1].script = BitcoinScriptTools.compile(b2h(sig))
+        tx.txs_in[1].script = network.extras.ScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(1))
 
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
@@ -119,7 +112,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k2, sig_hash, sig_type)
         self.assertTrue(sigcheck(k2, sig_hash, sig[:-1]))
 
-        tx.txs_in[2].script = BitcoinScriptTools.compile(b2h(sig))
+        tx.txs_in[2].script = network.extras.ScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(2))
 
         sig_type = SIGHASH_SINGLE | SIGHASH_ANYONECANPAY
@@ -130,7 +123,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k0, sig_hash, sig_type)
         self.assertTrue(sigcheck(k0, sig_hash, sig[:-1]))
 
-        tx.txs_in[0].script = BitcoinScriptTools.compile(b2h(sig))
+        tx.txs_in[0].script = network.extras.ScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(0))
 
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
@@ -139,7 +132,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k1, sig_hash, sig_type)
         self.assertTrue(sigcheck(k1, sig_hash, sig[:-1]))
 
-        tx.txs_in[1].script = BitcoinScriptTools.compile(b2h(sig))
+        tx.txs_in[1].script = network.extras.ScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(1))
 
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
@@ -148,7 +141,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k2, sig_hash, sig_type)
         self.assertTrue(sigcheck(k2, sig_hash, sig[:-1]))
 
-        tx.txs_in[2].script = BitcoinScriptTools.compile(b2h(sig))
+        tx.txs_in[2].script = network.extras.ScriptTools.compile(b2h(sig))
         self.assertTrue(tx.is_signature_ok(2))
 
 

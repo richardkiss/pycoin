@@ -2,9 +2,9 @@ import binascii
 import unittest
 
 from pycoin.encoding.hexbytes import b2h, h2b_rev
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.btc import network
 
-Tx = BitcoinMainnet.tx
+Tx = network.tx
 
 TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX = (
     "0100000001a8f57056b016d7d243fc0fc2a73f9146e7e4c7766ec6033b5ac4cb89c64e"
@@ -17,7 +17,7 @@ TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX = (
     "0b5ce889ac8700000000")
 
 
-address_for_script = BitcoinMainnet.ui.address_for_script
+address_for_script = network.ui.address_for_script
 
 
 class TxTest(unittest.TestCase):

@@ -2,13 +2,16 @@ import unittest
 
 from pycoin.encoding.b58 import b2a_hashed_base58
 from pycoin.key.Key import InvalidSecretExponentError
+from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.registry import network_codes
-from pycoin.symbols.btc import network as BitcoinMainnet
-from pycoin.symbols.xtn import network as BitcoinTestnet
 from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 
 NETCODES = "BTC XTN DOGE".split()
+
+
+BitcoinMainnet = network_for_netcode("BTC")
+BitcoinTestnet = network_for_netcode("XTN")
 
 # BRAIN DAMAGE
 Key = BitcoinMainnet.ui._key_class
@@ -62,7 +65,6 @@ class KeyUtilsTest(unittest.TestCase):
             a = wif[:-1] + chr(ord(wif[-1])+1)
             self.assertEqual(is_wif_valid(a), None)
 
-        from pycoin.networks.registry import network_for_netcode
         NETWORK_NAMES = network_codes()
         for netcode in NETWORK_NAMES:
             network = network_for_netcode(netcode)

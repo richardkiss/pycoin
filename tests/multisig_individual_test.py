@@ -14,7 +14,7 @@ Tx = BitcoinMainnet.tx
 
 class MultisigIndividualTest(unittest.TestCase):
     def multisig_M_of_N_individually(self, M, N):
-        keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
+        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)

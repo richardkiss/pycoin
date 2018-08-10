@@ -6,10 +6,7 @@ from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.encoding.hexbytes import h2b
 from pycoin.satoshi import errno
 from pycoin.satoshi import flags
-from pycoin.symbols.btc import network as BitcoinMainnet
-
-Tx = BitcoinMainnet.tx
-BitcoinScriptTools = BitcoinMainnet.extras.ScriptTools
+from pycoin.symbols.btc import network
 
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
@@ -28,15 +25,15 @@ def parse_flags(flag_string):
 
 
 def build_credit_tx(script_out_bin, coin_value=0):
-    txs_in = [Tx.TxIn(b'\0'*32, 4294967295, b'\0\0', sequence=4294967295)]
-    txs_out = [Tx.TxOut(coin_value, script_out_bin)]
-    return Tx(1, txs_in, txs_out)
+    txs_in = [network.tx.TxIn(b'\0'*32, 4294967295, b'\0\0', sequence=4294967295)]
+    txs_out = [network.tx.TxOut(coin_value, script_out_bin)]
+    return network.tx(1, txs_in, txs_out)
 
 
 def build_spending_tx(script_in_bin, credit_tx):
-    txs_in = [Tx.TxIn(credit_tx.hash(), 0, script_in_bin, sequence=4294967295)]
-    txs_out = [Tx.TxOut(credit_tx.txs_out[0].coin_value, b'')]
-    spend_tx = Tx(1, txs_in, txs_out, unspents=credit_tx.tx_outs_as_spendable())
+    txs_in = [network.tx.TxIn(credit_tx.hash(), 0, script_in_bin, sequence=4294967295)]
+    txs_out = [network.tx.TxOut(credit_tx.txs_out[0].coin_value, b'')]
+    spend_tx = network.tx(1, txs_in, txs_out, unspents=credit_tx.tx_outs_as_spendable())
     return spend_tx
 
 
@@ -48,14 +45,14 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
     print("ACTUAL: %s" % actual)
     print("MESSAGE: %s" % message)
     print(comment)
-    print(BitcoinScriptTools.disassemble(BitcoinScriptTools.compile(script_in)))
-    print(BitcoinScriptTools.disassemble(BitcoinScriptTools.compile(script_out)))
+    print(network.extras.ScriptTools.disassemble(network.extras.ScriptTools.compile(script_in)))
+    print(network.extras.ScriptTools.disassemble(network.extras.ScriptTools.compile(script_out)))
 
     def tbf(*args):
         opcode, data, pc, vm = args
         stack = vm.stack
         altstack = vm.altstack
-        opd = BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)
+        opd = network.extras.ScriptTools.disassemble_for_opcode_data(opcode, data)
         if len(altstack) == 0:
             altstack = ''
         print("%s %s\n  %3x  %s" % (stack, altstack, pc, opd))
@@ -77,8 +74,8 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
 
 
 def make_script_test(script_in, script_out, flags_string, comment, expected, coin_value, script_witness):
-    script_in_bin = BitcoinScriptTools.compile(script_in)
-    script_out_bin = BitcoinScriptTools.compile(script_out)
+    script_in_bin = network.extras.ScriptTools.compile(script_in)
+    script_out_bin = network.extras.ScriptTools.compile(script_out)
     script_witness_bin = [h2b(w) for w in script_witness]
     flags = parse_flags(flags_string)
 

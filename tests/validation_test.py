@@ -2,18 +2,13 @@ import binascii
 import unittest
 
 from pycoin.encoding.hexbytes import h2b
-from pycoin.symbols.btc import network as BitcoinMainnet
-
-
-Block = BitcoinMainnet.block
-Tx = BitcoinMainnet.tx
-BitcoinScriptTools = BitcoinMainnet.extras.ScriptTools
+from pycoin.symbols.btc import network
 
 
 class ValidationTest(unittest.TestCase):
 
     def setUp(self):
-        self._key = BitcoinMainnet.extras.Key(1)
+        self._key = network.extras.Key(1)
 
     def test_validate_multisig_tx(self):
         # this is a transaction in the block chain
@@ -32,7 +27,7 @@ class ValidationTest(unittest.TestCase):
             "9e52ae404b4c00000000004751210351efb6e91a31221652105d032a2508275f374cea"
             "63939ad72f1b1e02f477da7821004f0331742bbc917ba2056a3b8a857ea47ec088dd10"
             "475ea311302112c9d24a7152ae")
-        tx = Tx.from_hex(TX_HEX)
+        tx = network.tx.from_hex(TX_HEX)
         self.assertEqual(tx.id(), "70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a")
         self.assertEqual(tx.bad_signature_count(), 0)
 
@@ -92,16 +87,16 @@ class ValidationTest(unittest.TestCase):
             "00001976A914D4CAA8447532CA8EE4C80A1AE1D230A01E22BFDB88AC8013A0DE010000"
             "001976A9149661A79AE1F6D487AF3420C13E649D6DF3747FC288AC00000000")
 
-        block_80971 = Block.from_bin(block_80971_data)
+        block_80971 = network.block.from_bin(block_80971_data)
         self.assertEqual(block_80971.id(), block_80971_id)
-        block_80974 = Block.from_bin(block_80974_data)
+        block_80974 = network.block.from_bin(block_80974_data)
         self.assertEqual(block_80974.id(), block_80974_id)
 
         tx_db = {tx.hash(): tx for tx in block_80971.txs}
 
         tx_to_validate = block_80974.txs[2]
         self.assertEqual("OP_DUP OP_HASH160 [d4caa8447532ca8ee4c80a1ae1d230a01e22bfdb] OP_EQUALVERIFY OP_CHECKSIG",
-                         BitcoinScriptTools.disassemble(tx_to_validate.txs_out[0].script))
+                         network.extras.ScriptTools.disassemble(tx_to_validate.txs_out[0].script))
         self.assertEqual(tx_to_validate.id(), "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b")
 
         tx_to_validate.unspents_from_db(tx_db)
@@ -110,15 +105,15 @@ class ValidationTest(unittest.TestCase):
         # now, let's corrupt the Tx and see what happens
         tx_out = tx_to_validate.txs_out[1]
 
-        disassembly = BitcoinScriptTools.disassemble(tx_out.script)
-        tx_out.script = BitcoinScriptTools.compile(disassembly)
+        disassembly = network.extras.ScriptTools.disassemble(tx_out.script)
+        tx_out.script = network.extras.ScriptTools.compile(disassembly)
 
         self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
         disassembly = disassembly.replace("9661a79ae1f6d487af3420c13e649d6df3747fc2",
                                           "9661a79ae1f6d487af3420c13e649d6df3747fc3")
 
-        tx_out.script = BitcoinScriptTools.compile(disassembly)
+        tx_out.script = network.extras.ScriptTools.compile(disassembly)
 
         self.assertEqual(tx_to_validate.bad_signature_count(), 1)
         self.assertFalse(tx_to_validate.is_signature_ok(0))
@@ -126,7 +121,7 @@ class ValidationTest(unittest.TestCase):
     def test_validate_two_inputs(self):
         def tx_from_b64(h):
             d = binascii.a2b_base64(h.encode("utf8"))
-            return Tx.from_bin(d)
+            return network.tx.from_bin(d)
         # tx_0 = c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d
         # This is the one we're going to validate. It has inputs from
         #  tx_1 = b52201c2741d410b70688335afebba0d58f8675fa9b6c8c54becb0d7c0a75983
@@ -164,37 +159,37 @@ class ValidationTest(unittest.TestCase):
 
         tx_to_validate = tx_0
         self.assertEqual("OP_DUP OP_HASH160 [2d74eede5a76b7fc0c4aebea6e27ce4a3f7f92f9] OP_EQUALVERIFY OP_CHECKSIG",
-                         BitcoinScriptTools.disassemble(tx_to_validate.txs_out[0].script))
+                         network.extras.ScriptTools.disassemble(tx_to_validate.txs_out[0].script))
         self.assertEqual(tx_to_validate.id(), "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d")
 
         tx_to_validate.unspents_from_db(TX_DB)
         self.assertEqual(tx_to_validate.bad_signature_count(), 0)
 
         # now let's mess with signatures
-        disassembly = BitcoinScriptTools.disassemble(tx_to_validate.txs_in[0].script)
-        tx_to_validate.txs_in[0].script = BitcoinScriptTools.compile(disassembly)
+        disassembly = network.extras.ScriptTools.disassemble(tx_to_validate.txs_in[0].script)
+        tx_to_validate.txs_in[0].script = network.extras.ScriptTools.compile(disassembly)
         self.assertEqual(tx_to_validate.bad_signature_count(), 0)
         disassembly = disassembly.replace("353fb6fcfbce09", "353fb6fcfbce19")
-        tx_to_validate.txs_in[0].script = BitcoinScriptTools.compile(disassembly)
+        tx_to_validate.txs_in[0].script = network.extras.ScriptTools.compile(disassembly)
         self.assertEqual(tx_to_validate.bad_signature_count(), 1)
         self.assertFalse(tx_to_validate.is_signature_ok(0))
 
         tx_to_validate = tx_from_b64(TX_0_HEX)
         tx_to_validate.unspents_from_db(TX_DB)
         self.assertEqual(tx_to_validate.bad_signature_count(), 0)
-        disassembly = BitcoinScriptTools.disassemble(tx_to_validate.txs_in[1].script)
+        disassembly = network.extras.ScriptTools.disassemble(tx_to_validate.txs_in[1].script)
         disassembly = disassembly.replace("960c258ffb494d2859f", "960d258ffb494d2859f")
-        tx_to_validate.txs_in[1].script = BitcoinScriptTools.compile(disassembly)
+        tx_to_validate.txs_in[1].script = network.extras.ScriptTools.compile(disassembly)
         self.assertEqual(tx_to_validate.bad_signature_count(), 1)
         self.assertFalse(tx_to_validate.is_signature_ok(1))
 
         # futz with signature on tx_1
         tx_to_validate = tx_from_b64(TX_0_HEX)
         original_tx_hash = tx_1.hash()
-        disassembly = BitcoinScriptTools.disassemble(tx_1.txs_out[0].script)
+        disassembly = network.extras.ScriptTools.disassemble(tx_1.txs_out[0].script)
         disassembly = disassembly.replace("4cf9d8545548de0256f48c4b0726b14294619267",
                                           "4cf9d8545548de1256f48c4b0726b14294619267")
-        tx_1.txs_out[0].script = BitcoinScriptTools.compile(disassembly)
+        tx_1.txs_out[0].script = network.extras.ScriptTools.compile(disassembly)
         TX_DB[original_tx_hash] = tx_1
         tx_to_validate.unspents_from_db(TX_DB, ignore_missing=True)
         self.assertEqual(tx_to_validate.bad_signature_count(), 1)
@@ -208,10 +203,10 @@ class ValidationTest(unittest.TestCase):
         # futz with signature on tx_2
         tx_to_validate = tx_from_b64(TX_0_HEX)
         original_tx_hash = tx_2.hash()
-        disassembly = BitcoinScriptTools.disassemble(tx_2.txs_out[0].script)
+        disassembly = network.extras.ScriptTools.disassemble(tx_2.txs_out[0].script)
         disassembly = disassembly.replace("a645d6ccbefe5f11b8050f5624b5a054f734135b",
                                           "a665d6ccbefe5f11b8050f5624b5a054f734135b")
-        tx_2.txs_out[0].script = BitcoinScriptTools.compile(disassembly)
+        tx_2.txs_out[0].script = network.extras.ScriptTools.compile(disassembly)
         TX_DB[original_tx_hash] = tx_2
         tx_to_validate.unspents_from_db(TX_DB, ignore_missing=True)
         self.assertEqual(tx_to_validate.bad_signature_count(), 1)
@@ -234,7 +229,7 @@ class ValidationTest(unittest.TestCase):
         address = key.address()
         p2sh_lookup = build_p2sh_lookup(other_scripts)
 
-        coinbase_tx = Tx.coinbase_tx(public_key_sec=sec, coin_value=cv)
+        coinbase_tx = network.tx.coinbase_tx(public_key_sec=sec, coin_value=cv)
         coinbase_tx.txs_out[0].script = input_script
         spendable = coinbase_tx.tx_outs_as_spendable()[0]
         payables = [(address, cv)]
@@ -244,32 +239,32 @@ class ValidationTest(unittest.TestCase):
         return tx
 
     def test_validate_p2pkh(self):
-        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh(self._key.hash160())
+        us_1 = network.ui._script_info.script_for_p2pkh(self._key.hash160())
         tx = self._make_tx(us_1)
         tx.check_solution(0)
 
     def test_validate_p2s_of_p2pkh(self):
-        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh(self._key.hash160())
-        us_2 = BitcoinMainnet.ui._script_info.script_for_p2s(us_1)
+        us_1 = network.ui._script_info.script_for_p2pkh(self._key.hash160())
+        us_2 = network.ui._script_info.script_for_p2s(us_1)
         tx = self._make_tx(us_2, [us_1])
         tx.check_solution(0)
 
     def test_validate_p2pkh_wit(self):
-        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh_wit(self._key.hash160())
+        us_1 = network.ui._script_info.script_for_p2pkh_wit(self._key.hash160())
         tx = self._make_tx(us_1)
         tx.check_solution(0)
 
     def test_validate_p2s_wit_of_p2pkh(self):
-        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh_wit(self._key.hash160())
-        us_2 = BitcoinMainnet.ui._script_info.script_for_p2s(us_1)
+        us_1 = network.ui._script_info.script_for_p2pkh_wit(self._key.hash160())
+        us_2 = network.ui._script_info.script_for_p2s(us_1)
         tx = self._make_tx(us_2, [us_1])
         self.assertEqual(tx.id(), "1e5d967a3778bfa4e0d90f35f59530e8033a36bd7fd1d9e617c504054b89bd3a")
         tx.check_solution(0)
 
     def test_validate_p2s_of_p2s_wit_of_p2pkh(self):
-        us_1 = BitcoinMainnet.ui._script_info.script_for_p2pkh(self._key.hash160())
-        us_2 = BitcoinMainnet.ui._script_info.script_for_p2s_wit(us_1)
-        us_3 = BitcoinMainnet.ui._script_info.script_for_p2s(us_2)
+        us_1 = network.ui._script_info.script_for_p2pkh(self._key.hash160())
+        us_2 = network.ui._script_info.script_for_p2s_wit(us_1)
+        us_3 = network.ui._script_info.script_for_p2s(us_2)
         tx = self._make_tx(us_3, [us_1, us_2])
         self.assertEqual(tx.id(), "54a518b82b464744951531270c1bcec133c515fcdbe9d70c6141e067a62ff640")
         tx.check_solution(0)

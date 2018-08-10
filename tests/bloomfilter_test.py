@@ -2,9 +2,9 @@ import binascii
 import unittest
 
 from pycoin.bloomfilter import filter_size_required, hash_function_count_required, BloomFilter, murmur3
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.networks.registry import network_for_netcode
 
-Spendable = BitcoinMainnet.tx.Spendable
+Spendable = network_for_netcode("BTC").tx.Spendable
 
 h2b = binascii.unhexlify
 

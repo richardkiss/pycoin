@@ -85,7 +85,7 @@ class EncodingTestCase(unittest.TestCase):
 
     def test_wif_to_from_secret_exponent(self):
         def do_test(as_secret_exponent, as_wif, is_compressed):
-            key = Key(as_secret_exponent, is_compressed=is_compressed, generator=secp256k1_generator)
+            key = Key(as_secret_exponent, is_compressed=is_compressed)
             self.assertEqual(as_wif, key.wif())
             key = BitcoinMainnet.ui.parse(as_wif)
             se = key.secret_exponent()

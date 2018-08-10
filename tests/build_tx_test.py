@@ -5,14 +5,18 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.encoding.hexbytes import h2b
 from pycoin.encoding.sec import public_pair_to_sec, public_pair_to_hash160_sec
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.networks.registry import network_for_netcode
 
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.utils import build_hash160_lookup
 
-script_for_address = BitcoinMainnet.ui.script_for_address
-Block = BitcoinMainnet.block
-Tx = BitcoinMainnet.tx
+
+network = network_for_netcode("BTC")
+
+
+script_for_address = network.ui.script_for_address
+Block = network.block
+Tx = network.tx
 
 # block 80971
 block_80971_cs = h2b('00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC')
@@ -70,7 +74,7 @@ def standard_tx(coins_from, coins_to):
 
 
 def public_pair_to_bitcoin_address(pair, compressed):
-    return BitcoinMainnet.ui.address_for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
+    return network.ui.address_for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
 
 
 class BuildTxTest(unittest.TestCase):
@@ -79,7 +83,7 @@ class BuildTxTest(unittest.TestCase):
         compressed = False
         exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
         address_2 = public_pair_to_bitcoin_address(exponent_2 * secp256k1_generator, compressed=compressed)
-        key = BitcoinMainnet.ui.parse("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+        key = network.ui.parse("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
         exponent = key.secret_exponent()
 
         public_key_sec = public_pair_to_sec(exponent * secp256k1_generator, compressed=compressed)
@@ -117,7 +121,7 @@ class BuildTxTest(unittest.TestCase):
 
     def test_tx_out_address(self):
         tx = Tx.coinbase_tx(COINBASE_PUB_KEY_FROM_80971, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
-        address = BitcoinMainnet.ui.address_for_script(tx.txs_out[0].puzzle_script())
+        address = network.ui.address_for_script(tx.txs_out[0].puzzle_script())
         self.assertEqual(address, '1DmapcnrJNGeJB13fv9ngRFX1iRvR4zamn')
 
     def test_build_spends(self):
@@ -126,7 +130,7 @@ class BuildTxTest(unittest.TestCase):
 
         # create a coinbase Tx where we know the public & private key
 
-        key = BitcoinMainnet.ui.parse("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+        key = network.ui.parse("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
         exponent = key.secret_exponent()
         compressed = False
 

@@ -3,7 +3,7 @@ import unittest
 from pycoin.encoding.hexbytes import h2b, h2b_rev, b2h, b2h_rev
 
 
-class SerializeTest(unittest.TestCase):
+class HexbytesTest(unittest.TestCase):
 
     def test_h2b(self):
         h = "000102"
