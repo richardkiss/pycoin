@@ -2,15 +2,14 @@
 
 import argparse
 from pycoin.encoding.hexbytes import b2h
-from pycoin.networks.registry import full_network_name_for_netcode, network_codes
-from pycoin.networks.registry import network_for_netcode
+from pycoin.networks.registry import network_codes, network_for_netcode
 from pycoin.networks.default import get_current_netcode
 
 
 def create_parser():
     codes = network_codes()
     EPILOG = ('Known networks codes:\n  ' +
-              ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
+              ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
 
     parser = argparse.ArgumentParser(
         description="Compile or disassemble scripts.",
@@ -27,21 +26,31 @@ def create_parser():
 
 def coinc(args, parser):
     network = network_for_netcode(args.network)
-    script_tools = network.extras.ScriptTools
 
     for arg in args.argument:
-        compiled_script = script_tools.compile(arg)
-        print(b2h(compiled_script))
+        info = info_for_arg(arg, network)
+        for k in ("compiled_script_hex address_p2s preimage_p2s_hex "
+                  "address_p2s_wit underlying_script disassembled_script").split():
+            print(info[k])
 
-        address_p2s = network.ui.address_for_p2s(compiled_script)
-        print(address_p2s)
-        print(b2h(network.ui.script_for_address(address_p2s)))
 
-        address_p2s_wit = network.ui.address_for_p2s_wit(compiled_script)
-        print(address_p2s_wit)
-        print(b2h(network.ui.script_for_address(address_p2s_wit)))
+def info_for_arg(arg, network):
+    script_tools = network.extras.ScriptTools
 
-        print(script_tools.disassemble(compiled_script))
+    d = {}
+    compiled_script = script_tools.compile(arg)
+    d["compiled_script_hex"] = "0x%s" % b2h(compiled_script)
+
+    address_p2s = network.ui.address_for_p2s(compiled_script)
+    d["address_p2s"] = address_p2s
+    d["preimage_p2s_hex"] = b2h(network.ui.script_for_address(address_p2s))
+
+    address_p2s_wit = network.ui.address_for_p2s_wit(compiled_script)
+    d["address_p2s_wit"] = address_p2s_wit
+    d["underlying_script"] = b2h(network.ui.script_for_address(address_p2s_wit))
+
+    d["disassembled_script"] = script_tools.disassemble(compiled_script)
+    return d
 
 
 def main():

@@ -43,6 +43,7 @@ setup(
                 'msg = pycoin.cmds.msg:main',
                 'keychain = pycoin.cmds.keychain:main',
                 'b58 = pycoin.cmds.b58:main',
+                'coinc = pycoin.cmds.coinc:main',
             ]
         },
     author_email="him@richardkiss.com",

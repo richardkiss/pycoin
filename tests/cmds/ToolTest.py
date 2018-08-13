@@ -9,7 +9,7 @@ try:
 except ImportError:
     from io import StringIO
 
-from pycoin.cmds import block, ku, msg, tx
+from pycoin.cmds import block, ku, msg, tx, coinc
 
 
 DEFAULT_ENV = {
@@ -22,7 +22,8 @@ TOOL_LOOKUP = {
     "tx": (tx.create_parser(), tx.tx),
     "ku": (ku.create_parser(), ku.ku),
     "msg": (msg.create_parser(), msg.msg),
-    "block": (block.create_parser(), block.block)
+    "block": (block.create_parser(), block.block),
+    "coinc": (coinc.create_parser(), coinc.coinc),
 }
 
 
