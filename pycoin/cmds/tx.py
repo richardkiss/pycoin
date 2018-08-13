@@ -21,8 +21,7 @@ from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding.hexbytes import b2h, h2b, h2b_rev
 from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.key.Keychain import Keychain
-from pycoin.networks.registry import network_codes
-from pycoin.networks.registry import network_for_netcode
+from pycoin.networks.registry import network_codes, network_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
