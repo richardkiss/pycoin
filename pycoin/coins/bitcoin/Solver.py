@@ -7,7 +7,8 @@ from .ScriptTools import BitcoinScriptTools
 from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.constraints import Atom, Operator, make_traceback_f
-from pycoin.solve.solve import solutions_for_constraint, SolvingError
+from pycoin.solve.ConstraintSolver import SolvingError, ConstraintSolver
+from pycoin.solve.some_solvers import register_all
 
 
 def generate_default_placeholder_signature(generator):
@@ -92,7 +93,7 @@ class Solver(object):
     def solve_for_constraints(self, constraints, **kwargs):
         solutions = []
         for c in constraints:
-            s = solutions_for_constraint(c)
+            s = self.solutions_for_constraint(c)
             # s = (solution_f, target atom, dependency atom list)
             if s:
                 solutions.append(s)
@@ -180,6 +181,13 @@ class Solver(object):
         return self
 
 
+BitcoinConstraintSolver = ConstraintSolver()
+register_all(BitcoinConstraintSolver)
+
+
 class BitcoinSolver(Solver):
     SolutionChecker = BitcoinSolutionChecker
     ScriptTools = BitcoinScriptTools
+
+    def solutions_for_constraint(self, c):
+        return BitcoinConstraintSolver.solutions_for_constraint(c)

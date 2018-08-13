@@ -2,7 +2,6 @@ import hashlib
 import unittest
 
 from pycoin.coins.SolutionChecker import ScriptError
-from pycoin.coins.bitcoin.Solver import Solver
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import b2h
@@ -20,6 +19,7 @@ Key = network.extras.Key
 Tx = network.tx
 TxIn = Tx.TxIn
 TxOut = Tx.TxOut
+Solver = Tx.Solver
 
 
 class SolverTest(unittest.TestCase):

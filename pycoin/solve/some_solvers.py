@@ -11,23 +11,12 @@ from pycoin.encoding.sec import public_pair_to_sec, sec_to_public_pair
 from pycoin.intbytes import indexbytes, int2byte
 from pycoin.satoshi import der
 
-from .constraints import Atom, Operator
-
-
-class SolvingError(Exception):
-    pass
+from .constraints import Atom
+from .ConstraintSolver import CONSTANT, VAR, LIST, SolvingError
 
 
 DEFAULT_PLACEHOLDER_SIGNATURE = b''
 DEFAULT_SIGNATURE_TYPE = 1
-
-
-SOLUTIONS_BY_CONSTRAINT = []
-
-
-def register_solver(solver_f):
-    global SOLUTIONS_BY_CONSTRAINT
-    SOLUTIONS_BY_CONSTRAINT.append(solver_f)
 
 
 def _find_signatures(script_blobs, generator_for_signature_type_f, signature_for_hash_type_f, max_sigs, sec_keys):
@@ -55,53 +44,6 @@ def _find_signatures(script_blobs, generator_for_signature_type_f, signature_for
     return signatures, secs_solved
 
 
-def constraint_matches(c, m):
-    """
-    Return dict noting the substitution values (or False for no match)
-    """
-    if isinstance(m, tuple):
-        d = {}
-        if isinstance(c, Operator) and c._op_name == m[0]:
-            for c1, m1 in zip(c._args, m[1:]):
-                r = constraint_matches(c1, m1)
-                if r is False:
-                    return r
-                d.update(r)
-            return d
-        return False
-    return m.match(c)
-
-
-class CONSTANT(object):
-    def __init__(self, name):
-        self._name = name
-
-    def match(self, c):
-        if not isinstance(c, Atom):
-            return {self._name: c}
-        return False
-
-
-class VAR(object):
-    def __init__(self, name):
-        self._name = name
-
-    def match(self, c):
-        if isinstance(c, Atom) and not isinstance(c, Operator):
-            return {self._name: c}
-        return False
-
-
-class LIST(object):
-    def __init__(self, name):
-        self._name = name
-
-    def match(self, c):
-        if isinstance(c, (tuple, list)):
-            return {self._name: c}
-        return False
-
-
 def hash_lookup_solver(m):
 
     def f(solved_values, **kwargs):
@@ -121,7 +63,6 @@ def hash_lookup_solver(m):
 
 
 hash_lookup_solver.pattern = ('EQUAL', CONSTANT("the_hash"), ('HASH160', VAR("1")))
-register_solver(hash_lookup_solver)
 
 
 def constant_equality_solver(m):
@@ -133,7 +74,6 @@ def constant_equality_solver(m):
 
 
 constant_equality_solver.pattern = ('EQUAL', VAR("var"), CONSTANT('const'))
-register_solver(constant_equality_solver)
 
 
 def signing_solver(m):
@@ -195,16 +135,8 @@ def signing_solver(m):
 
 signing_solver.pattern = ('SIGNATURES_CORRECT', LIST("sec_list"), LIST("sig_list"),
                           CONSTANT("signature_for_hash_type_f"))
-register_solver(signing_solver)
 
 
-def solutions_for_constraint(c):
-    # given a constraint c
-    # return None or
-    # a solution (solution_f, target atom, dependency atom list)
-    # where solution_f take list of solved values
-
-    for f_factory in SOLUTIONS_BY_CONSTRAINT:
-        m = constraint_matches(c, f_factory.pattern)
-        if m:
-            return f_factory(m)
+def register_all(solver):
+    for t in [hash_lookup_solver, constant_equality_solver, signing_solver]:
+        solver.register_solver(t.pattern, t)
