@@ -31,9 +31,9 @@ class SignTest(unittest.TestCase):
         tx = Tx(1, [TxIn(b'\1' * 32, 1)], [TxOut(100, tx_out_script)])
         tx.set_unspents([tx_out])
         hl = build_hash160_lookup([1], [secp256k1_generator])
-        self.assertEqual(tx.bad_signature_count(), 1)
+        self.assertEqual(tx.bad_solution_count(), 1)
         tx.sign(hash160_lookup=hl)
-        self.assertEqual(tx.bad_signature_count(), 0)
+        self.assertEqual(tx.bad_solution_count(), 0)
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
@@ -43,11 +43,11 @@ class SignTest(unittest.TestCase):
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
-        self.assertEqual(tx2.bad_signature_count(), 1)
+        self.assertEqual(tx2.bad_solution_count(), 1)
         hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:M]), [secp256k1_generator])
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
-        self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertEqual(tx2.bad_solution_count(), 0)
 
     def test_sign_multisig_1_of_2(self):
         unsigned_id = "dd40f601e801ad87701b04851a4a6852d6b625e481d0fc9c3302faf613a4fc88"
@@ -73,12 +73,12 @@ class SignTest(unittest.TestCase):
                "9bb4421088190bbbb5b42a9eaa9baed7ec7574a407c25f71992ba56ca43d9c44",
                "03a1dc2a63f93a5cf5a7cb668658eb3fc2eda88c06dc287b85ba3e6aff751771"]
         for i in range(1, N+1):
-            self.assertEqual(tx2.bad_signature_count(), 1)
+            self.assertEqual(tx2.bad_solution_count(), 1)
             self.assertEqual(tx2.id(), ids[i-1])
             hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[i-1:i]), [secp256k1_generator])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
-        self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertEqual(tx2.bad_solution_count(), 0)
 
     def test_p2sh_multisig_sequential_signing(self):
         raw_scripts = [h2b(
@@ -98,10 +98,10 @@ class SignTest(unittest.TestCase):
             unspents = [Spendable.from_dict(spendable)]
             tx = Tx(version=DEFAULT_VERSION, txs_in=txs_in, txs_out=txs_out, unspents=unspents)
             for key in ordered_keys:
-                self.assertEqual(tx.bad_signature_count(), 1)
+                self.assertEqual(tx.bad_solution_count(), 1)
                 p2sh_lookup = build_p2sh_lookup(raw_scripts)
                 tx.sign(build_hash160_lookup([key.secret_exponent()], [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
-            self.assertEqual(tx.bad_signature_count(), 0)
+            self.assertEqual(tx.bad_solution_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):
         M, N = 3, 3
@@ -117,7 +117,7 @@ class SignTest(unittest.TestCase):
         hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:N]), [secp256k1_generator])
         p2sh_lookup = build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
-        self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertEqual(tx2.bad_solution_count(), 0)
 
     def test_sign_bitcoind_partially_signed_2_of_2(self):
         # Finish signing a 2 of 2 transaction, that already has one signature signed by bitcoind
@@ -139,9 +139,9 @@ class SignTest(unittest.TestCase):
         tx.set_unspents([tx_out])
         key = key_from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx")
         hash160_lookup = build_hash160_lookup([key.secret_exponent()], [secp256k1_generator])
-        self.assertEqual(tx.bad_signature_count(), 1)
+        self.assertEqual(tx.bad_solution_count(), 1)
         tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
-        self.assertEqual(tx.bad_signature_count(), 0)
+        self.assertEqual(tx.bad_solution_count(), 0)
         self.assertEqual(tx.id(), "9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2")
 
 

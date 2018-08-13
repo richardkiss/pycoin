@@ -27,11 +27,11 @@ class WhoSignedTest(unittest.TestCase):
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
-        self.assertEqual(tx2.bad_signature_count(), 1)
+        self.assertEqual(tx2.bad_solution_count(), 1)
         hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:M]), [secp256k1_generator])
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
-        self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertEqual(tx2.bad_solution_count(), 0)
         self.assertEqual(sorted(who_signed_tx(tx2, 0, UI)),
                          sorted(((key.address(), SIGHASH_ALL) for key in keys[:M])))
 
@@ -59,7 +59,7 @@ class WhoSignedTest(unittest.TestCase):
                "9bb4421088190bbbb5b42a9eaa9baed7ec7574a407c25f71992ba56ca43d9c44",
                "03a1dc2a63f93a5cf5a7cb668658eb3fc2eda88c06dc287b85ba3e6aff751771"]
         for i in range(1, N+1):
-            self.assertEqual(tx2.bad_signature_count(), 1)
+            self.assertEqual(tx2.bad_solution_count(), 1)
             self.assertEqual(tx2.id(), ids[i-1])
             hash160_lookup = build_hash160_lookup([keys[i-1].secret_exponent()], [secp256k1_generator])
             tx2.sign(hash160_lookup=hash160_lookup)
@@ -67,7 +67,7 @@ class WhoSignedTest(unittest.TestCase):
             t1 = sorted(who_signed_tx(tx2, 0, UI))
             t2 = sorted(((key.address(), SIGHASH_ALL) for key in keys[:i]))
             self.assertEqual(t1, t2)
-        self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertEqual(tx2.bad_solution_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):
         M, N = 3, 3
@@ -83,7 +83,7 @@ class WhoSignedTest(unittest.TestCase):
         hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:N]), [secp256k1_generator])
         p2sh_lookup = build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
-        self.assertEqual(tx2.bad_signature_count(), 0)
+        self.assertEqual(tx2.bad_solution_count(), 0)
         self.assertEqual(sorted(who_signed_tx(tx2, 0, UI)),
                          sorted(((key.address(), SIGHASH_ALL) for key in keys[:M])))
 

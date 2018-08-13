@@ -29,7 +29,7 @@ class ValidationTest(unittest.TestCase):
             "475ea311302112c9d24a7152ae")
         tx = network.tx.from_hex(TX_HEX)
         self.assertEqual(tx.id(), "70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a")
-        self.assertEqual(tx.bad_signature_count(), 0)
+        self.assertEqual(tx.bad_solution_count(), 0)
 
     def test_validate_block_data(self):
         # block 80971
@@ -100,7 +100,7 @@ class ValidationTest(unittest.TestCase):
         self.assertEqual(tx_to_validate.id(), "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b")
 
         tx_to_validate.unspents_from_db(tx_db)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
+        self.assertEqual(tx_to_validate.bad_solution_count(), 0)
 
         # now, let's corrupt the Tx and see what happens
         tx_out = tx_to_validate.txs_out[1]
@@ -108,15 +108,15 @@ class ValidationTest(unittest.TestCase):
         disassembly = network.extras.ScriptTools.disassemble(tx_out.script)
         tx_out.script = network.extras.ScriptTools.compile(disassembly)
 
-        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
+        self.assertEqual(tx_to_validate.bad_solution_count(), 0)
 
         disassembly = disassembly.replace("9661a79ae1f6d487af3420c13e649d6df3747fc2",
                                           "9661a79ae1f6d487af3420c13e649d6df3747fc3")
 
         tx_out.script = network.extras.ScriptTools.compile(disassembly)
 
-        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(0))
+        self.assertEqual(tx_to_validate.bad_solution_count(), 1)
+        self.assertFalse(tx_to_validate.is_solution_ok(0))
 
     def test_validate_two_inputs(self):
         def tx_from_b64(h):
@@ -163,25 +163,25 @@ class ValidationTest(unittest.TestCase):
         self.assertEqual(tx_to_validate.id(), "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d")
 
         tx_to_validate.unspents_from_db(TX_DB)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
+        self.assertEqual(tx_to_validate.bad_solution_count(), 0)
 
         # now let's mess with signatures
         disassembly = network.extras.ScriptTools.disassemble(tx_to_validate.txs_in[0].script)
         tx_to_validate.txs_in[0].script = network.extras.ScriptTools.compile(disassembly)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
+        self.assertEqual(tx_to_validate.bad_solution_count(), 0)
         disassembly = disassembly.replace("353fb6fcfbce09", "353fb6fcfbce19")
         tx_to_validate.txs_in[0].script = network.extras.ScriptTools.compile(disassembly)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(0))
+        self.assertEqual(tx_to_validate.bad_solution_count(), 1)
+        self.assertFalse(tx_to_validate.is_solution_ok(0))
 
         tx_to_validate = tx_from_b64(TX_0_HEX)
         tx_to_validate.unspents_from_db(TX_DB)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
+        self.assertEqual(tx_to_validate.bad_solution_count(), 0)
         disassembly = network.extras.ScriptTools.disassemble(tx_to_validate.txs_in[1].script)
         disassembly = disassembly.replace("960c258ffb494d2859f", "960d258ffb494d2859f")
         tx_to_validate.txs_in[1].script = network.extras.ScriptTools.compile(disassembly)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(1))
+        self.assertEqual(tx_to_validate.bad_solution_count(), 1)
+        self.assertFalse(tx_to_validate.is_solution_ok(1))
 
         # futz with signature on tx_1
         tx_to_validate = tx_from_b64(TX_0_HEX)
@@ -192,13 +192,13 @@ class ValidationTest(unittest.TestCase):
         tx_1.txs_out[0].script = network.extras.ScriptTools.compile(disassembly)
         TX_DB[original_tx_hash] = tx_1
         tx_to_validate.unspents_from_db(TX_DB, ignore_missing=True)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(0, ))
+        self.assertEqual(tx_to_validate.bad_solution_count(), 1)
+        self.assertFalse(tx_to_validate.is_solution_ok(0))
 
         # fix it up again
         TX_DB[original_tx_hash] = tx_from_b64(TX_1_HEX)
         tx_to_validate.unspents_from_db(TX_DB)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
+        self.assertEqual(tx_to_validate.bad_solution_count(), 0)
 
         # futz with signature on tx_2
         tx_to_validate = tx_from_b64(TX_0_HEX)
@@ -209,13 +209,13 @@ class ValidationTest(unittest.TestCase):
         tx_2.txs_out[0].script = network.extras.ScriptTools.compile(disassembly)
         TX_DB[original_tx_hash] = tx_2
         tx_to_validate.unspents_from_db(TX_DB, ignore_missing=True)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 1)
-        self.assertFalse(tx_to_validate.is_signature_ok(1))
+        self.assertEqual(tx_to_validate.bad_solution_count(), 1)
+        self.assertFalse(tx_to_validate.is_solution_ok(1))
 
         # fix it up again
         TX_DB[original_tx_hash] = tx_from_b64(TX_2_HEX)
         tx_to_validate.unspents_from_db(TX_DB)
-        self.assertEqual(tx_to_validate.bad_signature_count(), 0)
+        self.assertEqual(tx_to_validate.bad_solution_count(), 0)
 
     def _make_tx(self, input_script, other_scripts=[]):
         from pycoin.coins.tx_utils import create_signed_tx

@@ -303,10 +303,10 @@ class Tx(BaseTx):
         # Size limits
         self._check_size_limit()
 
-    def bad_signature_count(self, *args, **kwargs):
+    def bad_solution_count(self, *args, **kwargs):
         if self.is_coinbase():
             return 0
-        return super(Tx, self).bad_signature_count(*args, **kwargs)
+        return super(Tx, self).bad_solution_count(*args, **kwargs)
 
     """
     The functions below here deal with an optional additional parameter: "unspents".

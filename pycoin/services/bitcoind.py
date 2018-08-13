@@ -19,7 +19,7 @@ class BitcoindProvider(object):
         unknown_tx_outs = [unspent_to_bitcoind_dict(tx_in, tx_out)
                            for tx_in, tx_out in zip(tx.txs_in, tx.unspents)]
         signed = self.connection.signrawtransaction(tx.as_hex(), unknown_tx_outs, [])
-        is_ok = [tx.is_signature_ok(idx) for idx in range(len(tx.txs_in))]
+        is_ok = [tx.is_solution_ok(idx) for idx in range(len(tx.txs_in))]
         return all(is_ok) == signed.get("complete")
 
     def tx_for_tx_hash(self, tx_hash):

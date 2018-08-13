@@ -196,7 +196,7 @@ class TxTest(unittest.TestCase):
             self.assertNotEqual(tx, None)
             tx.unspents_from_db(TX_DB)
             for idx, tx_in in enumerate(tx.txs_in):
-                self.assertTrue(tx.is_signature_ok(tx_in_idx=idx))
+                self.assertTrue(tx.is_solution_ok(tx_in_idx=idx))
 
 
 def tx_to_b64(tx_hex):

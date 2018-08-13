@@ -582,14 +582,14 @@ def print_output(tx, include_unspents, output_file, show_unspents,
 
 
 def do_signing(tx, keychain, p2sh_lookup, sec_hints, signature_hints, network):
-    unsigned_before = tx.bad_signature_count()
+    unsigned_before = tx.bad_solution_count()
     unsigned_after = unsigned_before
     if unsigned_before > 0 and (keychain.has_secrets() or sec_hints or signature_hints):
         print("signing...", file=sys.stderr)
         solver = tx.Solver(tx)
         solver.sign(keychain, p2sh_lookup=p2sh_lookup, sec_hints=sec_hints, signature_hints=signature_hints)
 
-        unsigned_after = tx.bad_signature_count()
+        unsigned_after = tx.bad_solution_count()
         if unsigned_after > 0:
             print("warning: %d TxIn items still unsigned" % unsigned_after, file=sys.stderr)
     return unsigned_after == 0

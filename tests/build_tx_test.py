@@ -172,7 +172,7 @@ class BuildTxTest(unittest.TestCase):
         spend_tx = unsigned_spend_tx.sign(solver)
 
         # now check that it validates
-        self.assertEqual(spend_tx.bad_signature_count(), 0)
+        self.assertEqual(spend_tx.bad_solution_count(), 0)
 
 
 if __name__ == '__main__':

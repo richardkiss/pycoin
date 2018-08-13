@@ -22,11 +22,11 @@ class SegwitTest(unittest.TestCase):
 
     def check_unsigned(self, tx):
         for idx, txs_in in enumerate(tx.txs_in):
-            self.assertFalse(tx.is_signature_ok(idx))
+            self.assertFalse(tx.is_solution_ok(idx))
 
     def check_signed(self, tx):
         for idx, txs_in in enumerate(tx.txs_in):
-            self.assertTrue(tx.is_signature_ok(idx))
+            self.assertTrue(tx.is_solution_ok(idx))
 
     def unsigned_copy(self, tx):
         tx = Tx.from_hex(tx.as_hex())

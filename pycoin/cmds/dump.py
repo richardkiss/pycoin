@@ -59,7 +59,7 @@ def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly
             address = tx_in.address(ui_context=network.ui)
         else:
             tx_out = tx.unspents[idx]
-            sig_result = " sig ok" if tx.is_signature_ok(idx, traceback_f=traceback_f) else " BAD SIG"
+            sig_result = " sig ok" if tx.is_solution_ok(idx, traceback_f=traceback_f) else " BAD SIG"
             suffix = " %12.5f mBTC %s" % (satoshi_to_mbtc(tx_out.coin_value), sig_result)
             address = network.ui.address_for_script(tx_out.puzzle_script())
         t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),

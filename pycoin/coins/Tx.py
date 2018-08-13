@@ -140,23 +140,17 @@ class Tx(object):
         sc.check_solution(tx_context, *args, **kwargs)
 
     def is_solution_ok(self, tx_in_idx, *args, **kwargs):
+        if len(self.unspents) <= tx_in_idx or self.unspents[tx_in_idx] is None:
+            return False
         try:
             self.check_solution(tx_in_idx, *args, **kwargs)
             return True
         except ScriptError:
             return False
 
-    def is_signature_ok(self, tx_in_idx, *args, **kwargs):
-        """
-        Return a boolean indicating if the given :class:`TxIn` has a correct solution.
-        """
-        if len(self.unspents) <= tx_in_idx or self.unspents[tx_in_idx] is None:
-            return False
-        return self.is_solution_ok(tx_in_idx, *args, **kwargs)
-
-    def bad_signature_count(self, *args, **kwargs):
+    def bad_solution_count(self, *args, **kwargs):
         "Return a count of how many :class:`TxIn` objects are not correctly solved."
-        return sum(0 if self.is_signature_ok(idx, *args, **kwargs) else 1 for idx in range(len(self.txs_in)))
+        return sum(0 if self.is_solution_ok(idx, *args, **kwargs) else 1 for idx in range(len(self.txs_in)))
 
 
 """

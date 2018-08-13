@@ -44,7 +44,7 @@ class SpendTest(unittest.TestCase):
 
         for count in range(1, 11):
             tx = create_signed_tx(spendables, BITCOIN_ADDRESSES[1:count+1], wifs=WIFS[:1])
-            self.assertEqual(tx.bad_signature_count(), 0)
+            self.assertEqual(tx.bad_solution_count(), 0)
             self.assertEqual(tx.fee(), FEE)
             self.assertEqual(tx.id(), EXPECTED_IDS[count-1])
             for idx in range(1, count+1):

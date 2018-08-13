@@ -35,10 +35,10 @@ def main():
     # sign the transaction with the given WIF
     sign_tx(tx, wifs=[wif], p2sh_lookup=p2sh_lookup)
 
-    bad_signature_count = tx.bad_signature_count()
-    print("tx %s now has %d bad signature(s)" % (tx.id(), bad_signature_count))
+    bad_solution_count = tx.bad_signature_count()
+    print("tx %s now has %d bad signature(s)" % (tx.id(), bad_solution_count))
 
-    include_unspents = (bad_signature_count > 0)
+    include_unspents = (bad_solution_count > 0)
     print("Here is the tx as hex:\n%s" % tx.as_hex(include_unspents=include_unspents))
 
 
