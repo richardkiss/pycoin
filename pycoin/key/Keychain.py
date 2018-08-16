@@ -120,3 +120,14 @@ class Keychain(object):
     def clear_secrets(self):
         self._secrets = defaultdict(set)
         self._secret_exponent_cache = {}
+
+    def interested_hashes(self):
+        SQL = "select hash160 from HASH160"
+        c = self._exec_sql(SQL)
+        for r in c:
+            yield r[0]
+        SQL = "select hash160, hash256 from P2S"
+        c = self._exec_sql(SQL)
+        for r in c:
+            yield r[0]
+            yield r[1]

@@ -2,7 +2,7 @@
 import io
 
 from pycoin.encoding.hash import double_sha256
-from pycoin.serialize.bitcoin_streamer import parse_struct, stream_struct
+from pycoin.satoshi.satoshi_struct import parse_struct, stream_struct
 
 from pycoin.block import Block as BaseBlock
 

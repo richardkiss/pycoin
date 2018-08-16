@@ -9,7 +9,7 @@ import sys
 from pycoin.key.Keychain import Keychain
 from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.networks.registry import (
-    full_network_name_for_netcode, network_codes, network_for_netcode
+    network_codes, network_for_netcode
 )
 
 
@@ -20,7 +20,7 @@ def create_parser():
             'Cache look-up information into a Keychain for use with tx. '
             'Useful for hiearchical keys with many children.'),
         epilog=('Known networks codes:\n  ' +
-                ', '.join(['%s (%s)' % (i, full_network_name_for_netcode(i)) for i in codes]))
+              ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
     )
     parser.add_argument('-n', "--netcode", help='specify network by netcode', choices=codes, default="BTC")
     parser.add_argument('-m', "--multisig", metavar="sigcount", type=int,
