@@ -1,9 +1,6 @@
 
 from ..SolutionChecker import ScriptError
 
-from .SolutionChecker import BitcoinSolutionChecker
-from .ScriptTools import BitcoinScriptTools
-
 from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.solve.constraints import Atom, Operator, make_traceback_f
@@ -41,8 +38,8 @@ class DynamicStack(list):
 
 
 class Solver(object):
-    SolutionChecker = BitcoinSolutionChecker
-    ScriptTools = BitcoinScriptTools
+    SolutionChecker = None
+    ScriptTools = None
 
     def __init__(self, tx):
         self.tx = tx
@@ -142,7 +139,7 @@ class Solver(object):
                 data for opcode, data, pc, new_pc in self.ScriptTools.get_opcodes(
                     self.tx.txs_in[tx_in_idx].script) if data is not None]
         kwargs["signature_type"] = hash_type
-        kwargs["generator_for_signature_type_f"] = self.SolutionChecker.VM.generator_for_signature_type
+        kwargs["generator_for_signature_type_f"] = self.solution_checker.VM.generator_for_signature_type
         constraints = self.determine_constraints(tx_in_idx, p2sh_lookup=kwargs.get("p2sh_lookup"))
         solution_list, witness_list = self.solve_for_constraints(constraints, **kwargs)
         solution_script = self.ScriptTools.compile_push_data_list(solution_list)
@@ -183,6 +180,9 @@ class Solver(object):
 
 BitcoinConstraintSolver = ConstraintSolver()
 register_all(BitcoinConstraintSolver)
+
+from .ScriptTools import BitcoinScriptTools
+from .SolutionChecker import BitcoinSolutionChecker
 
 
 class BitcoinSolver(Solver):

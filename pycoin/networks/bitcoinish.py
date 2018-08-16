@@ -74,4 +74,6 @@ def create_bitcoinish_network(**kwargs):
     network.parse_message, network.pack_message = make_parser_and_packer(
         streamer, standard_messages(), standard_message_post_unpacks(streamer))
 
+    network.script_info = _script_info
+
     return network
