@@ -159,32 +159,29 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
         if k_hex in kwargs:
             kwargs[k] = h2b(kwargs[k_hex])
 
-    scriptTools = kwargs.get("scriptTools", BitcoinScriptTools)
-    _script_info = ScriptInfo(scriptTools)
+    network.script_tools = kwargs.get("scriptTools", BitcoinScriptTools)
+    network.script_info = ScriptInfo(network.script_tools)
+
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
-    ui = UI(_script_info, generator, **ui_kwargs)
 
-    extras = Extras(scriptTools, ui)
-    kwargs["ui"] = ui
-    kwargs["extras"] = extras
-    kwargs.setdefault("tx", Tx)
-    kwargs.setdefault("block", Block.make_subclass(kwargs["tx"]))
+    network.ui = UI(network.script_info, generator, **ui_kwargs)
+    network.extras = Extras(network.script_tools, network.ui)
 
-    NETWORK_KEYS = ("network_name subnet_name tx block ui extras "
-                    "dns_bootstrap default_port magic_header").split()
+    NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
     network_kwargs = {k: kwargs.get(k) for k in NETWORK_KEYS if k in kwargs}
+    for k in NETWORK_KEYS:
+        if k in kwargs:
+            setattr(network, k, kwargs[k])
 
-    for k, v in network_kwargs.items():
-        setattr(network, k, v)
+    network.tx = kwargs.get("tx") or Tx
+    network.block = kwargs.get("block") or Block.make_subclass(network.tx)
 
     streamer = standard_streamer(standard_parsing_functions(network.block, network.tx))
     network.parse_message, network.pack_message = make_parser_and_packer(
         streamer, standard_messages(), standard_message_post_unpacks(streamer))
 
-    network.script_info = _script_info
-    network.script_tools = scriptTools
     network.output_for_hwif = make_output_for_hwif(network)
     network.output_for_secret_exponent = make_output_for_secret_exponent(network.extras.Key)
     network.output_for_public_pair = make_output_for_public_pair(network.extras.Key, network)
