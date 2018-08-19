@@ -99,7 +99,7 @@ def create_output(item, key, network, output_key_set, subkey_path=None):
     full_network_name = "%s %s" % (network.network_name, network.subnet_name)
     add_output("input", item)
     add_output("network", full_network_name)
-    add_output("netcode", network.code)
+    add_output("symbol", network.symbol)
 
     if hasattr(key, "hwif"):
         if subkey_path:

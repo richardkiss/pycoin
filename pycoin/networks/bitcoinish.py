@@ -106,12 +106,12 @@ def make_output_for_public_pair(Key, network):
 
         address = ui_context.address_for_p2pkh(hash160 or hash160_c)
         yield ("address", address, "%s address" % network_name)
-        yield ("%s_address" % network.code, address, "legacy")
+        yield ("%s_address" % network.symbol, address, "legacy")
 
         if hash160_c and hash160_u:
             address = key.address(use_uncompressed=True)
             yield ("address_uncompressed", address, "%s address uncompressed" % network_name)
-            yield ("%s_address_uncompressed" % network.code, address, "legacy")
+            yield ("%s_address_uncompressed" % network.symbol, address, "legacy")
 
         # don't print segwit addresses unless we're sure we have a compressed key
         if hash160_c and hasattr(network, "ui") and getattr(network.ui, "_bech32_hrp"):
@@ -119,7 +119,7 @@ def make_output_for_public_pair(Key, network):
             if address_segwit:
                 # this network seems to support segwit
                 yield ("address_segwit", address_segwit, "%s segwit address" % network_name)
-                yield ("%s_address_segwit" % network.code, address_segwit, "legacy")
+                yield ("%s_address_segwit" % network.symbol, address_segwit, "legacy")
 
                 p2sh_script = network.ui._script_info.script_for_p2pkh_wit(hash160_c)
                 p2s_address = network.ui.address_for_p2s(p2sh_script)
@@ -138,7 +138,7 @@ def make_output_for_h160(network):
 
         address = network.ui.address_for_p2pkh(hash160)
         yield ("address", address, "%s address" % network.network_name)
-        yield ("%s_address" % network.code, address, "legacy")
+        yield ("%s_address" % network.symbol, address, "legacy")
     return f
 
 
@@ -175,7 +175,6 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     NETWORK_KEYS = ("network_name subnet_name tx block ui extras "
                     "dns_bootstrap default_port magic_header").split()
     network_kwargs = {k: kwargs.get(k) for k in NETWORK_KEYS if k in kwargs}
-    network_kwargs["code"] = symbol  # BRAIN DAMAGE
 
     for k, v in network_kwargs.items():
         setattr(network, k, v)
@@ -185,7 +184,6 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
         streamer, standard_messages(), standard_message_post_unpacks(streamer))
 
     network.script_info = _script_info
-    network.code = network.symbol
     network.script_tools = scriptTools
     network.output_for_hwif = make_output_for_hwif(network)
     network.output_for_secret_exponent = make_output_for_secret_exponent(network.extras.Key)

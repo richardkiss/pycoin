@@ -3,7 +3,7 @@ ku 0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
 
 input                        : 0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
 network                      : Bitcoin mainnet
-netcode                      : BTC
+symbol                       : BTC
 public pair x                : 55066263022277343669578718895168534326250603453777594175500187360389116729240
 public pair y                : 83121579216557378445487899878180864668798711284981320763518679672151497189239
  x as hex                    : 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798

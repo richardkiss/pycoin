@@ -3,7 +3,7 @@ ku --override-network XTN -s 0/0-2 ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt
 input                        : ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaym\
                                  FLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
 network                      : Bitcoin testnet3
-netcode                      : XTN
+symbol                       : XTN
 wallet key                   : tpubDBsj6y2YjBHKDTXTnw3HQ2NDCU3B4fvPj1RnTkCz5WBcVpikwEdYwKUMYkNdBA\
                                  cepmotth75QnbeYGtNtYSmqBmqsGa81tbt9Ry4D8C1nMY
 tree depth                   : 2
@@ -31,7 +31,7 @@ p2sh segwit                  : 2NCZmE164J6kMuRdcN4u6gGJu8zrrQ7jwWQ
 input                        : ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaym\
                                  FLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
 network                      : Bitcoin testnet3
-netcode                      : XTN
+symbol                       : XTN
 wallet key                   : tpubDBsj6y2YjBHKHGaybogNHibB2CcbWMXUJe44vs4s1vmH7jiw23n6JK9wzH2woA\
                                  TZS8mvh2oL3fSRahBKFYGyW2BdVEAUvnqDRwcEnBoedyJ
 tree depth                   : 2
@@ -59,7 +59,7 @@ p2sh segwit                  : 2NCKwJ1NULgHp1VBdEQX7LcQ6a1vKfHXcjU
 input                        : ttub4XNESS7BCg9c2MhXxffDq3JB8rpDKygicxpXmCtUt83VVnSmm7KcRNkH7CFaym\
                                  FLU9hDznwk13FxBms3T26JuoBDGAgqr6iyPzYtu7WSNNm
 network                      : Bitcoin testnet3
-netcode                      : XTN
+symbol                       : XTN
 wallet key                   : tpubDBsj6y2YjBHKKunUhBaY5twHX83A5Hj4nbU3TkfUCV14ZXMGbC7vULsAck7fCW\
                                  2KTA2x3mizTLBZ9H6N7sMuVD711d4tW7Jr53MBHf8J3Dq
 tree depth                   : 2

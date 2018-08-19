@@ -18,7 +18,7 @@ def network_for_netcode(symbol):
     for prefix in search_prefixes():
         try:
             module = importlib.import_module("%s.%s" % (prefix, netcode))
-            if module.network.code.upper() == symbol:
+            if module.network.symbol.upper() == symbol:
                 module.symbol = symbol
                 return module.network
         except (AttributeError, ImportError):
@@ -35,7 +35,7 @@ def iterate_symbols():
         for importer, modname, ispkg in pkgutil.walk_packages(path=package.__path__, onerror=lambda x: None):
             network = network_for_netcode(modname)
             if network:
-                yield network.code.upper()
+                yield network.symbol.upper()
 
 
 def network_codes():

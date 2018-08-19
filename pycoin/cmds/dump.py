@@ -51,7 +51,7 @@ def make_trace_script(network, output, do_trace, use_pdb):
 def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly_level):
     for idx, tx_in in enumerate(tx.txs_in):
         if tx.is_coinbase():
-            output.append("%4d: COINBASE  %12.5f m%s" % (idx, satoshi_to_mbtc(tx.total_in()), network.code))
+            output.append("%4d: COINBASE  %12.5f m%s" % (idx, satoshi_to_mbtc(tx.total_in()), network.symbol))
             continue
         suffix = ""
         if tx.missing_unspent(idx):
@@ -60,7 +60,7 @@ def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly
         else:
             tx_out = tx.unspents[idx]
             sig_result = " sig ok" if tx.is_solution_ok(idx, traceback_f=traceback_f) else " BAD SIG"
-            suffix = " %12.5f m%s %s" % (satoshi_to_mbtc(tx_out.coin_value), network.code, sig_result)
+            suffix = " %12.5f m%s %s" % (satoshi_to_mbtc(tx_out.coin_value), network.symbol, sig_result)
             address = network.ui.address_for_script(tx_out.puzzle_script())
         t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
                                           tx_in.previous_index, suffix)
@@ -104,11 +104,11 @@ def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
 
 def dump_footer(network, output, tx, missing_unspents):
     if not missing_unspents:
-        output.append("Total input  %12.5f m%s" % (satoshi_to_mbtc(tx.total_in()), network.code))
+        output.append("Total input  %12.5f m%s" % (satoshi_to_mbtc(tx.total_in()), network.symbol))
     if 1:
-        output.append("Total output %12.5f m%s" % (satoshi_to_mbtc(tx.total_out()), network.code))
+        output.append("Total output %12.5f m%s" % (satoshi_to_mbtc(tx.total_out()), network.symbol))
     if not missing_unspents:
-        output.append("Total fees   %12.5f m%s" % (satoshi_to_mbtc(tx.fee()), network.code))
+        output.append("Total fees   %12.5f m%s" % (satoshi_to_mbtc(tx.fee()), network.symbol))
 
 
 def dump_tx(output, tx, network, verbose_signature, disassembly_level, do_trace, use_pdb):
@@ -123,7 +123,7 @@ def dump_tx(output, tx, network, verbose_signature, disassembly_level, do_trace,
     for idx, tx_out in enumerate(tx.tx_outs_as_spendable()):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
         address = network.ui.address_for_script(tx_out.puzzle_script()) or "(unknown)"
-        output.append("%4d: %34s receives %12.5f m%s" % (idx, address, amount_mbtc, network.code))
+        output.append("%4d: %34s receives %12.5f m%s" % (idx, address, amount_mbtc, network.symbol))
         if disassembly_level > 0:
             for (pre_annotations, pc, opcode, instruction, post_annotations) in \
                     network.extras.annotate.annotate_spendable(tx.__class__, tx_out):

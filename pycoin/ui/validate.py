@@ -22,7 +22,7 @@ def is_address_valid(address, allowable_types=None, allowable_netcodes=None):
         k = network.ui.parse_to_info(metadata, types=["address"])
         if k:
             if allowable_types is None or k.get("address_type") in allowable_types:
-                return network.code
+                return network.symbol
     return None
 
 
@@ -33,7 +33,7 @@ def _is_key_valid(text, allowable_netcodes, info_filter_f, types=["key"]):
         k = network.ui.parse_to_info(metadata, types=types)
         if k:
             if info_filter_f(k):
-                return network.code
+                return network.symbol
     return None
 
 
