@@ -17,7 +17,7 @@ def create_parser():
 
     parser.add_argument('-n', "--network", default=get_current_netcode(), choices=codes,
                         help=('Network code (environment variable PYCOIN_DEFAULT_NETCODE '
-                              'or "BTC"=Bitcoin mainnet if unset'))
+                              'or "BTC"=Bitcoin mainnet if unset)'))
 
     parser.add_argument("argument", nargs="+", help='script to compile. To dump hex, prefix with 0x')
 
