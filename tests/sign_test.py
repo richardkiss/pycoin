@@ -12,7 +12,7 @@ from pycoin.ui.key_from_text import key_from_text
 # BRAIN DAMAGE
 address_for_p2s = network.ui.address_for_p2s
 script_for_address = network.ui.script_for_address
-script_for_multisig = network.ui._script_info.script_for_multisig
+script_for_multisig = network.script_info.script_for_multisig
 
 Spendable = network.tx.Spendable
 Tx = network.tx

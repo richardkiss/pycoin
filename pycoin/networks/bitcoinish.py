@@ -121,7 +121,7 @@ def make_output_for_public_pair(Key, network):
                 yield ("address_segwit", address_segwit, "%s segwit address" % network_name)
                 yield ("%s_address_segwit" % network.symbol, address_segwit, "legacy")
 
-                p2sh_script = network.ui._script_info.script_for_p2pkh_wit(hash160_c)
+                p2sh_script = network.script_info.script_for_p2pkh_wit(hash160_c)
                 p2s_address = network.ui.address_for_p2s(p2sh_script)
                 if p2s_address:
                     yield ("p2sh_segwit", p2s_address, None)

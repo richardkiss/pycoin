@@ -7,15 +7,15 @@ from pycoin.encoding.hash import double_sha256
 from pycoin.encoding.hexbytes import b2h, b2h_rev, h2b
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.btc import network
 
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.extras.Key
-Tx = BitcoinMainnet.tx
-TxOut = BitcoinMainnet.tx.TxOut
-script_for_p2pkh = BitcoinMainnet.ui._script_info.script_for_p2pkh
-script_for_p2pkh_wit = BitcoinMainnet.ui._script_info.script_for_p2pkh_wit
+Key = network.extras.Key
+Tx = network.tx
+TxOut = network.tx.TxOut
+script_for_p2pkh = network.script_info.script_for_p2pkh
+script_for_p2pkh_wit = network.script_info.script_for_p2pkh_wit
 
 
 class SegwitTest(unittest.TestCase):
@@ -49,8 +49,8 @@ class SegwitTest(unittest.TestCase):
     def test_segwit_ui(self):
         # p2wpkh
         address = 'bc1qqyykvamqq62n64t8gw09uw0cdgxjwwlw7mypam'
-        s = BitcoinMainnet.ui.script_for_address(address)
-        afs_address = BitcoinMainnet.ui.address_for_script(s)
+        s = network.ui.script_for_address(address)
+        afs_address = network.ui.address_for_script(s)
         self.assertEqual(address, afs_address)
 
     def test_segwit_create_tx(self):
@@ -68,8 +68,8 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(len(tx.txs_in[0].witness), 2)
 
         s1 = script_for_p2pkh(key1.hash160())
-        address = BitcoinMainnet.ui.address_for_p2s_wit(s1)
-        spendable.script = BitcoinMainnet.ui.script_for_address(address)
+        address = network.ui.address_for_p2s_wit(s1)
+        spendable.script = network.ui.script_for_address(address)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()], p2sh_lookup=build_p2sh_lookup([s1]))
@@ -148,7 +148,7 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(b2h(sc._hash_outputs(SIGHASH_ALL, 0)),
                          "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
 
-        script = BitcoinMainnet.ui._script_info.script_for_p2pkh(tx_s1.unspents[1].script[2:])
+        script = network.script_info.script_for_p2pkh(tx_s1.unspents[1].script[2:])
         self.assertEqual(
             b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
             "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd"

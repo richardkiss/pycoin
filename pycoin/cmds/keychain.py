@@ -53,7 +53,7 @@ def keychain(args, parser):
 
     total_paths = 0
 
-    script_for_multisig = network.ui._script_info.script_for_multisig
+    script_for_multisig = network.script_info.script_for_multisig
     for path in subpaths_for_path_range(subkey_paths):
         if m:
             secs = sorted([_.subkey_for_path(path).sec() for _ in keys])
