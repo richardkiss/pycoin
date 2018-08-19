@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import datetime
 
-from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.convention import satoshi_to_mbtc
 from pycoin.encoding.hexbytes import b2h, b2h_rev
 from pycoin.serialize import stream_to_bytes
@@ -29,7 +28,7 @@ def dump_header(output, tx):
     output.append("Input%s:" % ('s' if len(tx.txs_in) != 1 else ''))
 
 
-def make_trace_script(output, do_trace, use_pdb):
+def make_trace_script(network, output, do_trace, use_pdb):
     if not (do_trace or use_pdb):
         return None
 
@@ -38,7 +37,8 @@ def make_trace_script(output, do_trace, use_pdb):
         if len(vmc.altstack) > 0:
             output.append("altstack: %s" % vmc.altstack)
         output.append("condition stack: %s" % vmc.conditional_stack)
-        output.append("%3d : %02x  %s" % (vmc.pc, opcode, BitcoinScriptTools.disassemble_for_opcode_data(opcode, data)))
+        output.append("%3d : %02x  %s" % (
+            vmc.pc, opcode, network.script_tools.disassemble_for_opcode_data(opcode, data)))
         if use_pdb:
             for line in output:
                 print(line)
@@ -113,7 +113,7 @@ def dump_footer(network, output, tx, missing_unspents):
 
 def dump_tx(output, tx, network, verbose_signature, disassembly_level, do_trace, use_pdb):
     missing_unspents = tx.missing_unspents()
-    traceback_f = make_trace_script(output, do_trace, use_pdb)
+    traceback_f = make_trace_script(network, output, do_trace, use_pdb)
 
     dump_header(output, tx)
 

@@ -62,7 +62,7 @@ class SighashSingleTest(unittest.TestCase):
         coinbase_tx = network.tx.coinbase_tx(k0.sec(), 500000000)
         for k in [k1, k2]:
             coinbase_tx.txs_out.append(network.tx.TxOut(
-                1000000000, network.extras.ScriptTools.compile('%s OP_CHECKSIG' % b2h(k.sec()))))
+                1000000000, network.script_tools.compile('%s OP_CHECKSIG' % b2h(k.sec()))))
 
         self.assertEqual('2acbe1006f7168bad538b477f7844e53de3a31ffddfcfc4c6625276dd714155a',
                          b2h_rev(coinbase_tx.hash()))
@@ -94,7 +94,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k0, sig_hash, sig_type)
         self.assertTrue(sigcheck(k0, sig_hash, sig[:-1]))
 
-        tx.txs_in[0].script = network.extras.ScriptTools.compile(b2h(sig))
+        tx.txs_in[0].script = network.script_tools.compile(b2h(sig))
         self.assertTrue(tx.is_solution_ok(0))
 
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
@@ -103,7 +103,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k1, sig_hash, sig_type)
         self.assertTrue(sigcheck(k1, sig_hash, sig[:-1]))
 
-        tx.txs_in[1].script = network.extras.ScriptTools.compile(b2h(sig))
+        tx.txs_in[1].script = network.script_tools.compile(b2h(sig))
         self.assertTrue(tx.is_solution_ok(1))
 
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
@@ -112,7 +112,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k2, sig_hash, sig_type)
         self.assertTrue(sigcheck(k2, sig_hash, sig[:-1]))
 
-        tx.txs_in[2].script = network.extras.ScriptTools.compile(b2h(sig))
+        tx.txs_in[2].script = network.script_tools.compile(b2h(sig))
         self.assertTrue(tx.is_solution_ok(2))
 
         sig_type = SIGHASH_SINGLE | SIGHASH_ANYONECANPAY
@@ -123,7 +123,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k0, sig_hash, sig_type)
         self.assertTrue(sigcheck(k0, sig_hash, sig[:-1]))
 
-        tx.txs_in[0].script = network.extras.ScriptTools.compile(b2h(sig))
+        tx.txs_in[0].script = network.script_tools.compile(b2h(sig))
         self.assertTrue(tx.is_solution_ok(0))
 
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[1].script, 1, sig_type)
@@ -132,7 +132,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k1, sig_hash, sig_type)
         self.assertTrue(sigcheck(k1, sig_hash, sig[:-1]))
 
-        tx.txs_in[1].script = network.extras.ScriptTools.compile(b2h(sig))
+        tx.txs_in[1].script = network.script_tools.compile(b2h(sig))
         self.assertTrue(tx.is_solution_ok(1))
 
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[2].script, 2, sig_type)
@@ -141,7 +141,7 @@ class SighashSingleTest(unittest.TestCase):
         sig = sigmake(k2, sig_hash, sig_type)
         self.assertTrue(sigcheck(k2, sig_hash, sig[:-1]))
 
-        tx.txs_in[2].script = network.extras.ScriptTools.compile(b2h(sig))
+        tx.txs_in[2].script = network.script_tools.compile(b2h(sig))
         self.assertTrue(tx.is_solution_ok(2))
 
 

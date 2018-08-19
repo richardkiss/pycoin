@@ -8,7 +8,7 @@ def make_tests_for_netcode(netcode):
     network = network_for_netcode(netcode)
 
     Tx = network.tx
-    annotate_scripts = Annotate(network.extras.ScriptTools, network.ui).annotate_scripts
+    annotate_scripts = Annotate(network.script_tools, network.ui).annotate_scripts
 
     class DisassembleTest(unittest.TestCase):
 
@@ -32,7 +32,7 @@ def make_tests_for_netcode(netcode):
             tx_db = {tx.hash(): tx for tx in [input_tx]}
             tx_to_validate.unspents_from_db(tx_db)
             self.assertEqual("OP_DUP OP_HASH160 [d4caa8447532ca8ee4c80a1ae1d230a01e22bfdb] OP_EQUALVERIFY OP_CHECKSIG",
-                             network.extras.ScriptTools.disassemble(tx_to_validate.txs_out[0].script))
+                             network.script_tools.disassemble(tx_to_validate.txs_out[0].script))
             self.assertEqual(tx_to_validate.id(), "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b")
             annotate_scripts(tx_to_validate, 0)
 

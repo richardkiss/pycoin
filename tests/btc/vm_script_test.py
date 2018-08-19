@@ -45,14 +45,14 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
     print("ACTUAL: %s" % actual)
     print("MESSAGE: %s" % message)
     print(comment)
-    print(network.extras.ScriptTools.disassemble(network.extras.ScriptTools.compile(script_in)))
-    print(network.extras.ScriptTools.disassemble(network.extras.ScriptTools.compile(script_out)))
+    print(network.script_tools.disassemble(network.script_tools.compile(script_in)))
+    print(network.script_tools.disassemble(network.script_tools.compile(script_out)))
 
     def tbf(*args):
         opcode, data, pc, vm = args
         stack = vm.stack
         altstack = vm.altstack
-        opd = network.extras.ScriptTools.disassemble_for_opcode_data(opcode, data)
+        opd = network.script_tools.disassemble_for_opcode_data(opcode, data)
         if len(altstack) == 0:
             altstack = ''
         print("%s %s\n  %3x  %s" % (stack, altstack, pc, opd))
@@ -74,8 +74,8 @@ def dump_failure_info(spend_tx, script_in, script_out, flags, flags_string, expe
 
 
 def make_script_test(script_in, script_out, flags_string, comment, expected, coin_value, script_witness):
-    script_in_bin = network.extras.ScriptTools.compile(script_in)
-    script_out_bin = network.extras.ScriptTools.compile(script_out)
+    script_in_bin = network.script_tools.compile(script_in)
+    script_out_bin = network.script_tools.compile(script_out)
     script_witness_bin = [h2b(w) for w in script_witness]
     flags = parse_flags(flags_string)
 

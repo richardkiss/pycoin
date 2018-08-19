@@ -35,10 +35,8 @@ def coinc(args, parser):
 
 
 def info_for_arg(arg, network):
-    script_tools = network.extras.ScriptTools
-
     d = {}
-    compiled_script = script_tools.compile(arg)
+    compiled_script = network.script_tools.compile(arg)
     d["compiled_script_hex"] = "0x%s" % b2h(compiled_script)
 
     address_p2s = network.ui.address_for_p2s(compiled_script)
@@ -49,7 +47,7 @@ def info_for_arg(arg, network):
     d["address_p2s_wit"] = address_p2s_wit
     d["underlying_script"] = b2h(network.ui.script_for_address(address_p2s_wit))
 
-    d["disassembled_script"] = script_tools.disassemble(compiled_script)
+    d["disassembled_script"] = network.script_tools.disassemble(compiled_script)
     return d
 
 
