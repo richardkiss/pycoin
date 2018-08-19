@@ -3,11 +3,11 @@ Version:  1  tx hash 4efb0e7701dda83bd5109a0832331a48f459ead2ca793072a20c274a56f
 TxIn count: 1; TxOut count: 1
 Lock time: 0 (valid anytime)
 Input:
-   0: 1E6cjct6NSmvFjCRZfWBT4ausvPq5xgLTQ from 97f5f30a62120885adc97efc2077a1c0ea1d844428e57993cc752ff3b23906a3:0       300.00000 mBTC  sig ok
+   0: 1E6cjct6NSmvFjCRZfWBT4ausvPq5xgLTQ from 97f5f30a62120885adc97efc2077a1c0ea1d844428e57993cc752ff3b23906a3:0       300.00000 mBCH  sig ok
 Output:
-   0: 12uAiTn6bKZsWU6yWCktvijLtDVXzBf5mo receives    299.99754 mBTC
-Total input     300.00000 mBTC
-Total output    299.99754 mBTC
-Total fees        0.00246 mBTC
+   0: 12uAiTn6bKZsWU6yWCktvijLtDVXzBf5mo receives    299.99754 mBCH
+Total input     300.00000 mBCH
+Total output    299.99754 mBCH
+Total fees        0.00246 mBCH
 0100000001a30639b2f32f75cc9379e52844841deac0a17720fc7ec9ad850812620af3f597000000006b483045022100c0682369bfe59f884c6b8bc55cd292a45f3222a86c60f9735a24cb2ec3f3d71902204b815d0c2c1f8cc665b3807debdd2f9a9cb3c01d94db241f3bdb244da9291e97412103b99852e6299ecb73a818174ca6fc4c93e78f8f926d246fc5b27370d9a956ae4fffffffff018ac2c901000000001976a91414d5dd879f8964e23f8c22e679db4f1b1656b42e88ac00000000
 all incoming transaction values validated
