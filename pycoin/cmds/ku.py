@@ -78,97 +78,19 @@ def parse_as_public_pair(s, generator):
                     return (v0, v1)
 
 
-def create_key_output(key, network, subkey_path, add_output):
-    if hasattr(key, "hwif"):
-        if subkey_path:
-            add_output("subkey_path", subkey_path)
-
-        add_output("wallet_key", key.hwif(as_private=key.is_private()))
-        if key.is_private():
-            add_output("public_version", key.hwif(as_private=False))
-
-        child_number = key.child_index()
-        if child_number >= 0x80000000:
-            wc = child_number - 0x80000000
-            child_index = "%dH (%d)" % (wc, child_number)
-        else:
-            child_index = "%d" % child_number
-        add_output("tree_depth", "%d" % key.tree_depth())
-        add_output("fingerprint", b2h(key.fingerprint()))
-        add_output("parent_fingerprint", b2h(key.parent_fingerprint()), "parent f'print")
-        add_output("child_index", child_index)
-        add_output("chain_code", b2h(key.chain_code()))
-
-        add_output("private_key", "yes" if key.is_private() else "no")
-
-
-def create_public_pair_output(key, add_output):
-    public_pair = key.public_pair()
-
-    if public_pair:
-        add_output("public_pair_x", '%d' % public_pair[0])
-        add_output("public_pair_y", '%d' % public_pair[1])
-        add_output("public_pair_x_hex", '%x' % public_pair[0], " x as hex")
-        add_output("public_pair_y_hex", '%x' % public_pair[1], " y as hex")
-        add_output("y_parity", "odd" if (public_pair[1] & 1) else "even")
-
-        add_output("key_pair_as_sec", b2h(key.sec(use_uncompressed=False)))
-        add_output("key_pair_as_sec_uncompressed", b2h(key.sec(use_uncompressed=True)), " uncompressed")
-
-
-def create_hash160_output(key, network, add_output, output_dict):
-    ui_context = network.ui
-    network_name = network.network_name
-    hash160_c = key.hash160(use_uncompressed=False)
-    hash160_u = key.hash160(use_uncompressed=True)
-    hash160 = None
-    if hash160_c is None and hash160_u is None:
-        hash160 = key.hash160()
-
-    add_output("hash160", b2h(hash160 or hash160_c))
-
-    if hash160_c and hash160_u:
-        add_output("hash160_uncompressed", b2h(hash160_u), " uncompressed")
-
-    address = ui_context.address_for_p2pkh(hash160 or hash160_c)
-    add_output("address", address, "%s address" % network_name)
-    add_output("%s_address" % network.code, address, is_legacy_key=True)
-
-    if hash160_c and hash160_u:
-        address = key.address(use_uncompressed=True)
-        add_output("address_uncompressed", address, "%s address uncompressed" % network_name)
-        add_output("%s_address_uncompressed" % network.code, address, is_legacy_key=True)
-
-    # don't print segwit addresses unless we're sure we have a compressed key
-    if hash160_c and hasattr(network, "ui") and getattr(network.ui, "_bech32_hrp"):
-        address_segwit = network.ui.address_for_p2pkh_wit(hash160_c)
-        if address_segwit:
-            # this network seems to support segwit
-            add_output("address_segwit", address_segwit, "%s segwit address" % network_name)
-            add_output("%s_address_segwit" % network.code, address_segwit, is_legacy_key=True)
-
-            p2sh_script = network.ui._script_info.script_for_p2pkh_wit(hash160_c)
-            p2s_address = network.ui.address_for_p2s(p2sh_script)
-            if p2s_address:
-                add_output("p2sh_segwit", p2s_address)
-
-            p2sh_script_hex = b2h(p2sh_script)
-            add_output("p2sh_segwit_script", p2sh_script_hex, " corresponding p2sh script")
-
-
 def create_output(item, key, network, output_key_set, subkey_path=None):
     ui_context = network.ui
     key._ui_context = ui_context
     output_dict = {}
     output_order = []
 
-    def add_output(json_key, value=None, human_readable_key=None, is_legacy_key=False):
+    def add_output(json_key, value=None, human_readable_key=None):
         if output_key_set and json_key not in output_key_set:
             return
         if human_readable_key is None:
             human_readable_key = json_key.replace("_", " ")
         if value:
-            if is_legacy_key:
+            if human_readable_key == "legacy":
                 output_dict[json_key.strip()] = value
             else:
                 output_dict[json_key.strip().lower()] = value
@@ -179,18 +101,24 @@ def create_output(item, key, network, output_key_set, subkey_path=None):
     add_output("network", full_network_name)
     add_output("netcode", network.code)
 
-    create_key_output(key, network, subkey_path, add_output)
+    if hasattr(key, "hwif"):
+        if subkey_path:
+            add_output("subkey_path", subkey_path)
+        for k, v, text in network.output_for_hwif(key.serialize(), network, subkey_path, add_output):
+            add_output(k, v, text)
 
     secret_exponent = key.secret_exponent()
     if secret_exponent:
-        add_output("secret_exponent", '%d' % secret_exponent)
-        add_output("secret_exponent_hex", '%x' % secret_exponent, " hex")
-        add_output("wif", key.wif(use_uncompressed=False))
-        add_output("wif_uncompressed", key.wif(use_uncompressed=True), " uncompressed")
+        for k, v, text in network.output_for_secret_exponent(secret_exponent):
+            add_output(k, v, text)
 
-    create_public_pair_output(key, add_output)
-
-    create_hash160_output(key, network, add_output, output_dict)
+    public_pair = key.public_pair()
+    if public_pair:
+        for k, v, text in network.output_for_public_pair(public_pair):
+            add_output(k, v, text)
+    else:
+        for k, v, text in network.output_for_h160(key.hash160()):
+            add_output(k, v, text)
 
     return output_dict, output_order
 
@@ -221,20 +149,18 @@ def create_parser():
     parser.add_argument('-W', "--wif", help='show just Bitcoin WIF', action='store_true')
     parser.add_argument('-a', "--address", help='show just Bitcoin address', action='store_true')
     parser.add_argument(
-        '-u', "--uncompressed", help='show output in uncompressed form',
-        action='store_true')
+        '-u', "--uncompressed", help='show output in uncompressed form', action='store_true')
     parser.add_argument(
-        '-P', "--public", help='only show public version of wallet keys',
-        action='store_true')
+        '-P', "--public", help='only show public version of wallet keys', action='store_true')
 
     parser.add_argument('-j', "--json", help='output as JSON', action='store_true')
 
     parser.add_argument('-b', "--brief", nargs="*", help='brief output; display a single field')
 
-    parser.add_argument('-s', "--subkey", help='subkey path (example: 0H/2/15-20)')
+    parser.add_argument('-s', "--subkey", help='subkey path (example: 0H/2/15-20)', default="")
     parser.add_argument('-n', "--network", help='specify network', choices=codes)
-    parser.add_argument("--override-network", help='override detected network type',
-                        default=None, choices=codes)
+    parser.add_argument(
+        "--override-network", help='override detected network type', default=None, choices=codes)
 
     parser.add_argument(
         'item', nargs="*", help='a BIP0032 wallet key string;'
@@ -338,7 +264,7 @@ def ku(args, parser):
 
         display_network = override_network or key_network or fallback_network
 
-        for key in key.subkeys(args.subkey or ""):
+        for key in key.subkeys(args.subkey):
             if args.public:
                 key = key.public_copy()
 

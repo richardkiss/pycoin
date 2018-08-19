@@ -2,7 +2,7 @@ import hashlib
 
 from .subpaths import subpaths_for_path_range
 
-from pycoin.encoding.bytes32 import from_bytes_32
+from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
 from pycoin.encoding.hash import double_sha256
 from pycoin.encoding.hexbytes import b2h
 from pycoin.key.Key import Key
@@ -34,6 +34,18 @@ class ElectrumWallet(Key):
             public_pair = tuple(from_bytes_32(master_public_key[idx:idx+32]) for idx in (0, 32))
         super(ElectrumWallet, self).__init__(
             generator=generator, secret_exponent=master_private_key, public_pair=public_pair, prefer_uncompressed=True)
+
+    @classmethod
+    def deserialize(class_, blob):
+        if len(blob) == 32:
+            return class_(master_private_key=from_bytes_32(blob))
+        if len(blob) == 64:
+            return class_(master_public_key=blob)
+
+    def serialize(self):
+        if self._secret_exponent:
+            return to_bytes_32(self._secret_exponent)
+        return self.master_public_key()
 
     def secret_exponent(self):
         if self._secret_exponent is None and self._initial_key:
