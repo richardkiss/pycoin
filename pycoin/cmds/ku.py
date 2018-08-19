@@ -69,8 +69,7 @@ def parse_as_public_pair(s, generator):
             if v0:
                 if s1 in ("even", "odd"):
                     is_y_odd = (s1 == "odd")
-                    y = generator.y_values_for_x(v0)[is_y_odd]
-                    return generator.Point(v0, y)
+                    return generator.points_for_x(v0)[is_y_odd]
                 v1 = parse_as_number(s1)
                 if v1:
                     if not generator.contains_point(v0, v1):

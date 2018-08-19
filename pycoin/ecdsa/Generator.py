@@ -40,22 +40,23 @@ class Generator(Curve, Point):
         "Return n such that a * n == 1 (mod p)."
         return self.inverse_mod(a, self._order)
 
-    def y_values_for_x(self, x):
+    def points_for_x(self, x):
         """
-        Return (y0, y1) where for each y in (y0, y1) (x, y) is a point and y0 is even.
+        Return (p0, p1) where for each p is a point with given x coordinate
+        and p0's y value is even
 
-        To get a y value with particular parity, use something like
-        ```y_values_for_x(x)[1 if is_y_supposed_to_be_odd else 0]```
+        To get a point with particular parity, use something like
+        ```points_for_x(x)[1 if is_y_supposed_to_be_odd else 0]```
         """
         p = self._p
         alpha = (pow(x, 3, p) + self._a * x + self._b) % p
         y0 = self.modular_sqrt(alpha)
         if y0 == 0:
             raise ValueError("no y value for %d" % x)
-        y1 = p - y0
+        p0, p1 = [self.Point(x, _) for _ in (y0, p - y0)]
         if y0 & 1 == 0:
-            return (y0, y1)
-        return (y1, y0)
+            return (p0, p1)
+        return (p1, p0)
 
     def possible_public_pairs_for_signature(self, value, signature, y_parity=None):
         """
@@ -65,21 +66,21 @@ class Generator(Curve, Point):
         r, s = signature
 
         try:
-            y_vals = self.y_values_for_x(r)
+            points = self.points_for_x(r)
         except ValueError:
             return []
 
         if y_parity is not None:
             if y_parity & 1:
-                y_vals = y_vals[1:]
+                points = points[1:]
             else:
-                y_vals = y_vals[:1]
+                points = points[:1]
 
         inv_r = self.inverse(r)
         s_over_r = s * inv_r
         minus_E_over_r = -(inv_r * value) * self
         try:
-            return [s_over_r * self.Point(r, y) + minus_E_over_r for y in y_vals]
+            return [s_over_r * p + minus_E_over_r for p in points]
         except ValueError:
             return []
 
