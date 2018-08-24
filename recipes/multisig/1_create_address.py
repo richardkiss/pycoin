@@ -6,9 +6,10 @@
 import os
 import sys
 
-from pycoin.key.BIP32Node import BIP32Node
 from pycoin.encoding.hexbytes import b2h
-from pycoin.ui.ui import address_for_p2s, script_for_multisig
+from pycoin.symbols.btc import network
+
+BIP32Node = network.extras.BIP32Node
 
 
 def main():
@@ -19,7 +20,7 @@ def main():
         hwif = f.readline().strip()
 
     # turn the bip32 text into a BIP32Node object
-    BIP32_KEY = BIP32Node.from_hwif(hwif)
+    BIP32_KEY = network.ui.parse(hwif)
 
     # create three sec_keys (these are public keys, streamed using the SEC format)
 
@@ -31,17 +32,17 @@ def main():
 
     # create the 2-of-3 multisig script
     # any 2 signatures can release the funds
-    pay_to_multisig_script = script_for_multisig(2, public_key_sec_list)
+    pay_to_multisig_script = network.ui._script_info.script_for_multisig(2, public_key_sec_list)
 
     # create a "2-of-3" multisig address_for_multisig
-    the_address = address_for_p2s(pay_to_multisig_script)
+    the_address = network.ui.address_for_p2s(pay_to_multisig_script)
 
     print("Here is your pay 2-of-3 address: %s" % the_address)
 
     print("Here is the pay 2-of-3 script: %s" % b2h(pay_to_multisig_script))
     print("The hex script should go into p2sh_lookup.hex")
 
-    base_dir = os.path.dirname(sys.argv[1])
+    base_dir = os.path.abspath(os.path.dirname(sys.argv[1]))
     print("The three WIFs are written into %s as wif0, wif1 and wif2" % base_dir)
     for i in range(3):
         wif = BIP32_KEY.subkey_for_path("0/%d/0" % i).wif()
