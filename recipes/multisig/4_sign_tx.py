@@ -2,11 +2,11 @@
 
 import sys
 
+from pycoin.coins.tx_utils import sign_tx
 from pycoin.encoding.hexbytes import h2b
-from pycoin.key.validate import is_wif_valid
+from pycoin.ui.validate import is_wif_valid
 from pycoin.solve.utils import build_p2sh_lookup
-from pycoin.tx.Tx import Tx
-from pycoin.tx.tx_utils import sign_tx
+from pycoin.symbols.btc import network
 
 
 def main():
@@ -17,7 +17,7 @@ def main():
     # get the tx
     with open(sys.argv[1], "r") as f:
         tx_hex = f.readline().strip()
-    tx = Tx.from_hex(tx_hex)
+    tx = network.tx.from_hex(tx_hex)
 
     # get the WIF
     with open(sys.argv[2], "r") as f:

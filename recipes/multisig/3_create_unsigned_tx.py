@@ -9,9 +9,9 @@
 
 import sys
 
-from pycoin.tx.Tx import Tx
-from pycoin.tx.tx_utils import create_tx
-from pycoin.key.validate import is_address_valid
+from pycoin.coins.tx_utils import create_tx
+from pycoin.ui.validate import is_address_valid
+from pycoin.symbols.btc import network
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
         tx_hex = f.readline().strip()
 
     # get the spendable from the prior transaction
-    tx = Tx.from_hex(tx_hex)
+    tx = network.tx.from_hex(tx_hex)
     tx_out_index = int(sys.argv[2])
     spendable = tx.tx_outs_as_spendable()[tx_out_index]
 
