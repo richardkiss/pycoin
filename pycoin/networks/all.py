@@ -81,7 +81,8 @@ BUILT_IN_NETWORKS = [
             "bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org",
             "bluematt.me", "testnet-seed.bluematt.me"
         ],
-        bech32_hrp='tb'
+        bech32_hrp='tb',
+        address_wit=True
     ),
 
     # LTC litecoin mainnet : Ltpv/Ltub
