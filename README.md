@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/richardkiss/pycoin.png?branch=master)](https://travis-ci.org/richardkiss/pycoin)
+
 pycoin -- Python Cryptocoin Utilities
 =====================================
 
