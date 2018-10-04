@@ -143,6 +143,119 @@ def make_output_for_h160(network):
     return f
 
 
+def make_parse(network):
+
+    def parse(s):
+        pass
+
+    from pycoin.ui.Parser import parse_b58, parse_colon_prefix
+    from pycoin.encoding.bytes32 import from_bytes_32
+
+    def parse_wif(s):
+        data = parse_b58(s)
+        if data is None or data[:1] != network.ui._wif_prefix:
+            return None
+        data = data[1:]
+        is_compressed = (len(data) > 32)
+        if is_compressed:
+            data = data[:-1]
+        se = from_bytes_32(data)
+        return network.extras.Key(se)
+
+    def parse_bip32_prv(s):
+        data = parse_b58(s)
+        if data is None or not data.startswith(network.ui._bip32_prv_prefix):
+            return None
+        return network.extras.BIP32Node.deserialize(data)
+
+    def parse_bip32_pub(s):
+        data = parse_b58(s)
+        if data is None or not data.startswith(network.ui._bip32_pub_prefix):
+            return None
+        return network.extras.BIP32Node.deserialize(data)
+
+    def parse_bip32_seed(s):
+        pair = parse_colon_prefix(s)
+        if pair is None or pair[0] not in "HP":
+            return None
+        if pair[0] == "H":
+            try:
+                master_secret = h2b(pair[1])
+            except ValueError:
+                return None
+        else:
+            master_secret = pair[1].encode("utf8")
+        return network.extras.BIP32Node.from_master_secret(master_secret)
+
+    def parse_electrum_to_blob(s):
+        pair = parse_colon_prefix(s)
+        if pair is None or pair[0] != "E":
+            return None
+        try:
+            return h2b(pair[1])
+        except ValueError:
+            return None
+
+    def parse_electrum_seed(s):
+        blob = parse_electrum_to_blob(s)
+        if len(blob) == 16:
+            blob = b2h(blob)
+            return network.ui._electrum_class(
+                generator=network.ui._key_class._default_generator, initial_key=blob)
+
+    def parse_electrum_prv(s):
+        blob = parse_electrum_to_blob(s)
+        if len(blob) == 32:
+            mpk = from_bytes_32(blob)
+            return network.ui._electrum_class(
+                generator=network.ui._key_class._default_generator, master_private_key=mpk)
+
+    def parse_electrum_pub(s):
+        blob = parse_electrum_to_blob(s)
+        if len(blob) == 64:
+            return network.ui._electrum_class(
+                generator=network.ui._key_class._default_generator, master_public_key=blob)
+
+    parse.wif = parse_wif
+    parse.bip32_prv = parse_bip32_prv
+    parse.bip32_pub = parse_bip32_pub
+    parse.bip32_seed = parse_bip32_seed
+    parse.electrum_seed = parse_electrum_seed
+    parse.electrum_prv = parse_electrum_prv
+    parse.electrum_pub = parse_electrum_pub
+
+
+    """
+    def parse_p2pkh(s):
+        data = parse_b58(s)
+        if data is None or not data.startswith(network.ui._address_prefix):
+            return None
+        # BRAIN DAMAGE: figure out Payable
+        return Payable()
+
+    TODO:
+    parse.p2pkh = parse_p2pkh
+    parse.p2sh
+    parse.p2pkh_segwit
+    parse.p2sh_segwit
+    parse.secret_exponent = parse_secret_exponent
+    parse.address = parse_address
+    parse.script = parse_script
+    parse.sec = parse_sec
+    parse.spendable = parse_spendable
+    parse.script_preimage = parse_script_preimage
+    """
+
+    # semantic items
+    #tx
+    #keychain_secret
+    #input
+    #payable (address + script)
+    #address
+
+    return parse
+
+
 def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     # potential kwargs:
     #   tx, block, magic_header_hex, default_port, dns_bootstrap,
@@ -191,4 +304,5 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.Key = network.extras.Key
     network.ElectrumKey = network.extras.ElectrumKey
     network.Keychain = Keychain
+    network.parse = make_parse(network)
     return network
