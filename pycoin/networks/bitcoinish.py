@@ -143,13 +143,27 @@ def make_output_for_h160(network):
     return f
 
 
+class BitcoinishPayable(object):
+    def __init__(self, script_info, network):
+        self._script_info = script_info
+        self._network = network
+
+    def address(self):
+        return self._network.ui.address_for_script_info(self._script_info)
+
+    def script(self):
+        return self._network.script_info.script_for_info(self._script_info)
+
+
 def make_parse(network):
 
     def parse(s):
         pass
 
-    from pycoin.ui.Parser import parse_b58, parse_colon_prefix
+    from pycoin.contrib import segwit_addr
     from pycoin.encoding.bytes32 import from_bytes_32
+    from pycoin.intbytes import int2byte
+    from pycoin.ui.Parser import parse_b58, parse_bech32, parse_colon_prefix
 
     def parse_wif(s):
         data = parse_b58(s)
@@ -216,6 +230,45 @@ def make_parse(network):
             return network.ui._electrum_class(
                 generator=network.ui._key_class._default_generator, master_public_key=blob)
 
+    def parse_p2pkh(s):
+        data = parse_b58(s)
+        if data is None or not data.startswith(network.ui._address_prefix):
+            return None
+        script = network.script_info.script_for_p2pkh(data[1:])
+        script_info = network.script_info.info_for_script(script)
+        return BitcoinishPayable(script_info, network)
+
+    def parse_p2sh(s):
+        data = parse_b58(s)
+        if data is None or not data.startswith(network.ui._pay_to_script_prefix):
+            return None
+        script = network.script_info.script_for_p2sh(data[1:])
+        script_info = network.script_info.info_for_script(script)
+        return BitcoinishPayable(script_info, network)
+
+    def parse_segwit(s, blob_len, script_f):
+        pair = parse_bech32(s)
+        if pair is None or pair[0] != network.ui._bech32_hrp:
+            return None
+        data = pair[1]
+        version_byte = int2byte(data[0])
+        decoded = segwit_addr.convertbits(data[1:], 5, 8, False)
+        decoded_data = b''.join(int2byte(d) for d in decoded)
+        if version_byte != b'\0' or len(decoded_data) != blob_len:
+            return None
+        script = script_f(decoded_data)
+        script_info = network.script_info.info_for_script(script)
+        return BitcoinishPayable(script_info, network)
+
+    def parse_p2pkh_segwit(s):
+        return parse_segwit(s, 20, network.script_info.script_for_p2pkh_wit)
+
+    def parse_p2sh_segwit(s):
+        return parse_segwit(s, 32, network.script_info.script_for_p2sh_wit)
+
+    def parse_address(s):
+        return parse_p2pkh(s) or parse_p2sh(s) or parse_p2pkh_segwit(s) or parse_p2sh_segwit(s)
+
     parse.wif = parse_wif
     parse.bip32_prv = parse_bip32_prv
     parse.bip32_pub = parse_bip32_pub
@@ -223,23 +276,14 @@ def make_parse(network):
     parse.electrum_seed = parse_electrum_seed
     parse.electrum_prv = parse_electrum_prv
     parse.electrum_pub = parse_electrum_pub
-
+    parse.p2pkh = parse_p2pkh
+    parse.p2sh = parse_p2sh
+    parse.p2pkh_segwit = parse_p2pkh_segwit
+    parse.p2sh_segwit = parse_p2sh_segwit
 
     """
-    def parse_p2pkh(s):
-        data = parse_b58(s)
-        if data is None or not data.startswith(network.ui._address_prefix):
-            return None
-        # BRAIN DAMAGE: figure out Payable
-        return Payable()
-
     TODO:
-    parse.p2pkh = parse_p2pkh
-    parse.p2sh
-    parse.p2pkh_segwit
-    parse.p2sh_segwit
     parse.secret_exponent = parse_secret_exponent
-    parse.address = parse_address
     parse.script = parse_script
     parse.sec = parse_sec
     parse.spendable = parse_spendable

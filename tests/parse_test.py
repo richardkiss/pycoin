@@ -78,12 +78,28 @@ class ParseTest(unittest.TestCase):
         k = network.ui.parse(address, types=["address"])
         self.assertEqual(network.ui.address_for_script(k), address)
 
+        k = network.parse.p2pkh(address)
+        self.assertEqual(k.address(), address)
+
     def test_parse_address_p2sh(self):
         address = "3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN"
         k = network.ui.parse(address, types=["address"])
         self.assertEqual(network.ui.address_for_script(k), address)
 
+        k = network.parse.p2sh(address)
+        self.assertEqual(k.address(), address)
+
     def test_parse_address_p2pkh_wit(self):
         address = "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
         k = network.ui.parse(address)
         self.assertEqual(network.ui.address_for_script(k), address)
+
+        k = network.parse.p2pkh_segwit(address)
+        self.assertEqual(k.address(), address)
+
+    def test_parse_address_p2sh_wit(self):
+        import hashlib
+        address = network.ui.address_for_p2sh_wit(hashlib.sha256(b'').digest())
+
+        k = network.parse.p2sh_segwit(address)
+        self.assertEqual(k.address(), address)
