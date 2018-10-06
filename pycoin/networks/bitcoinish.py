@@ -154,6 +154,9 @@ class BitcoinishPayable(object):
     def script(self):
         return self._network.script_info.script_for_info(self._script_info)
 
+    def disassemble(self):
+        return self._network.script_tools.disassemble(self.script())
+
 
 def make_parse(network):
 
@@ -269,6 +272,14 @@ def make_parse(network):
     def parse_address(s):
         return parse_p2pkh(s) or parse_p2sh(s) or parse_p2pkh_segwit(s) or parse_p2sh_segwit(s)
 
+    def parse_script(s):
+        try:
+            script = network.script_tools.compile(s)
+            script_info = network.script_info.info_for_script(script)
+            return BitcoinishPayable(script_info, network)
+        except Exception:
+            return None
+
     parse.wif = parse_wif
     parse.bip32_prv = parse_bip32_prv
     parse.bip32_pub = parse_bip32_pub
@@ -280,22 +291,19 @@ def make_parse(network):
     parse.p2sh = parse_p2sh
     parse.p2pkh_segwit = parse_p2pkh_segwit
     parse.p2sh_segwit = parse_p2sh_segwit
-
-    """
-    TODO:
-    parse.secret_exponent = parse_secret_exponent
     parse.script = parse_script
-    parse.sec = parse_sec
-    parse.spendable = parse_spendable
-    parse.script_preimage = parse_script_preimage
-    """
+
+    #parse.secret_exponent = parse_secret_exponent
+    #parse.sec = parse_sec
+    #parse.spendable = parse_spendable
+    #parse.script_preimage = parse_script_preimage
 
     # semantic items
-    #tx
-    #keychain_secret
-    #input
-    #payable (address + script)
-    #address
+    parse.address = parse_address
+    #parse.payable = parse_payable
+    #parse.input = parse_input
+    #parse.keychain_secret = parse_keychain_secret
+    #parse.tx = parse_tx
 
     return parse
 

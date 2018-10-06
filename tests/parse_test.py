@@ -103,3 +103,9 @@ class ParseTest(unittest.TestCase):
 
         k = network.parse.p2sh_segwit(address)
         self.assertEqual(k.address(), address)
+
+    def test_parse_script(self):
+        k = network.parse.script("foo")
+        self.assertEqual(k, None)
+        k = network.parse.script("OP_CHECKSIG")
+        self.assertEqual(k.disassemble(), "OP_CHECKSIG")

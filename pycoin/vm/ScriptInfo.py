@@ -86,6 +86,8 @@ class ScriptInfo(object):
         type = info.get("type")
         if type == "nulldata":
             return self._scriptTools.compile("OP_RETURN") + info.get("data")
+        if type == "unknown":
+            return info["script"]
         script_text = self._SCRIPT_LOOKUP[type](info)
         return self._scriptTools.compile(script_text)
 
