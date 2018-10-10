@@ -165,7 +165,7 @@ def make_parse(network):
     from pycoin.contrib import segwit_addr
     from pycoin.encoding.bytes32 import from_bytes_32
     from pycoin.intbytes import int2byte
-    from pycoin.ui.Parser import parse_b58, parse_bech32, parse_colon_prefix
+    from pycoin.ui.Parser import parse_b58, parse_bech32, parse_colon_prefix, parseable_str
 
     def parse_wif(s):
         data = parse_b58(s)
@@ -280,8 +280,49 @@ def make_parse(network):
         except Exception:
             return None
 
+    def parse_as_number(s):
+        try:
+            return int(s)
+        except ValueError:
+            pass
+        try:
+            return int(s, 16)
+        except ValueError:
+            pass
+
+    def parse_secret_exponent(s):
+        v = parse_as_number(s)
+        Key = network.extras.Key
+        if v and 0 < v < Key._default_generator.order():
+            return Key(secret_exponent=v)
+
+    def parse_public_pair(s):
+        point = None
+        Key = network.extras.Key
+        generator = Key._default_generator
+        for c in ",/":
+            if c in s:
+                s0, s1 = s.split(c, 1)
+                v0 = parse_as_number(s0)
+                if v0:
+                    if s1 in ("even", "odd"):
+                        is_y_odd = (s1 == "odd")
+                        point = generator.points_for_x(v0)[is_y_odd]
+                    v1 = parse_as_number(s1)
+                    if v1:
+                        if generator.contains_point(v0, v1):
+                            point = generator.Point(v0, v1)
+        if point:
+            return Key(public_pair=point)
+
     def parse(s):
-        pass
+        s = parseable_str(s)
+        return (parse_address(s) or
+                parse_payable(s) or
+                parse_input(s) or
+                parse_keychain_secret(s) or
+                parse_tx(s))
+
 
     parse.wif = parse_wif
     parse.bip32_seed = parse_bip32_seed
@@ -295,8 +336,9 @@ def make_parse(network):
     parse.p2pkh_segwit = parse_p2pkh_segwit
     parse.p2sh_segwit = parse_p2sh_segwit
     parse.script = parse_script
+    parse.secret_exponent = parse_secret_exponent
+    parse.public_pair = parse_public_pair
 
-    #parse.secret_exponent = parse_secret_exponent
     #parse.sec = parse_sec
     #parse.spendable = parse_spendable
     #parse.script_preimage = parse_script_preimage

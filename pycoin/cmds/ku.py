@@ -44,40 +44,6 @@ def get_entropy():
     return entropy
 
 
-def parse_as_number(s):
-    try:
-        return int(s)
-    except ValueError:
-        pass
-    try:
-        return int(s, 16)
-    except ValueError:
-        pass
-
-
-def parse_as_secret_exponent(s, generator):
-    v = parse_as_number(s)
-    if v and 0 < v < generator.order():
-        return v
-
-
-def parse_as_public_pair(s, generator):
-    for c in ",/":
-        if c in s:
-            s0, s1 = s.split(c, 1)
-            v0 = parse_as_number(s0)
-            if v0:
-                if s1 in ("even", "odd"):
-                    is_y_odd = (s1 == "odd")
-                    return generator.points_for_x(v0)[is_y_odd]
-                v1 = parse_as_number(s1)
-                if v1:
-                    if not generator.contains_point(v0, v1):
-                        sys.stderr.write("invalid (x, y) pair\n")
-                        sys.exit(1)
-                    return (v0, v1)
-
-
 def create_output(item, key, network, output_key_set, subkey_path=None):
     ui_context = network.ui
     key._ui_context = ui_context
@@ -206,16 +172,16 @@ def parse_key(item, networks):
     if network:
         return network, key
 
-    secret_exponent = parse_as_secret_exponent(item, generator)
+    secret_exponent = default_network.parse.secret_exponent(item)
     if secret_exponent:
-        return None, Key(secret_exponent=secret_exponent)
+        return default_network, secret_exponent
 
     if SEC_RE.match(item):
         return None, Key.from_sec(h2b(item))
 
-    public_pair = parse_as_public_pair(item, generator)
+    public_pair = default_network.parse.public_pair(item)
     if public_pair:
-        return None, Key(public_pair=public_pair)
+        return None, public_pair
 
     return None, None
 
