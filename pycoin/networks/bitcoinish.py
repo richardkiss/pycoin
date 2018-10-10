@@ -3,6 +3,7 @@ from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.encoding.sec import is_sec_compressed, sec_to_public_pair
 from pycoin.key.Keychain import Keychain
 from pycoin.message.make_parser_and_packer import (
     make_parser_and_packer, standard_messages,
@@ -243,7 +244,7 @@ def make_parse(network):
     def parse_p2sh(s):
         data = parse_b58(s)
         if (None in (data, network.ui._pay_to_script_prefix) or
-                 not data.startswith(network.ui._pay_to_script_prefix)):
+                not data.startswith(network.ui._pay_to_script_prefix)):
             return None
         script = network.script_info.script_for_p2sh(data[1:])
         script_info = network.script_info.info_for_script(script)
@@ -268,9 +269,6 @@ def make_parse(network):
 
     def parse_p2sh_segwit(s):
         return parse_segwit(s, 32, network.script_info.script_for_p2sh_wit)
-
-    def parse_address(s):
-        return parse_p2pkh(s) or parse_p2sh(s) or parse_p2pkh_segwit(s) or parse_p2sh_segwit(s)
 
     def parse_script(s):
         try:
@@ -315,37 +313,81 @@ def make_parse(network):
         if point:
             return Key(public_pair=point)
 
+    def parse_sec(s):
+        pair = parse_colon_prefix(s)
+        if pair is not None and pair[0] == network.ui._wif_prefix:
+            s = pair[1]
+        try:
+            sec = h2b(s)
+            public_pair = sec_to_public_pair(sec, network.extras.Key._default_generator)
+            is_compressed = is_sec_compressed(sec)
+            return network.extras.Key(public_pair=public_pair, is_compressed=is_compressed)
+        except Exception:
+            pass
+
+    def parse_address(s):
+        s = parseable_str(s)
+        return parse_p2pkh(s) or parse_p2sh(s) or parse_p2pkh_segwit(s) or parse_p2sh_segwit(s)
+
+    def parse_payable(s):
+        s = parseable_str(s)
+        return parse_address(s) or parse_script(s)
+
+    def parse_hierarchical_key(s):
+        s = parseable_str(s)
+        for f in [parse_bip32_seed, parse_bip32_prv, parse_bip32_pub,
+                  parse_electrum_seed, parse_electrum_prv, parse_electrum_pub]:
+            v = f(s)
+            if v:
+                return v
+
+    def parse_private_key(s):
+        s = parseable_str(s)
+        for f in [parse_wif, parse_secret_exponent]:
+            v = f(s)
+            if v:
+                return v
+
     def parse(s):
         s = parseable_str(s)
-        return (parse_address(s) or
-                parse_payable(s) or
+        return (parse_payable(s) or
                 parse_input(s) or
                 parse_keychain_secret(s) or
                 parse_tx(s))
 
-
-    parse.wif = parse_wif
+    # hierarchical key
     parse.bip32_seed = parse_bip32_seed
     parse.bip32_prv = parse_bip32_prv
     parse.bip32_pub = parse_bip32_pub
     parse.electrum_seed = parse_electrum_seed
     parse.electrum_prv = parse_electrum_prv
     parse.electrum_pub = parse_electrum_pub
+
+    # private key
+    parse.wif = parse_wif
+    parse.secret_exponent = parse_secret_exponent
+
+    # public key
+    parse.public_pair = parse_public_pair
+    parse.sec = parse_sec
+
+    # address
     parse.p2pkh = parse_p2pkh
     parse.p2sh = parse_p2sh
     parse.p2pkh_segwit = parse_p2pkh_segwit
     parse.p2sh_segwit = parse_p2sh_segwit
-    parse.script = parse_script
-    parse.secret_exponent = parse_secret_exponent
-    parse.public_pair = parse_public_pair
 
-    #parse.sec = parse_sec
+    # payable (+ address)
+    parse.script = parse_script
+
     #parse.spendable = parse_spendable
     #parse.script_preimage = parse_script_preimage
 
     # semantic items
+    parse.hierarchical_key = parse_hierarchical_key
+    parse.private_key = parse_private_key
     parse.address = parse_address
-    #parse.payable = parse_payable
+    parse.payable = parse_payable
     #parse.input = parse_input
     #parse.keychain_secret = parse_keychain_secret
     #parse.tx = parse_tx
@@ -381,7 +423,6 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.extras = Extras(network.script_tools, network.ui)
 
     NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
-    network_kwargs = {k: kwargs.get(k) for k in NETWORK_KEYS if k in kwargs}
     for k in NETWORK_KEYS:
         if k in kwargs:
             setattr(network, k, kwargs[k])

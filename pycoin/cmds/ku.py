@@ -10,11 +10,11 @@ import sys
 
 from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.ui.key_from_text import network_key_from_text
+from pycoin.ui.Parser import parseable_str
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
 
 
-SEC_RE = re.compile(r"^(0[23][0-9a-fA-F]{64})|(04[0-9a-fA-F]{128})$")
 HASH160_RE = re.compile(r"^([0-9a-fA-F]{40})$")
 
 
@@ -168,20 +168,25 @@ def parse_key(item, networks):
         item = Key(hash160=h2b(item)).address()
         networks = [default_network]
 
-    network, key = network_key_from_text(item, networks=networks)
-    if network:
-        return network, key
+    item = parseable_str(item)
 
-    secret_exponent = default_network.parse.secret_exponent(item)
-    if secret_exponent:
-        return default_network, secret_exponent
+    for _ in networks:
 
-    if SEC_RE.match(item):
-        return None, Key.from_sec(h2b(item))
+        network, key = network_key_from_text(item, networks=[_])
+        if network:
+            return network, key
 
-    public_pair = default_network.parse.public_pair(item)
-    if public_pair:
-        return None, public_pair
+        secret_exponent = _.parse.secret_exponent(item)
+        if secret_exponent:
+            return _, secret_exponent
+
+        v = _.parse.sec(item)
+        if v:
+            return None, v
+
+        public_pair = _.parse.public_pair(item)
+        if public_pair:
+            return _, public_pair
 
     return None, None
 
