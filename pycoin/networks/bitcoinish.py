@@ -133,16 +133,6 @@ def make_output_for_public_pair(Key, network):
     return f
 
 
-def make_output_for_h160(network):
-    def f(hash160):
-        yield ("hash160", b2h(hash160), None)
-
-        address = network.ui.address_for_p2pkh(hash160)
-        yield ("address", address, "%s address" % network.network_name)
-        yield ("%s_address" % network.symbol, address, "legacy")
-    return f
-
-
 class BitcoinishPayable(object):
     def __init__(self, script_info, network):
         self._script_info = script_info
@@ -157,11 +147,20 @@ class BitcoinishPayable(object):
     def disassemble(self):
         return self._network.script_tools.disassemble(self.script())
 
+    def output(self):
+        hash160 = self._script_info.get("hash160", None)
+        if hash160:
+            yield ("hash160", b2h(hash160), None)
+
+        address = self.address()
+        yield ("address", address, "%s address" % self._network.network_name)
+        yield ("%s_address" % self._network.symbol, address, "legacy")
+
+    def __repr__(self):
+        return "<%s>" % self.address()
+
 
 def make_parse(network):
-
-    def parse(s):
-        pass
 
     from pycoin.contrib import segwit_addr
     from pycoin.encoding.bytes32 import from_bytes_32
@@ -177,7 +176,7 @@ def make_parse(network):
         if is_compressed:
             data = data[:-1]
         se = from_bytes_32(data)
-        return network.extras.Key(se)
+        return network.extras.Key(se, is_compressed=is_compressed)
 
     def parse_bip32_prv(s):
         data = parse_b58(s)
@@ -215,21 +214,21 @@ def make_parse(network):
 
     def parse_electrum_seed(s):
         blob = parse_electrum_to_blob(s)
-        if len(blob) == 16:
+        if blob and len(blob) == 16:
             blob = b2h(blob)
             return network.ui._electrum_class(
                 generator=network.ui._key_class._default_generator, initial_key=blob)
 
     def parse_electrum_prv(s):
         blob = parse_electrum_to_blob(s)
-        if len(blob) == 32:
+        if blob and len(blob) == 32:
             mpk = from_bytes_32(blob)
             return network.ui._electrum_class(
                 generator=network.ui._key_class._default_generator, master_private_key=mpk)
 
     def parse_electrum_pub(s):
         blob = parse_electrum_to_blob(s)
-        if len(blob) == 64:
+        if blob and len(blob) == 64:
             return network.ui._electrum_class(
                 generator=network.ui._key_class._default_generator, master_public_key=blob)
 
@@ -243,7 +242,8 @@ def make_parse(network):
 
     def parse_p2sh(s):
         data = parse_b58(s)
-        if data is None or not data.startswith(network.ui._pay_to_script_prefix):
+        if (None in (data, network.ui._pay_to_script_prefix) or
+                 not data.startswith(network.ui._pay_to_script_prefix)):
             return None
         script = network.script_info.script_for_p2sh(data[1:])
         script_info = network.script_info.info_for_script(script)
@@ -251,7 +251,7 @@ def make_parse(network):
 
     def parse_segwit(s, blob_len, script_f):
         pair = parse_bech32(s)
-        if pair is None or pair[0] != network.ui._bech32_hrp:
+        if pair is None or pair[0] != network.ui._bech32_hrp or pair[1] is None:
             return None
         data = pair[1]
         version_byte = int2byte(data[0])
@@ -280,10 +280,13 @@ def make_parse(network):
         except Exception:
             return None
 
+    def parse(s):
+        pass
+
     parse.wif = parse_wif
+    parse.bip32_seed = parse_bip32_seed
     parse.bip32_prv = parse_bip32_prv
     parse.bip32_pub = parse_bip32_pub
-    parse.bip32_seed = parse_bip32_seed
     parse.electrum_seed = parse_electrum_seed
     parse.electrum_prv = parse_electrum_prv
     parse.electrum_pub = parse_electrum_pub
@@ -351,7 +354,6 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.output_for_hwif = make_output_for_hwif(network)
     network.output_for_secret_exponent = make_output_for_secret_exponent(network.extras.Key)
     network.output_for_public_pair = make_output_for_public_pair(network.extras.Key, network)
-    network.output_for_h160 = make_output_for_h160(network)
     network.BIP32Node = network.extras.BIP32Node
     network.Key = network.extras.Key
     network.ElectrumKey = network.extras.ElectrumKey

@@ -1,6 +1,6 @@
 import unittest
 
-from pycoin.encoding.b58 import b2a_hashed_base58
+from pycoin.encoding.b58 import a2b_hashed_base58, b2a_hashed_base58
 from pycoin.key.Key import InvalidSecretExponentError
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.registry import network_codes
@@ -20,7 +20,7 @@ BIP32Node = BitcoinMainnet.ui._bip32node_class
 
 
 def change_prefix(address, new_prefix):
-    return b2a_hashed_base58(new_prefix + key_from_text(address).hash160())
+    return b2a_hashed_base58(new_prefix + a2b_hashed_base58(address)[1:])
 
 
 PAY_TO_HASH_ADDRESSES = [

@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from pycoin.encoding.hexbytes import b2h, h2b
-from pycoin.ui.key_from_text import key_info_from_text
+from pycoin.ui.key_from_text import network_key_from_text
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
 
@@ -101,23 +101,24 @@ def create_output(item, key, network, output_key_set, subkey_path=None):
     add_output("network", full_network_name)
     add_output("symbol", network.symbol)
 
+    if hasattr(key, "output"):
+        for k, v, text in key.output():
+            add_output(k, v, text)
+
     if hasattr(key, "hwif"):
         if subkey_path:
             add_output("subkey_path", subkey_path)
         for k, v, text in network.output_for_hwif(key.serialize(), network, subkey_path, add_output):
             add_output(k, v, text)
 
-    secret_exponent = key.secret_exponent()
+    secret_exponent = getattr(key, "secret_exponent", lambda: None)()
     if secret_exponent:
         for k, v, text in network.output_for_secret_exponent(secret_exponent):
             add_output(k, v, text)
 
-    public_pair = key.public_pair()
+    public_pair = getattr(key, "public_pair", lambda: None)()
     if public_pair:
         for k, v, text in network.output_for_public_pair(public_pair):
-            add_output(k, v, text)
-    else:
-        for k, v, text in network.output_for_h160(key.hash160()):
             add_output(k, v, text)
 
     return output_dict, output_order
@@ -196,11 +197,14 @@ def parse_key(item, networks):
     if item == 'create':
         return None, _create_bip32(default_network)
 
-    for network, key_info in key_info_from_text(item, networks=networks):
-        return network, key_info["create_f"]()
-
     if HASH160_RE.match(item):
-        return None, Key(hash160=h2b(item))
+        # BRAIN DAMAGE: lame hack for now
+        item = Key(hash160=h2b(item)).address()
+        networks = [default_network]
+
+    network, key = network_key_from_text(item, networks=networks)
+    if network:
+        return network, key
 
     secret_exponent = parse_as_secret_exponent(item, generator)
     if secret_exponent:
@@ -264,7 +268,11 @@ def ku(args, parser):
 
         display_network = override_network or key_network or fallback_network
 
-        for key in key.subkeys(args.subkey):
+        if hasattr(key, "subkeys"):
+            key_iter = key.subkeys(args.subkey)
+        else:
+            key_iter = [key]
+        for key in key_iter:
             if args.public:
                 key = key.public_copy()
 
