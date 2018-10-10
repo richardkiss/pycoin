@@ -348,6 +348,13 @@ def make_parse(network):
             if v:
                 return v
 
+    def parse_public_key(s):
+        s = parseable_str(s)
+        for f in [parse_public_pair, parse_sec]:
+            v = f(s)
+            if v:
+                return v
+
     def parse(s):
         s = parseable_str(s)
         return (parse_payable(s) or
@@ -377,7 +384,7 @@ def make_parse(network):
     parse.p2pkh_segwit = parse_p2pkh_segwit
     parse.p2sh_segwit = parse_p2sh_segwit
 
-    # payable (+ address)
+    # payable (+ all address types)
     parse.script = parse_script
 
     #parse.spendable = parse_spendable
@@ -386,6 +393,7 @@ def make_parse(network):
     # semantic items
     parse.hierarchical_key = parse_hierarchical_key
     parse.private_key = parse_private_key
+    parse.public_key = parse_public_key
     parse.address = parse_address
     parse.payable = parse_payable
     #parse.input = parse_input
