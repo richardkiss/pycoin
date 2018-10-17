@@ -3,6 +3,7 @@ from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.key.Keychain import Keychain
 from pycoin.message.make_parser_and_packer import (
     make_parser_and_packer, standard_messages,
     standard_message_post_unpacks, standard_streamer, standard_parsing_functions
@@ -175,8 +176,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
         if k in kwargs:
             setattr(network, k, kwargs[k])
 
-    network.tx = kwargs.get("tx") or Tx
-    network.block = kwargs.get("block") or Block.make_subclass(network.tx)
+    network.Tx = network.tx = kwargs.get("tx") or Tx
+    network.Block = network.block = kwargs.get("block") or Block.make_subclass(network.tx)
 
     streamer = standard_streamer(standard_parsing_functions(network.block, network.tx))
     network.parse_message, network.pack_message = make_parser_and_packer(
@@ -186,4 +187,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.output_for_secret_exponent = make_output_for_secret_exponent(network.extras.Key)
     network.output_for_public_pair = make_output_for_public_pair(network.extras.Key, network)
     network.output_for_h160 = make_output_for_h160(network)
+    network.BIP32Node = network.extras.BIP32Node
+    network.Key = network.extras.Key
+    network.ElectrumKey = network.extras.ElectrumKey
+    network.Keychain = Keychain
     return network
