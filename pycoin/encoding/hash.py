@@ -1,6 +1,8 @@
 
 import hashlib
 
+import groestlcoin_hash
+
 from .hexbytes import bytes_as_revhex
 
 
@@ -19,6 +21,10 @@ except Exception:
     from Crypto.Hash.RIPEMD import RIPEMD160Hash as ripemd160
 
 
+def sha256(data):
+    return bytes_as_revhex(hashlib.sha256(data).digest())
+
+
 def double_sha256(data):
     """A standard compound hash."""
     return bytes_as_revhex(hashlib.sha256(hashlib.sha256(data).digest()).digest())
@@ -27,6 +33,11 @@ def double_sha256(data):
 def hash160(data):
     """A standard compound hash."""
     return ripemd160(hashlib.sha256(data).digest()).digest()
+
+
+def groestlHash(data):
+    """Groestl-512 compound hash."""
+    return bytes_as_revhex(groestlcoin_hash.getHash(data, len(data)))
 
 
 """
