@@ -163,7 +163,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.script_info = ScriptInfo(network.script_tools)
 
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
-               "address_prefix pay_to_script_prefix bech32_hrp").split()
+               "address_prefix pay_to_script_prefix bech32_hrp base58_checksum_hash").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
     network.ui = UI(network.script_info, generator, **ui_kwargs)

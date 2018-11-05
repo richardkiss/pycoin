@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from pycoin.encoding.b58 import a2b_hashed_base58, EncodingError
+from pycoin.encoding.hash import double_sha256
 from pycoin.contrib import segwit_addr
 
 """
@@ -19,10 +20,10 @@ KEY:
 """
 
 
-def metadata_for_text(text):
+def metadata_for_text(text, checksum_hash=double_sha256):
     d = {}
     try:
-        data = a2b_hashed_base58(text)
+        data = a2b_hashed_base58(text, checksum_hash=checksum_hash)
         d["as_base58"] = (data,)
     except EncodingError:
         d["as_base58"] = None
@@ -65,14 +66,14 @@ def parse_to_info(metadata, parsers):
         return r
 
 
-def parse_all(item, parsers):
-    metadata = metadata_for_text(item)
+def parse_all(item, parsers, checksum_hash=double_sha256):
+    metadata = metadata_for_text(item, checksum_hash=checksum_hash)
     for info in parse_all_to_info(metadata, parsers):
         yield info.get("create_f")()
 
 
-def parse(item, parsers):
-    for r in parse_all(item, parsers):
+def parse(item, parsers, checksum_hash=double_sha256):
+    for r in parse_all(item, parsers, checksum_hash=checksum_hash):
         return r
 
 

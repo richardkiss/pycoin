@@ -2,7 +2,7 @@ import hashlib
 
 from pycoin.contrib import segwit_addr
 from pycoin.encoding.b58 import b2a_hashed_base58
-from pycoin.encoding.hash import hash160
+from pycoin.encoding.hash import hash160, double_sha256
 from pycoin.encoding.hexbytes import b2h
 from pycoin.intbytes import iterbytes
 from pycoin.key.Key import Key
@@ -24,7 +24,9 @@ from .Parser import parse, parse_to_info
 
 class UI(object):
     def __init__(self, puzzle_scripts, generator, bip32_prv_prefix=None, bip32_pub_prefix=None,
-                 wif_prefix=None, sec_prefix=None, address_prefix=None, pay_to_script_prefix=None, bech32_hrp=None):
+                 wif_prefix=None, sec_prefix=None, address_prefix=None, pay_to_script_prefix=None, bech32_hrp=None,
+                 base58_checksum_hash=double_sha256):
+        self._base58_checksum_hash = base58_checksum_hash
         self._script_info = puzzle_scripts
         self._key_class = Key.make_subclass(ui_context=self, generator=generator)
         self._electrum_class = ElectrumWallet.make_subclass(ui_context=self, generator=generator)
@@ -49,10 +51,10 @@ class UI(object):
 
     def bip32_as_string(self, blob, as_private):
         prefix = self._bip32_prv_prefix if as_private else self._bip32_pub_prefix
-        return b2a_hashed_base58(prefix + blob)
+        return b2a_hashed_base58(prefix + blob, checksum_hash=self._base58_checksum_hash)
 
     def wif_for_blob(self, blob):
-        return b2a_hashed_base58(self._wif_prefix + blob)
+        return b2a_hashed_base58(self._wif_prefix + blob, checksum_hash=self._base58_checksum_hash)
 
     def sec_text_for_blob(self, blob):
         return self._sec_prefix + b2h(blob)
@@ -90,12 +92,12 @@ class UI(object):
 
     def address_for_p2pkh(self, h160):
         if self._address_prefix:
-            return b2a_hashed_base58(self._address_prefix + h160)
+            return b2a_hashed_base58(self._address_prefix + h160, checksum_hash=self._base58_checksum_hash)
         return "???"
 
     def address_for_p2sh(self, h160):
         if self._pay_to_script_prefix:
-            return b2a_hashed_base58(self._pay_to_script_prefix + h160)
+            return b2a_hashed_base58(self._pay_to_script_prefix + h160, checksum_hash=self._base58_checksum_hash)
         return "???"
 
     def address_for_p2pkh_wit(self, h160):
@@ -134,4 +136,4 @@ class UI(object):
         types: a list containing a subset of ["key", "address"]
             eventually add "spendable", "payable", "keychain_hint"
         """
-        return parse(item, self.parsers_for_types(types))
+        return parse(item, self.parsers_for_types(types), checksum_hash=self._base58_checksum_hash)

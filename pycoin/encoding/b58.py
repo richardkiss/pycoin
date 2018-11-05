@@ -25,7 +25,7 @@ def a2b_base58(s):
     return from_long(v, prefix, 256, lambda x: x)
 
 
-def b2a_hashed_base58(data):
+def b2a_hashed_base58(data, checksum_hash=double_sha256):
     """
     A "hashed_base58" structure is a base58 integer (which looks like a string)
     with four bytes of hash data at the end. Bitcoin does this in several places,
@@ -33,17 +33,17 @@ def b2a_hashed_base58(data):
 
     This function turns data (of type "bytes") into its hashed_base58 equivalent.
     """
-    return b2a_base58(data + double_sha256(data)[:4])
+    return b2a_base58(data + checksum_hash(data)[:4])
 
 
-def a2b_hashed_base58(s):
+def a2b_hashed_base58(s, checksum_hash=double_sha256):
     """
     If the passed string is hashed_base58, return the binary data.
     Otherwise raises an EncodingError.
     """
     data = a2b_base58(s)
     data, the_hash = data[:-4], data[-4:]
-    if double_sha256(data)[:4] == the_hash:
+    if checksum_hash(data)[:4] == the_hash:
         return data
     raise EncodingError("hashed base58 has bad checksum %s" % s)
 
