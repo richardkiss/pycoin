@@ -33,7 +33,6 @@ setup(
         "pycoin.vm",
         "pycoin.wallet"
     ],
-    install_requires=['groestlcoin_hash'],
     author="Richard Kiss",
     entry_points={
         'console_scripts':

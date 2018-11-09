@@ -1,6 +1,6 @@
+from pycoin.coins.groestlcoin.hash import groestlHash
 from pycoin.coins.groestlcoin.Block import Block as GrsBlock
 from pycoin.coins.groestlcoin.Tx import Tx as GrsTx
-from pycoin.encoding.hash import groestlHash
 from pycoin.networks.bitcoinish import create_bitcoinish_network
 
 

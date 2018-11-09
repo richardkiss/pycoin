@@ -1,6 +1,6 @@
 import io
 
-from ...encoding.hash import sha256
+from .hash import sha256
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 
 from pycoin.satoshi.satoshi_struct import stream_struct

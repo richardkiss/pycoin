@@ -1,8 +1,8 @@
 import io
 
-from pycoin.encoding.hash import groestlHash
 from pycoin.block import Block as BaseBlock
 
+from .hash import groestlHash
 from .Tx import Tx
 
 class Block(BaseBlock):
