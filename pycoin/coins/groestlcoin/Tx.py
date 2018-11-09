@@ -2,9 +2,9 @@ import io
 
 from pycoin.coins.bitcoin.Tx import Tx as BaseTx
 from pycoin.convention import SATOSHI_PER_COIN
-from pycoin.encoding.hash import sha256, groestlHash
 from pycoin.satoshi.satoshi_struct import stream_struct
 
+from .hash import sha256, groestlHash
 from .Solver import GroestlcoinSolver as Solver
 from .SolutionChecker import GroestlcoinSolutionChecker as SolutionChecker
 
