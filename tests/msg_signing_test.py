@@ -23,13 +23,13 @@ def test_against_myself():
                     ('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss',
                      '1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN'),
                 ]:
-        k = BitcoinMainnet.ui.parse(wif)
+        k = BitcoinMainnet.parse.wif(wif)
         assert k.address() == right_addr
 
         vk = Key(public_pair=k.public_pair(), is_compressed=not k._use_uncompressed())
         assert vk.address() == right_addr
 
-        vk2 = BitcoinMainnet.ui.parse(right_addr)
+        vk2 = BitcoinMainnet.parse.address(right_addr)
         assert vk2.address() == right_addr
 
         for i in range(1, 30, 10):

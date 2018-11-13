@@ -14,9 +14,9 @@ BitcoinMainnet = network_for_netcode("BTC")
 BitcoinTestnet = network_for_netcode("XTN")
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.ui._key_class
-XTNKey = BitcoinTestnet.ui._key_class
-BIP32Node = BitcoinMainnet.ui._bip32node_class
+Key = BitcoinMainnet.Key
+XTNKey = BitcoinTestnet.Key
+BIP32Node = BitcoinMainnet.BIP32Node
 
 
 def change_prefix(address, new_prefix):
@@ -28,7 +28,7 @@ PAY_TO_HASH_ADDRESSES = [
     "1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP", "1LagHJk2FyCV2VzrNHVqg3gYG4TSYwDV4m",
     "1CUNEBjYrCn2y1SdiUMohaKUi4wpP326Lb", "1NZUP3JAc9JkmbvmoTv7nVgZGtyJjirKV1"]
 
-PAY_TO_SCRIPT_PREFIX = BitcoinMainnet.ui._pay_to_script_prefix
+PAY_TO_SCRIPT_PREFIX = BitcoinMainnet._ui._pay_to_script_prefix
 
 PAY_TO_SCRIPT_ADDRESSES = [change_prefix(t, PAY_TO_SCRIPT_PREFIX) for t in PAY_TO_HASH_ADDRESSES]
 
@@ -85,7 +85,7 @@ class KeyUtilsTest(unittest.TestCase):
         # not all networks support BIP32 yet
         for netcode in NETCODES:
             network = network_for_netcode(netcode)
-            BIP32Node = network.ui._bip32node_class
+            BIP32Node = network.BIP32Node
             for wk in WALLET_KEYS:
                 wallet = BIP32Node.from_master_secret(wk.encode("utf8"))
                 text = wallet.hwif(as_private=True)

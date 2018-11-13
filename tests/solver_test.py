@@ -9,13 +9,13 @@ from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.symbols.btc import network
 
 
-address_for_p2s = network.ui.address_for_p2s
-script_for_address = network.ui.script_for_address
+address_for_p2s = network.address.for_p2s
+script_for_address = network.script.for_address
 script_for_multisig = network.script_info.script_for_multisig
 script_for_p2pk = network.script_info.script_for_p2pk
 
 # BRAIN DAMAGE
-Key = network.extras.Key
+Key = network.Key
 Tx = network.tx
 TxIn = Tx.TxIn
 TxOut = Tx.TxOut

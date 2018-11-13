@@ -8,8 +8,8 @@ from pycoin.ui.key_from_text import key_from_text
 network = network_for_netcode("BTC")
 
 # BRAIN DAMAGE
-ElectrumWallet = network.extras.ElectrumKey
-Key = network.extras.Key
+ElectrumWallet = network.ElectrumKey
+Key = network.Key
 
 
 class ElectrumTest(unittest.TestCase):

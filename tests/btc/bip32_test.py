@@ -5,8 +5,8 @@ from pycoin.networks.registry import network_for_netcode
 from pycoin.ui.key_from_text import key_from_text
 
 # BRAIN DAMAGE
-BIP32Node = network_for_netcode("BTC").ui._bip32node_class
-XTNBIP32Node = network_for_netcode("XTN").ui._bip32node_class
+BIP32Node = network_for_netcode("BTC").BIP32Node
+XTNBIP32Node = network_for_netcode("XTN").BIP32Node
 
 
 class Bip0032TestCase(unittest.TestCase):
@@ -245,7 +245,7 @@ class Bip0032TestCase(unittest.TestCase):
 
     def test_repr(self):
         BitcoinTestnet = network_for_netcode("XTN")
-        Key = BitcoinTestnet.ui._key_class
+        Key = BitcoinTestnet.Key
         key = Key(secret_exponent=273)
         wallet = XTNBIP32Node.from_master_secret(bytes(key.wif().encode('ascii')))
 

@@ -50,7 +50,7 @@ class SighashSingleTest(unittest.TestCase):
 
     def _test_sighash_single(self, netcode):
         network = network_for_netcode(netcode)
-        Key = network.ui._key_class
+        Key = network.Key
         k0 = Key(secret_exponent=PRIV_KEYS[0], is_compressed=True)
         k1 = Key(secret_exponent=PRIV_KEYS[1], is_compressed=True)
         k2 = Key(secret_exponent=PRIV_KEYS[2], is_compressed=True)
@@ -67,7 +67,7 @@ class SighashSingleTest(unittest.TestCase):
         self.assertEqual('2acbe1006f7168bad538b477f7844e53de3a31ffddfcfc4c6625276dd714155a',
                          b2h_rev(coinbase_tx.hash()))
 
-        script_for_address = network.ui.script_for_address
+        script_for_address = network.script.for_address
 
         # Make the test transaction
         txs_in = [

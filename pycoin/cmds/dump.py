@@ -56,12 +56,12 @@ def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly
         suffix = ""
         if tx.missing_unspent(idx):
             tx_out = None
-            address = tx_in.address(ui_context=network.ui)
+            address = tx_in.address(ui_context=network._ui)
         else:
             tx_out = tx.unspents[idx]
             sig_result = " sig ok" if tx.is_solution_ok(idx, traceback_f=traceback_f) else " BAD SIG"
             suffix = " %12.5f m%s %s" % (satoshi_to_mbtc(tx_out.coin_value), network.symbol, sig_result)
-            address = network.ui.address_for_script(tx_out.puzzle_script())
+            address = network.address.for_script(tx_out.puzzle_script())
         t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
                                           tx_in.previous_index, suffix)
         output.append(t.rstrip())
@@ -122,7 +122,7 @@ def dump_tx(output, tx, network, verbose_signature, disassembly_level, do_trace,
     output.append("Output%s:" % ('s' if len(tx.txs_out) != 1 else ''))
     for idx, tx_out in enumerate(tx.tx_outs_as_spendable()):
         amount_mbtc = satoshi_to_mbtc(tx_out.coin_value)
-        address = network.ui.address_for_script(tx_out.puzzle_script()) or "(unknown)"
+        address = network.address.for_script(tx_out.puzzle_script()) or "(unknown)"
         output.append("%4d: %34s receives %12.5f m%s" % (idx, address, amount_mbtc, network.symbol))
         if disassembly_level > 0:
             for (pre_annotations, pc, opcode, instruction, post_annotations) in \

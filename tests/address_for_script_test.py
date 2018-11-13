@@ -8,13 +8,13 @@ from pycoin.solve.utils import build_hash160_lookup
 def make_tests_for_netcode(netcode):
     network = network_for_netcode(netcode)
 
-    address_for_script = network.ui.address_for_script
+    address_for_script = network.address.for_script
     script_for_p2pkh = network.script_info.script_for_p2pkh
     script_for_p2pk = network.script_info.script_for_p2pk
     script_for_nulldata = network.script_info.script_for_nulldata
 
     Tx = network.tx
-    Key = network.extras.Key
+    Key = network.Key
 
     class AddressForScriptTest(unittest.TestCase):
 

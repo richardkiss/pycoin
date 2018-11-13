@@ -10,7 +10,7 @@ class KeychainTest(unittest.TestCase):
     def test_keychain(self):
         netcode = "BTC"
         network = network_for_netcode(netcode)
-        BIP32 = network.ui._bip32node_class
+        BIP32 = network.BIP32Node
         keychain = Keychain()
         bip32_list = [BIP32.from_master_secret(_) for _ in [b"foo", b"bar"]]
         for bip32 in bip32_list:

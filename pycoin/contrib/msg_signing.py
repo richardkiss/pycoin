@@ -21,9 +21,9 @@ class MessageSigner(object):
                           'SIGNATURE-----\n{addr}\n{sig}\n-----END {net_name} SIGNED MESSAGE-----')
 
     def __init__(self, network):
-        self._ui = network.ui
+        self._ui = network._ui
         self._network_name = network.network_name
-        self._generator = network.extras.Key._default_generator
+        self._generator = network.Key._default_generator
 
     @classmethod
     def parse_sections(class_, msg_in):

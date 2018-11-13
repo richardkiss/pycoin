@@ -14,7 +14,7 @@ from pycoin.solve.utils import build_hash160_lookup
 network = network_for_netcode("BTC")
 
 
-script_for_address = network.ui.script_for_address
+script_for_address = network.script.for_address
 Block = network.block
 Tx = network.tx
 
@@ -74,7 +74,7 @@ def standard_tx(coins_from, coins_to):
 
 
 def public_pair_to_bitcoin_address(pair, compressed):
-    return network.ui.address_for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
+    return network.address.for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
 
 
 class BuildTxTest(unittest.TestCase):
@@ -83,7 +83,7 @@ class BuildTxTest(unittest.TestCase):
         compressed = False
         exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
         address_2 = public_pair_to_bitcoin_address(exponent_2 * secp256k1_generator, compressed=compressed)
-        key = network.ui.parse("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+        key = network.parse.wif("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
         exponent = key.secret_exponent()
 
         public_key_sec = public_pair_to_sec(exponent * secp256k1_generator, compressed=compressed)
@@ -121,7 +121,7 @@ class BuildTxTest(unittest.TestCase):
 
     def test_tx_out_address(self):
         tx = Tx.coinbase_tx(COINBASE_PUB_KEY_FROM_80971, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
-        address = network.ui.address_for_script(tx.txs_out[0].puzzle_script())
+        address = network.address.for_script(tx.txs_out[0].puzzle_script())
         self.assertEqual(address, '1DmapcnrJNGeJB13fv9ngRFX1iRvR4zamn')
 
     def test_build_spends(self):
@@ -130,7 +130,7 @@ class BuildTxTest(unittest.TestCase):
 
         # create a coinbase Tx where we know the public & private key
 
-        key = network.ui.parse("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
+        key = network.parse.wif("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
         exponent = key.secret_exponent()
         compressed = False
 

@@ -355,14 +355,12 @@ def parse_parts(tx_class, arg, spendables, payables, network):
 
 def key_found(arg, payables, keychain, key_paths, network):
     try:
-        key = network.ui.parse(arg)
-        # TODO: check network
-        if not hasattr(key, "secret_exponent") or key.secret_exponent() is None:
-            payables.append((network.ui.script_for_address(key.address()), 0))
+        secret = network.parse.secret(arg)
+        if secret:
+            # TODO: check network
+            keychain.add_secrets([secret])
+            keychain.add_key_paths(secret, subpaths_for_path_range(key_paths))
             return True
-        keychain.add_secrets([key])
-        keychain.add_key_paths(key, subpaths_for_path_range(key_paths))
-        return True
     except Exception:
         pass
 
@@ -371,7 +369,7 @@ def key_found(arg, payables, keychain, key_paths, network):
 
 def script_for_address_or_opcodes(network, text):
     try:
-        script = network.ui.script_for_address(text)
+        script = network.script.for_address(text)
         if script:
             return script
     except Exception:

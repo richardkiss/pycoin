@@ -8,7 +8,7 @@ from pycoin.symbols.btc import network as BitcoinMainnet
 class CrackBIP32Test(unittest.TestCase):
 
     def setUp(self):
-        self.bip32_key = BitcoinMainnet.ui._bip32node_class.from_master_secret(b"foo")
+        self.bip32_key = BitcoinMainnet.BIP32Node.from_master_secret(b"foo")
 
     def test_crack_bip32(self):
         bip32_key = self.bip32_key

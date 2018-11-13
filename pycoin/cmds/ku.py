@@ -8,7 +8,7 @@ import re
 import subprocess
 import sys
 
-from pycoin.encoding.hexbytes import b2h, h2b
+from pycoin.encoding.hexbytes import h2b
 from pycoin.ui.Parser import parseable_str
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
@@ -44,7 +44,7 @@ def get_entropy():
 
 
 def create_output(item, key, network, output_key_set, subkey_path=None):
-    ui_context = network.ui
+    ui_context = network._ui
     key._ui_context = ui_context
     output_dict = {}
     output_order = []
@@ -148,7 +148,7 @@ def _create_bip32(network):
     max_retries = 64
     for _ in range(max_retries):
         try:
-            return network.extras.BIP32Node.from_master_secret(get_entropy())
+            return network.BIP32Node.from_master_secret(get_entropy())
         except ValueError as e:
             continue
     # Probably a bug if we get here
@@ -157,8 +157,7 @@ def _create_bip32(network):
 
 def parse_key(item, networks):
     default_network = networks[0]
-    Key = default_network.extras.Key
-    generator = Key._default_generator
+    Key = default_network.Key
     if item == 'create':
         return None, _create_bip32(default_network)
 

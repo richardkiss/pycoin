@@ -8,7 +8,7 @@ def make_tests_for_netcode(netcode):
     network = network_for_netcode(netcode)
 
     Tx = network.tx
-    annotate_scripts = Annotate(network.script_tools, network.ui).annotate_scripts
+    annotate_scripts = Annotate(network.script_tools, network._ui).annotate_scripts
 
     class DisassembleTest(unittest.TestCase):
 

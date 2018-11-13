@@ -17,7 +17,7 @@ TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX = (
     "0b5ce889ac8700000000")
 
 
-address_for_script = network.ui.address_for_script
+address_for_script = network.address.for_script
 
 
 class TxTest(unittest.TestCase):

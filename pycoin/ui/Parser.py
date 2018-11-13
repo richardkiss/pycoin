@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from pycoin.encoding.b58 import a2b_base58, a2b_hashed_base58, b2a_base58, EncodingError
+from pycoin.encoding.b58 import a2b_base58, a2b_hashed_base58, EncodingError
 from pycoin.encoding.hash import double_sha256
 from pycoin.contrib import segwit_addr
 

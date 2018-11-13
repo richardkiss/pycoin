@@ -70,7 +70,7 @@ def msg_verify(args, parser):
         pair, is_compressed = message_signer.pair_for_message_hash(args.signature, msg_hash=message_hash)
     except EncodingError:
         pass
-    ta = network.ui.address_for_p2pkh(public_pair_to_hash160_sec(pair, compressed=is_compressed))
+    ta = network.address.for_p2pkh(public_pair_to_hash160_sec(pair, compressed=is_compressed))
     if args.address:
         if ta == args.address:
             print("signature ok")

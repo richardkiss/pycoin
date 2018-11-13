@@ -6,11 +6,9 @@ from pycoin.networks.registry import network_for_netcode
 from .ToolTest import ToolTest
 
 
-
 def make_tests_for_netcode(netcode):
 
     network = network_for_netcode(netcode)
-    Key = network.extras.Key
 
     class KuTest(ToolTest):
 
@@ -21,7 +19,7 @@ def make_tests_for_netcode(netcode):
 
         def test_ku_create(self):
             output = self.launch_tool("ku create -w -n %s" % netcode).split("\n")
-            bip32 = network.ui.parse(output[0])
+            bip32 = network.parse.bip32_prv(output[0])
             bip32_as_text = bip32.hwif(as_private=True)
             self.assertEqual(output[0], bip32_as_text)
 

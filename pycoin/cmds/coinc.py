@@ -39,13 +39,13 @@ def info_for_arg(arg, network):
     compiled_script = network.script_tools.compile(arg)
     d["compiled_script_hex"] = "0x%s" % b2h(compiled_script)
 
-    address_p2s = network.ui.address_for_p2s(compiled_script)
+    address_p2s = network.address.for_p2s(compiled_script)
     d["address_p2s"] = address_p2s
-    d["preimage_p2s_hex"] = b2h(network.ui.script_for_address(address_p2s))
+    d["preimage_p2s_hex"] = b2h(network.script.for_address(address_p2s))
 
-    address_p2s_wit = network.ui.address_for_p2s_wit(compiled_script)
+    address_p2s_wit = network.address.for_p2s_wit(compiled_script)
     d["address_p2s_wit"] = address_p2s_wit
-    d["underlying_script"] = b2h(network.ui.script_for_address(address_p2s_wit))
+    d["underlying_script"] = b2h(network.script.for_address(address_p2s_wit))
 
     d["disassembled_script"] = network.script_tools.disassemble(compiled_script)
     return d

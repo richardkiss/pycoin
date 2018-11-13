@@ -11,7 +11,7 @@ from pycoin.ui.validate import is_address_valid
 from pycoin.intbytes import iterbytes
 from pycoin.symbols.btc import network as BitcoinMainnet
 
-Key = BitcoinMainnet.ui._key_class
+Key = BitcoinMainnet.Key
 
 
 class EncodingTestCase(unittest.TestCase):
@@ -87,7 +87,7 @@ class EncodingTestCase(unittest.TestCase):
         def do_test(as_secret_exponent, as_wif, is_compressed):
             key = Key(as_secret_exponent, is_compressed=is_compressed)
             self.assertEqual(as_wif, key.wif())
-            key = BitcoinMainnet.ui.parse(as_wif)
+            key = BitcoinMainnet.parse.wif(as_wif)
             se = key.secret_exponent()
             comp = not key._use_uncompressed()
             self.assertEqual(se, as_secret_exponent)
@@ -121,7 +121,7 @@ class EncodingTestCase(unittest.TestCase):
             self.assertEqual(public_pair_to_hash160_sec(as_public_pair, compressed=is_compressed),
                              as_hash160_sec)
 
-            self.assertEqual(BitcoinMainnet.ui.address_for_p2pkh(as_hash160_sec), as_bitcoin_address)
+            self.assertEqual(BitcoinMainnet.address.for_p2pkh(as_hash160_sec), as_bitcoin_address)
             self.assertTrue(is_address_valid(as_bitcoin_address))
             bad_address = as_bitcoin_address[:17] + chr(ord(as_bitcoin_address[17]) + 1) + as_bitcoin_address[18:]
             self.assertFalse(is_address_valid(bad_address))

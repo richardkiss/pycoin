@@ -7,7 +7,7 @@ from pycoin.solve.utils import build_hash160_lookup
 from pycoin.symbols.btc import network
 
 
-Key = network.extras.Key
+Key = network.Key
 script_for_multisig = network.script_info.script_for_multisig
 Tx = network.tx
 

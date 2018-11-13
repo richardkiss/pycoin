@@ -16,15 +16,15 @@ def secret_exponent_to_wif(se, compressed):
     blob = to_bytes_32(se)
     if compressed:
         blob += b'\01'
-    return BitcoinMainnet.ui.wif_for_blob(blob)
+    return BitcoinMainnet._ui.wif_for_blob(blob)
 
 
 def public_pair_to_bitcoin_address(pair, compressed):
-    return BitcoinMainnet.ui.address_for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
+    return BitcoinMainnet.address.for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
 
 
 def bitcoin_address_to_hash160_sec(bitcoin_address):
-    return BitcoinMainnet.ui.parse(bitcoin_address).hash160()
+    return BitcoinMainnet.parse.address(bitcoin_address).hash160()
 
 
 class KeyTranslationTest(unittest.TestCase):
@@ -38,13 +38,13 @@ class KeyTranslationTest(unittest.TestCase):
             self.assertEqual(secret_exponent_to_wif(secret_exponent, compressed=False), wif)
             self.assertEqual(secret_exponent_to_wif(secret_exponent, compressed=True), c_wif)
 
-            key = BitcoinMainnet.ui.parse(wif)
+            key = BitcoinMainnet.parse.wif(wif)
             exponent = key.secret_exponent()
             compressed = not key._use_uncompressed()
             self.assertEqual(exponent, secret_exponent)
             self.assertFalse(compressed)
 
-            key = BitcoinMainnet.ui.parse(c_wif)
+            key = BitcoinMainnet.parse.wif(c_wif)
             exponent = key.secret_exponent()
             compressed = not key._use_uncompressed()
             self.assertEqual(exponent, secret_exponent)

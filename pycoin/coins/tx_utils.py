@@ -61,7 +61,7 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, netw
         else:
             address = payable
             coin_value = 0
-        script = network.ui.script_for_address(address)
+        script = network.script.for_address(address)
         txs_out.append(Tx.TxOut(coin_value, script))
 
     tx = Tx(version=version, txs_in=txs_in, txs_out=txs_out, lock_time=lock_time)
@@ -130,7 +130,7 @@ def sign_tx(tx, wifs=[], network=BitcoinMainnet, **kwargs):
         >> sign_tx(tx, wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
     keychain = Keychain()
-    keychain.add_secrets((network.ui.parse(_) for _ in wifs))
+    keychain.add_secrets((network.parse.wif(_) for _ in wifs))
     solver = tx.Solver(tx)
     solver.sign(keychain, **kwargs)
 
