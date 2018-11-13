@@ -1,6 +1,7 @@
 from collections import defaultdict
 
-from pycoin.encoding.b58 import a2b_hashed_base58, EncodingError
+from pycoin.encoding.b58 import a2b_base58, a2b_hashed_base58, b2a_base58, EncodingError
+from pycoin.encoding.hash import double_sha256
 from pycoin.contrib import segwit_addr
 
 """
@@ -49,7 +50,20 @@ class parseable_str(str):
 
 def parse_b58(s):
     s = parseable_str(s)
-    return s.cache("b58", a2b_hashed_base58)
+    return s.cache("b58", a2b_base58)
+
+
+def b58_double_sha256(s):
+    data = parse_b58(s)
+    if data:
+        data, the_hash = data[:-4], data[-4:]
+        if double_sha256(data)[:4] == the_hash:
+            return data
+
+
+def parse_b58_double_sha256(s):
+    s = parseable_str(s)
+    return s.cache("b58_double_sha256", b58_double_sha256)
 
 
 def parse_bech32(s):

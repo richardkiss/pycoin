@@ -166,10 +166,10 @@ def make_parse(network):
     from pycoin.contrib import segwit_addr
     from pycoin.encoding.bytes32 import from_bytes_32
     from pycoin.intbytes import int2byte
-    from pycoin.ui.Parser import parse_b58, parse_bech32, parse_colon_prefix, parseable_str
+    from pycoin.ui.Parser import parse_b58_double_sha256, parse_bech32, parse_colon_prefix, parseable_str
 
     def parse_wif(s):
-        data = parse_b58(s)
+        data = parse_b58_double_sha256(s)
         if data is None or data[:1] != network.ui._wif_prefix:
             return None
         data = data[1:]
@@ -180,13 +180,13 @@ def make_parse(network):
         return network.extras.Key(se, is_compressed=is_compressed)
 
     def parse_bip32_prv(s):
-        data = parse_b58(s)
+        data = parse_b58_double_sha256(s)
         if data is None or not data.startswith(network.ui._bip32_prv_prefix):
             return None
         return network.extras.BIP32Node.deserialize(data)
 
     def parse_bip32_pub(s):
-        data = parse_b58(s)
+        data = parse_b58_double_sha256(s)
         if data is None or not data.startswith(network.ui._bip32_pub_prefix):
             return None
         return network.extras.BIP32Node.deserialize(data)
@@ -234,7 +234,7 @@ def make_parse(network):
                 generator=network.ui._key_class._default_generator, master_public_key=blob)
 
     def parse_p2pkh(s):
-        data = parse_b58(s)
+        data = parse_b58_double_sha256(s)
         if data is None or not data.startswith(network.ui._address_prefix):
             return None
         script = network.script_info.script_for_p2pkh(data[1:])
@@ -242,7 +242,7 @@ def make_parse(network):
         return BitcoinishPayable(script_info, network)
 
     def parse_p2sh(s):
-        data = parse_b58(s)
+        data = parse_b58_double_sha256(s)
         if (None in (data, network.ui._pay_to_script_prefix) or
                 not data.startswith(network.ui._pay_to_script_prefix)):
             return None
