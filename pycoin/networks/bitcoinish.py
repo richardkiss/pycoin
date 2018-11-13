@@ -139,6 +139,9 @@ class BitcoinishPayable(object):
         self._script_info = script_info
         self._network = network
 
+    def info(self):
+        return self._script_info
+
     def address(self):
         return self._network.ui.address_for_script_info(self._script_info)
 
