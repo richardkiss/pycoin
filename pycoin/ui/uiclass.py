@@ -8,14 +8,6 @@ from pycoin.intbytes import iterbytes
 from pycoin.key.Key import Key
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.electrum import ElectrumWallet
-from pycoin.ui.AddressParser import AddressParser
-from pycoin.ui.BIP32Parser import BIP32Parser
-from pycoin.ui.Hash160Parser import Hash160Parser
-from pycoin.ui.ElectrumParser import ElectrumParser
-from pycoin.ui.SECParser import SECParser
-from pycoin.ui.WIFParser import WIFParser
-
-from .Parser import parse, parse_to_info
 
 
 # PARTS:
@@ -29,14 +21,6 @@ class UI(object):
         self._key_class = Key.make_subclass(ui_context=self, generator=generator)
         self._electrum_class = ElectrumWallet.make_subclass(ui_context=self, generator=generator)
         self._bip32node_class = BIP32Node.make_subclass(ui_context=self, generator=generator)
-        self._parsers = [
-            WIFParser(generator, wif_prefix, address_prefix, self._key_class),
-            ElectrumParser(generator, self._electrum_class),
-            BIP32Parser(generator, bip32_prv_prefix, bip32_pub_prefix, self._bip32node_class),
-            Hash160Parser(address_prefix, self._key_class),
-            SECParser(generator, sec_prefix, self._key_class),
-            AddressParser(puzzle_scripts, address_prefix, pay_to_script_prefix, bech32_hrp)
-        ]
         self._bip32_prv_prefix = bip32_prv_prefix
         self._bip32_pub_prefix = bip32_pub_prefix
         self._wif_prefix = wif_prefix
@@ -118,20 +102,3 @@ class UI(object):
 
     def address_for_p2s_wit(self, script):
         return self.address_for_p2sh_wit(hashlib.sha256(script).digest())
-
-    # parser stuff
-
-    def parsers_for_types(self, types):
-        if types:
-            return [p for p in self._parsers if p.TYPE in types]
-        return self._parsers
-
-    def parse_to_info(self, metadata, types):
-        return parse_to_info(metadata, self.parsers_for_types(types))
-
-    def parse(self, item, types=None):
-        """
-        types: a list containing a subset of ["key", "address"]
-            eventually add "spendable", "payable", "keychain_hint"
-        """
-        return parse(item, self.parsers_for_types(types))

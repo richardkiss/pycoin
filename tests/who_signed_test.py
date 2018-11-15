@@ -10,10 +10,10 @@ from pycoin.symbols.btc import network
 # BRAIN DAMAGE
 who_signed_tx = network.extras.who_signed_tx
 UI = network._ui
-address_for_p2s = UI.address_for_p2s
-script_for_address = UI.script_for_address
+address_for_p2s = network.address.for_p2s
+script_for_address = network.script.for_address
 script_for_multisig = network.script_info.script_for_multisig
-Key = UI._key_class
+Key = network.Key
 Tx = network.tx
 
 

@@ -21,7 +21,7 @@ class MessageSigner(object):
                           'SIGNATURE-----\n{addr}\n{sig}\n-----END {net_name} SIGNED MESSAGE-----')
 
     def __init__(self, network):
-        self._ui = network._ui
+        self._network = network
         self._network_name = network.network_name
         self._generator = network.Key._default_generator
 
@@ -159,10 +159,9 @@ class MessageSigner(object):
         # exact match for this key's public pair... or else we are looking at a validly
         # signed message, but signed by some other key.
         #
-        pp = key.public_pair()
-        if pp:
+        if hasattr(key, "public_pair"):
             # expect an exact match for public pair.
-            return pp == pair
+            return key.public_pair() == pair
         else:
             # Key() constructed from a hash of pubkey doesn't know the exact public pair, so
             # must compare hashed addresses instead.
@@ -180,7 +179,7 @@ class MessageSigner(object):
             # they gave us a private key or a public key already loaded.
             key = key_or_address
         else:
-            key = self._ui.parse(key_or_address, types=["key"])
+            key = self._network.parse.address(key_or_address)
 
         try:
             msg_hash = self.hash_for_signing(message) if message is not None else msg_hash
