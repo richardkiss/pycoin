@@ -4,7 +4,6 @@ from pycoin.encoding.b58 import a2b_hashed_base58, b2a_hashed_base58
 from pycoin.key.Key import InvalidSecretExponentError
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.registry import network_codes
-from pycoin.ui.key_from_text import key_from_text
 from pycoin.ui.validate import is_address_valid, is_wif_valid, is_public_bip32_valid, is_private_bip32_valid
 
 NETCODES = "BTC XTN DOGE".split()
@@ -118,11 +117,11 @@ class KeyUtilsTest(unittest.TestCase):
         key = XTNKey(secret_exponent=273)
 
         address = key.address()
-        pub_k = key_from_text(address, networks=[BitcoinTestnet])
+        pub_k = BitcoinTestnet.parse(address)
         self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
 
         wif = key.wif()
-        priv_k = key_from_text(wif, networks=[BitcoinTestnet])
+        priv_k = BitcoinTestnet.parse(wif)
         self.assertEqual(
             repr(priv_k),
             'private_for <XTNSEC:0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')

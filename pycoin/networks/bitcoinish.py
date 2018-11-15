@@ -368,11 +368,18 @@ def make_parse(network):
             if v:
                 return v
 
+    def parse_input(s):
+        # BRAIN DAMAGE: todo
+        return None
+
+    def parse_tx(s):
+        return None
+
     def parse(s):
         s = parseable_str(s)
         return (parse_payable(s) or
                 parse_input(s) or
-                parse_keychain_secret(s) or
+                parse_secret(s) or
                 parse_tx(s))
 
     # hierarchical key
@@ -410,9 +417,8 @@ def make_parse(network):
     parse.public_key = parse_public_key
     parse.address = parse_address
     parse.payable = parse_payable
-    #parse.input = parse_input
-    #parse.keychain_secret = parse_keychain_secret
-    #parse.tx = parse_tx
+    parse.input = parse_input
+    parse.tx = parse_tx
 
     return parse
 

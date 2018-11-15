@@ -6,7 +6,6 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import h2b
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.symbols.btc import network
-from pycoin.ui.key_from_text import key_from_text
 
 
 # BRAIN DAMAGE
@@ -89,8 +88,8 @@ class SignTest(unittest.TestCase):
                      'block_index_spent': 0, 'coin_value': 10000, 'block_index_available': 0, 'tx_out_index': 0,
                      'tx_hash_hex': '0ca152ba6b88db87a7ef1afd24554102aca1ab86cf2c10ccbc374472145dc943'}
 
-        key_1 = key_from_text('Kz6pytJCigYHeMsGLmfHQPJhN5og2wpeSVrU43xWwgHLCAvpsprh')
-        key_2 = key_from_text('Kz7NHgX7MBySA3RSKj9GexUSN6NepEDoPNugSPr5absRDoKgn2dT')
+        key_1 = network.parse.wif('Kz6pytJCigYHeMsGLmfHQPJhN5og2wpeSVrU43xWwgHLCAvpsprh')
+        key_2 = network.parse.wif('Kz7NHgX7MBySA3RSKj9GexUSN6NepEDoPNugSPr5absRDoKgn2dT')
         for ordered_keys in [(key_1, key_2), (key_2, key_1)]:
             txs_in = [TxIn(previous_hash=h2b('43c95d14724437bccc102ccf86aba1ac02415524fd1aefa787db886bba52a10c'),
                            previous_index=0)]
@@ -137,7 +136,7 @@ class SignTest(unittest.TestCase):
         tx = Tx.from_hex(partially_signed_raw_tx)
         tx_out = TxOut(1000000, h2b("a914a10dfa21ee8c33b028b92562f6fe04e60563d3c087"))
         tx.set_unspents([tx_out])
-        key = key_from_text("cThRBRu2jAeshWL3sH3qbqdq9f4jDiDbd1SVz4qjTZD2xL1pdbsx")
+        key = network.parse.wif("L3LRiWuBJ6xcY4rnUsEiEX8mXRmKZG7uYyJ2sePDxSZ2haw1hPHW")
         hash160_lookup = build_hash160_lookup([key.secret_exponent()], [secp256k1_generator])
         self.assertEqual(tx.bad_solution_count(), 1)
         tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)

@@ -3,7 +3,6 @@ import unittest
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.btc import network as BitcoinMainnet
-from pycoin.ui.key_from_text import key_from_text
 
 
 # BRAIN DAMAGE
@@ -30,8 +29,8 @@ class KeyTest(unittest.TestCase):
 
             keys_wif = [
                 Key(secret_exponent=secret_exponent, generator=secp256k1_generator),
-                key_from_text(wif),
-                key_from_text(c_wif),
+                BitcoinMainnet.parse.wif(wif),
+                BitcoinMainnet.parse.wif(c_wif),
             ]
 
             key_sec = Key.from_sec(sec, secp256k1_generator)
@@ -63,7 +62,7 @@ class KeyTest(unittest.TestCase):
                 self.assertEqual(key.address(use_uncompressed=False), c_address_b58)
                 self.assertEqual(key.address(use_uncompressed=True), address_b58)
 
-            key_pub = key_from_text(address_b58)
+            key_pub = BitcoinMainnet.parse.address(address_b58)
 
             self.assertEqual(key_pub.address(), address_b58)
 

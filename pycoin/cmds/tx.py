@@ -27,7 +27,6 @@ from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
 from pycoin.solve.utils import build_sec_lookup
-from pycoin.ui.key_from_text import key_from_text
 
 
 DEFAULT_VERSION = 1
@@ -242,7 +241,7 @@ def replace_with_gpg_pipe(args, f):
     return popen.stdout
 
 
-def parse_private_key_file(args, keychain):
+def parse_private_key_file(args, keychain, network):
     wif_re = re.compile(r"[1-9a-km-zA-LMNP-Z]{51,111}")
     # address_re = re.compile(r"[1-9a-kmnp-zA-KMNP-Z]{27-31}")
     for f in args.private_key_file:
@@ -257,7 +256,7 @@ def parse_private_key_file(args, keychain):
 
             def make_key(x):
                 try:
-                    return key_from_text(x)
+                    return network.parse.secret(x)
                 except Exception:
                     return None
 
@@ -445,7 +444,7 @@ def parse_context(args, parser):
 
         parser.error("can't parse %s" % arg)
 
-    parse_private_key_file(args, keychain)
+    parse_private_key_file(args, keychain, network)
 
     if args.fetch_spendables:
         warning_spendables = message_about_spendables_for_address_env(args.network)

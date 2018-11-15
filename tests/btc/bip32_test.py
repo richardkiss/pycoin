@@ -1,12 +1,14 @@
 import unittest
 
 from pycoin.encoding.hexbytes import h2b
-from pycoin.networks.registry import network_for_netcode
-from pycoin.ui.key_from_text import key_from_text
+from pycoin.symbols.btc import network as btc_network
+from pycoin.symbols.xtn import network as xtn_network
+
 
 # BRAIN DAMAGE
-BIP32Node = network_for_netcode("BTC").BIP32Node
-XTNBIP32Node = network_for_netcode("XTN").BIP32Node
+
+BIP32Node = btc_network.BIP32Node
+XTNBIP32Node = xtn_network.BIP32Node
 
 
 class Bip0032TestCase(unittest.TestCase):
@@ -206,15 +208,15 @@ class Bip0032TestCase(unittest.TestCase):
             pm = pm1.subkey(i=i)
             self.assertEqual(m.hwif(), pm.hwif())
             self.assertEqual(m.address(), pm.address())
-            m2 = key_from_text(m.hwif(as_private=True))
+            m2 = btc_network.parse.secret(m.hwif(as_private=True))
             m3 = m2.public_copy()
             self.assertEqual(m.hwif(as_private=True), m2.hwif(as_private=True))
             self.assertEqual(m.hwif(), m3.hwif())
             print(m.hwif(as_private=True))
             for j in range(2):
                 k = m.subkey(i=j)
-                k2 = key_from_text(k.hwif(as_private=True))
-                k3 = key_from_text(k.hwif())
+                k2 = btc_network.parse.secret(k.hwif(as_private=True))
+                k3 = btc_network.parse.secret(k.hwif())
                 k4 = k.public_copy()
                 self.assertEqual(k.hwif(as_private=True), k2.hwif(as_private=True))
                 self.assertEqual(k.hwif(), k2.hwif())
@@ -244,17 +246,16 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertRaises(ValueError, list, my_prv.subkeys('-1-0'))
 
     def test_repr(self):
-        BitcoinTestnet = network_for_netcode("XTN")
-        Key = BitcoinTestnet.Key
+        Key = xtn_network.Key
         key = Key(secret_exponent=273)
         wallet = XTNBIP32Node.from_master_secret(bytes(key.wif().encode('ascii')))
 
         address = wallet.address()
-        pub_k = key_from_text(address, networks=[BitcoinTestnet])
+        pub_k = xtn_network.parse.address(address)
         self.assertEqual(repr(pub_k),  '<myb5gZNXePNf2E2ksrjnHRFCwyuvt7oEay>')
 
         wif = wallet.wif()
-        priv_k = key_from_text(wif, networks=[BitcoinTestnet])
+        priv_k = xtn_network.parse.secret(wif)
         self.assertEqual(repr(priv_k),
                          'private_for <XTNSEC:03ad094b1dc9fdce5d3648ca359b4e210a89d049532fdd39d9ccdd8ca393ac82f4>')
 
