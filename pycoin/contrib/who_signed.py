@@ -6,8 +6,9 @@ from pycoin.satoshi.der import UnexpectedDER
 
 
 class WhoSigned(object):
-    def __init__(self, script_tools, generator):
+    def __init__(self, script_tools, address_api, generator):
         self._script_tools = script_tools
+        self._address = address_api
         self._generator = generator
 
     def solution_blobs(self, tx, tx_in_idx):
@@ -83,7 +84,7 @@ class WhoSigned(object):
                     signed_by.append((public_pair, sig_pair, sig_type))
         return signed_by
 
-    def who_signed_tx(self, tx, tx_in_idx, ui):
+    def who_signed_tx(self, tx, tx_in_idx):
         """
         Given a transaction (tx) an input index (tx_in_idx), attempt to figure
         out which addresses where used in signing (so far). This method
@@ -95,5 +96,5 @@ class WhoSigned(object):
         public_pair_sig_type_list = self.public_pairs_signed(tx, tx_in_idx)
         sig_type_list = [pp[-1] for pp in public_pair_sig_type_list]
         hash160_list = [public_pair_to_hash160_sec(pp[0]) for pp in public_pair_sig_type_list]
-        address_list = [ui.address_for_p2pkh(h160) for h160 in hash160_list]
+        address_list = [self._address.for_p2pkh(h160) for h160 in hash160_list]
         return list(zip(address_list, sig_type_list))

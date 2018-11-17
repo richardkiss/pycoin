@@ -20,8 +20,8 @@ from pycoin.vm.ScriptInfo import ScriptInfo
 
 class Extras(object):
     def __init__(self, network):
-        self.annotate = Annotate(network.script_tools, network._ui)
-        who_signed = WhoSigned(network.script_tools, network.Key._default_generator)
+        self.annotate = Annotate(network.script_tools, network.address)
+        who_signed = WhoSigned(network.script_tools, network.address, network.Key._default_generator)
         self.who_signed_tx = who_signed.who_signed_tx
         self.public_pairs_signed = who_signed.public_pairs_signed
         self.extract_secs = who_signed.extract_secs
@@ -464,8 +464,6 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.ElectrumKey = ElectrumWallet.make_subclass(ui_context=ui, generator=generator)
     network.BIP32Node = BIP32Node.make_subclass(ui_context=ui, generator=generator)
 
-    network.extras = Extras(network)
-
     NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
     for k in NETWORK_KEYS:
         if k in kwargs:
@@ -485,13 +483,13 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.parse = make_parse(network)
 
     network.address = AddressAPI()
-    network.address.for_script = network._ui.address_for_script
-    network.address.for_p2s = network._ui.address_for_p2s
-    network.address.for_p2sh = network._ui.address_for_p2sh
-    network.address.for_p2pkh = network._ui.address_for_p2pkh
-    network.address.for_p2s_wit = network._ui.address_for_p2s_wit
-    network.address.for_p2sh_wit = network._ui.address_for_p2sh_wit
-    network.address.for_script_info = network._ui.address_for_script_info
+    network.address.for_script = ui.address_for_script
+    network.address.for_p2s = ui.address_for_p2s
+    network.address.for_p2sh = ui.address_for_p2sh
+    network.address.for_p2pkh = ui.address_for_p2pkh
+    network.address.for_p2s_wit = ui.address_for_p2s_wit
+    network.address.for_p2sh_wit = ui.address_for_p2sh_wit
+    network.address.for_script_info = ui.address_for_script_info
 
     network.script = ScriptAPI()
 
@@ -499,5 +497,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
         return network.parse.address(x).script()
 
     network.script.for_address = script_for_address
+
+    network.extras = Extras(network)
 
     return network

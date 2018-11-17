@@ -13,9 +13,9 @@ class Annotate(object):
     BIT_LIST = [(SIGHASH_ANYONECANPAY, "SIGHASH_ANYONECANPAY"), (SIGHASH_FORKID, "SIGHASH_FORKID")]
     BASE_LOOKUP = {SIGHASH_ALL: "SIGHASH_ALL", SIGHASH_SINGLE: "SIGHASH_SINGLE", SIGHASH_NONE: "SIGHASH_NONE"}
 
-    def __init__(self, script_tools, ui_context):
+    def __init__(self, script_tools, address_api):
         self._script_tools = script_tools
-        self._ui_context = ui_context
+        self._address = address_api
         for _ in "EQUAL HASH160 CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():
             setattr(self, "OP_%s" % _, self._script_tools.int_for_opcode('OP_%s' % _))
 
@@ -36,7 +36,7 @@ class Annotate(object):
 
     def annotate_pubkey(self, blob, da):
         is_compressed = is_sec_compressed(blob)
-        address = self._ui_context.address_for_p2pkh(hash160(blob))
+        address = self._address.for_p2pkh(hash160(blob))
         da[blob].append("SEC for %scompressed %s" % ("" if is_compressed else "un", address))
 
     def annotate_signature(self, blob, da, vmc):
@@ -56,7 +56,7 @@ class Annotate(object):
         for pair in pairs:
             for comp in (True, False):
                 hash160 = public_pair_to_hash160_sec(pair, compressed=comp)
-                address = self._ui_context.address_for_p2pkh(hash160)
+                address = self._address.for_p2pkh(hash160)
                 addresses.append(address)
         lst.append(" sig for %s" % " ".join(addresses))
 

@@ -26,9 +26,10 @@ P2PKH_ADDRESSES = [
     "1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP", "1LagHJk2FyCV2VzrNHVqg3gYG4TSYwDV4m",
     "1CUNEBjYrCn2y1SdiUMohaKUi4wpP326Lb", "1NZUP3JAc9JkmbvmoTv7nVgZGtyJjirKV1"]
 
-P2SH_PREFIX = BitcoinMainnet._ui._pay_to_script_prefix
-
-P2SH_ADDRESSES = [change_prefix(t, P2SH_PREFIX) for t in P2PKH_ADDRESSES]
+P2SH_ADDRESSES = [
+    '3CNHUhP3uyB9EUtRLsmvFUmvGdjGdkTxJw', '3EyPVdtVrtMJ1XwPT9oiBrQysGpRY8LE9K',
+    '32JNcZWZqMX72bpzzgFLhkX56WviowgUtS', '3MGhCrETosWs7fhHVPAS6g3UQakA7Xz3wb',
+    '3DAP9jDzQ76R4B94qa2Q8CgQrbEXvUoghh', '3PFVJancA3d8rmdCvZaiD83VRRG2Em15Ge']
 
 
 class KeyUtilsTest(unittest.TestCase):

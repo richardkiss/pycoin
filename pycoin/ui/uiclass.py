@@ -23,8 +23,6 @@ class UI(object):
         self._pay_to_script_prefix = pay_to_script_prefix
         self._bech32_hrp = bech32_hrp
 
-    # ui_context stuff (used with Key, BIP32Node)
-
     def bip32_as_string(self, blob, as_private):
         prefix = self._bip32_prv_prefix if as_private else self._bip32_pub_prefix
         return b2a_hashed_base58(prefix + blob)

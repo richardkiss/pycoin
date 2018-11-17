@@ -9,8 +9,6 @@ from pycoin.symbols.btc import network
 
 # BRAIN DAMAGE
 who_signed_tx = network.extras.who_signed_tx
-UI = network._ui
-address_for_p2s = network.address.for_p2s
 script_for_address = network.script.for_address
 script_for_multisig = network.script_info.script_for_multisig
 Key = network.Key
@@ -32,7 +30,7 @@ class WhoSignedTest(unittest.TestCase):
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_solution_count(), 0)
-        self.assertEqual(sorted(who_signed_tx(tx2, 0, UI)),
+        self.assertEqual(sorted(who_signed_tx(tx2, 0)),
                          sorted(((key.address(), SIGHASH_ALL) for key in keys[:M])))
 
     def test_create_multisig_1_of_2(self):
@@ -64,7 +62,7 @@ class WhoSignedTest(unittest.TestCase):
             hash160_lookup = build_hash160_lookup([keys[i-1].secret_exponent()], [secp256k1_generator])
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
-            t1 = sorted(who_signed_tx(tx2, 0, UI))
+            t1 = sorted(who_signed_tx(tx2, 0))
             t2 = sorted(((key.address(), SIGHASH_ALL) for key in keys[:i]))
             self.assertEqual(t1, t2)
         self.assertEqual(tx2.bad_solution_count(), 0)
@@ -74,7 +72,7 @@ class WhoSignedTest(unittest.TestCase):
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
-        address = address_for_p2s(underlying_script)
+        address = network.address.for_p2s(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
         script = script_for_address(address)
         tx_out = Tx.TxOut(1000000, script)
@@ -84,7 +82,7 @@ class WhoSignedTest(unittest.TestCase):
         p2sh_lookup = build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_solution_count(), 0)
-        self.assertEqual(sorted(who_signed_tx(tx2, 0, UI)),
+        self.assertEqual(sorted(who_signed_tx(tx2, 0)),
                          sorted(((key.address(), SIGHASH_ALL) for key in keys[:M])))
 
 
