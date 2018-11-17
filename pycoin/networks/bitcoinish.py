@@ -176,9 +176,9 @@ def make_parse(network):
 
     def parse_wif(s):
         data = parse_b58_double_sha256(s)
-        if data is None or data[:1] != network._ui._wif_prefix:
+        if data is None or not data.startswith(network._ui._wif_prefix):
             return None
-        data = data[1:]
+        data = data[len(network._ui._wif_prefix):]
         is_compressed = (len(data) > 32)
         if is_compressed:
             data = data[:-1]
@@ -243,7 +243,8 @@ def make_parse(network):
         data = parse_b58_double_sha256(s)
         if data is None or not data.startswith(network._ui._address_prefix):
             return None
-        script = network.script_info.script_for_p2pkh(data[1:])
+        size = len(network._ui._address_prefix)
+        script = network.script_info.script_for_p2pkh(data[size:])
         script_info = network.script_info.info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
@@ -252,7 +253,8 @@ def make_parse(network):
         if (None in (data, network._ui._pay_to_script_prefix) or
                 not data.startswith(network._ui._pay_to_script_prefix)):
             return None
-        script = network.script_info.script_for_p2sh(data[1:])
+        size = len(network._ui._pay_to_script_prefix)
+        script = network.script_info.script_for_p2sh(data[size:])
         script_info = network.script_info.info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
