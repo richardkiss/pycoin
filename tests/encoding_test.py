@@ -7,7 +7,6 @@ from pycoin.encoding.hash import double_sha256, hash160
 from pycoin.encoding.hexbytes import h2b
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec, public_pair_to_sec, sec_to_public_pair
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.ui.validate import is_address_valid
 from pycoin.intbytes import iterbytes
 from pycoin.symbols.btc import network as BitcoinMainnet
 
@@ -122,9 +121,9 @@ class EncodingTestCase(unittest.TestCase):
                              as_hash160_sec)
 
             self.assertEqual(BitcoinMainnet.address.for_p2pkh(as_hash160_sec), as_bitcoin_address)
-            self.assertTrue(is_address_valid(as_bitcoin_address))
+            self.assertTrue(BitcoinMainnet.parse.address(as_bitcoin_address) != None)
             bad_address = as_bitcoin_address[:17] + chr(ord(as_bitcoin_address[17]) + 1) + as_bitcoin_address[18:]
-            self.assertFalse(is_address_valid(bad_address))
+            self.assertIsNone(BitcoinMainnet.parse.address(bad_address))
 
         SEC_TEST_DATA = [
             (
