@@ -5,6 +5,9 @@ from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.sec import is_sec_compressed, sec_to_public_pair
 from pycoin.key.Keychain import Keychain
+from pycoin.key.Key import Key
+from pycoin.key.BIP32Node import BIP32Node
+from pycoin.key.electrum import ElectrumWallet
 from pycoin.message.make_parser_and_packer import (
     make_parser_and_packer, standard_messages,
     standard_message_post_unpacks, standard_streamer, standard_parsing_functions
@@ -16,12 +19,9 @@ from pycoin.vm.ScriptInfo import ScriptInfo
 
 
 class Extras(object):
-    def __init__(self, script_tools, ui):
-        self.annotate = Annotate(script_tools, ui)
-        self.Key = ui._key_class
-        self.BIP32Node = ui._bip32node_class
-        self.ElectrumKey = ui._electrum_class
-        who_signed = WhoSigned(script_tools, self.Key._default_generator)
+    def __init__(self, network):
+        self.annotate = Annotate(network.script_tools, network._ui)
+        who_signed = WhoSigned(network.script_tools, network.Key._default_generator)
         self.who_signed_tx = who_signed.who_signed_tx
         self.public_pairs_signed = who_signed.public_pairs_signed
         self.extract_secs = who_signed.extract_secs
@@ -46,9 +46,9 @@ def make_output_for_hwif(network):
     def f(key_data, network, subkey_path, add_output):
 
         if len(key_data) == 74:
-            key = network.extras.BIP32Node.deserialize(b'0000' + key_data)
+            key = network.BIP32Node.deserialize(b'0000' + key_data)
         elif len(key_data) in (32, 64):
-            key = network.extras.ElectrumWallet.deserialize(key_data)
+            key = network.ElectrumWallet.deserialize(key_data)
         else:
             return
         yield ("wallet_key", key.hwif(as_private=key.is_private()), None)
@@ -183,19 +183,19 @@ def make_parse(network):
         if is_compressed:
             data = data[:-1]
         se = from_bytes_32(data)
-        return network.extras.Key(se, is_compressed=is_compressed)
+        return network.Key(se, is_compressed=is_compressed)
 
     def parse_bip32_prv(s):
         data = parse_b58_double_sha256(s)
         if data is None or not data.startswith(network._ui._bip32_prv_prefix):
             return None
-        return network.extras.BIP32Node.deserialize(data)
+        return network.BIP32Node.deserialize(data)
 
     def parse_bip32_pub(s):
         data = parse_b58_double_sha256(s)
         if data is None or not data.startswith(network._ui._bip32_pub_prefix):
             return None
-        return network.extras.BIP32Node.deserialize(data)
+        return network.BIP32Node.deserialize(data)
 
     def parse_bip32_seed(s):
         pair = parse_colon_prefix(s)
@@ -208,7 +208,7 @@ def make_parse(network):
                 return None
         else:
             master_secret = pair[1].encode("utf8")
-        return network.extras.BIP32Node.from_master_secret(master_secret)
+        return network.BIP32Node.from_master_secret(master_secret)
 
     def parse_electrum_to_blob(s):
         pair = parse_colon_prefix(s)
@@ -298,13 +298,13 @@ def make_parse(network):
 
     def parse_secret_exponent(s):
         v = parse_as_number(s)
-        Key = network.extras.Key
+        Key = network.Key
         if v and 0 < v < Key._default_generator.order():
             return Key(secret_exponent=v)
 
     def parse_public_pair(s):
         point = None
-        Key = network.extras.Key
+        Key = network.Key
         generator = Key._default_generator
         for c in ",/":
             if c in s:
@@ -327,9 +327,9 @@ def make_parse(network):
             s = pair[1]
         try:
             sec = h2b(s)
-            public_pair = sec_to_public_pair(sec, network.extras.Key._default_generator)
+            public_pair = sec_to_public_pair(sec, network.Key._default_generator)
             is_compressed = is_sec_compressed(sec)
-            return network.extras.Key(public_pair=public_pair, is_compressed=is_compressed)
+            return network.Key(public_pair=public_pair, is_compressed=is_compressed)
         except Exception:
             pass
 
@@ -457,8 +457,14 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
-    network._ui = UI(network.script_info, generator, **ui_kwargs)
-    network.extras = Extras(network.script_tools, network._ui)
+    ui = UI(network.script_info, generator, **ui_kwargs)
+    network._ui = ui
+
+    network.Key = Key.make_subclass(ui_context=ui, generator=generator)
+    network.ElectrumKey = ElectrumWallet.make_subclass(ui_context=ui, generator=generator)
+    network.BIP32Node = BIP32Node.make_subclass(ui_context=ui, generator=generator)
+
+    network.extras = Extras(network)
 
     NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
     for k in NETWORK_KEYS:
@@ -473,11 +479,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
         streamer, standard_messages(), standard_message_post_unpacks(streamer))
 
     network.output_for_hwif = make_output_for_hwif(network)
-    network.output_for_secret_exponent = make_output_for_secret_exponent(network.extras.Key)
-    network.output_for_public_pair = make_output_for_public_pair(network.extras.Key, network)
-    network.BIP32Node = network.extras.BIP32Node
-    network.Key = network.extras.Key
-    network.ElectrumKey = network.extras.ElectrumKey
+    network.output_for_secret_exponent = make_output_for_secret_exponent(network.Key)
+    network.output_for_public_pair = make_output_for_public_pair(network.Key, network)
     network.Keychain = Keychain
     network.parse = make_parse(network)
 

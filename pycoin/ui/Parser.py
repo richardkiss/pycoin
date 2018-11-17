@@ -1,23 +1,6 @@
-from collections import defaultdict
-
-from pycoin.encoding.b58 import a2b_base58, a2b_hashed_base58, EncodingError
+from pycoin.encoding.b58 import a2b_base58
 from pycoin.encoding.hash import double_sha256
 from pycoin.contrib import segwit_addr
-
-"""
-INFO:
-
-type: key, address, spendable, etc.
-create_f: call to create a canonical instance of what this represents
-
-KEY:
-  key_type: bip32, wif, sec
-  is_private: True or False
-  kwargs: passed to constructor
-  key_class: the class
-
-
-"""
 
 
 class parseable_str(str):

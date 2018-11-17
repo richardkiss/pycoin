@@ -5,9 +5,6 @@ from pycoin.encoding.b58 import b2a_hashed_base58
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
 from pycoin.intbytes import iterbytes
-from pycoin.key.Key import Key
-from pycoin.key.BIP32Node import BIP32Node
-from pycoin.key.electrum import ElectrumWallet
 
 
 # PARTS:
@@ -18,9 +15,6 @@ class UI(object):
     def __init__(self, puzzle_scripts, generator, bip32_prv_prefix=None, bip32_pub_prefix=None,
                  wif_prefix=None, sec_prefix=None, address_prefix=None, pay_to_script_prefix=None, bech32_hrp=None):
         self._script_info = puzzle_scripts
-        self._key_class = Key.make_subclass(ui_context=self, generator=generator)
-        self._electrum_class = ElectrumWallet.make_subclass(ui_context=self, generator=generator)
-        self._bip32node_class = BIP32Node.make_subclass(ui_context=self, generator=generator)
         self._bip32_prv_prefix = bip32_prv_prefix
         self._bip32_pub_prefix = bip32_pub_prefix
         self._wif_prefix = wif_prefix
