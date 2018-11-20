@@ -7,10 +7,6 @@ from pycoin.encoding.hexbytes import b2h
 from pycoin.intbytes import iterbytes
 
 
-# PARTS:
-# - turn network elements (key, address) into text and back (Parser objects)
-
-
 class UI(object):
     def __init__(self, puzzle_scripts, generator, bip32_prv_prefix=None, bip32_pub_prefix=None,
                  wif_prefix=None, sec_prefix=None, address_prefix=None, pay_to_script_prefix=None, bech32_hrp=None):

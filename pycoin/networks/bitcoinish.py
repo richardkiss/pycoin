@@ -123,7 +123,7 @@ def make_output_for_public_pair(Key, network):
                 yield ("address_segwit", address_segwit, "%s segwit address" % network_name)
                 yield ("%s_address_segwit" % network.symbol, address_segwit, "legacy")
 
-                p2sh_script = network.script_info.script_for_p2pkh_wit(hash160_c)
+                p2sh_script = network.script.for_p2pkh_wit(hash160_c)
                 p2s_address = network._ui.address_for_p2s(p2sh_script)
                 if p2s_address:
                     yield ("p2sh_segwit", p2s_address, None)
@@ -149,7 +149,7 @@ class BitcoinishPayable(object):
         return self._network.address.for_script_info(self._script_info)
 
     def script(self):
-        return self._network.script_info.script_for_info(self._script_info)
+        return self._network.script.for_info(self._script_info)
 
     def disassemble(self):
         return self._network.script_tools.disassemble(self.script())
@@ -245,7 +245,7 @@ def make_parse(network):
             return None
         size = len(network._ui._address_prefix)
         script = network.script.for_p2pkh(data[size:])
-        script_info = network.script_info.info_for_script(script)
+        script_info = network.script_info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
     def parse_p2sh(s):
@@ -255,7 +255,7 @@ def make_parse(network):
             return None
         size = len(network._ui._pay_to_script_prefix)
         script = network.script.for_p2sh(data[size:])
-        script_info = network.script_info.info_for_script(script)
+        script_info = network.script_info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
     def parse_segwit(s, blob_len, script_f):
@@ -269,7 +269,7 @@ def make_parse(network):
         if version_byte != b'\0' or len(decoded_data) != blob_len:
             return None
         script = script_f(decoded_data)
-        script_info = network.script_info.info_for_script(script)
+        script_info = network.script_info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
     def parse_p2pkh_segwit(s):
@@ -281,7 +281,7 @@ def make_parse(network):
     def parse_script(s):
         try:
             script = network.script_tools.compile(s)
-            script_info = network.script_info.info_for_script(script)
+            script_info = network.script_info_for_script(script)
             return BitcoinishPayable(script_info, network)
         except Exception:
             return None
@@ -451,13 +451,13 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
             kwargs[k] = h2b(kwargs[k_hex])
 
     network.script_tools = kwargs.get("scriptTools", BitcoinScriptTools)
-    network.script_info = CanonicalScript(network.script_tools)
+    script_info = CanonicalScript(network.script_tools)
 
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
-    ui = UI(network.script_info, generator, **ui_kwargs)
+    ui = UI(script_info, generator, **ui_kwargs)
     network._ui = ui
 
     network.Key = Key.make_subclass(ui_context=ui, generator=generator)
@@ -491,7 +491,6 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.address.for_p2sh_wit = ui.address_for_p2sh_wit
     network.address.for_script_info = ui.address_for_script_info
 
-    script_info = network.script_info
     network.script = ScriptAPI()
 
     def script_for_address(x):
@@ -509,6 +508,10 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.script.for_p2s = script_info.script_for_p2s
     network.script.for_p2s_wit = script_info.script_for_p2s_wit
     network.script.for_p2sh_wit = script_info.script_for_p2sh_wit
+
+    network.script.for_info = script_info.script_for_info
+
+    network.script_info_for_script = script_info.info_for_script
 
     network.extras = Extras(network)
 
