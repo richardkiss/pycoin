@@ -184,7 +184,9 @@ class Key(object):
         if self.secret_exponent() is None:
             return self
 
-        return self.__class__(public_pair=self.public_pair(), prefer_uncompressed=self._prefer_uncompressed,
+        return self.__class__(public_pair=self.public_pair(),
+                              generator=self._generator,
+                              prefer_uncompressed=self._prefer_uncompressed,
                               is_compressed=(self._hash160_compressed is not None))
 
     def subkey_for_path(self, path):
