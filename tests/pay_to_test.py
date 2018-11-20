@@ -8,9 +8,9 @@ from pycoin.symbols.btc import network
 
 # BRAIN DAMAGE
 script_info_for_script = network.script_info.info_for_script
-script_for_multisig = network.script_info.script_for_multisig
-script_for_nulldata = network.script_info.script_for_nulldata
-script_for_nulldata_push = network.script_info.script_for_nulldata_push
+script_for_multisig = network.script.for_multisig
+script_for_nulldata = network.script.for_nulldata
+script_for_nulldata_push = network.script.for_nulldata_push
 Tx = network.tx
 
 

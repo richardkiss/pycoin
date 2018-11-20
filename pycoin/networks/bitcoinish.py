@@ -244,7 +244,7 @@ def make_parse(network):
         if data is None or not data.startswith(network._ui._address_prefix):
             return None
         size = len(network._ui._address_prefix)
-        script = network.script_info.script_for_p2pkh(data[size:])
+        script = network.script.for_p2pkh(data[size:])
         script_info = network.script_info.info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
@@ -254,7 +254,7 @@ def make_parse(network):
                 not data.startswith(network._ui._pay_to_script_prefix)):
             return None
         size = len(network._ui._pay_to_script_prefix)
-        script = network.script_info.script_for_p2sh(data[size:])
+        script = network.script.for_p2sh(data[size:])
         script_info = network.script_info.info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
@@ -273,10 +273,10 @@ def make_parse(network):
         return BitcoinishPayable(script_info, network)
 
     def parse_p2pkh_segwit(s):
-        return parse_segwit(s, 20, network.script_info.script_for_p2pkh_wit)
+        return parse_segwit(s, 20, network.script.for_p2pkh_wit)
 
     def parse_p2sh_segwit(s):
-        return parse_segwit(s, 32, network.script_info.script_for_p2sh_wit)
+        return parse_segwit(s, 32, network.script.for_p2sh_wit)
 
     def parse_script(s):
         try:
@@ -491,12 +491,24 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.address.for_p2sh_wit = ui.address_for_p2sh_wit
     network.address.for_script_info = ui.address_for_script_info
 
+    script_info = network.script_info
     network.script = ScriptAPI()
 
     def script_for_address(x):
         return network.parse.address(x).script()
 
     network.script.for_address = script_for_address
+
+    network.script.for_multisig = script_info.script_for_multisig
+    network.script.for_nulldata = script_info.script_for_nulldata
+    network.script.for_nulldata_push = script_info.script_for_nulldata_push
+    network.script.for_p2pk = script_info.script_for_p2pk
+    network.script.for_p2pkh = script_info.script_for_p2pkh
+    network.script.for_p2pkh_wit = script_info.script_for_p2pkh_wit
+    network.script.for_p2sh = script_info.script_for_p2sh
+    network.script.for_p2s = script_info.script_for_p2s
+    network.script.for_p2s_wit = script_info.script_for_p2s_wit
+    network.script.for_p2sh_wit = script_info.script_for_p2sh_wit
 
     network.extras = Extras(network)
 

@@ -11,8 +11,8 @@ from pycoin.symbols.btc import network
 
 address_for_p2s = network.address.for_p2s
 script_for_address = network.script.for_address
-script_for_multisig = network.script_info.script_for_multisig
-script_for_p2pk = network.script_info.script_for_p2pk
+script_for_multisig = network.script.for_multisig
+script_for_p2pk = network.script.for_p2pk
 
 # BRAIN DAMAGE
 Key = network.Key
