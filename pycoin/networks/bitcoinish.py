@@ -15,7 +15,7 @@ from pycoin.message.make_parser_and_packer import (
 from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.ui.uiclass import UI
 from pycoin.vm.annotate import Annotate
-from pycoin.vm.ScriptInfo import ScriptInfo
+from pycoin.vm.CanonicalScript import CanonicalScript
 
 
 class Extras(object):
@@ -451,7 +451,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
             kwargs[k] = h2b(kwargs[k_hex])
 
     network.script_tools = kwargs.get("scriptTools", BitcoinScriptTools)
-    network.script_info = ScriptInfo(network.script_tools)
+    network.script_info = CanonicalScript(network.script_tools)
 
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()

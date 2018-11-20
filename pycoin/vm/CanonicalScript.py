@@ -5,7 +5,7 @@ from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
 
 
-class ScriptInfo(object):
+class CanonicalScript(object):
     def __init__(self, scriptTools):
         self._scriptTools = scriptTools
 
