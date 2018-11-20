@@ -8,9 +8,8 @@ from pycoin.intbytes import iterbytes
 
 
 class UI(object):
-    def __init__(self, puzzle_scripts, generator, bip32_prv_prefix=None, bip32_pub_prefix=None,
+    def __init__(self, generator, bip32_prv_prefix=None, bip32_pub_prefix=None,
                  wif_prefix=None, sec_prefix=None, address_prefix=None, pay_to_script_prefix=None, bech32_hrp=None):
-        self._script_info = puzzle_scripts
         self._bip32_prv_prefix = bip32_prv_prefix
         self._bip32_pub_prefix = bip32_pub_prefix
         self._wif_prefix = wif_prefix
@@ -30,10 +29,6 @@ class UI(object):
         return self._sec_prefix + b2h(blob)
 
     # address_for_script and script_for_address stuff
-
-    def address_for_script(self, script):
-        script_info = self._script_info.info_for_script(script)
-        return self.address_for_script_info(script_info)
 
     def address_for_script_info(self, script_info):
         type = script_info.get("type")
@@ -79,9 +74,6 @@ class UI(object):
         if self._bech32_hrp and len(hash256) == 32:
             return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(hash256))
         return "???"
-
-    def script_for_address(self, address):
-        return self.parse(address, types=["address"])
 
     # p2s and p2s_wit helpers
 

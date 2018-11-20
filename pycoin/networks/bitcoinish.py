@@ -167,7 +167,7 @@ class BitcoinishPayable(object):
         return "<%s>" % self.address()
 
 
-def make_parse(network):
+def make_parse(network, ui):
 
     from pycoin.contrib import segwit_addr
     from pycoin.encoding.bytes32 import from_bytes_32
@@ -176,9 +176,9 @@ def make_parse(network):
 
     def parse_wif(s):
         data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(network._ui._wif_prefix):
+        if data is None or not data.startswith(ui._wif_prefix):
             return None
-        data = data[len(network._ui._wif_prefix):]
+        data = data[len(ui._wif_prefix):]
         is_compressed = (len(data) > 32)
         if is_compressed:
             data = data[:-1]
@@ -187,13 +187,13 @@ def make_parse(network):
 
     def parse_bip32_prv(s):
         data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(network._ui._bip32_prv_prefix):
+        if data is None or not data.startswith(ui._bip32_prv_prefix):
             return None
         return network.BIP32Node.deserialize(data)
 
     def parse_bip32_pub(s):
         data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(network._ui._bip32_pub_prefix):
+        if data is None or not data.startswith(ui._bip32_pub_prefix):
             return None
         return network.BIP32Node.deserialize(data)
 
@@ -241,26 +241,26 @@ def make_parse(network):
 
     def parse_p2pkh(s):
         data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(network._ui._address_prefix):
+        if data is None or not data.startswith(ui._address_prefix):
             return None
-        size = len(network._ui._address_prefix)
+        size = len(ui._address_prefix)
         script = network.script.for_p2pkh(data[size:])
         script_info = network.script_info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
     def parse_p2sh(s):
         data = parse_b58_double_sha256(s)
-        if (None in (data, network._ui._pay_to_script_prefix) or
-                not data.startswith(network._ui._pay_to_script_prefix)):
+        if (None in (data, ui._pay_to_script_prefix) or
+                not data.startswith(ui._pay_to_script_prefix)):
             return None
-        size = len(network._ui._pay_to_script_prefix)
+        size = len(ui._pay_to_script_prefix)
         script = network.script.for_p2sh(data[size:])
         script_info = network.script_info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
     def parse_segwit(s, blob_len, script_f):
         pair = parse_bech32(s)
-        if pair is None or pair[0] != network._ui._bech32_hrp or pair[1] is None:
+        if pair is None or pair[0] != ui._bech32_hrp or pair[1] is None:
             return None
         data = pair[1]
         version_byte = int2byte(data[0])
@@ -323,7 +323,7 @@ def make_parse(network):
 
     def parse_sec(s):
         pair = parse_colon_prefix(s)
-        if pair is not None and pair[0] == network._ui._wif_prefix:
+        if pair is not None and pair[0] == ui._wif_prefix:
             s = pair[1]
         try:
             sec = h2b(s)
@@ -457,7 +457,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
-    ui = UI(script_info, generator, **ui_kwargs)
+    ui = UI(generator, **ui_kwargs)
     network._ui = ui
 
     network.Key = Key.make_subclass(ui_context=ui, generator=generator)
@@ -480,10 +480,14 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.output_for_secret_exponent = make_output_for_secret_exponent(network.Key)
     network.output_for_public_pair = make_output_for_public_pair(network.Key, network)
     network.Keychain = Keychain
-    network.parse = make_parse(network)
+    network.parse = make_parse(network, ui)
+
+    def address_for_script(script):
+        info = script_info.info_for_script(script)
+        return ui.address_for_script_info(info)
 
     network.address = AddressAPI()
-    network.address.for_script = ui.address_for_script
+    network.address.for_script = address_for_script
     network.address.for_p2s = ui.address_for_p2s
     network.address.for_p2sh = ui.address_for_p2sh
     network.address.for_p2pkh = ui.address_for_p2pkh
