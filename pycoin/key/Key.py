@@ -214,20 +214,17 @@ class Key(object):
         r, s = self._generator.sign(self.secret_exponent(), val)
         return sigencode_der(r, s)
 
-    def verify(self, h, sig, generator=None):
+    def verify(self, h, sig):
         """
         Return whether a signature is valid for hash h using this key.
         """
-        generator = generator or self._generator
-        if not generator:
-            raise ValueError("generator must be specified")
         val = from_bytes_32(h)
         pubkey = self.public_pair()
         rs = sigdecode_der(sig)
         if self.public_pair() is None:
             # find the pubkey from the signature and see if it matches
             # our key
-            possible_pubkeys = generator.possible_public_pairs_for_signature(val, rs)
+            possible_pubkeys = self._generator.possible_public_pairs_for_signature(val, rs)
             hash160 = self.hash160()
             for candidate in possible_pubkeys:
                 if hash160 == public_pair_to_hash160_sec(candidate, True):
@@ -239,7 +236,7 @@ class Key(object):
             else:
                 # signature is using a pubkey that's not this key
                 return False
-        return generator.verify(pubkey, val, rs)
+        return self._generator.verify(pubkey, val, rs)
 
     def _use_uncompressed(self, use_uncompressed=None):
         if use_uncompressed:
