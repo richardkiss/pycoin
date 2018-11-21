@@ -1,7 +1,5 @@
 import hashlib
 
-import groestlcoin_hash
-
 from pycoin.encoding.hexbytes import bytes_as_revhex
 
 
@@ -11,4 +9,11 @@ def sha256(data):
 
 def groestlHash(data):
     """Groestl-512 compound hash."""
+    try:
+        import groestlcoin_hash
+    except ImportError:
+        t = 'Groestlcoin requires the groestlcoin_hash package ("pip install groestlcoin_hash").'
+        print(t)
+        raise ImportError(t)
+
     return bytes_as_revhex(groestlcoin_hash.getHash(data, len(data)))
