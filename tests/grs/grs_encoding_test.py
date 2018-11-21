@@ -10,22 +10,22 @@ GroestlcoinMainnet = network_for_netcode("GRS")
 class GroestlcoinEncodingTestCase(unittest.TestCase):
     def test_p2pkh(self):
         def do_test(h160, address):
-            self.assertEqual(GroestlcoinMainnet.ui.address_for_p2pkh(h160), address)
-            parsed = GroestlcoinMainnet.ui.parse(address)
-            self.assertEqual(parsed.as_text(), address)
+            self.assertEqual(GroestlcoinMainnet._ui.address_for_p2pkh(h160), address)
+            self.assertEqual(GroestlcoinMainnet.parse.p2pkh(address).address(), address)
 
         do_test(h2b('0000000000000000000000000000000000000000'), 'FVAiSujNZVgYSc27t6zUTWoKfAGxer42D4')
 
     def test_p2sh(self):
         def do_test(h160, redeem_script, address):
             self.assertEqual(GroestlcoinMainnet.script_info.script_for_p2sh(h160), redeem_script)
-            self.assertEqual(GroestlcoinMainnet.ui.address_for_p2sh(h160), address)
+            self.assertEqual(GroestlcoinMainnet._ui.address_for_p2sh(h160), address)
+            self.assertEqual(GroestlcoinMainnet.parse.p2sh(address).address(), address)
 
         do_test(h2b('2a84cf00d47f699ee7bbc1dea5ec1bdecb4ac154'), h2b('a9142a84cf00d47f699ee7bbc1dea5ec1bdecb4ac15487'), '35ZqQJcBQMZ1rsv8aSuJ2wkC7ohUFNJZ77')
 
     def test_wif(self):
         def do_test(sec_bytes, wif, address):
-            parsed = GroestlcoinMainnet.ui.parse(wif)
+            parsed = GroestlcoinMainnet.parse.wif(wif)
             self.assertEqual(to_bytes_32(parsed.secret_exponent()), sec_bytes)
             self.assertEqual(parsed.wif(), wif)
             self.assertEqual(parsed.address(), address)
@@ -36,7 +36,7 @@ class GroestlcoinEncodingTestCase(unittest.TestCase):
     def test_bip32(self):
         xprv = 'xprvA41z7zogVVwxVSgdKUHDy1SKmdb533PjDz7J6N6mV6uS3ze1ai8FHa8kmHScGpWmj4WggLyQjgPie1rFSruoUihUZREPSL39UNdE3GaoVXP'
         xpub = 'xpub6H1LXWLaKsWFhvm6RVpEL9P4KfRZSW7abD2ttkWP3SSQvnyA8FSVqNTEcYFgJS2UaFcxupHiYkro49S8yGasTvXEYBVPamhGW6cFJuY6NHg'
-        parsed = GroestlcoinMainnet.ui.parse(xprv)
+        parsed = GroestlcoinMainnet.parse.hierarchical_key(xprv)
         self.assertEqual(parsed.tree_depth(), 5)
         self.assertEqual(parsed.parent_fingerprint(), b'\xd8\x80\xd7\xd8')
         self.assertEqual(parsed.child_index(), 1000000000)
@@ -44,3 +44,8 @@ class GroestlcoinEncodingTestCase(unittest.TestCase):
         self.assertEqual(parsed.secret_exponent(), 32162737660659799401901343156672072893797470137297259782459076395168682141640)
         self.assertEqual(parsed.hwif(as_private=True), xprv)
         self.assertEqual(parsed.hwif(as_private=False), xpub)
+
+        self.assertEqual(parsed.wif(), 'Kybw8izYevo5xMh1TK7aUr7jHFCxXS1zv8p3oqFz3o2zFbjGCYKc')
+        self.assertEqual(parsed.address(), 'FpjSHmYBamwxWSsPtaL2rUz98FSS17VmY2')
+        self.assertEqual(parsed.wif(use_uncompressed=True), '5JMbvQZXHJAzJyoDnqWasGCwtiHJZivF2ckjn3n5mazYYwQHway')
+        self.assertEqual(parsed.address(use_uncompressed=True), 'FrH6KqPfsLPHArqCJ8WciGyvnWcRmvAsHC')

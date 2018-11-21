@@ -35,3 +35,7 @@ class GroestlcoinBlockTestCase(unittest.TestCase):
 
         tx = parsed.txs[1]
         self.assertEqual(str(tx.hash()), '89ff39e83636359bace69725fe19e1d33b16918205eaaf77c37684ac557e5154')
+        self.assertEqual(tx.txs_out[0].coin_value, 664294254)
+        self.assertEqual(GroestlcoinMainnet.address.for_script(tx.txs_out[0].puzzle_script()), 'Fdi7YYeN7nmnjJPqQDGy8vudgQ26FVjNrk')
+        self.assertEqual(tx.txs_out[1].coin_value, 2365109)
+        self.assertEqual(GroestlcoinMainnet.address.for_script(tx.txs_out[1].puzzle_script()), 'FnSbX2G6VkrCqCLBFPxwbrC9xT7C3rh5ko')
