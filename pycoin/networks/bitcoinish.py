@@ -93,7 +93,6 @@ def make_output_for_public_pair(Key, network):
         yield ("key_pair_as_sec", b2h(key.sec(use_uncompressed=False)), None)
         yield ("key_pair_as_sec_uncompressed", b2h(key.sec(use_uncompressed=True)), " uncompressed")
 
-        ui_context = network._ui
         network_name = network.network_name
         hash160_c = key.hash160(use_uncompressed=False)
         hash160_u = key.hash160(use_uncompressed=True)
@@ -106,7 +105,7 @@ def make_output_for_public_pair(Key, network):
         if hash160_c and hash160_u:
             yield ("hash160_uncompressed", b2h(hash160_u), " uncompressed")
 
-        address = ui_context.address_for_p2pkh(hash160 or hash160_c)
+        address = network.address.for_p2pkh(hash160 or hash160_c)
         yield ("address", address, "%s address" % network_name)
         yield ("%s_address" % network.symbol, address, "legacy")
 
@@ -116,15 +115,15 @@ def make_output_for_public_pair(Key, network):
             yield ("%s_address_uncompressed" % network.symbol, address, "legacy")
 
         # don't print segwit addresses unless we're sure we have a compressed key
-        if hash160_c and hasattr(network, "_ui") and getattr(network._ui, "_bech32_hrp"):
-            address_segwit = network._ui.address_for_p2pkh_wit(hash160_c)
+        if hash160_c and hasattr(network.address, "for_p2pkh_wit"):
+            address_segwit = network.address.for_p2pkh_wit(hash160_c)
             if address_segwit:
                 # this network seems to support segwit
                 yield ("address_segwit", address_segwit, "%s segwit address" % network_name)
                 yield ("%s_address_segwit" % network.symbol, address_segwit, "legacy")
 
                 p2sh_script = network.script.for_p2pkh_wit(hash160_c)
-                p2s_address = network._ui.address_for_p2s(p2sh_script)
+                p2s_address = network.address.for_p2s(p2sh_script)
                 if p2s_address:
                     yield ("p2sh_segwit", p2s_address, None)
 
@@ -258,7 +257,10 @@ def make_parse(network, ui):
         script_info = network.script_info_for_script(script)
         return BitcoinishPayable(script_info, network)
 
-    def parse_segwit(s, blob_len, script_f):
+    def parse_segwit(s, blob_len, segwit_attr):
+        script_f = getattr(network.script, segwit_attr, None)
+        if script_f is None:
+            return None
         pair = parse_bech32(s)
         if pair is None or pair[0] != ui._bech32_hrp or pair[1] is None:
             return None
@@ -273,10 +275,10 @@ def make_parse(network, ui):
         return BitcoinishPayable(script_info, network)
 
     def parse_p2pkh_segwit(s):
-        return parse_segwit(s, 20, network.script.for_p2pkh_wit)
+        return parse_segwit(s, 20, "for_p2pkh_wit")
 
     def parse_p2sh_segwit(s):
-        return parse_segwit(s, 32, network.script.for_p2sh_wit)
+        return parse_segwit(s, 32, "for_p2sh_wit")
 
     def parse_script(s):
         try:
@@ -458,11 +460,10 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
     ui = UI(generator, **ui_kwargs)
-    network._ui = ui
 
-    network.Key = Key.make_subclass(ui_context=ui, generator=generator)
-    network.ElectrumKey = ElectrumWallet.make_subclass(ui_context=ui, generator=generator)
-    network.BIP32Node = BIP32Node.make_subclass(ui_context=ui, generator=generator)
+    network.Key = Key.make_subclass(network=network, generator=generator)
+    network.ElectrumKey = ElectrumWallet.make_subclass(network=network, generator=generator)
+    network.BIP32Node = BIP32Node.make_subclass(network=network, generator=generator)
 
     NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
     for k in NETWORK_KEYS:
@@ -491,9 +492,11 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.address.for_p2s = ui.address_for_p2s
     network.address.for_p2sh = ui.address_for_p2sh
     network.address.for_p2pkh = ui.address_for_p2pkh
-    network.address.for_p2s_wit = ui.address_for_p2s_wit
-    network.address.for_p2sh_wit = ui.address_for_p2sh_wit
     network.address.for_script_info = ui.address_for_script_info
+    if ui._bech32_hrp:
+        network.address.for_p2s_wit = ui.address_for_p2s_wit
+        network.address.for_p2sh_wit = ui.address_for_p2sh_wit
+        network.address.for_p2pkh_wit = ui.address_for_p2pkh_wit
 
     network.script = ScriptAPI()
 
@@ -507,15 +510,20 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.script.for_nulldata_push = script_info.script_for_nulldata_push
     network.script.for_p2pk = script_info.script_for_p2pk
     network.script.for_p2pkh = script_info.script_for_p2pkh
-    network.script.for_p2pkh_wit = script_info.script_for_p2pkh_wit
     network.script.for_p2sh = script_info.script_for_p2sh
     network.script.for_p2s = script_info.script_for_p2s
-    network.script.for_p2s_wit = script_info.script_for_p2s_wit
-    network.script.for_p2sh_wit = script_info.script_for_p2sh_wit
+    if ui._bech32_hrp:
+        network.script.for_p2pkh_wit = script_info.script_for_p2pkh_wit
+        network.script.for_p2s_wit = script_info.script_for_p2s_wit
+        network.script.for_p2sh_wit = script_info.script_for_p2sh_wit
 
     network.script.for_info = script_info.script_for_info
 
     network.script_info_for_script = script_info.info_for_script
+
+    network.bip32_as_string = ui.bip32_as_string
+    network.sec_text_for_blob = ui.sec_text_for_blob
+    network.wif_for_blob = ui.wif_for_blob
 
     network.extras = Extras(network)
 

@@ -16,7 +16,7 @@ def secret_exponent_to_wif(se, compressed):
     blob = to_bytes_32(se)
     if compressed:
         blob += b'\01'
-    return BitcoinMainnet._ui.wif_for_blob(blob)
+    return BitcoinMainnet.wif_for_blob(blob)
 
 
 def public_pair_to_bitcoin_address(pair, compressed):

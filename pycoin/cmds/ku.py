@@ -44,8 +44,7 @@ def get_entropy():
 
 
 def create_output(item, key, network, output_key_set, subkey_path=None):
-    ui_context = network._ui
-    key._ui_context = ui_context
+    key._network = network
     output_dict = {}
     output_order = []
 

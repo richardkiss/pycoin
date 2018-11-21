@@ -74,13 +74,13 @@ class TxIn(object):
             return sec
         return None
 
-    def address(self, ui_context):
+    def address(self, address_api):
         if self.is_coinbase():
             return "(coinbase)"
         # attempt to return the source address
         sec = self.public_key_sec()
         if sec:
-            address = ui_context.address_for_p2pkh(hash160(sec))
+            address = address_api.for_p2pkh(hash160(sec))
             return address
         return "(unknown)"
 

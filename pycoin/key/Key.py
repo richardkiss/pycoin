@@ -18,14 +18,14 @@ class InvalidSecretExponentError(ValueError):
 
 class Key(object):
 
-    _ui_context = None
+    _network = None
     _default_generator = None
 
     @classmethod
-    def make_subclass(class_, ui_context, generator):
+    def make_subclass(class_, network, generator):
 
         class Key(class_):
-            _ui_context = ui_context
+            _network = network
             _default_generator = generator
 
         return Key
@@ -108,7 +108,7 @@ class Key(object):
         blob = to_bytes_32(secret_exponent)
         if not self._use_uncompressed(use_uncompressed):
             blob += b'\01'
-        return self._ui_context.wif_for_blob(blob)
+        return self._network.wif_for_blob(blob)
 
     def public_pair(self):
         """
@@ -134,7 +134,7 @@ class Key(object):
         sec = self.sec(use_uncompressed=use_uncompressed)
         if sec is None:
             return None
-        return self._ui_context.sec_text_for_blob(sec)
+        return self._network.sec_text_for_blob(sec)
 
     def hash160(self, use_uncompressed=None):
         """
@@ -166,7 +166,7 @@ class Key(object):
         """
         hash160 = self.hash160(use_uncompressed=use_uncompressed)
         if hash160:
-            return self._ui_context.address_for_p2pkh(hash160)
+            return self._network.address.for_p2pkh(hash160)
         return None
 
     def as_text(self):
@@ -250,7 +250,7 @@ class Key(object):
 
     def __repr__(self):
         r = self.public_copy()
-        if r._ui_context:
+        if r._network:
             s = r.as_text()
         elif r.sec():
             s = b2h(r.sec())

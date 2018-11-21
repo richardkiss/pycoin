@@ -56,7 +56,7 @@ def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly
         suffix = ""
         if tx.missing_unspent(idx):
             tx_out = None
-            address = tx_in.address(ui_context=network._ui)
+            address = tx_in.address(address_api=network.address)
         else:
             tx_out = tx.unspents[idx]
             sig_result = " sig ok" if tx.is_solution_ok(idx, traceback_f=traceback_f) else " BAD SIG"
