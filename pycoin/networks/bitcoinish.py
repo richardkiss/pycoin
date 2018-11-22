@@ -2,8 +2,11 @@ from pycoin.block import Block
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.contrib.who_signed import WhoSigned
+from pycoin.contrib import segwit_addr
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.encoding.sec import is_sec_compressed, sec_to_public_pair
+from pycoin.intbytes import int2byte
 from pycoin.key.Keychain import Keychain
 from pycoin.key.Key import Key
 from pycoin.key.BIP32Node import BIP32Node
@@ -13,6 +16,7 @@ from pycoin.message.make_parser_and_packer import (
     standard_message_post_unpacks, standard_streamer, standard_parsing_functions
 )
 from pycoin.encoding.hexbytes import b2h, h2b
+from pycoin.ui.parseable_str import parse_b58_double_sha256, parse_bech32, parse_colon_prefix, parseable_str
 from pycoin.ui.uiclass import UI
 from pycoin.vm.annotate import Annotate
 from pycoin.vm.CanonicalScript import CanonicalScript
@@ -164,12 +168,6 @@ class BitcoinishPayable(object):
 
     def __repr__(self):
         return "<%s>" % self.address()
-
-
-from pycoin.contrib import segwit_addr
-from pycoin.encoding.bytes32 import from_bytes_32
-from pycoin.intbytes import int2byte
-from pycoin.ui.parseable_str import parse_b58_double_sha256, parse_bech32, parse_colon_prefix, parseable_str
 
 
 class ParseAPI(object):
