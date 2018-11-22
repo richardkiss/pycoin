@@ -1,11 +1,11 @@
 import unittest
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.symbols.btc import network as btc_network
+from pycoin.symbols.btc import network as BitcoinMainnet
 
 
-ElectrumKey = btc_network.ElectrumKey
-Key = btc_network.Key
+ElectrumKey = BitcoinMainnet.ElectrumKey
+Key = BitcoinMainnet.Key
 
 
 class ElectrumTest(unittest.TestCase):
@@ -28,14 +28,14 @@ class ElectrumTest(unittest.TestCase):
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = btc_network.parse.wif(wif)
+            key = BitcoinMainnet.parse.wif(wif)
             self.assertEqual(key.address(use_uncompressed=True), address)
         for idx, address in enumerate(CHANGE_ADDRESSES):
             subkey = wallet.subkey("%s/1" % idx)
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = btc_network.parse.wif(wif)
+            key = BitcoinMainnet.parse.wif(wif)
             self.assertEqual(key.address(use_uncompressed=True), address)
 
     def test_master_public_and_private(self):
@@ -75,12 +75,12 @@ class ElectrumTest(unittest.TestCase):
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = btc_network.parse.wif(wif)
+            key = BitcoinMainnet.parse.wif(wif)
             self.assertEqual(key.address(use_uncompressed=True), address)
         for idx, address in enumerate(CHANGE_ADDRESSES):
             subkey = wallet.subkey("%s/1" % idx)
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = btc_network.parse.wif(wif)
+            key = BitcoinMainnet.parse.wif(wif)
             self.assertEqual(key.address(use_uncompressed=True), address)

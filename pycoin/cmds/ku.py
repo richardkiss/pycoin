@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from pycoin.encoding.hexbytes import h2b
-from pycoin.ui.Parser import parseable_str
+from pycoin.ui.parseable_str import parseable_str
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
 

@@ -166,37 +166,19 @@ class BitcoinishPayable(object):
         return "<%s>" % self.address()
 
 
-def make_parse(network, ui):
+from pycoin.contrib import segwit_addr
+from pycoin.encoding.bytes32 import from_bytes_32
+from pycoin.intbytes import int2byte
+from pycoin.ui.parseable_str import parse_b58_double_sha256, parse_bech32, parse_colon_prefix, parseable_str
 
-    from pycoin.contrib import segwit_addr
-    from pycoin.encoding.bytes32 import from_bytes_32
-    from pycoin.intbytes import int2byte
-    from pycoin.ui.Parser import parse_b58_double_sha256, parse_bech32, parse_colon_prefix, parseable_str
 
-    def parse_wif(s):
-        data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(ui._wif_prefix):
-            return None
-        data = data[len(ui._wif_prefix):]
-        is_compressed = (len(data) > 32)
-        if is_compressed:
-            data = data[:-1]
-        se = from_bytes_32(data)
-        return network.Key(se, is_compressed=is_compressed)
+class ParseAPI(object):
+    def __init__(self, network, ui):
+        self._network = network
+        self._ui = ui
 
-    def parse_bip32_prv(s):
-        data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(ui._bip32_prv_prefix):
-            return None
-        return network.BIP32Node.deserialize(data)
-
-    def parse_bip32_pub(s):
-        data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(ui._bip32_pub_prefix):
-            return None
-        return network.BIP32Node.deserialize(data)
-
-    def parse_bip32_seed(s):
+    # hierarchical key
+    def bip32_seed(self, s):
         pair = parse_colon_prefix(s)
         if pair is None or pair[0] not in "HP":
             return None
@@ -207,9 +189,21 @@ def make_parse(network, ui):
                 return None
         else:
             master_secret = pair[1].encode("utf8")
-        return network.BIP32Node.from_master_secret(master_secret)
+        return self._network.BIP32Node.from_master_secret(master_secret)
 
-    def parse_electrum_to_blob(s):
+    def bip32_prv(self, s):
+        data = parse_b58_double_sha256(s)
+        if data is None or not data.startswith(self._ui._bip32_prv_prefix):
+            return None
+        return self._network.BIP32Node.deserialize(data)
+
+    def bip32_pub(self, s):
+        data = parse_b58_double_sha256(s)
+        if data is None or not data.startswith(self._ui._bip32_pub_prefix):
+            return None
+        return self._network.BIP32Node.deserialize(data)
+
+    def electrum_to_blob(self, s):
         pair = parse_colon_prefix(s)
         if pair is None or pair[0] != "E":
             return None
@@ -218,51 +212,52 @@ def make_parse(network, ui):
         except ValueError:
             return None
 
-    def parse_electrum_seed(s):
-        blob = parse_electrum_to_blob(s)
+    def electrum_seed(self, s):
+        blob = self.electrum_to_blob(s)
         if blob and len(blob) == 16:
             blob = b2h(blob)
-            return network.ElectrumKey(
-                generator=network.Key._default_generator, initial_key=blob)
+            return self._network.ElectrumKey(
+                generator=self._network.Key._default_generator, initial_key=blob)
 
-    def parse_electrum_prv(s):
-        blob = parse_electrum_to_blob(s)
+    def electrum_prv(self, s):
+        blob = self.electrum_to_blob(s)
         if blob and len(blob) == 32:
             mpk = from_bytes_32(blob)
-            return network.ElectrumKey(
-                generator=network.Key._default_generator, master_private_key=mpk)
+            return self._network.ElectrumKey(
+                generator=self._network.Key._default_generator, master_private_key=mpk)
 
-    def parse_electrum_pub(s):
-        blob = parse_electrum_to_blob(s)
+    def electrum_pub(self, s):
+        blob = self.electrum_to_blob(s)
         if blob and len(blob) == 64:
-            return network.ElectrumKey(
-                generator=network.Key._default_generator, master_public_key=blob)
+            return self._network.ElectrumKey(
+                generator=self._network.Key._default_generator, master_public_key=blob)
 
-    def parse_p2pkh(s):
+    # address
+    def p2pkh(self, s):
         data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(ui._address_prefix):
+        if data is None or not data.startswith(self._ui._address_prefix):
             return None
-        size = len(ui._address_prefix)
-        script = network.script.for_p2pkh(data[size:])
-        script_info = network.script_info_for_script(script)
-        return BitcoinishPayable(script_info, network)
+        size = len(self._ui._address_prefix)
+        script = self._network.script.for_p2pkh(data[size:])
+        script_info = self._network.script_info_for_script(script)
+        return BitcoinishPayable(script_info, self._network)
 
-    def parse_p2sh(s):
+    def p2sh(self, s):
         data = parse_b58_double_sha256(s)
-        if (None in (data, ui._pay_to_script_prefix) or
-                not data.startswith(ui._pay_to_script_prefix)):
+        if (None in (data, self._ui._pay_to_script_prefix) or
+                not data.startswith(self._ui._pay_to_script_prefix)):
             return None
-        size = len(ui._pay_to_script_prefix)
-        script = network.script.for_p2sh(data[size:])
-        script_info = network.script_info_for_script(script)
-        return BitcoinishPayable(script_info, network)
+        size = len(self._ui._pay_to_script_prefix)
+        script = self._network.script.for_p2sh(data[size:])
+        script_info = self._network.script_info_for_script(script)
+        return BitcoinishPayable(script_info, self._network)
 
-    def parse_segwit(s, blob_len, segwit_attr):
-        script_f = getattr(network.script, segwit_attr, None)
+    def segwit(self, s, blob_len, segwit_attr):
+        script_f = getattr(self._network.script, segwit_attr, None)
         if script_f is None:
             return None
         pair = parse_bech32(s)
-        if pair is None or pair[0] != ui._bech32_hrp or pair[1] is None:
+        if pair is None or pair[0] != self._ui._bech32_hrp or pair[1] is None:
             return None
         data = pair[1]
         version_byte = int2byte(data[0])
@@ -271,24 +266,25 @@ def make_parse(network, ui):
         if version_byte != b'\0' or len(decoded_data) != blob_len:
             return None
         script = script_f(decoded_data)
-        script_info = network.script_info_for_script(script)
-        return BitcoinishPayable(script_info, network)
+        script_info = self._network.script_info_for_script(script)
+        return BitcoinishPayable(script_info, self._network)
 
-    def parse_p2pkh_segwit(s):
-        return parse_segwit(s, 20, "for_p2pkh_wit")
+    def p2pkh_segwit(self, s):
+        return self.segwit(s, 20, "for_p2pkh_wit")
 
-    def parse_p2sh_segwit(s):
-        return parse_segwit(s, 32, "for_p2sh_wit")
+    def p2sh_segwit(self, s):
+        return self.segwit(s, 32, "for_p2sh_wit")
 
-    def parse_script(s):
+    # payable (+ all address types)
+    def script(self, s):
         try:
-            script = network.script_tools.compile(s)
-            script_info = network.script_info_for_script(script)
-            return BitcoinishPayable(script_info, network)
+            script = self._network.script_tools.compile(s)
+            script_info = self._network.script_info_for_script(script)
+            return BitcoinishPayable(script_info, self._network)
         except Exception:
             return None
 
-    def parse_as_number(s):
+    def as_number(self, s):
         try:
             return int(s)
         except ValueError:
@@ -298,141 +294,202 @@ def make_parse(network, ui):
         except ValueError:
             pass
 
-    def parse_secret_exponent(s):
-        v = parse_as_number(s)
-        Key = network.Key
+    # private key
+    def wif(self, s):
+        data = parse_b58_double_sha256(s)
+        if data is None or not data.startswith(self._ui._wif_prefix):
+            return None
+        data = data[len(self._ui._wif_prefix):]
+        is_compressed = (len(data) > 32)
+        if is_compressed:
+            data = data[:-1]
+        se = from_bytes_32(data)
+        return self._network.Key(se, is_compressed=is_compressed)
+
+    def secret_exponent(self, s):
+        v = self.as_number(s)
+        Key = self._network.Key
         if v and 0 < v < Key._default_generator.order():
             return Key(secret_exponent=v)
 
-    def parse_public_pair(s):
+    # public key
+    def public_pair(self, s):
         point = None
-        Key = network.Key
+        Key = self._network.Key
         generator = Key._default_generator
         for c in ",/":
             if c in s:
                 s0, s1 = s.split(c, 1)
-                v0 = parse_as_number(s0)
+                v0 = self.as_number(s0)
                 if v0:
                     if s1 in ("even", "odd"):
                         is_y_odd = (s1 == "odd")
                         point = generator.points_for_x(v0)[is_y_odd]
-                    v1 = parse_as_number(s1)
+                    v1 = self.as_number(s1)
                     if v1:
                         if generator.contains_point(v0, v1):
                             point = generator.Point(v0, v1)
         if point:
             return Key(public_pair=point)
 
-    def parse_sec(s):
+    def sec(self, s):
         pair = parse_colon_prefix(s)
-        if pair is not None and pair[0] == ui._wif_prefix:
+        if pair is not None and pair[0] == self._ui._wif_prefix:
             s = pair[1]
         try:
             sec = h2b(s)
-            public_pair = sec_to_public_pair(sec, network.Key._default_generator)
+            public_pair = sec_to_public_pair(sec, self._network.Key._default_generator)
             is_compressed = is_sec_compressed(sec)
-            return network.Key(public_pair=public_pair, is_compressed=is_compressed)
+            return self._network.Key(public_pair=public_pair, is_compressed=is_compressed)
         except Exception:
             pass
 
-    def parse_address(s):
+    def address(self, s):
         s = parseable_str(s)
-        return parse_p2pkh(s) or parse_p2sh(s) or parse_p2pkh_segwit(s) or parse_p2sh_segwit(s)
+        return self.p2pkh(s) or self.p2sh(s) or self.p2pkh_segwit(s) or self.p2sh_segwit(s)
 
-    def parse_payable(s):
+    def payable(self, s):
         s = parseable_str(s)
-        return parse_address(s) or parse_script(s)
-
-    def parse_hierarchical_key(s):
-        s = parseable_str(s)
-        for f in [parse_bip32_seed, parse_bip32_prv, parse_bip32_pub,
-                  parse_electrum_seed, parse_electrum_prv, parse_electrum_pub]:
-            v = f(s)
-            if v:
-                return v
-
-    def parse_private_key(s):
-        s = parseable_str(s)
-        for f in [parse_wif, parse_secret_exponent]:
-            v = f(s)
-            if v:
-                return v
-
-    def parse_secret(s):
-        s = parseable_str(s)
-        for f in [parse_private_key, parse_hierarchical_key]:
-            v = f(s)
-            if v:
-                return v
-
-    def parse_public_key(s):
-        s = parseable_str(s)
-        for f in [parse_public_pair, parse_sec]:
-            v = f(s)
-            if v:
-                return v
-
-    def parse_input(s):
-        # BRAIN DAMAGE: todo
-        return None
-
-    def parse_tx(s):
-        return None
-
-    def parse(s):
-        s = parseable_str(s)
-        return (parse_payable(s) or
-                parse_input(s) or
-                parse_secret(s) or
-                parse_tx(s))
-
-    # hierarchical key
-    parse.bip32_seed = parse_bip32_seed
-    parse.bip32_prv = parse_bip32_prv
-    parse.bip32_pub = parse_bip32_pub
-    parse.electrum_seed = parse_electrum_seed
-    parse.electrum_prv = parse_electrum_prv
-    parse.electrum_pub = parse_electrum_pub
-
-    # private key
-    parse.wif = parse_wif
-    parse.secret_exponent = parse_secret_exponent
-    parse.secret = parse_secret
-
-    # public key
-    parse.public_pair = parse_public_pair
-    parse.sec = parse_sec
-
-    # address
-    parse.p2pkh = parse_p2pkh
-    parse.p2sh = parse_p2sh
-    parse.p2pkh_segwit = parse_p2pkh_segwit
-    parse.p2sh_segwit = parse_p2sh_segwit
-
-    # payable (+ all address types)
-    parse.script = parse_script
-
-    #parse.spendable = parse_spendable
-    #parse.script_preimage = parse_script_preimage
+        return self.address(s) or self.script(s)
 
     # semantic items
-    parse.hierarchical_key = parse_hierarchical_key
-    parse.private_key = parse_private_key
-    parse.public_key = parse_public_key
-    parse.address = parse_address
-    parse.payable = parse_payable
-    parse.input = parse_input
-    parse.tx = parse_tx
+    def hierarchical_key(self, s):
+        s = parseable_str(s)
+        for f in [self.bip32_seed, self.bip32_prv, self.bip32_pub,
+                  self.electrum_seed, self.electrum_prv, self.electrum_pub]:
+            v = f(s)
+            if v:
+                return v
 
-    return parse
+    def private_key(self, s):
+        s = parseable_str(s)
+        for f in [self.wif, self.secret_exponent]:
+            v = f(s)
+            if v:
+                return v
+
+    def secret(self, s):
+        s = parseable_str(s)
+        for f in [self.private_key, self.hierarchical_key]:
+            v = f(s)
+            if v:
+                return v
+
+    def public_key(self, s):
+        s = parseable_str(s)
+        for f in [self.public_pair, self.sec]:
+            v = f(s)
+            if v:
+                return v
+
+    def input(self, s):
+        # BRAIN DAMAGE: TODO
+        return None
+
+    def tx(self, s):
+        # BRAIN DAMAGE: TODO
+        return None
+
+    def spendable(self, s):
+        # BRAIN DAMAGE: TODO
+        return None
+
+    def script_preimage(self, s):
+        # BRAIN DAMAGE: TODO
+        return None
+
+    def __call__(self, s):
+        s = parseable_str(s)
+        return (self.payable(s) or
+                self.input(s) or
+                self.secret(s) or
+                self.tx(s))
 
 
 class AddressAPI(object):
-    pass
+
+    def __init__(self, ui, canonical_scripts):
+        self._ui = ui
+        self._canonical_scripts = canonical_scripts
+
+    def address_for_script(self, script):
+        info = self._canonical_scripts.info_for_script(script)
+        return self._ui.address_for_script_info(info)
+
+    def for_script_info(self, s):
+        return self._ui.address_for_script_info(s)
+
+    def for_script(self, s):
+        return self.address_for_script(s)
+
+    def for_p2s(self, s):
+        return self._ui.address_for_p2s(s)
+
+    def for_p2sh(self, s):
+        return self._ui.address_for_p2sh(s)
+
+    def for_p2pkh(self, s):
+        return self._ui.address_for_p2pkh(s)
+
+    def for_p2s_wit(self, s):
+        if self._ui._bech32_hrp:
+            return self._ui.address_for_p2s_wit(s)
+
+    def for_p2sh_wit(self, s):
+        if self._ui._bech32_hrp:
+            return self._ui.address_for_p2sh_wit(s)
+
+    def for_p2pkh_wit(self, s):
+        if self._ui._bech32_hrp:
+            return self._ui.address_for_p2pkh_wit(s)
 
 
 class ScriptAPI(object):
-    pass
+    def __init__(self, network, canonical_scripts, ui):
+        self._network = network
+        self._canonical_scripts = canonical_scripts
+        self._ui = ui
+
+    def for_address(self, address):
+        info = self._network.parse.address(address)
+        if info:
+            return info.script()
+
+    def for_multisig(self, m, sec_keys):
+        return self._canonical_scripts.script_for_multisig(m, sec_keys)
+
+    def for_nulldata(self, s):
+        return self._canonical_scripts.script_for_nulldata(s)
+
+    def for_nulldata_push(self, s):
+        return self._canonical_scripts.script_for_nulldata_push(s)
+
+    def for_p2pk(self, s):
+        return self._canonical_scripts.script_for_p2pk(s)
+
+    def for_p2pkh(self, s):
+        return self._canonical_scripts.script_for_p2pkh(s)
+
+    def for_p2sh(self, s):
+        return self._canonical_scripts.script_for_p2sh(s)
+
+    def for_p2s(self, s):
+        return self._canonical_scripts.script_for_p2s(s)
+
+    def for_p2pkh_wit(self, s):
+        if self._ui._bech32_hrp:
+            return self._canonical_scripts.script_for_p2pkh_wit(s)
+
+    def for_p2s_wit(self, s):
+        if self._ui._bech32_hrp:
+            return self._canonical_scripts.script_for_p2s_wit(s)
+
+    def for_p2sh_wit(self, s):
+        if self._ui._bech32_hrp:
+            return self._canonical_scripts.script_for_p2sh_wit(s)
+
+    def for_info(self, s):
+        return self._canonical_scripts.script_for_info(s)
 
 
 def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
@@ -453,7 +510,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
             kwargs[k] = h2b(kwargs[k_hex])
 
     network.script_tools = kwargs.get("scriptTools", BitcoinScriptTools)
-    script_info = CanonicalScript(network.script_tools)
+    canonical_scripts = CanonicalScript(network.script_tools)
 
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
@@ -481,45 +538,14 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.output_for_secret_exponent = make_output_for_secret_exponent(network.Key)
     network.output_for_public_pair = make_output_for_public_pair(network.Key, network)
     network.Keychain = Keychain
-    network.parse = make_parse(network, ui)
 
-    def address_for_script(script):
-        info = script_info.info_for_script(script)
-        return ui.address_for_script_info(info)
+    network.parse = ParseAPI(network, ui)
 
-    network.address = AddressAPI()
-    network.address.for_script = address_for_script
-    network.address.for_p2s = ui.address_for_p2s
-    network.address.for_p2sh = ui.address_for_p2sh
-    network.address.for_p2pkh = ui.address_for_p2pkh
-    network.address.for_script_info = ui.address_for_script_info
-    if ui._bech32_hrp:
-        network.address.for_p2s_wit = ui.address_for_p2s_wit
-        network.address.for_p2sh_wit = ui.address_for_p2sh_wit
-        network.address.for_p2pkh_wit = ui.address_for_p2pkh_wit
+    network.address = AddressAPI(ui, canonical_scripts)
 
-    network.script = ScriptAPI()
+    network.script = ScriptAPI(network, canonical_scripts, ui)
 
-    def script_for_address(x):
-        return network.parse.address(x).script()
-
-    network.script.for_address = script_for_address
-
-    network.script.for_multisig = script_info.script_for_multisig
-    network.script.for_nulldata = script_info.script_for_nulldata
-    network.script.for_nulldata_push = script_info.script_for_nulldata_push
-    network.script.for_p2pk = script_info.script_for_p2pk
-    network.script.for_p2pkh = script_info.script_for_p2pkh
-    network.script.for_p2sh = script_info.script_for_p2sh
-    network.script.for_p2s = script_info.script_for_p2s
-    if ui._bech32_hrp:
-        network.script.for_p2pkh_wit = script_info.script_for_p2pkh_wit
-        network.script.for_p2s_wit = script_info.script_for_p2s_wit
-        network.script.for_p2sh_wit = script_info.script_for_p2sh_wit
-
-    network.script.for_info = script_info.script_for_info
-
-    network.script_info_for_script = script_info.info_for_script
+    network.script_info_for_script = canonical_scripts.info_for_script
 
     network.bip32_as_string = ui.bip32_as_string
     network.sec_text_for_blob = ui.sec_text_for_blob

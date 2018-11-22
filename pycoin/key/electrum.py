@@ -21,12 +21,11 @@ def initial_key_to_master_key(initial_key):
 
 
 class ElectrumWallet(Key):
-    def __init__(self, generator, initial_key=None, master_private_key=None, public_pair=None, master_public_key=None):
+    def __init__(self, generator=None, initial_key=None, master_private_key=None, public_pair=None, master_public_key=None):
         if [initial_key, public_pair, master_private_key, master_public_key].count(None) != 3:
             raise ValueError(
                 "exactly one of initial_key, master_private_key, master_public_key must be non-None")
         self._initial_key = initial_key
-        self._generator = generator
 
         if initial_key is not None:
             master_private_key = initial_key_to_master_key(initial_key)
