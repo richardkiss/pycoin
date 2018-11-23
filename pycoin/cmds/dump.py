@@ -85,7 +85,7 @@ def dump_disassembly(output, tx, tx_in_idx, annotate):
 
 def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
     sc = tx.SolutionChecker(tx)
-    signatures = [parse_signature_blob(blob) for blob, sig_hash in network.extras.extract_signatures(tx, idx)]
+    signatures = [parse_signature_blob(blob) for blob, sig_hash in network.who_signed.extract_signatures(tx, idx)]
     if signatures:
         sig_types_identical = (
             tuple(zip(*signatures))[1].count(signatures[0][1]) == len(signatures))

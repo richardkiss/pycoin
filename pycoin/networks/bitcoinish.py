@@ -22,16 +22,6 @@ from pycoin.vm.annotate import Annotate
 from pycoin.vm.CanonicalScript import CanonicalScript
 
 
-class Extras(object):
-    def __init__(self, network):
-        who_signed = WhoSigned(network.script_tools, network.address, network.Key._default_generator)
-        self.who_signed_tx = who_signed.who_signed_tx
-        self.public_pairs_signed = who_signed.public_pairs_signed
-        self.extract_secs = who_signed.extract_secs
-        self.extract_signatures = who_signed.extract_signatures
-        self.public_pairs_for_script = who_signed.public_pairs_for_script
-
-
 class Network(object):
     def __init__(self, symbol, network_name, subnet_name):
         self.symbol = symbol
@@ -548,8 +538,9 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.sec_text_for_blob = ui.sec_text_for_blob
     network.wif_for_blob = ui.wif_for_blob
 
-    network.extras = Extras(network)
-
     network.annotate = Annotate(network.script_tools, network.address)
+
+    network.who_signed = WhoSigned(
+        network.script_tools, network.address, network.Key._default_generator)
 
     return network

@@ -8,7 +8,7 @@ from pycoin.symbols.btc import network
 
 
 # BRAIN DAMAGE
-who_signed_tx = network.extras.who_signed_tx
+who_signed_tx = network.who_signed.who_signed_tx
 script_for_address = network.script.for_address
 script_for_multisig = network.script.for_multisig
 Key = network.Key

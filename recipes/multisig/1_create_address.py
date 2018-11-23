@@ -9,7 +9,7 @@ import sys
 from pycoin.encoding.hexbytes import b2h
 from pycoin.symbols.btc import network
 
-BIP32Node = network.extras.BIP32Node
+BIP32Node = network.BIP32Node
 
 
 def main():
