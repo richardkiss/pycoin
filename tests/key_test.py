@@ -1,10 +1,12 @@
 import unittest
 
+from pycoin.ecdsa.secp256r1 import secp256r1_generator
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.btc import network as BitcoinMainnet
 from pycoin.ui.key_from_text import key_from_text
 
+from pycoin.key.Key import InvalidPublicPairError
 
 # BRAIN DAMAGE
 Key = BitcoinMainnet.ui._key_class
@@ -21,6 +23,42 @@ class KeyTest(unittest.TestCase):
         self.assertTrue(public_key.verify(h, sig))
         h160_key = Key(hash160=private_key.hash160())
         self.assertTrue(h160_key.verify(h, sig))
+
+    def test_load_from_wrong_curve(self):
+        privkey = Key(1, generator=secp256r1_generator)
+        h = b"\x00" * 32
+        sig = privkey.sign(h)
+
+        pubkey_right = Key(public_pair=privkey.public_pair(), generator=secp256r1_generator)
+        self.assertRaises(InvalidPublicPairError, lambda: Key(public_pair=privkey.public_pair(), generator=secp256k1_generator))
+
+    def test_verify_from_sec(self):
+        """
+        Make sure a key loaded with from_sec() is still usable.
+        test_translation() half tests this; it does not try to do crypto with the loaded keys.
+        """
+        # Due to BRAIN DAMAGE noted above
+        # these tests accidentally ignore some problems, like forgetting
+        # to copy the ECDSA curve when changing formats. By using the
+        # Bitcoin Key class the secp256k1 curve is filled in everywhere
+        # and that type of bug will not be caught.
+        #
+        # The full solution is to NOT use the BRAIN DAMAGE and
+        # rewrite all the tests to test the plain Key class.
+        # A quicker patch would be to
+        # > from pycoin.key.Key import Key
+        # Even quicker patch, and sufficient for now, is to just
+        # force a different ECDSA curve:
+
+        privkey = Key(1, generator=secp256r1_generator)
+        h = b"\x00" * 32
+        sig = privkey.sign(h)
+
+        pubkey_sec = privkey.sec() # .sec() implicitly takes the public copy. the sec format for private keys is too trivial to implement, I guess?
+        # now reload the key as a pubkey
+        pubkey = Key.from_sec(pubkey_sec, generator=secp256r1_generator)
+
+        self.assertTrue(pubkey.verify(h, sig)) # -> fails with ValueError: generator must be specified
 
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
