@@ -86,7 +86,7 @@ class Key(object):
         """
         generator = generator or class_._default_generator
         public_pair = sec_to_public_pair(sec, generator)
-        return class_(public_pair=public_pair, is_compressed=is_sec_compressed(sec))
+        return class_(public_pair=public_pair, generator=generator, is_compressed=is_sec_compressed(sec))
 
     def is_private(self):
         return self.secret_exponent() is not None
