@@ -1,13 +1,14 @@
 import io
 
 from .hash import sha256
+from pycoin.coins.bitcoin.SegwitChecker import ZERO32
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
+from pycoin.encoding.bytes32 import from_bytes_32
 
 from pycoin.satoshi.satoshi_struct import stream_struct
 
 from pycoin.satoshi.flags import (
     SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
-    VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM, VERIFY_CLEANSTACK, VERIFY_WITNESS
 )
 
 

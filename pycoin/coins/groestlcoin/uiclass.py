@@ -3,8 +3,10 @@ from pycoin.encoding.b58 import b2a_base58
 
 from .hash import groestlHash
 
+
 def b2a_hashed_base58_grs(data):
     return b2a_base58(data + groestlHash(data)[:4])
+
 
 class GroestlcoinUI(UI):
     """Groestlcoin UI subclass."""
