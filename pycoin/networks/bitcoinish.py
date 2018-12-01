@@ -149,7 +149,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
-    ui = UI(generator, **ui_kwargs)
+    ui_class = kwargs.get("ui_class", UI)
+    ui = ui_class(generator, **ui_kwargs)
 
     network.Key = Key.make_subclass(network=network, generator=generator)
     network.ElectrumKey = ElectrumWallet.make_subclass(network=network, generator=generator)
