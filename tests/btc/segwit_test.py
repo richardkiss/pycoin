@@ -14,8 +14,8 @@ from pycoin.symbols.btc import network
 Key = network.Key
 Tx = network.tx
 TxOut = network.tx.TxOut
-script_for_p2pkh = network.script_info.script_for_p2pkh
-script_for_p2pkh_wit = network.script_info.script_for_p2pkh_wit
+script_for_p2pkh = network.script.for_p2pkh
+script_for_p2pkh_wit = network.script.for_p2pkh_wit
 
 
 class SegwitTest(unittest.TestCase):
@@ -148,7 +148,7 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(b2h(sc._hash_outputs(SIGHASH_ALL, 0)),
                          "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
 
-        script = network.script_info.script_for_p2pkh(tx_s1.unspents[1].script[2:])
+        script = network.script.for_p2pkh(tx_s1.unspents[1].script[2:])
         self.assertEqual(
             b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
             "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd"

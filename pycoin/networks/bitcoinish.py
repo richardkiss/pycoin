@@ -3,7 +3,6 @@ from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.encoding.sec import is_sec_compressed, sec_to_public_pair
 from pycoin.key.Keychain import Keychain
 from pycoin.key.Key import Key
 from pycoin.key.BIP32Node import BIP32Node
@@ -15,18 +14,11 @@ from pycoin.message.make_parser_and_packer import (
 from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.ui.uiclass import UI
 from pycoin.vm.annotate import Annotate
-from pycoin.vm.ScriptInfo import ScriptInfo
+from pycoin.vm.CanonicalScript import CanonicalScript
 
-
-class Extras(object):
-    def __init__(self, network):
-        self.annotate = Annotate(network.script_tools, network.address)
-        who_signed = WhoSigned(network.script_tools, network.address, network.Key._default_generator)
-        self.who_signed_tx = who_signed.who_signed_tx
-        self.public_pairs_signed = who_signed.public_pairs_signed
-        self.extract_secs = who_signed.extract_secs
-        self.extract_signatures = who_signed.extract_signatures
-        self.public_pairs_for_script = who_signed.public_pairs_for_script
+from .AddressAPI import AddressAPI
+from .ParseAPI import ParseAPI
+from .ScriptAPI import ScriptAPI
 
 
 class Network(object):
@@ -93,7 +85,6 @@ def make_output_for_public_pair(Key, network):
         yield ("key_pair_as_sec", b2h(key.sec(use_uncompressed=False)), None)
         yield ("key_pair_as_sec_uncompressed", b2h(key.sec(use_uncompressed=True)), " uncompressed")
 
-        ui_context = network._ui
         network_name = network.network_name
         hash160_c = key.hash160(use_uncompressed=False)
         hash160_u = key.hash160(use_uncompressed=True)
@@ -106,7 +97,7 @@ def make_output_for_public_pair(Key, network):
         if hash160_c and hash160_u:
             yield ("hash160_uncompressed", b2h(hash160_u), " uncompressed")
 
-        address = ui_context.address_for_p2pkh(hash160 or hash160_c)
+        address = network.address.for_p2pkh(hash160 or hash160_c)
         yield ("address", address, "%s address" % network_name)
         yield ("%s_address" % network.symbol, address, "legacy")
 
@@ -116,15 +107,15 @@ def make_output_for_public_pair(Key, network):
             yield ("%s_address_uncompressed" % network.symbol, address, "legacy")
 
         # don't print segwit addresses unless we're sure we have a compressed key
-        if hash160_c and hasattr(network, "_ui") and getattr(network._ui, "_bech32_hrp"):
-            address_segwit = network._ui.address_for_p2pkh_wit(hash160_c)
+        if hash160_c and hasattr(network.address, "for_p2pkh_wit"):
+            address_segwit = network.address.for_p2pkh_wit(hash160_c)
             if address_segwit:
                 # this network seems to support segwit
                 yield ("address_segwit", address_segwit, "%s segwit address" % network_name)
                 yield ("%s_address_segwit" % network.symbol, address_segwit, "legacy")
 
-                p2sh_script = network.script_info.script_for_p2pkh_wit(hash160_c)
-                p2s_address = network._ui.address_for_p2s(p2sh_script)
+                p2sh_script = network.script.for_p2pkh_wit(hash160_c)
+                p2s_address = network.address.for_p2s(p2sh_script)
                 if p2s_address:
                     yield ("p2sh_segwit", p2s_address, None)
 
@@ -132,305 +123,6 @@ def make_output_for_public_pair(Key, network):
                 yield ("p2sh_segwit_script", p2sh_script_hex, " corresponding p2sh script")
 
     return f
-
-
-class BitcoinishPayable(object):
-    def __init__(self, script_info, network):
-        self._script_info = script_info
-        self._network = network
-
-    def info(self):
-        return self._script_info
-
-    def hash160(self):
-        return self._script_info.get("hash160")
-
-    def address(self):
-        return self._network.address.for_script_info(self._script_info)
-
-    def script(self):
-        return self._network.script_info.script_for_info(self._script_info)
-
-    def disassemble(self):
-        return self._network.script_tools.disassemble(self.script())
-
-    def output(self):
-        hash160 = self._script_info.get("hash160", None)
-        if hash160:
-            yield ("hash160", b2h(hash160), None)
-
-        address = self.address()
-        yield ("address", address, "%s address" % self._network.network_name)
-        yield ("%s_address" % self._network.symbol, address, "legacy")
-
-    def __repr__(self):
-        return "<%s>" % self.address()
-
-
-def make_parse(network):
-
-    from pycoin.contrib import segwit_addr
-    from pycoin.encoding.bytes32 import from_bytes_32
-    from pycoin.intbytes import int2byte
-    from pycoin.ui.Parser import parse_b58_double_sha256, parse_bech32, parse_colon_prefix, parseable_str
-
-    def parse_wif(s):
-        data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(network._ui._wif_prefix):
-            return None
-        data = data[len(network._ui._wif_prefix):]
-        is_compressed = (len(data) > 32)
-        if is_compressed:
-            data = data[:-1]
-        se = from_bytes_32(data)
-        return network.Key(se, is_compressed=is_compressed)
-
-    def parse_bip32_prv(s):
-        data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(network._ui._bip32_prv_prefix):
-            return None
-        return network.BIP32Node.deserialize(data)
-
-    def parse_bip32_pub(s):
-        data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(network._ui._bip32_pub_prefix):
-            return None
-        return network.BIP32Node.deserialize(data)
-
-    def parse_bip32_seed(s):
-        pair = parse_colon_prefix(s)
-        if pair is None or pair[0] not in "HP":
-            return None
-        if pair[0] == "H":
-            try:
-                master_secret = h2b(pair[1])
-            except ValueError:
-                return None
-        else:
-            master_secret = pair[1].encode("utf8")
-        return network.BIP32Node.from_master_secret(master_secret)
-
-    def parse_electrum_to_blob(s):
-        pair = parse_colon_prefix(s)
-        if pair is None or pair[0] != "E":
-            return None
-        try:
-            return h2b(pair[1])
-        except ValueError:
-            return None
-
-    def parse_electrum_seed(s):
-        blob = parse_electrum_to_blob(s)
-        if blob and len(blob) == 16:
-            blob = b2h(blob)
-            return network.ElectrumKey(
-                generator=network.Key._default_generator, initial_key=blob)
-
-    def parse_electrum_prv(s):
-        blob = parse_electrum_to_blob(s)
-        if blob and len(blob) == 32:
-            mpk = from_bytes_32(blob)
-            return network.ElectrumKey(
-                generator=network.Key._default_generator, master_private_key=mpk)
-
-    def parse_electrum_pub(s):
-        blob = parse_electrum_to_blob(s)
-        if blob and len(blob) == 64:
-            return network.ElectrumKey(
-                generator=network.Key._default_generator, master_public_key=blob)
-
-    def parse_p2pkh(s):
-        data = parse_b58_double_sha256(s)
-        if data is None or not data.startswith(network._ui._address_prefix):
-            return None
-        size = len(network._ui._address_prefix)
-        script = network.script_info.script_for_p2pkh(data[size:])
-        script_info = network.script_info.info_for_script(script)
-        return BitcoinishPayable(script_info, network)
-
-    def parse_p2sh(s):
-        data = parse_b58_double_sha256(s)
-        if (None in (data, network._ui._pay_to_script_prefix) or
-                not data.startswith(network._ui._pay_to_script_prefix)):
-            return None
-        size = len(network._ui._pay_to_script_prefix)
-        script = network.script_info.script_for_p2sh(data[size:])
-        script_info = network.script_info.info_for_script(script)
-        return BitcoinishPayable(script_info, network)
-
-    def parse_segwit(s, blob_len, script_f):
-        pair = parse_bech32(s)
-        if pair is None or pair[0] != network._ui._bech32_hrp or pair[1] is None:
-            return None
-        data = pair[1]
-        version_byte = int2byte(data[0])
-        decoded = segwit_addr.convertbits(data[1:], 5, 8, False)
-        decoded_data = b''.join(int2byte(d) for d in decoded)
-        if version_byte != b'\0' or len(decoded_data) != blob_len:
-            return None
-        script = script_f(decoded_data)
-        script_info = network.script_info.info_for_script(script)
-        return BitcoinishPayable(script_info, network)
-
-    def parse_p2pkh_segwit(s):
-        return parse_segwit(s, 20, network.script_info.script_for_p2pkh_wit)
-
-    def parse_p2sh_segwit(s):
-        return parse_segwit(s, 32, network.script_info.script_for_p2sh_wit)
-
-    def parse_script(s):
-        try:
-            script = network.script_tools.compile(s)
-            script_info = network.script_info.info_for_script(script)
-            return BitcoinishPayable(script_info, network)
-        except Exception:
-            return None
-
-    def parse_as_number(s):
-        try:
-            return int(s)
-        except ValueError:
-            pass
-        try:
-            return int(s, 16)
-        except ValueError:
-            pass
-
-    def parse_secret_exponent(s):
-        v = parse_as_number(s)
-        Key = network.Key
-        if v and 0 < v < Key._default_generator.order():
-            return Key(secret_exponent=v)
-
-    def parse_public_pair(s):
-        point = None
-        Key = network.Key
-        generator = Key._default_generator
-        for c in ",/":
-            if c in s:
-                s0, s1 = s.split(c, 1)
-                v0 = parse_as_number(s0)
-                if v0:
-                    if s1 in ("even", "odd"):
-                        is_y_odd = (s1 == "odd")
-                        point = generator.points_for_x(v0)[is_y_odd]
-                    v1 = parse_as_number(s1)
-                    if v1:
-                        if generator.contains_point(v0, v1):
-                            point = generator.Point(v0, v1)
-        if point:
-            return Key(public_pair=point)
-
-    def parse_sec(s):
-        pair = parse_colon_prefix(s)
-        if pair is not None and pair[0] == network._ui._wif_prefix:
-            s = pair[1]
-        try:
-            sec = h2b(s)
-            public_pair = sec_to_public_pair(sec, network.Key._default_generator)
-            is_compressed = is_sec_compressed(sec)
-            return network.Key(public_pair=public_pair, is_compressed=is_compressed)
-        except Exception:
-            pass
-
-    def parse_address(s):
-        s = parseable_str(s)
-        return parse_p2pkh(s) or parse_p2sh(s) or parse_p2pkh_segwit(s) or parse_p2sh_segwit(s)
-
-    def parse_payable(s):
-        s = parseable_str(s)
-        return parse_address(s) or parse_script(s)
-
-    def parse_hierarchical_key(s):
-        s = parseable_str(s)
-        for f in [parse_bip32_seed, parse_bip32_prv, parse_bip32_pub,
-                  parse_electrum_seed, parse_electrum_prv, parse_electrum_pub]:
-            v = f(s)
-            if v:
-                return v
-
-    def parse_private_key(s):
-        s = parseable_str(s)
-        for f in [parse_wif, parse_secret_exponent]:
-            v = f(s)
-            if v:
-                return v
-
-    def parse_secret(s):
-        s = parseable_str(s)
-        for f in [parse_private_key, parse_hierarchical_key]:
-            v = f(s)
-            if v:
-                return v
-
-    def parse_public_key(s):
-        s = parseable_str(s)
-        for f in [parse_public_pair, parse_sec]:
-            v = f(s)
-            if v:
-                return v
-
-    def parse_input(s):
-        # BRAIN DAMAGE: todo
-        return None
-
-    def parse_tx(s):
-        return None
-
-    def parse(s):
-        s = parseable_str(s)
-        return (parse_payable(s) or
-                parse_input(s) or
-                parse_secret(s) or
-                parse_tx(s))
-
-    # hierarchical key
-    parse.bip32_seed = parse_bip32_seed
-    parse.bip32_prv = parse_bip32_prv
-    parse.bip32_pub = parse_bip32_pub
-    parse.electrum_seed = parse_electrum_seed
-    parse.electrum_prv = parse_electrum_prv
-    parse.electrum_pub = parse_electrum_pub
-
-    # private key
-    parse.wif = parse_wif
-    parse.secret_exponent = parse_secret_exponent
-    parse.secret = parse_secret
-
-    # public key
-    parse.public_pair = parse_public_pair
-    parse.sec = parse_sec
-
-    # address
-    parse.p2pkh = parse_p2pkh
-    parse.p2sh = parse_p2sh
-    parse.p2pkh_segwit = parse_p2pkh_segwit
-    parse.p2sh_segwit = parse_p2sh_segwit
-
-    # payable (+ all address types)
-    parse.script = parse_script
-
-    #parse.spendable = parse_spendable
-    #parse.script_preimage = parse_script_preimage
-
-    # semantic items
-    parse.hierarchical_key = parse_hierarchical_key
-    parse.private_key = parse_private_key
-    parse.public_key = parse_public_key
-    parse.address = parse_address
-    parse.payable = parse_payable
-    parse.input = parse_input
-    parse.tx = parse_tx
-
-    return parse
-
-
-class AddressAPI(object):
-    pass
-
-
-class ScriptAPI(object):
-    pass
 
 
 def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
@@ -451,19 +143,18 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
             kwargs[k] = h2b(kwargs[k_hex])
 
     network.script_tools = kwargs.get("scriptTools", BitcoinScriptTools)
-    network.script_info = ScriptInfo(network.script_tools)
+    canonical_scripts = CanonicalScript(network.script_tools)
 
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
     ui_class = kwargs.get("ui_class", UI)
-    ui = ui_class(network.script_info, generator, **ui_kwargs)
-    network._ui = ui
+    ui = ui_class(generator, **ui_kwargs)
 
-    network.Key = Key.make_subclass(ui_context=ui, generator=generator)
-    network.ElectrumKey = ElectrumWallet.make_subclass(ui_context=ui, generator=generator)
-    network.BIP32Node = BIP32Node.make_subclass(ui_context=ui, generator=generator)
+    network.Key = Key.make_subclass(network=network, generator=generator)
+    network.ElectrumKey = ElectrumWallet.make_subclass(network=network, generator=generator)
+    network.BIP32Node = BIP32Node.make_subclass(network=network, generator=generator)
 
     NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
     for k in NETWORK_KEYS:
@@ -481,24 +172,23 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.output_for_secret_exponent = make_output_for_secret_exponent(network.Key)
     network.output_for_public_pair = make_output_for_public_pair(network.Key, network)
     network.Keychain = Keychain
-    network.parse = make_parse(network)
 
-    network.address = AddressAPI()
-    network.address.for_script = ui.address_for_script
-    network.address.for_p2s = ui.address_for_p2s
-    network.address.for_p2sh = ui.address_for_p2sh
-    network.address.for_p2pkh = ui.address_for_p2pkh
-    network.address.for_p2s_wit = ui.address_for_p2s_wit
-    network.address.for_p2sh_wit = ui.address_for_p2sh_wit
-    network.address.for_script_info = ui.address_for_script_info
+    parse_api_class = kwargs.get("parse_api_class", ParseAPI)
+    network.parse = parse_api_class(network, ui)
 
-    network.script = ScriptAPI()
+    network.address = AddressAPI(canonical_scripts, ui)
 
-    def script_for_address(x):
-        return network.parse.address(x).script()
+    network.script = ScriptAPI(network, canonical_scripts, ui)
 
-    network.script.for_address = script_for_address
+    network.script_info_for_script = canonical_scripts.info_for_script
 
-    network.extras = Extras(network)
+    network.bip32_as_string = ui.bip32_as_string
+    network.sec_text_for_blob = ui.sec_text_for_blob
+    network.wif_for_blob = ui.wif_for_blob
+
+    network.annotate = Annotate(network.script_tools, network.address)
+
+    network.who_signed = WhoSigned(
+        network.script_tools, network.address, network.Key._default_generator)
 
     return network

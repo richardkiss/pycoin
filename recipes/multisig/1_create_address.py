@@ -9,7 +9,7 @@ import sys
 from pycoin.encoding.hexbytes import b2h
 from pycoin.symbols.btc import network
 
-BIP32Node = network.extras.BIP32Node
+BIP32Node = network.BIP32Node
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
 
     # create the 2-of-3 multisig script
     # any 2 signatures can release the funds
-    pay_to_multisig_script = network.ui._script_info.script_for_multisig(2, public_key_sec_list)
+    pay_to_multisig_script = network.script.for_multisig(2, public_key_sec_list)
 
     # create a "2-of-3" multisig address_for_multisig
     the_address = network.ui.address_for_p2s(pay_to_multisig_script)

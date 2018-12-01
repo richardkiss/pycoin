@@ -8,15 +8,15 @@ from pycoin.symbols.grs import network as GroestlcoinMainnet
 class GroestlcoinEncodingTestCase(unittest.TestCase):
     def test_p2pkh(self):
         def do_test(h160, address):
-            self.assertEqual(GroestlcoinMainnet._ui.address_for_p2pkh(h160), address)
+            self.assertEqual(GroestlcoinMainnet.address.for_p2pkh(h160), address)
             self.assertEqual(GroestlcoinMainnet.parse.p2pkh(address).address(), address)
 
         do_test(h2b('0000000000000000000000000000000000000000'), 'FVAiSujNZVgYSc27t6zUTWoKfAGxer42D4')
 
     def test_p2sh(self):
         def do_test(h160, redeem_script, address):
-            self.assertEqual(GroestlcoinMainnet.script_info.script_for_p2sh(h160), redeem_script)
-            self.assertEqual(GroestlcoinMainnet._ui.address_for_p2sh(h160), address)
+            self.assertEqual(GroestlcoinMainnet.script.for_p2sh(h160), redeem_script)
+            self.assertEqual(GroestlcoinMainnet.address.for_p2sh(h160), address)
             self.assertEqual(GroestlcoinMainnet.parse.p2sh(address).address(), address)
 
         do_test(h2b('2a84cf00d47f699ee7bbc1dea5ec1bdecb4ac154'), h2b('a9142a84cf00d47f699ee7bbc1dea5ec1bdecb4ac15487'), '35ZqQJcBQMZ1rsv8aSuJ2wkC7ohUFNJZ77')

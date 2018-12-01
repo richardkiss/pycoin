@@ -9,9 +9,9 @@ def make_tests_for_netcode(netcode):
     network = network_for_netcode(netcode)
 
     address_for_script = network.address.for_script
-    script_for_p2pkh = network.script_info.script_for_p2pkh
-    script_for_p2pk = network.script_info.script_for_p2pk
-    script_for_nulldata = network.script_info.script_for_nulldata
+    script_for_p2pkh = network.script.for_p2pkh
+    script_for_p2pk = network.script.for_p2pk
+    script_for_nulldata = network.script.for_nulldata
 
     Tx = network.tx
     Key = network.Key

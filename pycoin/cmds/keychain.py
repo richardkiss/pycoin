@@ -20,7 +20,7 @@ def create_parser():
             'Cache look-up information into a Keychain for use with tx. '
             'Useful for hiearchical keys with many children.'),
         epilog=('Known networks codes:\n  ' +
-              ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
+                ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
     )
     parser.add_argument('-n', "--netcode", help='specify network by netcode', choices=codes, default="BTC")
     parser.add_argument('-m', "--multisig", metavar="sigcount", type=int,
@@ -53,11 +53,10 @@ def keychain(args, parser):
 
     total_paths = 0
 
-    script_for_multisig = network.script_info.script_for_multisig
     for path in subpaths_for_path_range(subkey_paths):
         if m:
             secs = sorted([_.subkey_for_path(path).sec() for _ in keys])
-            script = script_for_multisig(m, secs)
+            script = network.script.for_multisig(m, secs)
             keychain.add_p2s_script(script)
             print(network.ui.address_for_p2s(script))
         total_paths += keychain.add_keys_path(keys, path)

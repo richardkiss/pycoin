@@ -56,7 +56,7 @@ def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly
         suffix = ""
         if tx.missing_unspent(idx):
             tx_out = None
-            address = tx_in.address(ui_context=network._ui)
+            address = tx_in.address(address_api=network.address)
         else:
             tx_out = tx.unspents[idx]
             sig_result = " sig ok" if tx.is_solution_ok(idx, traceback_f=traceback_f) else " BAD SIG"
@@ -66,7 +66,7 @@ def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly
                                           tx_in.previous_index, suffix)
         output.append(t.rstrip())
         if disassembly_level > 0:
-            dump_disassembly(output, tx, idx, network.extras.annotate)
+            dump_disassembly(output, tx, idx, network.annotate)
 
         if verbose_signature:
             dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f)
@@ -85,7 +85,7 @@ def dump_disassembly(output, tx, tx_in_idx, annotate):
 
 def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
     sc = tx.SolutionChecker(tx)
-    signatures = [parse_signature_blob(blob) for blob, sig_hash in network.extras.extract_signatures(tx, idx)]
+    signatures = [parse_signature_blob(blob) for blob, sig_hash in network.who_signed.extract_signatures(tx, idx)]
     if signatures:
         sig_types_identical = (
             tuple(zip(*signatures))[1].count(signatures[0][1]) == len(signatures))
@@ -94,12 +94,12 @@ def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
             output.append("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
                 output.append("      z{}: {:#x} {}".format(i, sc._signature_hash(tx_out.script, idx, sig_type),
-                              network.extras.annotate.sighash_type_to_string(sig_type)))
+                              network.annotate.sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:
             output.append("      z:{} {:#x} {}".format(' ' if i else '', sc._signature_hash(
-                tx_out.script, idx, sig_type), network.extras.annotate.sighash_type_to_string(sig_type)))
+                tx_out.script, idx, sig_type), network.annotate.sighash_type_to_string(sig_type)))
 
 
 def dump_footer(network, output, tx, missing_unspents):
@@ -126,7 +126,7 @@ def dump_tx(output, tx, network, verbose_signature, disassembly_level, do_trace,
         output.append("%4d: %34s receives %12.5f m%s" % (idx, address, amount_mbtc, network.symbol))
         if disassembly_level > 0:
             for (pre_annotations, pc, opcode, instruction, post_annotations) in \
-                    network.extras.annotate.annotate_spendable(tx.__class__, tx_out):
+                    network.annotate.annotate_spendable(tx.__class__, tx_out):
                 for l in pre_annotations:
                     output.append("           %s" % l)
                 if 1:

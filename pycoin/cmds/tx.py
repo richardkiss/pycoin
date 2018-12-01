@@ -628,7 +628,7 @@ def validate_against_bitcoind(tx, tx_db, network, bitcoind_url):
 def dump_signatures_hex(tx, network):
     sigs = []
     for _, tx_in in enumerate(tx.txs_in):
-        sigs.extend(network.extras.extract_signatures(tx, _))
+        sigs.extend(network.who_signed.extract_signatures(tx, _))
     if len(sigs):
         print("SIGNATURES")
     for sig in sigs:
@@ -638,7 +638,7 @@ def dump_signatures_hex(tx, network):
 def dump_secs_hex(tx, network):
     sec_key_list = []
     for _, tx_in in enumerate(tx.txs_in):
-        sec_key_list.extend(network.extras.extract_secs(tx, _))
+        sec_key_list.extend(network.who_signed.extract_secs(tx, _))
     if len(sec_key_list):
         print("SECS")
     for sec in sec_key_list:

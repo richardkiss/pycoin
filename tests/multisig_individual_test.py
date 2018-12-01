@@ -8,7 +8,7 @@ from pycoin.symbols.btc import network
 
 
 Key = network.Key
-script_for_multisig = network.script_info.script_for_multisig
+script_for_multisig = network.script.for_multisig
 Tx = network.tx
 
 

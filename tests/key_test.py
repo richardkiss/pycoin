@@ -1,6 +1,5 @@
 import unittest
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.btc import network as BitcoinMainnet
 
@@ -12,14 +11,14 @@ Key = BitcoinMainnet.Key
 class KeyTest(unittest.TestCase):
 
     def test_sign_verify(self):
-        private_key = Key(secret_exponent=1, generator=secp256k1_generator)
+        private_key = Key(secret_exponent=1)
         h = b"\x00" * 32
         sig = private_key.sign(h)
         self.assertTrue(private_key.verify(h, sig))
         public_key = private_key.public_copy()
-        self.assertTrue(public_key.verify(h, sig, generator=secp256k1_generator))
+        self.assertTrue(public_key.verify(h, sig))
         h160_key = Key(hash160=private_key.hash160())
-        self.assertTrue(h160_key.verify(h, sig, generator=secp256k1_generator))
+        self.assertTrue(h160_key.verify(h, sig))
 
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
@@ -28,13 +27,13 @@ class KeyTest(unittest.TestCase):
             c_sec = h2b(c_public_pair_sec)
 
             keys_wif = [
-                Key(secret_exponent=secret_exponent, generator=secp256k1_generator),
+                Key(secret_exponent=secret_exponent),
                 BitcoinMainnet.parse.wif(wif),
                 BitcoinMainnet.parse.wif(c_wif),
             ]
 
-            key_sec = Key.from_sec(sec, secp256k1_generator)
-            key_sec_c = Key.from_sec(c_sec, secp256k1_generator)
+            key_sec = Key.from_sec(sec)
+            key_sec_c = Key.from_sec(c_sec)
             keys_sec = [key_sec, key_sec_c]
 
             for key in keys_wif:

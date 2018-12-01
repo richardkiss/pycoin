@@ -116,7 +116,7 @@ class BIP32Node(Key):
 
     def hwif(self, as_private=False):
         """Yield a 111-byte string corresponding to this node."""
-        return self._ui_context.bip32_as_string(self.serialize(as_private=as_private), as_private=as_private)
+        return self._network.bip32_as_string(self.serialize(as_private=as_private), as_private=as_private)
 
     as_text = hwif
 

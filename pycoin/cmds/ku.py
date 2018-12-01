@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from pycoin.encoding.hexbytes import h2b
-from pycoin.ui.Parser import parseable_str
+from pycoin.ui.parseable_str import parseable_str
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
 
@@ -44,8 +44,7 @@ def get_entropy():
 
 
 def create_output(item, key, network, output_key_set, subkey_path=None):
-    ui_context = network._ui
-    key._ui_context = ui_context
+    key._network = network
     output_dict = {}
     output_order = []
 
