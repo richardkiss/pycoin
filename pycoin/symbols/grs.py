@@ -18,3 +18,12 @@ network = create_bitcoinish_network(
         "jswallet.groestlcoin.org", "groestlsight.groestlcoin.org"
     ]
 )
+
+# Cause parsing to fail and tests to skip.
+try:
+    import groestlcoin_hash
+except ImportError:
+    network.Key = None
+    none_parser = lambda *args, **kwargs: None
+    for attr in "hierarchical_key private_key public_key address".split():
+        setattr(network.parse, attr, none_parser)
