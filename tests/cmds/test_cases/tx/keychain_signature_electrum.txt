@@ -1,14 +1,13 @@
 # test using the -K functionality. This allows using a BIP32 key and hints as to where to down into the hierarchy.
 tx b2e4ae9fa8eb91f12fb8bb3f8cd7b58ba7287a379a9abc5550a40bc3f0b0c607/0/76a914aa604ab19e6f30ecd22f0d99fdab45bdedadfb3188ac/5000000/0/0/0 1GXsE5gvdtKNCA44e8CRBdjRdnuGuPaJVq E:00000000000000000000000000000000 -K 0-200
-Version:  1  tx hash ba4d8213af9383473b0900320bdf64b74444f717649c5ad9fe1504954802baf8  85 bytes
+Version:  1  tx hash dccb8bfe2504c02d09bfb4ba1f9f1ab03f427cf882c9a648cd12862e95f3490c  224 bytes
 TxIn count: 1; TxOut count: 1
 Lock time: 0 (valid anytime)
 Input:
-   0: 1GXsE5gvdtKNCA44e8CRBdjRdnuGuPaJVq from b2e4ae9fa8eb91f12fb8bb3f8cd7b58ba7287a379a9abc5550a40bc3f0b0c607:0        50.00000 mBTC  BAD SIG
+   0: 1GXsE5gvdtKNCA44e8CRBdjRdnuGuPaJVq from b2e4ae9fa8eb91f12fb8bb3f8cd7b58ba7287a379a9abc5550a40bc3f0b0c607:0        50.00000 mBTC  sig ok
 Output:
    0: 1GXsE5gvdtKNCA44e8CRBdjRdnuGuPaJVq receives     49.90000 mBTC
 Total input      50.00000 mBTC
 Total output     49.90000 mBTC
 Total fees        0.10000 mBTC
-including unspents in hex dump since transaction not fully signed
-010000000107c6b0f0c30ba45055bc9a9a377a28a78bb5d78c3fbbb82ff191eba89faee4b20000000000ffffffff0130244c00000000001976a914aa604ab19e6f30ecd22f0d99fdab45bdedadfb3188ac00000000404b4c00000000001976a914aa604ab19e6f30ecd22f0d99fdab45bdedadfb3188ac
+010000000107c6b0f0c30ba45055bc9a9a377a28a78bb5d78c3fbbb82ff191eba89faee4b2000000008b483045022100d238d041fe57cb18f9ede9d3a83b760ed8cb4c1d96a7b1883ca99c396c74e22e022029e36ca78beaeac2d4c0d66df944fa4891b63276cc752eda4d5a59b5d2ad6381014104290fd960c2e4099c0a9b9eb82a382aa9a6f3e862d3d9cb764ea97aa779cf6758030f82c7f8d7668967fd0544fdecc7b69ae7c702cd5ab5b4470f2515976ca324ffffffff0130244c00000000001976a914aa604ab19e6f30ecd22f0d99fdab45bdedadfb3188ac00000000

@@ -352,7 +352,7 @@ def parse_parts(tx_class, arg, spendables, payables, network):
             return True
 
 
-def key_found(arg, payables, keychain, key_paths, network):
+def key_found(arg, keychain, key_paths, network):
     try:
         secret = network.parse.secret(arg)
         if secret:
@@ -431,7 +431,7 @@ def parse_context(args, parser):
             txs.append(tx)
             continue
 
-        if key_found(arg, payables, keychain, args.key_paths, network):
+        if key_found(arg, keychain, args.key_paths, network):
             continue
 
         if parse_parts(tx_class, arg, spendables, payables, network):

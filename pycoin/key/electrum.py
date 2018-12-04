@@ -63,6 +63,9 @@ class ElectrumWallet(Key):
             return self
         return self.__class__(self._generator, public_pair=self.public_pair())
 
+    def subkey_for_path(self, path):
+        return self.subkey(path)
+
     def subkey(self, path):
         """
         path:
