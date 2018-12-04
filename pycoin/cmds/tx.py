@@ -374,7 +374,7 @@ def script_for_address_or_opcodes(network, text):
     except Exception:
         pass
     try:
-        return network.script_tools.compile(text)
+        return network.script.compile(text)
     except Exception:
         pass
 
@@ -648,7 +648,7 @@ def dump_secs_hex(tx, network):
 def dump_inputs(tx, network):
     for _, tx_out in enumerate(tx.unspents):
         if tx_out:
-            print("%d: %s %s" % (_, tx_out.coin_value, network.script_tools.disassemble(tx_out.script)))
+            print("%d: %s %s" % (_, tx_out.coin_value, network.script.disassemble(tx_out.script)))
         else:
             print("%d: (missing spendable)" % _)
 

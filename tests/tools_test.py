@@ -50,7 +50,7 @@ class ToolsTest(unittest.TestCase):
     def test_compile_decompile(self):
         def check(s):
             b1 = network.script_tools.compile(s)
-            s1 = network.script_tools.disassemble(b1)
+            s1 = network.script.disassemble(b1)
             b2 = network.script_tools.compile(s1)
             self.assertEqual(s, s1)
             self.assertEqual(b1, b2)
@@ -93,7 +93,7 @@ class ToolsTest(unittest.TestCase):
             "93dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351ed993e"
             "a0d455b75642e2098ea51448d967ae33bfbdfe40cfe97bdc4773992254ae00")
 
-        d1 = network.script_tools.disassemble(script).split()
+        d1 = network.script.disassemble(script).split()
         self.assertEqual(len(d1), 5)
         self.assertEqual(d1[-1], "OP_0")
 

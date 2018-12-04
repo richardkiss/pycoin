@@ -178,6 +178,10 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.address = AddressAPI(canonical_scripts, ui)
 
     network.script = ScriptAPI(network, canonical_scripts, ui)
+    network.script.compile = network.script_tools.compile
+    network.script.disassemble = network.script_tools.disassemble
+    network.script.disassemble_for_opcode_data = network.script_tools.disassemble_for_opcode_data
+    network.script.compile_push_data_list = network.script_tools.compile_push_data_list
 
     network.script_info_for_script = canonical_scripts.info_for_script
 

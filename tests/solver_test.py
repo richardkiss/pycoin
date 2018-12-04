@@ -28,7 +28,7 @@ class SolverTest(unittest.TestCase):
         solver = Solver(tx)
         constraints = solver.determine_constraints(tx_in_idx, p2sh_lookup=kwargs.get("p2sh_lookup"))
         solution_list, witness_list = solver.solve_for_constraints(constraints, **kwargs)
-        solution_script = network.script_tools.compile_push_data_list(solution_list)
+        solution_script = network.script.compile_push_data_list(solution_list)
         tx.txs_in[tx_in_idx].script = solution_script
         tx.txs_in[tx_in_idx].witness = witness_list
         if not kwargs.get("nocheck"):
@@ -64,7 +64,7 @@ class SolverTest(unittest.TestCase):
 
     def test_nonstandard_p2pkh(self):
         key = Key(1)
-        self.do_test_tx(network.script_tools.compile("OP_SWAP") + script_for_address(key.address()))
+        self.do_test_tx(network.script.compile("OP_SWAP") + script_for_address(key.address()))
 
     def test_p2multisig(self):
         keys = [Key(i) for i in (1, 2, 3)]
@@ -78,7 +78,7 @@ class SolverTest(unittest.TestCase):
         script = script_for_address(address_for_p2s(underlying_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
-        underlying_script = network.script_tools.compile("OP_SWAP") + script_for_address(keys[0].address())
+        underlying_script = network.script.compile("OP_SWAP") + script_for_address(keys[0].address())
         script = script_for_address(address_for_p2s(underlying_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
@@ -88,26 +88,26 @@ class SolverTest(unittest.TestCase):
 
     def test_p2pkh_wit(self):
         key = Key(1)
-        script = network.script_tools.compile("OP_0 [%s]" % b2h(key.hash160()))
+        script = network.script.compile("OP_0 [%s]" % b2h(key.hash160()))
         self.do_test_tx(script)
 
     def test_p2sh_wit(self):
         keys = [Key(i) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
         underlying_script = script_for_multisig(2, secs)
-        script = network.script_tools.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
+        script = network.script.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
     def test_p2multisig_wit(self):
         keys = [Key(i) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
         underlying_script = script_for_multisig(2, secs)
-        p2sh_script = network.script_tools.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
+        p2sh_script = network.script.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
         script = script_for_address(address_for_p2s(p2sh_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script, p2sh_script]))
 
     def test_if(self):
-        script = network.script_tools.compile("IF 1 ELSE 0 ENDIF")
+        script = network.script.compile("IF 1 ELSE 0 ENDIF")
         # self.do_test_tx(script)
 
     def test_p2multisig_incremental(self):

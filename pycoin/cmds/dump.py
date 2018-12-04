@@ -38,7 +38,7 @@ def make_trace_script(network, output, do_trace, use_pdb):
             output.append("altstack: %s" % vmc.altstack)
         output.append("condition stack: %s" % vmc.conditional_stack)
         output.append("%3d : %02x  %s" % (
-            vmc.pc, opcode, network.script_tools.disassemble_for_opcode_data(opcode, data)))
+            vmc.pc, opcode, network.script.disassemble_for_opcode_data(opcode, data)))
         if use_pdb:
             for line in output:
                 print(line)

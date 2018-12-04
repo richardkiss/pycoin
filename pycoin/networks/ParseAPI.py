@@ -24,7 +24,7 @@ class BitcoinishPayable(object):
         return self._network.script.for_info(self._script_info)
 
     def disassemble(self):
-        return self._network.script_tools.disassemble(self.script())
+        return self._network.script.disassemble(self.script())
 
     def output(self):
         hash160 = self._script_info.get("hash160", None)
@@ -145,7 +145,7 @@ class ParseAPI(object):
     # payable (+ all address types)
     def script(self, s):
         try:
-            script = self._network.script_tools.compile(s)
+            script = self._network.script.compile(s)
             script_info = self._network.script_info_for_script(script)
             return BitcoinishPayable(script_info, self._network)
         except Exception:
