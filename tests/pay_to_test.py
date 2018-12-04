@@ -10,7 +10,6 @@ script_info_for_script = network.script_info_for_script
 script_for_multisig = network.script.for_multisig
 script_for_nulldata = network.script.for_nulldata
 script_for_nulldata_push = network.script.for_nulldata_push
-script_tools = network.script_tools
 Tx = network.tx
 
 
@@ -42,7 +41,7 @@ class PayToTest(unittest.TestCase):
         self.assertEqual(s, script)
 
     def test_nulldata(self):
-        OP_RETURN = script_tools.compile("OP_RETURN")
+        OP_RETURN = network.script.compile("OP_RETURN")
         for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
             sample_script = OP_RETURN + sample
             sc = script_for_nulldata(sample)
@@ -54,12 +53,12 @@ class PayToTest(unittest.TestCase):
             Tx(0, [], [out])
             # convert between asm and back to ensure no bugs with compilation
             # BRAIN DAMAGE: this doesn't work yet
-            # self.assertEqual(sc, script_tools.compile(script_tools.disassemble(sc)))
+            # self.assertEqual(sc, network.script.compile(network.script.disassemble(sc)))
 
     def test_nulldata_push(self):
-        OP_RETURN = script_tools.compile("OP_RETURN")
+        OP_RETURN = network.script.compile("OP_RETURN")
         for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
-            sample_push = script_tools.compile_push_data_list([sample])
+            sample_push = network.script.compile_push_data_list([sample])
             sample_script = OP_RETURN + sample_push
             sc = script_for_nulldata_push(sample)
             info = script_info_for_script(sc)
@@ -69,7 +68,7 @@ class PayToTest(unittest.TestCase):
             # ensure we can create a tx
             Tx(0, [], [out])
             # convert between asm and back to ensure no bugs with compilation
-            self.assertEqual(sc, script_tools.compile(script_tools.disassemble(sc)))
+            self.assertEqual(sc, network.script.compile(network.script.disassemble(sc)))
 
 
 if __name__ == "__main__":

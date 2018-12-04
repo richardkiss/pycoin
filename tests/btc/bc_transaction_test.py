@@ -93,7 +93,7 @@ def txs_from_json(path):
                 if len(prevout) == 4:
                     coin_value = prevout[3]
                 spendable = BitcoinMainnet.tx.Spendable(
-                    coin_value=coin_value, script=BitcoinMainnet.script_tools.compile(prevout[2]),
+                    coin_value=coin_value, script=BitcoinMainnet.script.compile(prevout[2]),
                     tx_hash=h2b_rev(prevout[0]), tx_out_index=prevout[1])
                 spendable_db[(spendable.tx_hash, spendable.tx_out_index)] = spendable
             unspents = [

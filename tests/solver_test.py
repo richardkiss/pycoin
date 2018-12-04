@@ -123,7 +123,7 @@ class SolverTest(unittest.TestCase):
                 pass
             kwargs = {"hash160_lookup": build_hash160_lookup([k.secret_exponent()], [secp256k1_generator])}
             kwargs["existing_script"] = [
-                data for opcode, data, pc, new_pc in network.script_tools.get_opcodes(
+                data for opcode, data, pc, new_pc in network.script.get_opcodes(
                     tx.txs_in[tx_in_idx].script) if data is not None]
             kwargs["nocheck"] = True
             kwargs["generator_for_signature_type_f"] = Solver.SolutionChecker.VM.generator_for_signature_type

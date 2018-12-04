@@ -142,8 +142,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
         if k_hex in kwargs:
             kwargs[k] = h2b(kwargs[k_hex])
 
-    network.script_tools = kwargs.get("scriptTools", BitcoinScriptTools)
-    canonical_scripts = CanonicalScript(network.script_tools)
+    script_tools = kwargs.get("scriptTools", BitcoinScriptTools)
+    canonical_scripts = CanonicalScript(script_tools)
 
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
@@ -178,10 +178,11 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.address = AddressAPI(canonical_scripts, ui)
 
     network.script = ScriptAPI(network, canonical_scripts, ui)
-    network.script.compile = network.script_tools.compile
-    network.script.disassemble = network.script_tools.disassemble
-    network.script.disassemble_for_opcode_data = network.script_tools.disassemble_for_opcode_data
-    network.script.compile_push_data_list = network.script_tools.compile_push_data_list
+    network.script.compile = script_tools.compile
+    network.script.disassemble = script_tools.disassemble
+    network.script.disassemble_for_opcode_data = script_tools.disassemble_for_opcode_data
+    network.script.compile_push_data_list = script_tools.compile_push_data_list
+    network.script.get_opcodes = script_tools.get_opcodes
 
     network.script_info_for_script = canonical_scripts.info_for_script
 
@@ -189,9 +190,9 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.sec_text_for_blob = ui.sec_text_for_blob
     network.wif_for_blob = ui.wif_for_blob
 
-    network.annotate = Annotate(network.script_tools, network.address)
+    network.annotate = Annotate(script_tools, network.address)
 
     network.who_signed = WhoSigned(
-        network.script_tools, network.address, network.Key._default_generator)
+        script_tools, network.address, network.Key._default_generator)
 
     return network

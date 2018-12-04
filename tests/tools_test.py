@@ -14,7 +14,7 @@ class ToolsTest(unittest.TestCase):
     def test_compile_push_data_list(self):
 
         def test_bytes(as_bytes):
-            script = network.script_tools.compile_push_data_list([as_bytes])
+            script = network.script.compile_push_data_list([as_bytes])
             # this is a pretty horrible hack to test the vm with long scripts. But it works
             tx_context = TxContext()
             tx_context.signature_for_hash_type_f = None
@@ -49,9 +49,9 @@ class ToolsTest(unittest.TestCase):
 
     def test_compile_decompile(self):
         def check(s):
-            b1 = network.script_tools.compile(s)
+            b1 = network.script.compile(s)
             s1 = network.script.disassemble(b1)
-            b2 = network.script_tools.compile(s1)
+            b2 = network.script.compile(s1)
             self.assertEqual(s, s1)
             self.assertEqual(b1, b2)
 

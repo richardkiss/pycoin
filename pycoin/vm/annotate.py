@@ -4,6 +4,7 @@ import itertools
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec
+from pycoin.intbytes import byte2int
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, SIGHASH_FORKID
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.coins.SolutionChecker import ScriptError
@@ -17,7 +18,7 @@ class Annotate(object):
         self._script_tools = script_tools
         self._address = address_api
         for _ in "EQUAL HASH160 CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():
-            setattr(self, "OP_%s" % _, self._script_tools.int_for_opcode('OP_%s' % _))
+            setattr(self, "OP_%s" % _, byte2int(self._script_tools.compile('OP_%s' % _)))
 
     def sighash_type_to_string(self, sighash_type):
         v = sighash_type
