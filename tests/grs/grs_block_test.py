@@ -1,9 +1,12 @@
 import io
+import pytest
 import unittest
 
 from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.grs import network as GroestlcoinMainnet
 
+
+pytest.importorskip('groestlcoin_hash')
 
 # Block 2000000
 BLOCK_HASH = '00000000000434d5b8d1c3308df7b6e3fd773657dfb28f5dd2f70854ef94cc66'

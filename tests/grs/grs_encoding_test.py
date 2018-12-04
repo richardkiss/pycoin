@@ -1,9 +1,12 @@
+import pytest
 import unittest
 
 from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.grs import network as GroestlcoinMainnet
 
+
+pytest.importorskip('groestlcoin_hash')
 
 class GroestlcoinEncodingTestCase(unittest.TestCase):
     def test_p2pkh(self):
