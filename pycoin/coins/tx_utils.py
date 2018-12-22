@@ -61,7 +61,7 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, netw
         else:
             address = payable
             coin_value = 0
-        script = network.script.for_address(address)
+        script = network.contract.for_address(address)
         txs_out.append(Tx.TxOut(coin_value, script))
 
     tx = Tx(version=version, txs_in=txs_in, txs_out=txs_out, lock_time=lock_time)

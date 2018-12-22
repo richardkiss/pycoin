@@ -63,7 +63,7 @@ def standard_tx(coins_from, coins_to):
 
     txs_out = []
     for coin_value, address in coins_to:
-        txs_out.append(Tx.TxOut(coin_value, network.script.for_address(address)))
+        txs_out.append(Tx.TxOut(coin_value, network.contract.for_address(address)))
 
     version, lock_time = 1, 0
     tx = Tx(version, txs_in, txs_out, lock_time)

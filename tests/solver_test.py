@@ -9,11 +9,6 @@ from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.symbols.btc import network
 
 
-address_for_p2s = network.address.for_p2s
-script_for_address = network.script.for_address
-script_for_multisig = network.script.for_multisig
-script_for_p2pk = network.script.for_p2pk
-
 # BRAIN DAMAGE
 Key = network.Key
 Tx = network.tx
@@ -38,7 +33,7 @@ class SolverTest(unittest.TestCase):
     def make_test_tx(self, input_script):
         previous_hash = b'\1' * 32
         txs_in = [TxIn(previous_hash, 0)]
-        txs_out = [TxOut(1000, script_for_address(Key(1).address()))]
+        txs_out = [TxOut(1000, network.contract.for_address(Key(1).address()))]
         version, lock_time = 1, 0
         tx = Tx(version, txs_in, txs_out, lock_time)
         unspents = [TxOut(1000, input_script)]
@@ -55,35 +50,35 @@ class SolverTest(unittest.TestCase):
 
     def test_p2pkh(self):
         key = Key(1)
-        self.do_test_tx(script_for_address(key.address()))
+        self.do_test_tx(network.contract.for_address(key.address()))
 
     def test_p2pk(self):
         key = Key(1)
-        self.do_test_tx(script_for_p2pk(key.sec(use_uncompressed=True)))
-        self.do_test_tx(script_for_p2pk(key.sec(use_uncompressed=False)))
+        self.do_test_tx(network.contract.for_p2pk(key.sec(use_uncompressed=True)))
+        self.do_test_tx(network.contract.for_p2pk(key.sec(use_uncompressed=False)))
 
     def test_nonstandard_p2pkh(self):
         key = Key(1)
-        self.do_test_tx(network.script.compile("OP_SWAP") + script_for_address(key.address()))
+        self.do_test_tx(network.script.compile("OP_SWAP") + network.contract.for_address(key.address()))
 
     def test_p2multisig(self):
         keys = [Key(i) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
-        self.do_test_tx(script_for_multisig(2, secs))
+        self.do_test_tx(network.contract.for_multisig(2, secs))
 
     def test_p2sh(self):
         keys = [Key(i) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
-        underlying_script = script_for_multisig(1, secs)
-        script = script_for_address(address_for_p2s(underlying_script))
+        underlying_script = network.contract.for_multisig(1, secs)
+        script = network.contract.for_address(network.address.for_p2s(underlying_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
-        underlying_script = network.script.compile("OP_SWAP") + script_for_address(keys[0].address())
-        script = script_for_address(address_for_p2s(underlying_script))
+        underlying_script = network.script.compile("OP_SWAP") + network.contract.for_address(keys[0].address())
+        script = network.contract.for_address(network.address.for_p2s(underlying_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
-        underlying_script = script_for_p2pk(keys[2].sec())
-        script = script_for_address(address_for_p2s(underlying_script))
+        underlying_script = network.contract.for_p2pk(keys[2].sec())
+        script = network.contract.for_address(network.address.for_p2s(underlying_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
     def test_p2pkh_wit(self):
@@ -94,16 +89,16 @@ class SolverTest(unittest.TestCase):
     def test_p2sh_wit(self):
         keys = [Key(i) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
-        underlying_script = script_for_multisig(2, secs)
+        underlying_script = network.contract.for_multisig(2, secs)
         script = network.script.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
 
     def test_p2multisig_wit(self):
         keys = [Key(i) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
-        underlying_script = script_for_multisig(2, secs)
+        underlying_script = network.contract.for_multisig(2, secs)
         p2sh_script = network.script.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
-        script = script_for_address(address_for_p2s(p2sh_script))
+        script = network.contract.for_address(network.address.for_p2s(p2sh_script))
         self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script, p2sh_script]))
 
     def test_if(self):
@@ -113,7 +108,7 @@ class SolverTest(unittest.TestCase):
     def test_p2multisig_incremental(self):
         keys = [Key(i) for i in (1, 2, 3)]
         secs = [k.sec() for k in keys]
-        tx = self.make_test_tx(script_for_multisig(3, secs))
+        tx = self.make_test_tx(network.contract.for_multisig(3, secs))
         tx_in_idx = 0
         for k in keys:
             try:

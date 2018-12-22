@@ -21,7 +21,7 @@ class BitcoinishPayable(object):
         return self._network.address.for_script_info(self._script_info)
 
     def script(self):
-        return self._network.script.for_info(self._script_info)
+        return self._network.contract.for_info(self._script_info)
 
     def disassemble(self):
         return self._network.script.disassemble(self.script())
@@ -105,8 +105,8 @@ class ParseAPI(object):
         if data is None or not data.startswith(self._ui._address_prefix):
             return None
         size = len(self._ui._address_prefix)
-        script = self._network.script.for_p2pkh(data[size:])
-        script_info = self._network.script.info_for_script(script)
+        script = self._network.contract.for_p2pkh(data[size:])
+        script_info = self._network.contract.info_for_script(script)
         return BitcoinishPayable(script_info, self._network)
 
     def p2sh(self, s):
@@ -115,12 +115,12 @@ class ParseAPI(object):
                 not data.startswith(self._ui._pay_to_script_prefix)):
             return None
         size = len(self._ui._pay_to_script_prefix)
-        script = self._network.script.for_p2sh(data[size:])
-        script_info = self._network.script.info_for_script(script)
+        script = self._network.contract.for_p2sh(data[size:])
+        script_info = self._network.contract.info_for_script(script)
         return BitcoinishPayable(script_info, self._network)
 
     def segwit(self, s, blob_len, segwit_attr):
-        script_f = getattr(self._network.script, segwit_attr, None)
+        script_f = getattr(self._network.contract, segwit_attr, None)
         if script_f is None:
             return None
         pair = parse_bech32(s)
@@ -133,7 +133,7 @@ class ParseAPI(object):
         if version_byte != b'\0' or len(decoded_data) != blob_len:
             return None
         script = script_f(decoded_data)
-        script_info = self._network.script.info_for_script(script)
+        script_info = self._network.contract.info_for_script(script)
         return BitcoinishPayable(script_info, self._network)
 
     def p2pkh_segwit(self, s):
@@ -146,7 +146,7 @@ class ParseAPI(object):
     def script(self, s):
         try:
             script = self._network.script.compile(s)
-            script_info = self._network.script.info_for_script(script)
+            script_info = self._network.contract.info_for_script(script)
             return BitcoinishPayable(script_info, self._network)
         except Exception:
             return None

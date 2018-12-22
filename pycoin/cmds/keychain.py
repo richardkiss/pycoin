@@ -56,7 +56,7 @@ def keychain(args, parser):
     for path in subpaths_for_path_range(subkey_paths):
         if m:
             secs = sorted([_.subkey_for_path(path).sec() for _ in keys])
-            script = network.script.for_multisig(m, secs)
+            script = network.contract.for_multisig(m, secs)
             keychain.add_p2s_script(script)
             print(network.ui.address_for_p2s(script))
         total_paths += keychain.add_keys_path(keys, path)

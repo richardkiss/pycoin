@@ -239,32 +239,32 @@ class ValidationTest(unittest.TestCase):
         return tx
 
     def test_validate_p2pkh(self):
-        us_1 = network.script.for_p2pkh(self._key.hash160())
+        us_1 = network.contract.for_p2pkh(self._key.hash160())
         tx = self._make_tx(us_1)
         tx.check_solution(0)
 
     def test_validate_p2s_of_p2pkh(self):
-        us_1 = network.script.for_p2pkh(self._key.hash160())
-        us_2 = network.script.for_p2s(us_1)
+        us_1 = network.contract.for_p2pkh(self._key.hash160())
+        us_2 = network.contract.for_p2s(us_1)
         tx = self._make_tx(us_2, [us_1])
         tx.check_solution(0)
 
     def test_validate_p2pkh_wit(self):
-        us_1 = network.script.for_p2pkh_wit(self._key.hash160())
+        us_1 = network.contract.for_p2pkh_wit(self._key.hash160())
         tx = self._make_tx(us_1)
         tx.check_solution(0)
 
     def test_validate_p2s_wit_of_p2pkh(self):
-        us_1 = network.script.for_p2pkh_wit(self._key.hash160())
-        us_2 = network.script.for_p2s(us_1)
+        us_1 = network.contract.for_p2pkh_wit(self._key.hash160())
+        us_2 = network.contract.for_p2s(us_1)
         tx = self._make_tx(us_2, [us_1])
         self.assertEqual(tx.id(), "1e5d967a3778bfa4e0d90f35f59530e8033a36bd7fd1d9e617c504054b89bd3a")
         tx.check_solution(0)
 
     def test_validate_p2s_of_p2s_wit_of_p2pkh(self):
-        us_1 = network.script.for_p2pkh(self._key.hash160())
-        us_2 = network.script.for_p2s_wit(us_1)
-        us_3 = network.script.for_p2s(us_2)
+        us_1 = network.contract.for_p2pkh(self._key.hash160())
+        us_2 = network.contract.for_p2s_wit(us_1)
+        us_3 = network.contract.for_p2s(us_2)
         tx = self._make_tx(us_3, [us_1, us_2])
         self.assertEqual(tx.id(), "54a518b82b464744951531270c1bcec133c515fcdbe9d70c6141e067a62ff640")
         tx.check_solution(0)

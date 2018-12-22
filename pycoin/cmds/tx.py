@@ -368,7 +368,7 @@ def key_found(arg, keychain, key_paths, network):
 
 def script_for_address_or_opcodes(network, text):
     try:
-        script = network.script.for_address(text)
+        script = network.contract.for_address(text)
         if script:
             return script
     except Exception:

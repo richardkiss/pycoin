@@ -9,8 +9,6 @@ from pycoin.symbols.btc import network
 
 # BRAIN DAMAGE
 who_signed_tx = network.who_signed.who_signed_tx
-script_for_address = network.script.for_address
-script_for_multisig = network.script.for_multisig
 Key = network.Key
 Tx = network.tx
 
@@ -20,7 +18,7 @@ class WhoSignedTest(unittest.TestCase):
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
-        script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
+        script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
@@ -48,7 +46,7 @@ class WhoSignedTest(unittest.TestCase):
         N = 3
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
-        script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
+        script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
@@ -71,10 +69,10 @@ class WhoSignedTest(unittest.TestCase):
         M, N = 3, 3
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
-        underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
+        underlying_script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         address = network.address.for_p2s(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
-        script = script_for_address(address)
+        script = network.contract.for_address(address)
         tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])

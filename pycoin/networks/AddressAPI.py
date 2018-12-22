@@ -1,11 +1,11 @@
 class AddressAPI(object):
 
-    def __init__(self, canonical_scripts, ui):
-        self._canonical_scripts = canonical_scripts
+    def __init__(self, contracts, ui):
+        self._contracts = contracts
         self._ui = ui
 
     def address_for_script(self, script):
-        info = self._canonical_scripts.info_for_script(script)
+        info = self._contracts.info_for_script(script)
         return self._ui.address_for_script_info(info)
 
     def for_script_info(self, s):

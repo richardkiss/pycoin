@@ -14,11 +14,14 @@ from pycoin.message.make_parser_and_packer import (
 from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.ui.uiclass import UI
 from pycoin.vm.annotate import Annotate
-from pycoin.vm.CanonicalScript import CanonicalScript
+from pycoin.vm.Contracts import Contracts
 
 from .AddressAPI import AddressAPI
 from .ParseAPI import ParseAPI
-from .ScriptAPI import ScriptAPI
+from .ContractAPI import ContractAPI
+
+
+class ScriptAPI(object): pass
 
 
 class Network(object):
@@ -114,7 +117,7 @@ def make_output_for_public_pair(Key, network):
                 yield ("address_segwit", address_segwit, "%s segwit address" % network_name)
                 yield ("%s_address_segwit" % network.symbol, address_segwit, "legacy")
 
-                p2sh_script = network.script.for_p2pkh_wit(hash160_c)
+                p2sh_script = network.contract.for_p2pkh_wit(hash160_c)
                 p2s_address = network.address.for_p2s(p2sh_script)
                 if p2s_address:
                     yield ("p2sh_segwit", p2s_address, None)
@@ -143,7 +146,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
             kwargs[k] = h2b(kwargs[k_hex])
 
     script_tools = kwargs.get("scriptTools", BitcoinScriptTools)
-    canonical_scripts = CanonicalScript(script_tools)
+    contract = Contracts(script_tools)
 
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
@@ -175,15 +178,17 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.parse = ParseAPI(network, ui)
 
-    network.address = AddressAPI(canonical_scripts, ui)
+    network.address = AddressAPI(contract, ui)
 
-    network.script = ScriptAPI(network, canonical_scripts, ui)
+    network.contract = ContractAPI(network, contract, ui)
+    network.contract.info_for_script = contract.info_for_script
+
+    network.script = ScriptAPI()
     network.script.compile = script_tools.compile
     network.script.disassemble = script_tools.disassemble
     network.script.disassemble_for_opcode_data = script_tools.disassemble_for_opcode_data
     network.script.compile_push_data_list = script_tools.compile_push_data_list
     network.script.get_opcodes = script_tools.get_opcodes
-    network.script.info_for_script = canonical_scripts.info_for_script
 
     network.bip32_as_string = ui.bip32_as_string
     network.sec_text_for_blob = ui.sec_text_for_blob

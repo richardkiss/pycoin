@@ -14,8 +14,6 @@ from pycoin.symbols.btc import network
 Key = network.Key
 Tx = network.tx
 TxOut = network.tx.TxOut
-script_for_p2pkh = network.script.for_p2pkh
-script_for_p2pkh_wit = network.script.for_p2pkh_wit
 
 
 class SegwitTest(unittest.TestCase):
@@ -49,14 +47,14 @@ class SegwitTest(unittest.TestCase):
     def test_segwit_ui(self):
         # p2wpkh
         address = 'bc1qqyykvamqq62n64t8gw09uw0cdgxjwwlw7mypam'
-        s = network.script.for_address(address)
+        s = network.contract.for_address(address)
         afs_address = network.address.for_script(s)
         self.assertEqual(address, afs_address)
 
     def test_segwit_create_tx(self):
         key1 = Key(1)
         coin_value = 5000000
-        script = script_for_p2pkh_wit(key1.hash160())
+        script = network.contract.for_p2pkh_wit(key1.hash160())
         tx_hash = b'\ee' * 32
         tx_out_index = 0
         spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
@@ -67,9 +65,9 @@ class SegwitTest(unittest.TestCase):
         self.check_signed(tx)
         self.assertEqual(len(tx.txs_in[0].witness), 2)
 
-        s1 = script_for_p2pkh(key1.hash160())
+        s1 = network.contract.for_p2pkh(key1.hash160())
         address = network.address.for_p2s_wit(s1)
-        spendable.script = network.script.for_address(address)
+        spendable.script = network.contract.for_address(address)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()], p2sh_lookup=build_p2sh_lookup([s1]))
@@ -148,7 +146,7 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(b2h(sc._hash_outputs(SIGHASH_ALL, 0)),
                          "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
 
-        script = network.script.for_p2pkh(tx_s1.unspents[1].script[2:])
+        script = network.contract.for_p2pkh(tx_s1.unspents[1].script[2:])
         self.assertEqual(
             b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
             "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd"

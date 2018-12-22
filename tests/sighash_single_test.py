@@ -67,8 +67,6 @@ class SighashSingleTest(unittest.TestCase):
         self.assertEqual('2acbe1006f7168bad538b477f7844e53de3a31ffddfcfc4c6625276dd714155a',
                          b2h_rev(coinbase_tx.hash()))
 
-        script_for_address = network.script.for_address
-
         # Make the test transaction
         txs_in = [
             network.tx.TxIn(coinbase_tx.hash(), 0),
@@ -76,9 +74,9 @@ class SighashSingleTest(unittest.TestCase):
             network.tx.TxIn(coinbase_tx.hash(), 2),
         ]
         txs_out = [
-            network.tx.TxOut(900000000, script_for_address(k3.address())),
-            network.tx.TxOut(800000000, script_for_address(k4.address())),
-            network.tx.TxOut(800000000, script_for_address(k5.address())),
+            network.tx.TxOut(900000000, network.contract.for_address(k3.address())),
+            network.tx.TxOut(800000000, network.contract.for_address(k4.address())),
+            network.tx.TxOut(800000000, network.contract.for_address(k5.address())),
         ]
         tx = network.tx(1, txs_in, txs_out)
         tx.set_unspents(coinbase_tx.txs_out)

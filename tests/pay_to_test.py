@@ -5,9 +5,6 @@ from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.btc import network
 
 
-# BRAIN DAMAGE
-script = network.script
-
 Tx = network.tx
 
 
@@ -33,17 +30,17 @@ class PayToTest(unittest.TestCase):
         tx.parse_unspents(f)
         self.assertEqual(tx.id(), "10c61e258e0a2b19b245a96a2d0a1538fe81cd4ecd547e0a3df7ed6fd3761ada")
         script = tx.unspents[0].script
-        multisig_info = network.script.info_for_script(script)
+        multisig_info = network.contract.info_for_script(script)
         del multisig_info["type"]
-        s = network.script.for_multisig(**multisig_info)
+        s = network.contract.for_multisig(**multisig_info)
         self.assertEqual(s, script)
 
     def test_nulldata(self):
         OP_RETURN = network.script.compile("OP_RETURN")
         for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
             sample_script = OP_RETURN + sample
-            sc = network.script.for_nulldata(sample)
-            info = network.script.info_for_script(sc)
+            sc = network.contract.for_nulldata(sample)
+            info = network.contract.info_for_script(sc)
             self.assertEqual(info.get("data"), sample)
             self.assertEqual(sc, sample_script)
             out = Tx.TxOut(1, sc)
@@ -58,8 +55,8 @@ class PayToTest(unittest.TestCase):
         for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
             sample_push = network.script.compile_push_data_list([sample])
             sample_script = OP_RETURN + sample_push
-            sc = network.script.for_nulldata_push(sample)
-            info = network.script.info_for_script(sc)
+            sc = network.contract.for_nulldata_push(sample)
+            info = network.contract.info_for_script(sc)
             self.assertEqual(info.get("data"), sample_push)
             self.assertEqual(sc, sample_script)
             out = Tx.TxOut(1, sc)

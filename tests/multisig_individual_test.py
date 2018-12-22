@@ -8,7 +8,6 @@ from pycoin.symbols.btc import network
 
 
 Key = network.Key
-script_for_multisig = network.script.for_multisig
 Tx = network.tx
 
 
@@ -16,7 +15,7 @@ class MultisigIndividualTest(unittest.TestCase):
     def multisig_M_of_N_individually(self, M, N):
         keys = [Key(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
-        script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
+        script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         for partial_key_list in itertools.permutations(keys[:N], M):

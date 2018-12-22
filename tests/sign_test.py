@@ -8,11 +8,6 @@ from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.symbols.btc import network
 
 
-# BRAIN DAMAGE
-address_for_p2s = network.address.for_p2s
-script_for_address = network.script.for_address
-script_for_multisig = network.script.for_multisig
-
 Spendable = network.tx.Spendable
 Tx = network.tx
 TxIn = network.tx.TxIn
@@ -24,7 +19,7 @@ class SignTest(unittest.TestCase):
 
     def test_sign_p2sh(self):
         tx_out_script = h2b("76a91491b24bf9f5288532960ac687abb035127b1d28a588ac")
-        script = script_for_address("1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm")
+        script = network.contract.for_address("1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm")
         self.assertEqual(tx_out_script, script)
         tx_out = TxOut(100, tx_out_script)
         tx = Tx(1, [TxIn(b'\1' * 32, 1)], [TxOut(100, tx_out_script)])
@@ -37,7 +32,7 @@ class SignTest(unittest.TestCase):
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
-        script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
+        script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
@@ -63,7 +58,7 @@ class SignTest(unittest.TestCase):
         N = 3
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
-        script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
+        script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
@@ -93,7 +88,7 @@ class SignTest(unittest.TestCase):
         for ordered_keys in [(key_1, key_2), (key_2, key_1)]:
             txs_in = [TxIn(previous_hash=h2b('43c95d14724437bccc102ccf86aba1ac02415524fd1aefa787db886bba52a10c'),
                            previous_index=0)]
-            txs_out = [TxOut(10000, script_for_address('3KeGeLFmsbmbVdeMLrWp7WYKcA3tdsB4AR'))]
+            txs_out = [TxOut(10000, network.contract.for_address('3KeGeLFmsbmbVdeMLrWp7WYKcA3tdsB4AR'))]
             unspents = [Spendable.from_dict(spendable)]
             tx = Tx(version=DEFAULT_VERSION, txs_in=txs_in, txs_out=txs_out, unspents=unspents)
             for key in ordered_keys:
@@ -106,10 +101,10 @@ class SignTest(unittest.TestCase):
         M, N = 3, 3
         keys = [Key(secret_exponent=i, generator=secp256k1_generator) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
-        underlying_script = script_for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
-        address = address_for_p2s(underlying_script)
+        underlying_script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
+        address = network.address.for_p2s(underlying_script)
         self.assertEqual(address, "39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q")
-        script = script_for_address(address)
+        script = network.contract.for_address(address)
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])

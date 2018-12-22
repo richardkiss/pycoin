@@ -41,11 +41,11 @@ def info_for_arg(arg, network):
 
     address_p2s = network.address.for_p2s(compiled_script)
     d["address_p2s"] = address_p2s
-    d["preimage_p2s_hex"] = b2h(network.script.for_address(address_p2s))
+    d["preimage_p2s_hex"] = b2h(network.contract.for_address(address_p2s))
 
     address_p2s_wit = network.address.for_p2s_wit(compiled_script)
     d["address_p2s_wit"] = address_p2s_wit
-    d["underlying_script"] = b2h(network.script.for_address(address_p2s_wit))
+    d["underlying_script"] = b2h(network.contract.for_address(address_p2s_wit))
 
     d["disassembled_script"] = network.script.disassemble(compiled_script)
     return d
