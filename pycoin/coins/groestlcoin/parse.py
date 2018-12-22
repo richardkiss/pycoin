@@ -38,8 +38,8 @@ class GRSParseAPI(ParseAPI):
         if data is None or not data.startswith(self._ui._address_prefix):
             return None
         size = len(self._ui._address_prefix)
-        script = self._network.script.for_p2pkh(data[size:])
-        script_info = self._network.script_info_for_script(script)
+        script = self._network.contract.for_p2pkh(data[size:])
+        script_info = self._network.contract.info_for_script(script)
         return BitcoinishPayable(script_info, self._network)
 
     def p2sh(self, s):
@@ -48,8 +48,8 @@ class GRSParseAPI(ParseAPI):
                 not data.startswith(self._ui._pay_to_script_prefix)):
             return None
         size = len(self._ui._pay_to_script_prefix)
-        script = self._network.script.for_p2sh(data[size:])
-        script_info = self._network.script_info_for_script(script)
+        script = self._network.contract.for_p2sh(data[size:])
+        script_info = self._network.contract.info_for_script(script)
         return BitcoinishPayable(script_info, self._network)
 
     def wif(self, s):

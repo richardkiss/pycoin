@@ -18,7 +18,7 @@ class GroestlcoinEncodingTestCase(unittest.TestCase):
 
     def test_p2sh(self):
         def do_test(h160, redeem_script, address):
-            self.assertEqual(GroestlcoinMainnet.script.for_p2sh(h160), redeem_script)
+            self.assertEqual(GroestlcoinMainnet.contract.for_p2sh(h160), redeem_script)
             self.assertEqual(GroestlcoinMainnet.address.for_p2sh(h160), address)
             self.assertEqual(GroestlcoinMainnet.parse.p2sh(address).address(), address)
 
