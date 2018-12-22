@@ -15,6 +15,7 @@ setup(
         "pycoin.coins.bcash",
         "pycoin.coins.bgold",
         "pycoin.coins.bitcoin",
+        "pycoin.coins.groestlcoin",
         "pycoin.coins.litecoin",
         "pycoin.contrib",
         "pycoin.convention",

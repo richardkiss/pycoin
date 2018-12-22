@@ -171,7 +171,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.output_for_public_pair = make_output_for_public_pair(network.Key, network)
     network.Keychain = Keychain
 
-    network.parse = ParseAPI(network, ui)
+    parse_api_class = kwargs.get("parse_api_class", ParseAPI)
+    network.parse = parse_api_class(network, ui)
 
     network.contract = ContractAPI(network, script_tools, ui)
 
