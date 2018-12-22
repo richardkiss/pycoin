@@ -13,8 +13,6 @@ from pycoin.solve.utils import build_hash160_lookup
 
 network = network_for_netcode("BTC")
 
-
-script_for_address = network.script.for_address
 Block = network.block
 Tx = network.tx
 
@@ -65,7 +63,7 @@ def standard_tx(coins_from, coins_to):
 
     txs_out = []
     for coin_value, address in coins_to:
-        txs_out.append(Tx.TxOut(coin_value, script_for_address(address)))
+        txs_out.append(Tx.TxOut(coin_value, network.script.for_address(address)))
 
     version, lock_time = 1, 0
     tx = Tx(version, txs_in, txs_out, lock_time)

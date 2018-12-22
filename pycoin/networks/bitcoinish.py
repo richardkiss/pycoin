@@ -183,8 +183,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.script.disassemble_for_opcode_data = script_tools.disassemble_for_opcode_data
     network.script.compile_push_data_list = script_tools.compile_push_data_list
     network.script.get_opcodes = script_tools.get_opcodes
-
-    network.script_info_for_script = canonical_scripts.info_for_script
+    network.script.info_for_script = canonical_scripts.info_for_script
 
     network.bip32_as_string = ui.bip32_as_string
     network.sec_text_for_blob = ui.sec_text_for_blob

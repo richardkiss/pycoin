@@ -106,7 +106,7 @@ class ParseAPI(object):
             return None
         size = len(self._ui._address_prefix)
         script = self._network.script.for_p2pkh(data[size:])
-        script_info = self._network.script_info_for_script(script)
+        script_info = self._network.script.info_for_script(script)
         return BitcoinishPayable(script_info, self._network)
 
     def p2sh(self, s):
@@ -116,7 +116,7 @@ class ParseAPI(object):
             return None
         size = len(self._ui._pay_to_script_prefix)
         script = self._network.script.for_p2sh(data[size:])
-        script_info = self._network.script_info_for_script(script)
+        script_info = self._network.script.info_for_script(script)
         return BitcoinishPayable(script_info, self._network)
 
     def segwit(self, s, blob_len, segwit_attr):
@@ -133,7 +133,7 @@ class ParseAPI(object):
         if version_byte != b'\0' or len(decoded_data) != blob_len:
             return None
         script = script_f(decoded_data)
-        script_info = self._network.script_info_for_script(script)
+        script_info = self._network.script.info_for_script(script)
         return BitcoinishPayable(script_info, self._network)
 
     def p2pkh_segwit(self, s):
@@ -146,7 +146,7 @@ class ParseAPI(object):
     def script(self, s):
         try:
             script = self._network.script.compile(s)
-            script_info = self._network.script_info_for_script(script)
+            script_info = self._network.script.info_for_script(script)
             return BitcoinishPayable(script_info, self._network)
         except Exception:
             return None
