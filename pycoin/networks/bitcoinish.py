@@ -14,14 +14,10 @@ from pycoin.message.make_parser_and_packer import (
 from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.ui.uiclass import UI
 from pycoin.vm.annotate import Annotate
-from pycoin.vm.Contracts import Contracts
 
 from .AddressAPI import AddressAPI
 from .ParseAPI import ParseAPI
 from .ContractAPI import ContractAPI
-
-
-class ScriptAPI(object): pass
 
 
 class Network(object):
@@ -132,7 +128,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     # potential kwargs:
     #   tx, block, magic_header_hex, default_port, dns_bootstrap,
     #   wif_prefix_hex, address_prefix_hex, pay_to_script_prefix_hex
-    #   bip32_prv_prefix_hex, bip32_pub_prefix_hex, sec_prefix, scriptTools
+    #   bip32_prv_prefix_hex, bip32_pub_prefix_hex, sec_prefix, script_tools
 
     network = Network(symbol, network_name, subnet_name)
 
@@ -145,8 +141,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
         if k_hex in kwargs:
             kwargs[k] = h2b(kwargs[k_hex])
 
-    script_tools = kwargs.get("scriptTools", BitcoinScriptTools)
-    contract = Contracts(script_tools)
+    script_tools = kwargs.get("script_tools", BitcoinScriptTools)
 
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
@@ -178,17 +173,11 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.parse = ParseAPI(network, ui)
 
-    network.address = AddressAPI(contract, ui)
+    network.contract = ContractAPI(network, script_tools, ui)
 
-    network.contract = ContractAPI(network, contract, ui)
-    network.contract.info_for_script = contract.info_for_script
+    network.address = AddressAPI(network.contract, ui)
 
-    network.script = ScriptAPI()
-    network.script.compile = script_tools.compile
-    network.script.disassemble = script_tools.disassemble
-    network.script.disassemble_for_opcode_data = script_tools.disassemble_for_opcode_data
-    network.script.compile_push_data_list = script_tools.compile_push_data_list
-    network.script.get_opcodes = script_tools.get_opcodes
+    network.script = script_tools
 
     network.bip32_as_string = ui.bip32_as_string
     network.sec_text_for_blob = ui.sec_text_for_blob
