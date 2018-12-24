@@ -1,10 +1,10 @@
 ku -n LTC -j P:foo -s 5-10
 {
    "LTC_address": "LUJeFvMKNLYMfQ9Dvw8s2kzNc8hvmGtpsV",
-   "LTC_address_segwit": "lc1qvwwzaxznnqywkzrl5ez58m7ym4a25hjw00dh38",
+   "LTC_address_segwit": "ltc1qvwwzaxznnqywkzrl5ez58m7ym4a25hjwpapefq",
    "LTC_address_uncompressed": "LTZ47VYgDV1dGDbTrMHFtqqddyHXeW16bf",
    "address": "LUJeFvMKNLYMfQ9Dvw8s2kzNc8hvmGtpsV",
-   "address_segwit": "lc1qvwwzaxznnqywkzrl5ez58m7ym4a25hjw00dh38",
+   "address_segwit": "ltc1qvwwzaxznnqywkzrl5ez58m7ym4a25hjwpapefq",
    "address_uncompressed": "LTZ47VYgDV1dGDbTrMHFtqqddyHXeW16bf",
    "chain_code": "e48329b496b2a88349811d6dd1e9e823f5a590e147d47dd70b9ed5bca234120f",
    "child_index": "5",
@@ -35,10 +35,10 @@ ku -n LTC -j P:foo -s 5-10
 }
 {
    "LTC_address": "LhS195KwHi6JTh4RY4NPGtmRPm4EcW6EWD",
-   "LTC_address_segwit": "lc1q7wdzjzm6dlugerrpemxf4rnmws4z8mmwqjz3d3",
+   "LTC_address_segwit": "ltc1q7wdzjzm6dlugerrpemxf4rnmws4z8mmwwqwl4k",
    "LTC_address_uncompressed": "LYjzooGZ88L4HeVhzWxjUiP4Dy63qU7547",
    "address": "LhS195KwHi6JTh4RY4NPGtmRPm4EcW6EWD",
-   "address_segwit": "lc1q7wdzjzm6dlugerrpemxf4rnmws4z8mmwqjz3d3",
+   "address_segwit": "ltc1q7wdzjzm6dlugerrpemxf4rnmws4z8mmwwqwl4k",
    "address_uncompressed": "LYjzooGZ88L4HeVhzWxjUiP4Dy63qU7547",
    "chain_code": "977785b221367f51858e682f220235c8161a4db4c75c61a8f5ea0b5d08227c81",
    "child_index": "6",
@@ -69,10 +69,10 @@ ku -n LTC -j P:foo -s 5-10
 }
 {
    "LTC_address": "LZV26kCByLVS9XuPF1NohnRSNn8ngDHqfe",
-   "LTC_address_segwit": "lc1qn34ngqcjydcqvd5mhfrxawzxlua4cch4vda40s",
+   "LTC_address_segwit": "ltc1qn34ngqcjydcqvd5mhfrxawzxlua4cch4zl3mhh",
    "LTC_address_uncompressed": "LcMTRvtqrVvTm3B6bBfbCFPb14Dkk1xSCV",
    "address": "LZV26kCByLVS9XuPF1NohnRSNn8ngDHqfe",
-   "address_segwit": "lc1qn34ngqcjydcqvd5mhfrxawzxlua4cch4vda40s",
+   "address_segwit": "ltc1qn34ngqcjydcqvd5mhfrxawzxlua4cch4zl3mhh",
    "address_uncompressed": "LcMTRvtqrVvTm3B6bBfbCFPb14Dkk1xSCV",
    "chain_code": "775524124e1ad6e90701e89523682e5204fb3e0307357d6c42eee72ff3e6c000",
    "child_index": "7",
@@ -103,10 +103,10 @@ ku -n LTC -j P:foo -s 5-10
 }
 {
    "LTC_address": "LMzw1M167Lwpt1JZJkkmmMS6s5F1Fz4r8f",
-   "LTC_address_segwit": "lc1qrec7hnsm8agwe4utg3vcm26r2xhyy63qru36w0",
+   "LTC_address_segwit": "ltc1qrec7hnsm8agwe4utg3vcm26r2xhyy63qdwa5kg",
    "LTC_address_uncompressed": "LNhKyNeY3ww6ZUhpbQmob7oCvShgDuRLki",
    "address": "LMzw1M167Lwpt1JZJkkmmMS6s5F1Fz4r8f",
-   "address_segwit": "lc1qrec7hnsm8agwe4utg3vcm26r2xhyy63qru36w0",
+   "address_segwit": "ltc1qrec7hnsm8agwe4utg3vcm26r2xhyy63qdwa5kg",
    "address_uncompressed": "LNhKyNeY3ww6ZUhpbQmob7oCvShgDuRLki",
    "chain_code": "232ffeb773ef0449502b1c68ef0e3e5a42f89310d8803abf05895ed15a8ecbc0",
    "child_index": "8",
@@ -137,10 +137,10 @@ ku -n LTC -j P:foo -s 5-10
 }
 {
    "LTC_address": "Lh2Tf2r36kx3AXEBvjJsfr7fio7o8sCdc2",
-   "LTC_address_segwit": "lc1qaunyle5ywnge2h2p6tsxghedlz84d9eegzjecf",
+   "LTC_address_segwit": "ltc1qaunyle5ywnge2h2p6tsxghedlz84d9eexs7hqw",
    "LTC_address_uncompressed": "LacwqCatpMaqVHrzwLKR3RQ7p2XnuovFjj",
    "address": "Lh2Tf2r36kx3AXEBvjJsfr7fio7o8sCdc2",
-   "address_segwit": "lc1qaunyle5ywnge2h2p6tsxghedlz84d9eegzjecf",
+   "address_segwit": "ltc1qaunyle5ywnge2h2p6tsxghedlz84d9eexs7hqw",
    "address_uncompressed": "LacwqCatpMaqVHrzwLKR3RQ7p2XnuovFjj",
    "chain_code": "cf921ce865b77ba3eb976a9ea5f1677c3782d1e49161847f6fc3a12d45b330ce",
    "child_index": "9",
@@ -171,10 +171,10 @@ ku -n LTC -j P:foo -s 5-10
 }
 {
    "LTC_address": "LWeG5PXaqPDqFnu3B5S5JqfBauTX2hdRJ3",
-   "LTC_address_segwit": "lc1q04preraj4ams20psyx0ky47mlgrn0wsd8gm57x",
+   "LTC_address_segwit": "ltc1q04preraj4ams20psyx0ky47mlgrn0wsdf6h6xp",
    "LTC_address_uncompressed": "LY79xJ4btKhfuAD6P3MQaYsMKL8TQVDfuB",
    "address": "LWeG5PXaqPDqFnu3B5S5JqfBauTX2hdRJ3",
-   "address_segwit": "lc1q04preraj4ams20psyx0ky47mlgrn0wsd8gm57x",
+   "address_segwit": "ltc1q04preraj4ams20psyx0ky47mlgrn0wsdf6h6xp",
    "address_uncompressed": "LY79xJ4btKhfuAD6P3MQaYsMKL8TQVDfuB",
    "chain_code": "e2a3c0e79e0e1c41b20a11c6526c517a9b47d7f81635225127c47ffe7254fb54",
    "child_index": "10",

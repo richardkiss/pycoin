@@ -1,10 +1,10 @@
 ku -n XLT -j P:foo -s 5-10
 {
    "XLT_address": "mpbeHm8U6hjZBhvgUN7waf8wFuwMV6rWDy",
-   "XLT_address_segwit": "tl1qvwwzaxznnqywkzrl5ez58m7ym4a25hjwf3pm9l",
+   "XLT_address_segwit": "tltc1qvwwzaxznnqywkzrl5ez58m7ym4a25hjwk0zs62",
    "XLT_address_uncompressed": "mor49LKpwrCpnXNvPnGLSjzCHkWxNkuxXs",
    "address": "mpbeHm8U6hjZBhvgUN7waf8wFuwMV6rWDy",
-   "address_segwit": "tl1qvwwzaxznnqywkzrl5ez58m7ym4a25hjwf3pm9l",
+   "address_segwit": "tltc1qvwwzaxznnqywkzrl5ez58m7ym4a25hjwk0zs62",
    "address_uncompressed": "mor49LKpwrCpnXNvPnGLSjzCHkWxNkuxXs",
    "chain_code": "e48329b496b2a88349811d6dd1e9e823f5a590e147d47dd70b9ed5bca234120f",
    "child_index": "5",
@@ -35,10 +35,10 @@ ku -n XLT -j P:foo -s 5-10
 }
 {
    "XLT_address": "n3j1Av7625HVyzqt5VMTpnuz3YHfR46mJM",
-   "XLT_address_segwit": "tl1q7wdzjzm6dlugerrpemxf4rnmws4z8mmwxvwaef",
+   "XLT_address_segwit": "tltc1q7wdzjzm6dlugerrpemxf4rnmws4z8mmwejdkxu",
    "XLT_address_uncompressed": "mu2zqe3hrVXFoxHAXwwp2cXcskKUd5q4sj",
    "address": "n3j1Av7625HVyzqt5VMTpnuz3YHfR46mJM",
-   "address_segwit": "tl1q7wdzjzm6dlugerrpemxf4rnmws4z8mmwxvwaef",
+   "address_segwit": "tltc1q7wdzjzm6dlugerrpemxf4rnmws4z8mmwejdkxu",
    "address_uncompressed": "mu2zqe3hrVXFoxHAXwwp2cXcskKUd5q4sj",
    "chain_code": "977785b221367f51858e682f220235c8161a4db4c75c61a8f5ea0b5d08227c81",
    "child_index": "6",
@@ -69,10 +69,10 @@ ku -n XLT -j P:foo -s 5-10
 }
 {
    "XLT_address": "mun28ayLhhgdfqgqnSMtFga12ZNDQkTTrw",
-   "XLT_address_segwit": "tl1qn34ngqcjydcqvd5mhfrxawzxlua4cch42n3emg",
+   "XLT_address_segwit": "tltc1qn34ngqcjydcqvd5mhfrxawzxlua4cch44djjya",
    "XLT_address_uncompressed": "mxeTTmfzas7fHLxZ8cefk9Y9eqTBRsWNxm",
    "address": "mun28ayLhhgdfqgqnSMtFga12ZNDQkTTrw",
-   "address_segwit": "tl1qn34ngqcjydcqvd5mhfrxawzxlua4cch42n3emg",
+   "address_segwit": "tltc1qn34ngqcjydcqvd5mhfrxawzxlua4cch44djjya",
    "address_uncompressed": "mxeTTmfzas7fHLxZ8cefk9Y9eqTBRsWNxm",
    "chain_code": "775524124e1ad6e90701e89523682e5204fb3e0307357d6c42eee72ff3e6c000",
    "child_index": "7",
@@ -103,10 +103,10 @@ ku -n XLT -j P:foo -s 5-10
 }
 {
    "XLT_address": "miHw3BnEqi92QK61rBjrKFafWrURyYcPfU",
-   "XLT_address_segwit": "tl1qrec7hnsm8agwe4utg3vcm26r2xhyy63q9zak6h",
+   "XLT_address_segwit": "tltc1qrec7hnsm8agwe4utg3vcm26r2xhyy63q6u7a9z",
    "XLT_address_uncompressed": "mizL1DRgnK8J5nVH8qkt91wmaDw71bV2G6",
    "address": "miHw3BnEqi92QK61rBjrKFafWrURyYcPfU",
-   "address_segwit": "tl1qrec7hnsm8agwe4utg3vcm26r2xhyy63q9zak6h",
+   "address_segwit": "tltc1qrec7hnsm8agwe4utg3vcm26r2xhyy63q6u7a9z",
    "address_uncompressed": "mizL1DRgnK8J5nVH8qkt91wmaDw71bV2G6",
    "chain_code": "232ffeb773ef0449502b1c68ef0e3e5a42f89310d8803abf05895ed15a8ecbc0",
    "child_index": "8",
@@ -137,10 +137,10 @@ ku -n XLT -j P:foo -s 5-10
 }
 {
    "XLT_address": "n3KTgsdBq89Egq1eUAHxDkGENaMDtUHZY2",
-   "XLT_address_segwit": "tl1qaunyle5ywnge2h2p6tsxghedlz84d9eewu74v3",
+   "XLT_address_segwit": "tltc1qaunyle5ywnge2h2p6tsxghedlz84d9ee3za7ny",
    "XLT_address_uncompressed": "mvuws3N3Yin31beTUmJVbKYgTomDkrEQDA",
    "address": "n3KTgsdBq89Egq1eUAHxDkGENaMDtUHZY2",
-   "address_segwit": "tl1qaunyle5ywnge2h2p6tsxghedlz84d9eewu74v3",
+   "address_segwit": "tltc1qaunyle5ywnge2h2p6tsxghedlz84d9ee3za7ny",
    "address_uncompressed": "mvuws3N3Yin31beTUmJVbKYgTomDkrEQDA",
    "chain_code": "cf921ce865b77ba3eb976a9ea5f1677c3782d1e49161847f6fc3a12d45b330ce",
    "child_index": "9",
@@ -171,10 +171,10 @@ ku -n XLT -j P:foo -s 5-10
 }
 {
    "XLT_address": "mrwG7EJjZkR2n6gViWR9rjokEggwoKAZZn",
-   "XLT_address_segwit": "tl1q04preraj4ams20psyx0ky47mlgrn0wsdpkhc27",
+   "XLT_address_segwit": "tltc1q04preraj4ams20psyx0ky47mlgrn0wsd7g5n4t",
    "XLT_address_uncompressed": "mtQ9z8qkcgtsRTzYvULV8T1uy7MtBwQPUK",
    "address": "mrwG7EJjZkR2n6gViWR9rjokEggwoKAZZn",
-   "address_segwit": "tl1q04preraj4ams20psyx0ky47mlgrn0wsdpkhc27",
+   "address_segwit": "tltc1q04preraj4ams20psyx0ky47mlgrn0wsd7g5n4t",
    "address_uncompressed": "mtQ9z8qkcgtsRTzYvULV8T1uy7MtBwQPUK",
    "chain_code": "e2a3c0e79e0e1c41b20a11c6526c517a9b47d7f81635225127c47ffe7254fb54",
    "child_index": "10",
