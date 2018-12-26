@@ -1,36 +1,80 @@
-class AddressAPI(object):
+import hashlib
 
-    def __init__(self, contracts, ui):
-        self._contracts = contracts
-        self._ui = ui
+from pycoin.contrib import segwit_addr
+from pycoin.encoding.b58 import b2a_hashed_base58
+from pycoin.encoding.hash import hash160
+from pycoin.encoding.hexbytes import b2h
+from pycoin.intbytes import iterbytes
 
-    def address_for_script(self, script):
-        info = self._contracts.info_for_script(script)
-        return self._ui.address_for_script_info(info)
 
-    def for_script_info(self, s):
-        return self._ui.address_for_script_info(s)
+def make_address_api(
+        contracts,
+        bip32_prv_prefix=None, bip32_pub_prefix=None, wif_prefix=None,
+        sec_prefix=None, address_prefix=None, pay_to_script_prefix=None,
+        bech32_hrp=None):
 
-    def for_script(self, s):
-        return self.address_for_script(s)
+    class AddressAPI(object):
 
-    def for_p2s(self, s):
-        return self._ui.address_for_p2s(s)
+        def for_script(self, script):
+            info = contracts.info_for_script(script)
+            return self.for_script_info(info)
 
-    def for_p2sh(self, s):
-        return self._ui.address_for_p2sh(s)
+        def b2a(self, blob):
+            return b2a_hashed_base58(blob)
 
-    def for_p2pkh(self, s):
-        return self._ui.address_for_p2pkh(s)
+        # address_for_script and script_for_address stuff
+        def for_script_info(self, script_info):
+            type = script_info.get("type")
 
-    def for_p2s_wit(self, s):
-        if self._ui._bech32_hrp:
-            return self._ui.address_for_p2s_wit(s)
+            if type == "p2pkh":
+                return self.for_p2pkh(script_info["hash160"])
 
-    def for_p2sh_wit(self, s):
-        if self._ui._bech32_hrp:
-            return self._ui.address_for_p2sh_wit(s)
+            if type == "p2pkh_wit":
+                return self.for_p2pkh_wit(script_info["hash160"])
 
-    def for_p2pkh_wit(self, s):
-        if self._ui._bech32_hrp:
-            return self._ui.address_for_p2pkh_wit(s)
+            if type == "p2sh_wit":
+                return self.for_p2sh_wit(script_info["hash256"])
+
+            if type == "p2pk":
+                h160 = hash160(script_info["sec"])
+                # BRAIN DAMAGE: this isn't really a p2pkh
+                return self.for_p2pkh(h160)
+
+            if type == "p2sh":
+                return self.for_p2sh(script_info["hash160"])
+
+            if type == "nulldata":
+                return "(nulldata %s)" % b2h(script_info["data"])
+
+            return "???"
+
+        if address_prefix:
+            def for_p2pkh(self, h160):
+                return self.b2a(address_prefix + h160)
+
+        if pay_to_script_prefix:
+            def for_p2sh(self, h160):
+                return self.b2a(pay_to_script_prefix + h160)
+
+        if bech32_hrp:
+            def for_p2pkh_wit(self, h160):
+                assert len(h160) == 20
+                return segwit_addr.encode(bech32_hrp, 0, iterbytes(h160))
+
+        if bech32_hrp:
+            def for_p2sh_wit(self, hash256):
+                assert len(hash256) == 32
+                return segwit_addr.encode(bech32_hrp, 0, iterbytes(hash256))
+
+        # p2s and p2s_wit helpers
+
+        if pay_to_script_prefix:
+            def for_p2s(self, script):
+                return self.for_p2sh(hash160(script))
+
+        if bech32_hrp:
+            def for_p2s_wit(self, script):
+                return self.for_p2sh_wit(hashlib.sha256(
+                    script).digest())
+
+    return AddressAPI()

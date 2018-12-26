@@ -15,7 +15,7 @@ from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.ui.uiclass import UI
 from pycoin.vm.annotate import Annotate
 
-from .AddressAPI import AddressAPI
+from .AddressAPI import make_address_api
 from .ParseAPI import ParseAPI
 from .ContractAPI import ContractAPI
 
@@ -180,7 +180,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.contract = ContractAPI(network, script_tools)
 
-    network.address = AddressAPI(network.contract, ui)
+    network.address = make_address_api(network.contract, **ui_kwargs)
 
     network.script = script_tools
 

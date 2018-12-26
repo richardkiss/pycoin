@@ -1,10 +1,5 @@
-import hashlib
-
-from pycoin.contrib import segwit_addr
 from pycoin.encoding.b58 import b2a_hashed_base58
-from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
-from pycoin.intbytes import iterbytes
 
 
 class UI(object):
@@ -27,58 +22,3 @@ class UI(object):
 
     def sec_text_for_blob(self, blob):
         return self._sec_prefix + b2h(blob)
-
-    # address_for_script and script_for_address stuff
-
-    def address_for_script_info(self, script_info):
-        type = script_info.get("type")
-
-        if type == "p2pkh":
-            return self.address_for_p2pkh(script_info["hash160"])
-
-        if type == "p2pkh_wit":
-            return self.address_for_p2pkh_wit(script_info["hash160"])
-
-        if type == "p2sh_wit":
-            return self.address_for_p2sh_wit(script_info["hash256"])
-
-        if type == "p2pk":
-            h160 = hash160(script_info["sec"])
-            # BRAIN DAMAGE: this isn't really a p2pkh
-            return self.address_for_p2pkh(h160)
-
-        if type == "p2sh":
-            return self.address_for_p2sh(script_info["hash160"])
-
-        if type == "nulldata":
-            return "(nulldata %s)" % b2h(script_info["data"])
-
-        return "???"
-
-    def address_for_p2pkh(self, h160):
-        if self._address_prefix:
-            return b2a_hashed_base58(self._address_prefix + h160)
-        return "???"
-
-    def address_for_p2sh(self, h160):
-        if self._pay_to_script_prefix:
-            return b2a_hashed_base58(self._pay_to_script_prefix + h160)
-        return "???"
-
-    def address_for_p2pkh_wit(self, h160):
-        if self._bech32_hrp and len(h160) == 20:
-            return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(h160))
-        return "???"
-
-    def address_for_p2sh_wit(self, hash256):
-        if self._bech32_hrp and len(hash256) == 32:
-            return segwit_addr.encode(self._bech32_hrp, 0, iterbytes(hash256))
-        return "???"
-
-    # p2s and p2s_wit helpers
-
-    def address_for_p2s(self, script):
-        return self.address_for_p2sh(hash160(script))
-
-    def address_for_p2s_wit(self, script):
-        return self.address_for_p2sh_wit(hashlib.sha256(script).digest())
