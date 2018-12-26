@@ -6,10 +6,9 @@ from pycoin.encoding.hexbytes import b2h
 
 
 class ContractAPI(object):
-    def __init__(self, network, script_tools, ui):
+    def __init__(self, network, script_tools):
         self._network = network
         self._script_tools = script_tools
-        self._ui = ui
 
     def for_address(self, address):
         info = self._network.parse.address(address)
@@ -29,8 +28,7 @@ class ContractAPI(object):
         return self.for_info(dict(type="p2sh", hash160=hash160))
 
     def for_p2sh_wit(self, hash256):
-        if self._ui._bech32_hrp:
-            return self.for_info(dict(type="p2sh_wit", hash256=hash256))
+        return self.for_info(dict(type="p2sh_wit", hash256=hash256))
 
     def for_multisig(self, m, sec_keys):
         return self.for_info(dict(type="multisig", m=m, sec_keys=sec_keys))
@@ -48,8 +46,7 @@ class ContractAPI(object):
         return self.for_p2sh(hash160(underlying_script))
 
     def for_p2s_wit(self, underlying_script):
-        if self._ui._bech32_hrp:
-            return self.for_p2sh_wit(hashlib.sha256(underlying_script).digest())
+        return self.for_p2sh_wit(hashlib.sha256(underlying_script).digest())
 
     def match(self, template_disassembly, script):
         template = self._script_tools.compile(template_disassembly)

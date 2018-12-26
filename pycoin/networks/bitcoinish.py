@@ -178,7 +178,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     parse_api_class = kwargs.get("parse_api_class", ParseAPI)
     network.parse = parse_api_class(network, ui)
 
-    network.contract = ContractAPI(network, script_tools, ui)
+    network.contract = ContractAPI(network, script_tools)
 
     network.address = AddressAPI(network.contract, ui)
 
