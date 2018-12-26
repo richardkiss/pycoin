@@ -33,15 +33,19 @@ class Network(object):
         return "<Network %s>" % self.full_name()
 
 
+def hwif_for_data(key_data, network):
+    if len(key_data) == 74:
+        return network.BIP32Node.deserialize(b'0000' + key_data)
+    if len(key_data) in (32, 64):
+        return network.ElectrumWallet.deserialize(key_data)
+
+
 def make_output_for_hwif(network):
     def f(key_data, network, subkey_path, add_output):
-
-        if len(key_data) == 74:
-            key = network.BIP32Node.deserialize(b'0000' + key_data)
-        elif len(key_data) in (32, 64):
-            key = network.ElectrumWallet.deserialize(key_data)
-        else:
+        key = hwif_for_data(key_data, network)
+        if key is None:
             return
+
         yield ("wallet_key", key.hwif(as_private=key.is_private()), None)
         if key.is_private():
             yield ("public_version", key.hwif(as_private=False), None)
