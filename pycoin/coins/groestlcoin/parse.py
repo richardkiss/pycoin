@@ -1,6 +1,6 @@
 from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.networks.ParseAPI import BitcoinishPayable, ParseAPI
-from pycoin.ui.parseable_str import parseable_str, parse_b58
+from pycoin.networks.parseable_str import parseable_str, parse_b58
 
 from .hash import groestlHash
 

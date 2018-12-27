@@ -18,6 +18,7 @@ from pycoin.vm.annotate import Annotate
 from .AddressAPI import make_address_api
 from .ParseAPI import ParseAPI
 from .ContractAPI import ContractAPI
+from .parseable_str import parseable_str
 
 
 class Network(object):
@@ -204,5 +205,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.who_signed = WhoSigned(
         script_tools, network.address, network.Key._default_generator)
+
+    network.str = parseable_str
 
     return network

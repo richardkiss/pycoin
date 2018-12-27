@@ -20,7 +20,7 @@ def main():
         hwif = f.readline().strip()
 
     # turn the bip32 text into a BIP32Node object
-    BIP32_KEY = network.ui.parse(hwif)
+    BIP32_KEY = network.parse(hwif)
 
     # create three sec_keys (these are public keys, streamed using the SEC format)
 
@@ -32,10 +32,10 @@ def main():
 
     # create the 2-of-3 multisig script
     # any 2 signatures can release the funds
-    pay_to_multisig_script = network.script.for_multisig(2, public_key_sec_list)
+    pay_to_multisig_script = network.contract.for_multisig(2, public_key_sec_list)
 
     # create a "2-of-3" multisig address_for_multisig
-    the_address = network.ui.address_for_p2s(pay_to_multisig_script)
+    the_address = network.address.for_p2s(pay_to_multisig_script)
 
     print("Here is your pay 2-of-3 address: %s" % the_address)
 

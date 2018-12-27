@@ -4,7 +4,6 @@ import sys
 
 from pycoin.coins.tx_utils import sign_tx
 from pycoin.encoding.hexbytes import h2b
-from pycoin.ui.validate import is_wif_valid
 from pycoin.solve.utils import build_p2sh_lookup
 from pycoin.symbols.btc import network
 
@@ -22,7 +21,7 @@ def main():
     # get the WIF
     with open(sys.argv[2], "r") as f:
         wif = f.readline().strip()
-    assert is_wif_valid(wif)
+    assert network.parse.wif(wif) is not None
 
     # create the p2sh_lookup
     with open(sys.argv[3], "r") as f:
@@ -35,8 +34,8 @@ def main():
     # sign the transaction with the given WIF
     sign_tx(tx, wifs=[wif], p2sh_lookup=p2sh_lookup)
 
-    bad_solution_count = tx.bad_signature_count()
-    print("tx %s now has %d bad signature(s)" % (tx.id(), bad_solution_count))
+    bad_solution_count = tx.bad_solution_count()
+    print("tx %s now has %d bad solution(s)" % (tx.id(), bad_solution_count))
 
     include_unspents = (bad_solution_count > 0)
     print("Here is the tx as hex:\n%s" % tx.as_hex(include_unspents=include_unspents))

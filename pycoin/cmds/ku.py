@@ -9,7 +9,6 @@ import subprocess
 import sys
 
 from pycoin.encoding.hexbytes import h2b
-from pycoin.ui.parseable_str import parseable_str
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
 
@@ -165,7 +164,7 @@ def parse_key(item, networks):
         item = Key(hash160=h2b(item)).address()
         networks = [default_network]
 
-    item = parseable_str(item)
+    item = default_network.str(item)
 
     for network in networks:
         for f in "hierarchical_key private_key public_key address".split():

@@ -10,7 +10,6 @@
 import sys
 
 from pycoin.coins.tx_utils import create_tx
-from pycoin.ui.validate import is_address_valid
 from pycoin.symbols.btc import network
 
 
@@ -29,7 +28,7 @@ def main():
 
     # make sure the address is valid
     payable = sys.argv[3]
-    assert is_address_valid(payable)
+    assert network.parse.address(payable) is not None
 
     # create the unsigned transaction
     tx = create_tx([spendable], [payable])
