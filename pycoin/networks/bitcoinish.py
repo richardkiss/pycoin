@@ -3,6 +3,7 @@ from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
+from pycoin.encoding.b58 import b2a_hashed_base58
 from pycoin.key.Keychain import Keychain
 from pycoin.key.Key import Key
 from pycoin.key.BIP32Node import BIP32Node
@@ -12,7 +13,6 @@ from pycoin.message.make_parser_and_packer import (
     standard_message_post_unpacks, standard_streamer, standard_parsing_functions
 )
 from pycoin.encoding.hexbytes import b2h, h2b
-from pycoin.ui.uiclass import UI
 from pycoin.vm.annotate import Annotate
 
 from .AddressAPI import make_address_api
@@ -151,8 +151,20 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
-    ui_class = kwargs.get("ui_class", UI)
-    ui = ui_class(generator, **ui_kwargs)
+    _bip32_prv_prefix = ui_kwargs.get("bip32_prv_prefix")
+    _bip32_pub_prefix = ui_kwargs.get("bip32_pub_prefix")
+    _wif_prefix = ui_kwargs.get("wif_prefix")
+    _sec_prefix = ui_kwargs.get("sec_prefix")
+
+    def bip32_as_string(blob, as_private):
+        prefix = _bip32_prv_prefix if as_private else _bip32_pub_prefix
+        return b2a_hashed_base58(prefix + blob)
+
+    def wif_for_blob(blob):
+        return b2a_hashed_base58(_wif_prefix + blob)
+
+    def sec_text_for_blob(blob):
+        return _sec_prefix + b2h(blob)
 
     network.Key = Key.make_subclass(network=network, generator=generator)
     network.ElectrumKey = ElectrumWallet.make_subclass(network=network, generator=generator)
@@ -176,7 +188,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.Keychain = Keychain
 
     parse_api_class = kwargs.get("parse_api_class", ParseAPI)
-    network.parse = parse_api_class(network, ui)
+    network.parse = parse_api_class(network, **ui_kwargs)
 
     network.contract = ContractAPI(network, script_tools)
 
@@ -184,9 +196,9 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.script = script_tools
 
-    network.bip32_as_string = ui.bip32_as_string
-    network.sec_text_for_blob = ui.sec_text_for_blob
-    network.wif_for_blob = ui.wif_for_blob
+    network.bip32_as_string = bip32_as_string
+    network.sec_text_for_blob = sec_text_for_blob
+    network.wif_for_blob = wif_for_blob
 
     network.annotate = Annotate(script_tools, network.address)
 
