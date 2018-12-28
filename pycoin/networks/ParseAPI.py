@@ -92,18 +92,18 @@ class ParseAPI(object):
         blob = self.electrum_to_blob(s)
         if blob and len(blob) == 16:
             blob = b2h(blob)
-            return self._network.ElectrumKey(initial_key=blob)
+            return self._network.keys.electrum_seed(seed=blob)
 
     def electrum_prv(self, s):
         blob = self.electrum_to_blob(s)
         if blob and len(blob) == 32:
             mpk = from_bytes_32(blob)
-            return self._network.ElectrumKey(master_private_key=mpk)
+            return self._network.keys.electrum_private(master_private_key=mpk)
 
     def electrum_pub(self, s):
         blob = self.electrum_to_blob(s)
         if blob and len(blob) == 64:
-            return self._network.ElectrumKey(master_public_key=blob)
+            return self._network.keys.electrum_public(master_public_key=blob)
 
     # address
     def p2pkh(self, s):

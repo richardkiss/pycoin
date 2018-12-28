@@ -172,8 +172,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     def sec_text_for_blob(blob):
         return _sec_prefix + b2h(blob)
 
-    network.Key = Key.make_subclass(network=network, generator=generator)
-    network.ElectrumKey = ElectrumWallet.make_subclass(network=network, generator=generator)
+    NetworkKey = Key.make_subclass(network=network, generator=generator)
+    NetworkElectrumKey = ElectrumWallet.make_subclass(network=network, generator=generator)
     network.BIP32Node = BIP32Node.make_subclass(network=network, generator=generator)
 
     NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
@@ -189,8 +189,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
         streamer, standard_messages(), standard_message_post_unpacks(streamer))
 
     network.output_for_hwif = make_output_for_hwif(network)
-    network.output_for_secret_exponent = make_output_for_secret_exponent(network.Key)
-    network.output_for_public_pair = make_output_for_public_pair(network.Key, network)
+    network.output_for_secret_exponent = make_output_for_secret_exponent(NetworkKey)
+    network.output_for_public_pair = make_output_for_public_pair(NetworkKey, network)
     network.Keychain = Keychain
 
     parse_api_class = kwargs.get("parse_api_class", ParseAPI)
@@ -201,19 +201,32 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.address = make_address_api(network.contract, **ui_kwargs)
 
     def keys_private(secret_exponent, is_compressed=None):
-        return network.Key(secret_exponent=secret_exponent, is_compressed=is_compressed)
+        return NetworkKey(secret_exponent=secret_exponent, is_compressed=is_compressed)
 
     def keys_public(item, is_compressed=None):
         if isinstance(item, tuple):
             # it's a public pair
-            return network.Key(public_pair=item, prefer_uncompressed=not is_compressed)
+            return NetworkKey(public_pair=item, prefer_uncompressed=not is_compressed)
         if is_compressed is not None:
             raise ValueError("can't set is_compressed from sec")
-        return network.Key.from_sec(item)
+        return NetworkKey.from_sec(item)
 
     network.keys = API()
     network.keys.private = keys_private
     network.keys.public = keys_public
+
+    def electrum_seed(seed):
+        return NetworkElectrumKey(initial_key=seed)
+
+    def electrum_private(master_private_key):
+        return NetworkElectrumKey(master_private_key=master_private_key)
+
+    def electrum_public(master_public_key):
+        return NetworkElectrumKey(master_public_key=master_public_key)
+
+    network.keys.electrum_seed = electrum_seed
+    network.keys.electrum_private = electrum_private
+    network.keys.electrum_public = electrum_public
 
     network.msg = API()
     message_signer = MessageSigner(network, generator)

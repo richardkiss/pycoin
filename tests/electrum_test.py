@@ -3,9 +3,6 @@ import unittest
 from pycoin.symbols.btc import network
 
 
-ElectrumKey = network.ElectrumKey
-
-
 class ElectrumTest(unittest.TestCase):
     def test_initial_key(self):
         RECEIVING_ADDRESSES = [
@@ -20,7 +17,7 @@ class ElectrumTest(unittest.TestCase):
             "146wnqmsQNYCZ6AXRCqLkzZyGM1ZU6nr3F",
             "1Mwexajvia3s8AcaGUkyEg9ZZJPJeTbKTZ"
         ]
-        wallet = ElectrumKey(initial_key="00000000000000000000000000000001")
+        wallet = network.keys.electrum_seed(seed="00000000000000000000000000000001")
         for idx, address in enumerate(RECEIVING_ADDRESSES):
             subkey = wallet.subkey("%s/0" % idx)
             calculated_address = subkey.address()
@@ -57,7 +54,7 @@ class ElectrumTest(unittest.TestCase):
         k = network.keys.private(secret_exponent=1)
         master_public_key = k.sec(use_uncompressed=True)[1:]
 
-        wallet = ElectrumKey(master_public_key=master_public_key)
+        wallet = network.keys.electrum_public(master_public_key)
         for idx, address in enumerate(RECEIVING_ADDRESSES):
             subkey = wallet.subkey("%s/0" % idx)
             calculated_address = subkey.address()
@@ -67,7 +64,7 @@ class ElectrumTest(unittest.TestCase):
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
 
-        wallet = ElectrumKey(master_private_key=1)
+        wallet = network.keys.electrum_private(master_private_key=1)
         for idx, address in enumerate(RECEIVING_ADDRESSES):
             subkey = wallet.subkey("%s/0" % idx)
             calculated_address = subkey.address()
