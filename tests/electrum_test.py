@@ -1,10 +1,9 @@
 import unittest
 
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.btc import network
 
 
-ElectrumKey = BitcoinMainnet.ElectrumKey
-Key = BitcoinMainnet.keys.private
+ElectrumKey = network.ElectrumKey
 
 
 class ElectrumTest(unittest.TestCase):
@@ -27,14 +26,14 @@ class ElectrumTest(unittest.TestCase):
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = BitcoinMainnet.parse.wif(wif)
+            key = network.parse.wif(wif)
             self.assertEqual(key.address(), address)
         for idx, address in enumerate(CHANGE_ADDRESSES):
             subkey = wallet.subkey("%s/1" % idx)
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = BitcoinMainnet.parse.wif(wif)
+            key = network.parse.wif(wif)
             self.assertEqual(key.address(), address)
 
     def test_master_public_and_private(self):
@@ -55,7 +54,7 @@ class ElectrumTest(unittest.TestCase):
             "1Fgyp3PUx9AAg8yJe1zGXHP5dVC6i1tXbs",
             "12XTLd4u9jeqw4egLAUhoKLxHARCdKWkty"
         ]
-        k = Key(secret_exponent=1)
+        k = network.keys.private(secret_exponent=1)
         master_public_key = k.sec(use_uncompressed=True)[1:]
 
         wallet = ElectrumKey(master_public_key=master_public_key)
@@ -74,12 +73,12 @@ class ElectrumTest(unittest.TestCase):
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = BitcoinMainnet.parse.wif(wif)
+            key = network.parse.wif(wif)
             self.assertEqual(key.address(), address)
         for idx, address in enumerate(CHANGE_ADDRESSES):
             subkey = wallet.subkey("%s/1" % idx)
             calculated_address = subkey.address()
             self.assertEqual(address, calculated_address)
             wif = subkey.wif()
-            key = BitcoinMainnet.parse.wif(wif)
+            key = network.parse.wif(wif)
             self.assertEqual(key.address(), address)

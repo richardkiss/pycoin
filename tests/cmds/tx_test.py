@@ -5,14 +5,13 @@ import tempfile
 from pycoin.cmds import tx
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import h2b
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.btc import network
 
 from .ToolTest import ToolTest
 
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.keys.private
-Tx = BitcoinMainnet.tx
+Tx = network.tx
 
 
 class TxTest(ToolTest):
@@ -68,7 +67,7 @@ class TxTest(ToolTest):
             "1976a914751e76e8199196d454941c45d1b3a323f1433bd688ac0000000000f9"
             "02950000000017a91415fc0754e73eb85d1cbce08786fadb7320ecb8dc8700f9"
             "02950000000017a914594f349df0bac3084ffea8a477bba5f03dcd450787")
-        wifs = ' '.join(Key(_).wif() for _ in (1, 2, 3))
+        wifs = ' '.join(network.keys.private(_).wif() for _ in (1, 2, 3))
         signed = tempfile.mktemp(suffix=".hex")
         self.launch_tool("tx -a -P %s --db %s %s %s -o %s" % (
             p2sh_file.name, tx_source_hex, tx_to_sign, wifs, signed), env=dict(PYCOIN_CACHE_DIR=the_dir))

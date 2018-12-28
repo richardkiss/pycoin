@@ -7,12 +7,11 @@ from pycoin.coins.tx_utils import create_signed_tx
 from pycoin.symbols.btc import network
 
 
-Key = network.keys.private
 Spendable = network.tx.Spendable
 
-BITCOIN_ADDRESSES = [Key(i).address() for i in range(1, 21)]
+BITCOIN_ADDRESSES = [network.keys.private(i).address() for i in range(1, 21)]
 
-WIFS = [Key(i).wif() for i in range(1, 21)]
+WIFS = [network.keys.private(i).wif() for i in range(1, 21)]
 
 FAKE_HASH = hashlib.sha256(struct.pack("Q", 1)).digest()
 

@@ -9,14 +9,13 @@ from pycoin.symbols.btc import network
 
 # BRAIN DAMAGE
 who_signed_tx = network.who_signed.who_signed_tx
-Key = network.keys.private
 Tx = network.tx
 
 
 class WhoSignedTest(unittest.TestCase):
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [network.keys.private(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)
@@ -44,7 +43,7 @@ class WhoSignedTest(unittest.TestCase):
     def test_multisig_one_at_a_time(self):
         M = 3
         N = 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [network.keys.private(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)
@@ -67,7 +66,7 @@ class WhoSignedTest(unittest.TestCase):
 
     def test_sign_pay_to_script_multisig(self):
         M, N = 3, 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [network.keys.private(secret_exponent=i) for i in range(1, N+2)]
         tx_in = Tx.TxIn.coinbase_tx_in(script=b'')
         underlying_script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         address = network.address.for_p2s(underlying_script)

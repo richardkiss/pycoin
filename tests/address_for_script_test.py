@@ -14,13 +14,12 @@ def make_tests_for_netcode(netcode):
     script_for_nulldata = network.contract.for_nulldata
 
     Tx = network.tx
-    Key = network.keys.private
 
     class AddressForScriptTest(unittest.TestCase):
 
         def test_script_type_pay_to_address(self):
             for se in range(1, 100):
-                key = Key(secret_exponent=se)
+                key = network.keys.private(secret_exponent=se)
                 for b in [True, False]:
                     addr = key.address(use_uncompressed=b)
                     sc = script_for_p2pkh(key.hash160(use_uncompressed=b))
@@ -29,7 +28,7 @@ def make_tests_for_netcode(netcode):
 
         def test_solve_pay_to_address(self):
             for se in range(1, 10):
-                key = Key(secret_exponent=se)
+                key = network.keys.private(secret_exponent=se)
                 for b in [True, False]:
                     addr = key.address(use_uncompressed=b)
                     script = script_for_p2pkh(key.hash160(use_uncompressed=b))
@@ -43,7 +42,7 @@ def make_tests_for_netcode(netcode):
 
         def test_script_type_pay_to_public_pair(self):
             for se in range(1, 100):
-                key = Key(secret_exponent=se)
+                key = network.keys.private(secret_exponent=se)
                 for b in [True, False]:
                     addr = key.address(use_uncompressed=b)
                     sc = script_for_p2pk(key.sec(use_uncompressed=b))
@@ -52,7 +51,7 @@ def make_tests_for_netcode(netcode):
 
         def test_solve_pay_to_public_pair(self):
             for se in range(1, 10):
-                key = Key(secret_exponent=se)
+                key = network.keys.private(secret_exponent=se)
                 for b in [True, False]:
                     addr = key.address(use_uncompressed=b)
                     script = script_for_p2pk(key.sec(use_uncompressed=b))

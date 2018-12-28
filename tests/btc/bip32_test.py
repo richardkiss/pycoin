@@ -246,8 +246,7 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertRaises(ValueError, list, my_prv.subkeys('-1-0'))
 
     def test_repr(self):
-        Key = BitcoinTestnet.keys.private
-        key = Key(secret_exponent=273)
+        key = BitcoinTestnet.keys.private(secret_exponent=273)
         wallet = XTNBIP32Node.from_master_secret(bytes(key.wif().encode('ascii')))
 
         address = wallet.address()

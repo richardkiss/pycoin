@@ -50,13 +50,8 @@ class SighashSingleTest(unittest.TestCase):
 
     def _test_sighash_single(self, netcode):
         network = network_for_netcode(netcode)
-        Key = network.keys.private
-        k0 = Key(secret_exponent=PRIV_KEYS[0], is_compressed=True)
-        k1 = Key(secret_exponent=PRIV_KEYS[1], is_compressed=True)
-        k2 = Key(secret_exponent=PRIV_KEYS[2], is_compressed=True)
-        k3 = Key(secret_exponent=PRIV_KEYS[3], is_compressed=True)
-        k4 = Key(secret_exponent=PRIV_KEYS[4], is_compressed=True)
-        k5 = Key(secret_exponent=PRIV_KEYS[5], is_compressed=True)
+        k0, k1, k2, k3, k4, k5 = [
+            network.keys.private(secret_exponent=se, is_compressed=True) for se in PRIV_KEYS]
 
         # Fake a coinbase transaction
         coinbase_tx = network.tx.coinbase_tx(k0.sec(), 500000000)

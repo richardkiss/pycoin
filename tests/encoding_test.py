@@ -8,9 +8,7 @@ from pycoin.encoding.hexbytes import h2b
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec, public_pair_to_sec, sec_to_public_pair
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.intbytes import iterbytes
-from pycoin.symbols.btc import network as BitcoinMainnet
-
-Key = BitcoinMainnet.keys.private
+from pycoin.symbols.btc import network
 
 
 class EncodingTestCase(unittest.TestCase):
@@ -84,9 +82,9 @@ class EncodingTestCase(unittest.TestCase):
 
     def test_wif_to_from_secret_exponent(self):
         def do_test(as_secret_exponent, as_wif, is_compressed):
-            key = Key(as_secret_exponent, is_compressed=is_compressed)
+            key = network.keys.private(as_secret_exponent, is_compressed=is_compressed)
             self.assertEqual(as_wif, key.wif())
-            key = BitcoinMainnet.parse.wif(as_wif)
+            key = network.parse.wif(as_wif)
             se = key.secret_exponent()
             comp = key.is_compressed()
             self.assertEqual(se, as_secret_exponent)
@@ -120,10 +118,10 @@ class EncodingTestCase(unittest.TestCase):
             self.assertEqual(public_pair_to_hash160_sec(as_public_pair, compressed=is_compressed),
                              as_hash160_sec)
 
-            self.assertEqual(BitcoinMainnet.address.for_p2pkh(as_hash160_sec), as_bitcoin_address)
-            self.assertTrue(BitcoinMainnet.parse.address(as_bitcoin_address) != None)
+            self.assertEqual(network.address.for_p2pkh(as_hash160_sec), as_bitcoin_address)
+            self.assertTrue(network.parse.address(as_bitcoin_address) != None)
             bad_address = as_bitcoin_address[:17] + chr(ord(as_bitcoin_address[17]) + 1) + as_bitcoin_address[18:]
-            self.assertIsNone(BitcoinMainnet.parse.address(bad_address))
+            self.assertIsNone(network.parse.address(bad_address))
 
         SEC_TEST_DATA = [
             (

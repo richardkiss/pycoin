@@ -12,7 +12,6 @@ Spendable = network.tx.Spendable
 Tx = network.tx
 TxIn = network.tx.TxIn
 TxOut = network.tx.TxOut
-Key = network.keys.private
 
 
 class SignTest(unittest.TestCase):
@@ -30,7 +29,7 @@ class SignTest(unittest.TestCase):
         self.assertEqual(tx.bad_solution_count(), 0)
 
     def multisig_M_of_N(self, M, N, unsigned_id, signed_id):
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [network.keys.private(secret_exponent=i) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = TxOut(1000000, script)
@@ -56,7 +55,7 @@ class SignTest(unittest.TestCase):
     def test_multisig_one_at_a_time(self):
         M = 3
         N = 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [network.keys.private(secret_exponent=i) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = TxOut(1000000, script)
@@ -99,7 +98,7 @@ class SignTest(unittest.TestCase):
 
     def test_sign_pay_to_script_multisig(self):
         M, N = 3, 3
-        keys = [Key(secret_exponent=i) for i in range(1, N+2)]
+        keys = [network.keys.private(secret_exponent=i) for i in range(1, N+2)]
         tx_in = TxIn.coinbase_tx_in(script=b'')
         underlying_script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         address = network.address.for_p2s(underlying_script)

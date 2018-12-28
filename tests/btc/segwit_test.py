@@ -11,7 +11,6 @@ from pycoin.symbols.btc import network
 
 
 # BRAIN DAMAGE
-Key = network.keys.private
 Tx = network.tx
 TxOut = network.tx.TxOut
 
@@ -52,13 +51,13 @@ class SegwitTest(unittest.TestCase):
         self.assertEqual(address, afs_address)
 
     def test_segwit_create_tx(self):
-        key1 = Key(1)
+        key1 = network.keys.private(1)
         coin_value = 5000000
         script = network.contract.for_p2pkh_wit(key1.hash160())
         tx_hash = b'\ee' * 32
         tx_out_index = 0
         spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
-        key2 = Key(2)
+        key2 = network.keys.private(2)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
         sign_tx(tx, [key1.wif()])
