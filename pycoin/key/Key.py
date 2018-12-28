@@ -248,6 +248,9 @@ class Key(object):
             return self._prefer_uncompressed
         return False
 
+    def is_compressed(self):
+        return not self._prefer_uncompressed
+
     def __repr__(self):
         r = self.public_copy()
         if r._network:

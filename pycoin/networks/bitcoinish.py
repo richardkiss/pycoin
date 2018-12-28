@@ -1,6 +1,7 @@
 from pycoin.block import Block
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
+from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.b58 import b2a_hashed_base58
@@ -19,6 +20,10 @@ from .AddressAPI import make_address_api
 from .ParseAPI import ParseAPI
 from .ContractAPI import ContractAPI
 from .parseable_str import parseable_str
+
+
+class API(object):
+    pass
 
 
 class Network(object):
@@ -195,6 +200,14 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.address = make_address_api(network.contract, **ui_kwargs)
 
+    network.msg = API()
+    message_signer = MessageSigner(network, generator)
+    network.msg.sign = message_signer.sign_message
+    network.msg.verify = message_signer.verify_message
+    network.msg.parse_signed = message_signer.parse_signed_message
+    network.msg.hash_for_signing = message_signer.hash_for_signing
+    network.msg.signature_for_message_hash = message_signer.signature_for_message_hash
+    network.msg.pair_for_message_hash = message_signer.pair_for_message_hash
     network.script = script_tools
 
     network.bip32_as_string = bip32_as_string

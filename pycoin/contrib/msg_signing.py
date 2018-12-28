@@ -10,7 +10,6 @@ from ..encoding.bytes32 import to_bytes_32, from_bytes_32
 from ..encoding.exceptions import EncodingError
 from ..encoding.hash import double_sha256
 from ..encoding.sec import public_pair_to_hash160_sec
-from ..key import Key
 
 
 class MessageSigner(object):
@@ -20,10 +19,10 @@ class MessageSigner(object):
     signature_template = ('-----BEGIN {net_name} SIGNED MESSAGE-----\n{msg}\n-----BEGIN '
                           'SIGNATURE-----\n{addr}\n{sig}\n-----END {net_name} SIGNED MESSAGE-----')
 
-    def __init__(self, network):
+    def __init__(self, network, generator):
         self._network = network
         self._network_name = network.network_name
-        self._generator = network.Key._default_generator
+        self._generator = generator
 
     @classmethod
     def parse_sections(class_, msg_in):
@@ -126,7 +125,7 @@ class MessageSigner(object):
         addr = key.address()
 
         msg_hash = self.hash_for_signing(message)
-        is_compressed = not key._use_uncompressed(use_uncompressed)
+        is_compressed = key.is_compressed()
 
         sig = self.signature_for_message_hash(secret_exponent, msg_hash, is_compressed)
 
@@ -175,11 +174,11 @@ class MessageSigner(object):
         key object (which implies the public key),
         or a specific base58-encoded pubkey hash.
         """
-        if isinstance(key_or_address, Key):
+        if isinstance(key_or_address, str):
             # they gave us a private key or a public key already loaded.
-            key = key_or_address
-        else:
             key = self._network.parse.address(key_or_address)
+        else:
+            key = key_or_address
 
         try:
             msg_hash = self.hash_for_signing(message) if message is not None else msg_hash
