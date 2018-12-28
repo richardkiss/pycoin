@@ -9,8 +9,6 @@ import sys
 from pycoin.encoding.hexbytes import b2h
 from pycoin.symbols.btc import network
 
-BIP32Node = network.BIP32Node
-
 
 def main():
     if len(sys.argv) != 2:

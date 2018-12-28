@@ -219,7 +219,6 @@ class ValidationTest(unittest.TestCase):
 
     def _make_tx(self, input_script, other_scripts=[]):
         from pycoin.coins.tx_utils import create_signed_tx
-        from pycoin.solve.utils import build_p2sh_lookup
 
         cv = int(50*1e8)
 
@@ -227,7 +226,7 @@ class ValidationTest(unittest.TestCase):
         sec = key.sec()
         wif = key.wif()
         address = key.address()
-        p2sh_lookup = build_p2sh_lookup(other_scripts)
+        p2sh_lookup = network.tx.solve.build_p2sh_lookup(other_scripts)
 
         coinbase_tx = network.tx.coinbase_tx(public_key_sec=sec, coin_value=cv)
         coinbase_tx.txs_out[0].script = input_script

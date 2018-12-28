@@ -2,9 +2,7 @@ import unittest
 
 from pycoin.coins import tx_utils
 from pycoin.cmds.tx import DEFAULT_VERSION
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import h2b
-from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.symbols.btc import network
 
 
@@ -23,7 +21,7 @@ class SignTest(unittest.TestCase):
         tx_out = TxOut(100, tx_out_script)
         tx = Tx(1, [TxIn(b'\1' * 32, 1)], [TxOut(100, tx_out_script)])
         tx.set_unspents([tx_out])
-        hl = build_hash160_lookup([1], [secp256k1_generator])
+        hl = network.tx.solve.build_hash160_lookup([1])
         self.assertEqual(tx.bad_solution_count(), 1)
         tx.sign(hash160_lookup=hl)
         self.assertEqual(tx.bad_solution_count(), 0)
@@ -37,7 +35,7 @@ class SignTest(unittest.TestCase):
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_solution_count(), 1)
-        hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:M]), [secp256k1_generator])
+        hash160_lookup = network.tx.solve.build_hash160_lookup((key.secret_exponent() for key in keys[:M]))
         tx2.sign(hash160_lookup=hash160_lookup)
         self.assertEqual(tx2.id(), signed_id)
         self.assertEqual(tx2.bad_solution_count(), 0)
@@ -68,7 +66,7 @@ class SignTest(unittest.TestCase):
         for i in range(1, N+1):
             self.assertEqual(tx2.bad_solution_count(), 1)
             self.assertEqual(tx2.id(), ids[i-1])
-            hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[i-1:i]), [secp256k1_generator])
+            hash160_lookup = network.tx.solve.build_hash160_lookup((key.secret_exponent() for key in keys[i-1:i]))
             tx2.sign(hash160_lookup=hash160_lookup)
             self.assertEqual(tx2.id(), ids[i])
         self.assertEqual(tx2.bad_solution_count(), 0)
@@ -92,8 +90,8 @@ class SignTest(unittest.TestCase):
             tx = Tx(version=DEFAULT_VERSION, txs_in=txs_in, txs_out=txs_out, unspents=unspents)
             for key in ordered_keys:
                 self.assertEqual(tx.bad_solution_count(), 1)
-                p2sh_lookup = build_p2sh_lookup(raw_scripts)
-                tx.sign(build_hash160_lookup([key.secret_exponent()], [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
+                p2sh_lookup = network.tx.solve.build_p2sh_lookup(raw_scripts)
+                tx.sign(network.tx.solve.build_hash160_lookup([key.secret_exponent()]), p2sh_lookup=p2sh_lookup)
             self.assertEqual(tx.bad_solution_count(), 0)
 
     def test_sign_pay_to_script_multisig(self):
@@ -107,8 +105,8 @@ class SignTest(unittest.TestCase):
         tx_out = TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])
-        hash160_lookup = build_hash160_lookup((key.secret_exponent() for key in keys[:N]), [secp256k1_generator])
-        p2sh_lookup = build_p2sh_lookup([underlying_script])
+        hash160_lookup = network.tx.solve.build_hash160_lookup((key.secret_exponent() for key in keys[:N]))
+        p2sh_lookup = network.tx.solve.build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx2.bad_solution_count(), 0)
 
@@ -118,7 +116,7 @@ class SignTest(unittest.TestCase):
         # txid: 9618820d7037d2f32db798c92665231cd4599326f5bd99cb59d0b723be2a13a2
         raw_script = ("522103e33b41f5ed67a77d4c4c54b3e946bd30d15b8f66e42cb29fde059c168851165521"
                       "02b92cb20a9fb1eb9656a74eeb7387636cf64cdf502ff50511830328c1b479986452ae")
-        p2sh_lookup = build_p2sh_lookup([h2b(raw_script)])
+        p2sh_lookup = network.tx.solve.build_p2sh_lookup([h2b(raw_script)])
         partially_signed_raw_tx = (
             "010000000196238f11a5fd3ceef4efd5a186a7e6b9217d900418e72aca917cd6a6e634"
             "e74100000000910047304402201b41b471d9dd93cf97eed7cfc39a5767a546f6bfbf3e"
@@ -131,7 +129,7 @@ class SignTest(unittest.TestCase):
         tx_out = TxOut(1000000, h2b("a914a10dfa21ee8c33b028b92562f6fe04e60563d3c087"))
         tx.set_unspents([tx_out])
         key = network.parse.wif("L3LRiWuBJ6xcY4rnUsEiEX8mXRmKZG7uYyJ2sePDxSZ2haw1hPHW")
-        hash160_lookup = build_hash160_lookup([key.secret_exponent()], [secp256k1_generator])
+        hash160_lookup = network.tx.solve.build_hash160_lookup([key.secret_exponent()])
         self.assertEqual(tx.bad_solution_count(), 1)
         tx.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.assertEqual(tx.bad_solution_count(), 0)

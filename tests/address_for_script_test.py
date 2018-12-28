@@ -1,8 +1,6 @@
 import unittest
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.networks.registry import network_for_netcode
-from pycoin.solve.utils import build_hash160_lookup
 
 
 def make_tests_for_netcode(netcode):
@@ -34,7 +32,7 @@ def make_tests_for_netcode(netcode):
                     script = script_for_p2pkh(key.hash160(use_uncompressed=b))
                     afs_address = address_for_script(script)
                     self.assertEqual(afs_address, addr)
-                    hl = build_hash160_lookup([se], [secp256k1_generator])
+                    hl = network.tx.solve.build_hash160_lookup([se])
                     tx = Tx(1, [], [Tx.TxOut(100, script)])
                     tx.sign(hash160_lookup=hl)
                     afs_address = address_for_script(tx.txs_out[0].puzzle_script())
@@ -57,7 +55,7 @@ def make_tests_for_netcode(netcode):
                     script = script_for_p2pk(key.sec(use_uncompressed=b))
                     afs_address = address_for_script(script)
                     self.assertEqual(afs_address, addr)
-                    hl = build_hash160_lookup([se], [secp256k1_generator])
+                    hl = network.tx.solve.build_hash160_lookup([se])
                     tx = Tx(1, [], [Tx.TxOut(100, script)])
                     tx.sign(hash160_lookup=hl)
                     afs_address = address_for_script(tx.txs_out[0].puzzle_script())

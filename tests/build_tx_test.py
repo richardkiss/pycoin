@@ -8,7 +8,6 @@ from pycoin.encoding.sec import public_pair_to_sec, public_pair_to_hash160_sec
 from pycoin.networks.registry import network_for_netcode
 
 from pycoin.satoshi.flags import SIGHASH_ALL
-from pycoin.solve.utils import build_hash160_lookup
 
 
 network = network_for_netcode("BTC")
@@ -149,7 +148,7 @@ class BuildTxTest(unittest.TestCase):
         coins_from = [(the_coinbase_tx.hash(), 0, the_coinbase_tx.txs_out[0])]
         coins_to = [(int(50 * 1e8), address_2)]
         unsigned_coinbase_spend_tx = standard_tx(coins_from, coins_to)
-        solver = build_hash160_lookup([exponent], [secp256k1_generator])
+        solver = network.tx.solve.build_hash160_lookup([exponent])
 
         coinbase_spend_tx = unsigned_coinbase_spend_tx.sign(solver)
 
@@ -166,7 +165,7 @@ class BuildTxTest(unittest.TestCase):
 
         coins_from = [(coinbase_spend_tx.hash(), 0, coinbase_spend_tx.txs_out[0])]
         unsigned_spend_tx = standard_tx(coins_from, [(int(50 * 1e8), address_3)])
-        solver.update(build_hash160_lookup([exponent_2], [secp256k1_generator]))
+        solver.update(network.tx.solve.build_hash160_lookup([exponent_2]))
         spend_tx = unsigned_spend_tx.sign(solver)
 
         # now check that it validates

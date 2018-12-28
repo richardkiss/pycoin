@@ -14,6 +14,7 @@ from pycoin.message.make_parser_and_packer import (
     standard_message_post_unpacks, standard_streamer, standard_parsing_functions
 )
 from pycoin.encoding.hexbytes import b2h, h2b
+from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup, build_sec_lookup
 from pycoin.vm.annotate import Annotate
 
 from .AddressAPI import make_address_api
@@ -39,16 +40,11 @@ class Network(object):
         return "<Network %s>" % self.full_name()
 
 
-def hwif_for_data(key_data, network):
-    if len(key_data) == 74:
-        return network.BIP32Node.deserialize(b'0000' + key_data)
-    if len(key_data) in (32, 64):
-        return network.ElectrumWallet.deserialize(key_data)
-
-
 def make_output_for_hwif(network):
     def f(key_data, network, subkey_path, add_output):
-        key = hwif_for_data(key_data, network)
+        key = None
+        if len(key_data) == 74:
+            key = network.keys.bip32_deserialize(b'0000' + key_data)
         if key is None:
             return
 
@@ -174,7 +170,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     NetworkKey = Key.make_subclass(network=network, generator=generator)
     NetworkElectrumKey = ElectrumWallet.make_subclass(network=network, generator=generator)
-    network.BIP32Node = BIP32Node.make_subclass(network=network, generator=generator)
+    NetworkBIP32Node = BIP32Node.make_subclass(network=network, generator=generator)
 
     NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
     for k in NETWORK_KEYS:
@@ -224,6 +220,15 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     def electrum_public(master_public_key):
         return NetworkElectrumKey(master_public_key=master_public_key)
 
+    def bip32_seed(seed):
+        return NetworkBIP32Node.from_master_secret(seed)
+
+    def bip32_deserialize(data):
+        return NetworkBIP32Node.deserialize(data)
+
+    network.keys.bip32_seed = bip32_seed
+    network.keys.bip32_deserialize = bip32_deserialize
+
     network.keys.electrum_seed = electrum_seed
     network.keys.electrum_private = electrum_private
     network.keys.electrum_public = electrum_public
@@ -241,6 +246,14 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.bip32_as_string = bip32_as_string
     network.sec_text_for_blob = sec_text_for_blob
     network.wif_for_blob = wif_for_blob
+
+    def network_build_hash160_lookup(iter):
+        return build_hash160_lookup(iter, [generator])
+
+    network.tx.solve = API()
+    network.tx.solve.build_hash160_lookup = network_build_hash160_lookup
+    network.tx.solve.build_p2sh_lookup = build_p2sh_lookup
+    network.tx.solve.build_sec_lookup = build_sec_lookup
 
     network.annotate = Annotate(script_tools, network.address)
 

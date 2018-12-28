@@ -3,9 +3,7 @@ import unittest
 
 from pycoin.coins.SolutionChecker import ScriptError
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import b2h
-from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.symbols.btc import network
 
 
@@ -43,7 +41,7 @@ class SolverTest(unittest.TestCase):
         keys = [network.keys.private(i) for i in range(1, 20)]
         tx = self.make_test_tx(incoming_script)
         tx_in_idx = 0
-        kwargs["hash160_lookup"] = build_hash160_lookup((k.secret_exponent() for k in keys), [secp256k1_generator])
+        kwargs["hash160_lookup"] = network.tx.solve.build_hash160_lookup((k.secret_exponent() for k in keys))
         kwargs["generator_for_signature_type_f"] = Solver.SolutionChecker.VM.generator_for_signature_type
         self.do_test_solve(tx, tx_in_idx, **kwargs)
 
@@ -70,15 +68,15 @@ class SolverTest(unittest.TestCase):
         secs = [k.sec() for k in keys]
         underlying_script = network.contract.for_multisig(1, secs)
         script = network.contract.for_address(network.address.for_p2s(underlying_script))
-        self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
+        self.do_test_tx(script, p2sh_lookup=network.tx.solve.build_p2sh_lookup([underlying_script]))
 
         underlying_script = network.script.compile("OP_SWAP") + network.contract.for_address(keys[0].address())
         script = network.contract.for_address(network.address.for_p2s(underlying_script))
-        self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
+        self.do_test_tx(script, p2sh_lookup=network.tx.solve.build_p2sh_lookup([underlying_script]))
 
         underlying_script = network.contract.for_p2pk(keys[2].sec())
         script = network.contract.for_address(network.address.for_p2s(underlying_script))
-        self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
+        self.do_test_tx(script, p2sh_lookup=network.tx.solve.build_p2sh_lookup([underlying_script]))
 
     def test_p2pkh_wit(self):
         key = network.keys.private(1)
@@ -90,7 +88,7 @@ class SolverTest(unittest.TestCase):
         secs = [k.sec() for k in keys]
         underlying_script = network.contract.for_multisig(2, secs)
         script = network.script.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
-        self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script]))
+        self.do_test_tx(script, p2sh_lookup=network.tx.solve.build_p2sh_lookup([underlying_script]))
 
     def test_p2multisig_wit(self):
         keys = [network.keys.private(i) for i in (1, 2, 3)]
@@ -98,7 +96,7 @@ class SolverTest(unittest.TestCase):
         underlying_script = network.contract.for_multisig(2, secs)
         p2sh_script = network.script.compile("OP_0 [%s]" % b2h(hashlib.sha256(underlying_script).digest()))
         script = network.contract.for_address(network.address.for_p2s(p2sh_script))
-        self.do_test_tx(script, p2sh_lookup=build_p2sh_lookup([underlying_script, p2sh_script]))
+        self.do_test_tx(script, p2sh_lookup=network.tx.solve.build_p2sh_lookup([underlying_script, p2sh_script]))
 
     def test_if(self):
         script = network.script.compile("IF 1 ELSE 0 ENDIF")
@@ -115,7 +113,7 @@ class SolverTest(unittest.TestCase):
                 assert 0
             except ScriptError:
                 pass
-            kwargs = {"hash160_lookup": build_hash160_lookup([k.secret_exponent()], [secp256k1_generator])}
+            kwargs = {"hash160_lookup": network.tx.solve.build_hash160_lookup([k.secret_exponent()])}
             kwargs["existing_script"] = [
                 data for opcode, data, pc, new_pc in network.script.get_opcodes(
                     tx.txs_in[tx_in_idx].script) if data is not None]

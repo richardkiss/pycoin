@@ -10,9 +10,8 @@ class KeychainTest(unittest.TestCase):
     def test_keychain(self):
         netcode = "BTC"
         network = network_for_netcode(netcode)
-        BIP32 = network.BIP32Node
         keychain = Keychain()
-        bip32_list = [BIP32.from_master_secret(_) for _ in [b"foo", b"bar"]]
+        bip32_list = [network.keys.bip32_seed(_) for _ in [b"foo", b"bar"]]
         for bip32 in bip32_list:
             keychain.add_key_paths(bip32.public_copy(), subpaths_for_path_range("0-1/0-10"))
         keychain.add_secrets(bip32_list)

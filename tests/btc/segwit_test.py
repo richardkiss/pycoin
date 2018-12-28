@@ -1,12 +1,10 @@
 import unittest
 
 from pycoin.coins.tx_utils import create_tx, sign_tx
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.hash import double_sha256
 from pycoin.encoding.hexbytes import b2h, b2h_rev, h2b
 from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
-from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup
 from pycoin.symbols.btc import network
 
 
@@ -36,8 +34,8 @@ class SegwitTest(unittest.TestCase):
         tx_u_prime = self.unsigned_copy(tx_s)
         tx_s_hex = tx_s.as_hex()
         tx_u_prime.set_unspents(tx_s.unspents)
-        p2sh_lookup = build_p2sh_lookup([h2b(x) for x in p2sh_values])
-        hash160_lookup = build_hash160_lookup(private_keys, [secp256k1_generator])
+        p2sh_lookup = network.tx.solve.build_p2sh_lookup([h2b(x) for x in p2sh_values])
+        hash160_lookup = network.tx.solve.build_hash160_lookup(private_keys)
         tx_u_prime.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)
         self.check_signed(tx_u_prime)
         tx_hex = tx_u_prime.as_hex()
@@ -69,7 +67,7 @@ class SegwitTest(unittest.TestCase):
         spendable.script = network.contract.for_address(address)
         tx = create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
-        sign_tx(tx, [key1.wif()], p2sh_lookup=build_p2sh_lookup([s1]))
+        sign_tx(tx, [key1.wif()], p2sh_lookup=network.tx.solve.build_p2sh_lookup([s1]))
         self.check_signed(tx)
 
     def test_issue_224(self):
@@ -290,7 +288,7 @@ class SegwitTest(unittest.TestCase):
               "d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b6"
               "61b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56ae",
               "0020a16b5755f7f6f96dbd65f5f0d6ab9418b89af4b1f14a1bb8a09062c35f0dcb54"]
-        p2sh_lookup = build_p2sh_lookup([h2b(x) for x in ss])
+        p2sh_lookup = network.tx.solve.build_p2sh_lookup([h2b(x) for x in ss])
         for se, sighash_type in [
             (0x730fff80e1413068a05b57d6a58261f07551163369787f349438ea38ca80fac6, SIGHASH_ALL),
             (0x11fa3d25a17cbc22b29c44a484ba552b5a53149d106d3d853e22fdd05a2d8bb3, SIGHASH_NONE),
@@ -299,8 +297,8 @@ class SegwitTest(unittest.TestCase):
             (0xfe9a95c19eef81dde2b95c1284ef39be497d128e2aa46916fb02d552485e0323, SIGHASH_ANYONECANPAY | SIGHASH_NONE),
             (0x428a7aee9f0c2af0cd19af3cf1c78149951ea528726989b2e83e4778d2c3f890, SIGHASH_ANYONECANPAY | SIGHASH_SINGLE),
         ]:
-            tx_u5prime.sign(hash_type=sighash_type, hash160_lookup=build_hash160_lookup(
-                [se], [secp256k1_generator]), p2sh_lookup=p2sh_lookup)
+            tx_u5prime.sign(hash_type=sighash_type, hash160_lookup=network.tx.solve.build_hash160_lookup(
+                [se]), p2sh_lookup=p2sh_lookup)
 
         self.check_signed(tx_u5prime)
         tx_hex = tx_u5prime.as_hex()

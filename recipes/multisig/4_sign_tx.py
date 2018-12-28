@@ -4,7 +4,6 @@ import sys
 
 from pycoin.coins.tx_utils import sign_tx
 from pycoin.encoding.hexbytes import h2b
-from pycoin.solve.utils import build_p2sh_lookup
 from pycoin.symbols.btc import network
 
 
@@ -29,7 +28,7 @@ def main():
     p2sh_script = h2b(p2sh_script_hex)
 
     # build a dictionary of script hashes to scripts
-    p2sh_lookup = build_p2sh_lookup([p2sh_script])
+    p2sh_lookup = network.tx.solve.build_p2sh_lookup([p2sh_script])
 
     # sign the transaction with the given WIF
     sign_tx(tx, wifs=[wif], p2sh_lookup=p2sh_lookup)

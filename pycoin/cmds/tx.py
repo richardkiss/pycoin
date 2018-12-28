@@ -26,7 +26,6 @@ from pycoin.networks.default import get_current_netcode
 from pycoin.services import spendables_for_address, get_tx_db
 from pycoin.services.providers import message_about_tx_cache_env, \
     message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
-from pycoin.solve.utils import build_sec_lookup
 
 
 DEFAULT_VERSION = 1
@@ -670,7 +669,7 @@ def tx(args, parser):
     tx = generate_tx(network, txs, spendables, payables, args)
 
     signature_hints = [h2b(sig) for sig in (args.signature or [])]
-    sec_hints = build_sec_lookup([h2b(sec) for sec in (args.sec or [])])
+    sec_hints = network.tx.solve.build_sec_lookup([h2b(sec) for sec in (args.sec or [])])
 
     is_fully_signed = do_signing(tx, keychain, keychain, sec_hints, signature_hints, network)
 

@@ -5,16 +5,10 @@ from pycoin.symbols.btc import network as BitcoinMainnet
 from pycoin.symbols.xtn import network as BitcoinTestnet
 
 
-# BRAIN DAMAGE
-
-BIP32Node = BitcoinMainnet.BIP32Node
-XTNBIP32Node = BitcoinTestnet.BIP32Node
-
-
 class Bip0032TestCase(unittest.TestCase):
 
     def test_vector_1(self):
-        master = BIP32Node.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"))
+        master = BitcoinMainnet.keys.bip32_seed(h2b("000102030405060708090a0b0c0d0e0f"))
         self.assertEqual(
             master.hwif(as_private=True),
             "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPG"
@@ -105,7 +99,7 @@ class Bip0032TestCase(unittest.TestCase):
                          pub_m0p1_1_2p_2_1000000000.hwif())
 
     def test_vector_2(self):
-        master = BIP32Node.from_master_secret(h2b(
+        master = BitcoinMainnet.keys.bip32_seed(h2b(
             "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c99"
             "9693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542"))
         self.assertEqual(
@@ -189,7 +183,7 @@ class Bip0032TestCase(unittest.TestCase):
 
     def test_testnet(self):
         # WARNING: these values have not been verified independently. TODO: do so
-        master = XTNBIP32Node.from_master_secret(h2b("000102030405060708090a0b0c0d0e0f"))
+        master = BitcoinTestnet.keys.bip32_seed(h2b("000102030405060708090a0b0c0d0e0f"))
         self.assertEqual(
             master.hwif(as_private=True),
             "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5kh"
@@ -198,7 +192,7 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertEqual(master.wif(), "cVPXTF2TnozE1PenpP3x9huctiATZmp27T9Ue1d8nqLSExoPwfN5")
 
     def test_streams(self):
-        m0 = BIP32Node.from_master_secret(b"foo bar baz")
+        m0 = BitcoinMainnet.keys.bip32_seed(b"foo bar baz")
         pm0 = m0.public_copy()
         self.assertEqual(m0.hwif(), pm0.hwif())
         m1 = m0.subkey()
@@ -225,7 +219,7 @@ class Bip0032TestCase(unittest.TestCase):
                 print("   %s %s" % (k.address(), k.wif()))
 
     def test_public_subkey(self):
-        my_prv = BIP32Node.from_master_secret(b"foo")
+        my_prv = BitcoinMainnet.keys.bip32_seed(b"foo")
         uag = my_prv.subkey(i=0, is_hardened=True, as_private=True)
         self.assertEqual(None, uag.subkey(i=0, as_private=False).secret_exponent())
 
@@ -247,7 +241,7 @@ class Bip0032TestCase(unittest.TestCase):
 
     def test_repr(self):
         key = BitcoinTestnet.keys.private(secret_exponent=273)
-        wallet = XTNBIP32Node.from_master_secret(bytes(key.wif().encode('ascii')))
+        wallet = BitcoinTestnet.keys.bip32_seed(bytes(key.wif().encode('ascii')))
 
         address = wallet.address()
         pub_k = BitcoinTestnet.parse.address(address)

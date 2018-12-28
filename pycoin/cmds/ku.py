@@ -146,7 +146,7 @@ def _create_bip32(network):
     max_retries = 64
     for _ in range(max_retries):
         try:
-            return network.BIP32Node.from_master_secret(get_entropy())
+            return network.keys.bip32_seed(get_entropy())
         except ValueError as e:
             continue
     # Probably a bug if we get here

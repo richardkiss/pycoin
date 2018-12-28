@@ -25,13 +25,13 @@ class GRSParseAPI(ParseAPI):
         data = parse_b58_groestl(s)
         if data is None or not data.startswith(self._bip32_prv_prefix):
             return None
-        return self._network.BIP32Node.deserialize(data)
+        return self._network.keys.bip32_deserialize(data)
 
     def bip32_pub(self, s):
         data = parse_b58_groestl(s)
         if data is None or not data.startswith(self._bip32_pub_prefix):
             return None
-        return self._network.BIP32Node.deserialize(data)
+        return self._network.keys.bip32_deserialize(data)
 
     def p2pkh(self, s):
         data = parse_b58_groestl(s)

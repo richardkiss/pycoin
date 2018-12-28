@@ -11,9 +11,6 @@ NETCODES = "BTC XTN DOGE".split()
 BitcoinMainnet = network_for_netcode("BTC")
 BitcoinTestnet = network_for_netcode("XTN")
 
-# BRAIN DAMAGE
-BIP32Node = BitcoinMainnet.BIP32Node
-
 
 def change_prefix(address, new_prefix):
     return b2a_hashed_base58(new_prefix + a2b_hashed_base58(address)[1:])
@@ -78,9 +75,8 @@ class KeyUtilsTest(unittest.TestCase):
         # not all networks support BIP32 yet
         for netcode in NETCODES:
             network = network_for_netcode(netcode)
-            BIP32Node = network.BIP32Node
             for wk in WALLET_KEYS:
-                wallet = BIP32Node.from_master_secret(wk.encode("utf8"))
+                wallet = network.keys.bip32_seed(wk.encode("utf8"))
                 text = wallet.hwif(as_private=True)
                 self.assertEqual(network.parse.bip32_prv(text).hwif(as_private=True), text)
                 self.assertIsNone(network.parse.bip32_pub(text))
@@ -99,6 +95,8 @@ class KeyUtilsTest(unittest.TestCase):
         cc = b'000102030405060708090a0b0c0d0e0f'
         order = BitcoinMainnet.keys.private(1)._generator.order()
 
+        # BRAIN DAMAGE: hack
+        BIP32Node = BitcoinMainnet.keys.bip32_seed(b"foo").__class__
         for k in -1, 0, order, order + 1:
             self.assertRaises(InvalidSecretExponentError, BitcoinMainnet.keys.private, secret_exponent=k)
             self.assertRaises(InvalidSecretExponentError, BIP32Node, nc, cc, secret_exponent=k)
