@@ -113,7 +113,7 @@ class MessageSigner(object):
         sig = sig.decode("utf8")
         return sig
 
-    def sign_message(self, key, message, verbose=False, use_uncompressed=None):
+    def sign_message(self, key, message, verbose=False):
         """
         Return a signature, encoded in Base64, which can be verified by anyone using the
         public key.
