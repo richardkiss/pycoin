@@ -61,4 +61,4 @@ class GRSParseAPI(ParseAPI):
         if is_compressed:
             data = data[:-1]
         se = from_bytes_32(data)
-        return self._network.Key(se, is_compressed=is_compressed)
+        return self._network.keys.private(se, is_compressed=is_compressed)

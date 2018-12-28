@@ -7,7 +7,7 @@ from pycoin.solve.utils import build_hash160_lookup
 from pycoin.symbols.btc import network
 
 
-Key = network.Key
+Key = network.keys.private
 Tx = network.tx
 
 

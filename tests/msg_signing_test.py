@@ -7,7 +7,7 @@ from pycoin.symbols.xtn import network as BitcoinTestnet
 
 # BRAIN DAMAGE
 
-Key = BitcoinMainnet.Key
+Key = BitcoinMainnet.keys.private
 message_signer = BitcoinMainnet.msg
 XTN_message_signer = BitcoinTestnet.msg
 

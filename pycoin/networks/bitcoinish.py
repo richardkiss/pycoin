@@ -200,6 +200,21 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.address = make_address_api(network.contract, **ui_kwargs)
 
+    def keys_private(secret_exponent, is_compressed=None):
+        return network.Key(secret_exponent=secret_exponent, is_compressed=is_compressed)
+
+    def keys_public(item, is_compressed=None):
+        if isinstance(item, tuple):
+            # it's a public pair
+            return network.Key(public_pair=item, prefer_uncompressed=not is_compressed)
+        if is_compressed is not None:
+            raise ValueError("can't set is_compressed from sec")
+        return network.Key.from_sec(item)
+
+    network.keys = API()
+    network.keys.private = keys_private
+    network.keys.public = keys_public
+
     network.msg = API()
     message_signer = MessageSigner(network, generator)
     network.msg.sign = message_signer.sign_message
@@ -216,8 +231,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.annotate = Annotate(script_tools, network.address)
 
-    network.who_signed = WhoSigned(
-        script_tools, network.address, network.Key._default_generator)
+    network.who_signed = WhoSigned(script_tools, network.address, generator)
 
     network.str = parseable_str
 

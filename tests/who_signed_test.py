@@ -9,7 +9,7 @@ from pycoin.symbols.btc import network
 
 # BRAIN DAMAGE
 who_signed_tx = network.who_signed.who_signed_tx
-Key = network.Key
+Key = network.keys.private
 Tx = network.tx
 
 

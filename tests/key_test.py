@@ -1,23 +1,20 @@
 import unittest
 
 from pycoin.encoding.hexbytes import h2b
-from pycoin.symbols.btc import network as BitcoinMainnet
-
-
-# BRAIN DAMAGE
-Key = BitcoinMainnet.Key
+from pycoin.symbols.btc import network
 
 
 class KeyTest(unittest.TestCase):
 
     def test_sign_verify(self):
-        private_key = Key(secret_exponent=1)
+        private_key = network.keys.private(secret_exponent=1)
         h = b"\x00" * 32
         sig = private_key.sign(h)
         self.assertTrue(private_key.verify(h, sig))
         public_key = private_key.public_copy()
         self.assertTrue(public_key.verify(h, sig))
-        h160_key = Key(hash160=private_key.hash160())
+        # BRAIN DAMAGE
+        h160_key = private_key.__class__(hash160=private_key.hash160())
         self.assertTrue(h160_key.verify(h, sig))
 
     def test_translation(self):
@@ -27,41 +24,37 @@ class KeyTest(unittest.TestCase):
             c_sec = h2b(c_public_pair_sec)
 
             keys_wif = [
-                Key(secret_exponent=secret_exponent),
-                BitcoinMainnet.parse.wif(wif),
-                BitcoinMainnet.parse.wif(c_wif),
+                network.keys.private(secret_exponent=secret_exponent),
+                network.parse.wif(wif),
+                network.parse.wif(c_wif),
             ]
 
-            key_sec = Key.from_sec(sec)
-            key_sec_c = Key.from_sec(c_sec)
+            key_sec = network.keys.public(sec)
+            key_sec_c = network.keys.public(c_sec)
             keys_sec = [key_sec, key_sec_c]
 
             for key in keys_wif:
                 self.assertEqual(key.secret_exponent(), secret_exponent)
                 self.assertEqual(key.public_copy().secret_exponent(), None)
                 repr(key)
-                if key._prefer_uncompressed:
-                    self.assertEqual(key.wif(), wif)
-                else:
+                if key.is_compressed():
                     self.assertEqual(key.wif(), c_wif)
                 self.assertEqual(key.wif(use_uncompressed=True), wif)
                 self.assertEqual(key.wif(use_uncompressed=False), c_wif)
 
             for key in keys_wif + keys_sec:
-                if key._prefer_uncompressed:
-                    self.assertEqual(key.sec(), sec)
-                else:
+                if key.is_compressed():
                     self.assertEqual(key.sec(), c_sec)
                 self.assertEqual(key.sec(use_uncompressed=True), sec)
                 self.assertEqual(key.sec(use_uncompressed=False), c_sec)
-                if key._prefer_uncompressed:
-                    self.assertEqual(key.address(), address_b58)
-                else:
+                if key.is_compressed():
                     self.assertEqual(key.address(), c_address_b58)
+                else:
+                    self.assertEqual(key.address(), address_b58)
                 self.assertEqual(key.address(use_uncompressed=False), c_address_b58)
                 self.assertEqual(key.address(use_uncompressed=True), address_b58)
 
-            key_pub = BitcoinMainnet.parse.address(address_b58)
+            key_pub = network.parse.address(address_b58)
 
             self.assertEqual(key_pub.address(), address_b58)
 

@@ -8,7 +8,7 @@ from pycoin.symbols.btc import network
 class ValidationTest(unittest.TestCase):
 
     def setUp(self):
-        self._key = network.Key(1)
+        self._key = network.keys.private(1)
 
     def test_validate_multisig_tx(self):
         # this is a transaction in the block chain

@@ -155,14 +155,12 @@ def _create_bip32(network):
 
 def parse_key(item, networks):
     default_network = networks[0]
-    Key = default_network.Key
     if item == 'create':
         return None, _create_bip32(default_network)
 
     if HASH160_RE.match(item):
         # BRAIN DAMAGE: lame hack for now
-        item = Key(hash160=h2b(item)).address()
-        networks = [default_network]
+        item = default_network.address.for_p2pkh(h2b(item))
 
     item = default_network.str(item)
 

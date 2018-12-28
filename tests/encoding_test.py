@@ -10,7 +10,7 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.intbytes import iterbytes
 from pycoin.symbols.btc import network as BitcoinMainnet
 
-Key = BitcoinMainnet.Key
+Key = BitcoinMainnet.keys.private
 
 
 class EncodingTestCase(unittest.TestCase):
@@ -88,7 +88,7 @@ class EncodingTestCase(unittest.TestCase):
             self.assertEqual(as_wif, key.wif())
             key = BitcoinMainnet.parse.wif(as_wif)
             se = key.secret_exponent()
-            comp = not key._use_uncompressed()
+            comp = key.is_compressed()
             self.assertEqual(se, as_secret_exponent)
             self.assertEqual(comp, is_compressed)
 

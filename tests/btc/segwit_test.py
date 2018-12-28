@@ -11,7 +11,7 @@ from pycoin.symbols.btc import network
 
 
 # BRAIN DAMAGE
-Key = network.Key
+Key = network.keys.private
 Tx = network.tx
 TxOut = network.tx.TxOut
 

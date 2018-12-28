@@ -12,8 +12,8 @@ BitcoinMainnet = network_for_netcode("BTC")
 BitcoinTestnet = network_for_netcode("XTN")
 
 # BRAIN DAMAGE
-Key = BitcoinMainnet.Key
-XTNKey = BitcoinTestnet.Key
+Key = BitcoinMainnet.keys.private
+XTNKey = BitcoinTestnet.keys.private
 BIP32Node = BitcoinMainnet.BIP32Node
 
 
@@ -99,7 +99,7 @@ class KeyUtilsTest(unittest.TestCase):
     def test_key_limits(self):
         nc = 'BTC'
         cc = b'000102030405060708090a0b0c0d0e0f'
-        order = Key._default_generator.order()
+        order = Key(1)._generator.order()
 
         for k in -1, 0, order, order + 1:
             self.assertRaises(InvalidSecretExponentError, Key, secret_exponent=k)

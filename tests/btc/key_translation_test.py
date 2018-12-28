@@ -40,25 +40,25 @@ class KeyTranslationTest(unittest.TestCase):
 
             key = BitcoinMainnet.parse.wif(wif)
             exponent = key.secret_exponent()
-            compressed = not key._use_uncompressed()
+            compressed = key.is_compressed()
             self.assertEqual(exponent, secret_exponent)
             self.assertFalse(compressed)
 
             key = BitcoinMainnet.parse.wif(c_wif)
             exponent = key.secret_exponent()
-            compressed = not key._use_uncompressed()
+            compressed = key.is_compressed()
             self.assertEqual(exponent, secret_exponent)
             self.assertTrue(compressed)
 
-            public_pair = secret_exponent * key._default_generator
+            public_pair = secret_exponent * key._generator
 
-            pk_public_pair = sec_to_public_pair(sec, key._default_generator)
+            pk_public_pair = sec_to_public_pair(sec, key._generator)
             compressed = is_sec_compressed(sec)
             self.assertEqual(pk_public_pair, public_pair)
             self.assertFalse(is_sec_compressed(sec))
             self.assertEqual(public_pair_to_sec(pk_public_pair, compressed=False), sec)
 
-            pk_public_pair = sec_to_public_pair(c_sec, key._default_generator)
+            pk_public_pair = sec_to_public_pair(c_sec, key._generator)
             compressed = is_sec_compressed(c_sec)
             self.assertEqual(pk_public_pair, public_pair)
             self.assertTrue(compressed)

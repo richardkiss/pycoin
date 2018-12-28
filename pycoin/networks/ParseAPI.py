@@ -92,21 +92,18 @@ class ParseAPI(object):
         blob = self.electrum_to_blob(s)
         if blob and len(blob) == 16:
             blob = b2h(blob)
-            return self._network.ElectrumKey(
-                generator=self._network.Key._default_generator, initial_key=blob)
+            return self._network.ElectrumKey(initial_key=blob)
 
     def electrum_prv(self, s):
         blob = self.electrum_to_blob(s)
         if blob and len(blob) == 32:
             mpk = from_bytes_32(blob)
-            return self._network.ElectrumKey(
-                generator=self._network.Key._default_generator, master_private_key=mpk)
+            return self._network.ElectrumKey(master_private_key=mpk)
 
     def electrum_pub(self, s):
         blob = self.electrum_to_blob(s)
         if blob and len(blob) == 64:
-            return self._network.ElectrumKey(
-                generator=self._network.Key._default_generator, master_public_key=blob)
+            return self._network.ElectrumKey(master_public_key=blob)
 
     # address
     def p2pkh(self, s):
@@ -180,19 +177,22 @@ class ParseAPI(object):
         if is_compressed:
             data = data[:-1]
         se = from_bytes_32(data)
-        return self._network.Key(se, is_compressed=is_compressed)
+        return self._network.keys.private(se, is_compressed=is_compressed)
 
     def secret_exponent(self, s):
         v = self.as_number(s)
-        Key = self._network.Key
-        if v and 0 < v < Key._default_generator.order():
-            return Key(secret_exponent=v)
+        if v:
+            try:
+                return self._network.keys.private(v)
+            except ValueError:
+                pass
 
     # public key
     def public_pair(self, s):
         point = None
-        Key = self._network.Key
-        generator = Key._default_generator
+        Key = self._network.keys.private
+        # BRAIN DAMAGE
+        generator = Key(1)._generator
         for c in ",/":
             if c in s:
                 s0, s1 = s.split(c, 1)
@@ -206,7 +206,7 @@ class ParseAPI(object):
                         if generator.contains_point(v0, v1):
                             point = generator.Point(v0, v1)
         if point:
-            return Key(public_pair=point)
+            return self._network.keys.public(point)
 
     def sec(self, s):
         pair = parse_colon_prefix(s)
@@ -214,9 +214,7 @@ class ParseAPI(object):
             s = pair[1]
         try:
             sec = h2b(s)
-            public_pair = sec_to_public_pair(sec, self._network.Key._default_generator)
-            is_compressed = is_sec_compressed(sec)
-            return self._network.Key(public_pair=public_pair, is_compressed=is_compressed)
+            return self._network.keys.public(sec)
         except Exception:
             pass
 

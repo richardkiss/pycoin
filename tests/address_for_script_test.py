@@ -14,7 +14,7 @@ def make_tests_for_netcode(netcode):
     script_for_nulldata = network.contract.for_nulldata
 
     Tx = network.tx
-    Key = network.Key
+    Key = network.keys.private
 
     class AddressForScriptTest(unittest.TestCase):
 

@@ -50,7 +50,7 @@ class SighashSingleTest(unittest.TestCase):
 
     def _test_sighash_single(self, netcode):
         network = network_for_netcode(netcode)
-        Key = network.Key
+        Key = network.keys.private
         k0 = Key(secret_exponent=PRIV_KEYS[0], is_compressed=True)
         k1 = Key(secret_exponent=PRIV_KEYS[1], is_compressed=True)
         k2 = Key(secret_exponent=PRIV_KEYS[2], is_compressed=True)
