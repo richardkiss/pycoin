@@ -16,7 +16,6 @@ import sys
 from .dump import dump_tx
 
 from pycoin.coins.exceptions import BadSpendableError
-from pycoin.coins.tx_utils import distribute_from_split_pool
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding.hexbytes import b2h, h2b, h2b_rev
 from pycoin.key.subpaths import subpaths_for_path_range
@@ -534,7 +533,7 @@ def generate_tx(network, txs, spendables, payables, args):
     fee = args.fee
     try:
         if len(payables) > 0:
-            distribute_from_split_pool(tx, fee)
+            network.tx_utils.distribute_from_split_pool(tx, fee)
     except ValueError as ex:
         print("warning: %s" % ex.args[0], file=sys.stderr)
     return tx

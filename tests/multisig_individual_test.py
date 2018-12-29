@@ -1,8 +1,6 @@
 import itertools
 import unittest
 
-from pycoin.coins.tx_utils import create_tx
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.symbols.btc import network
 
 
@@ -17,7 +15,7 @@ class MultisigIndividualTest(unittest.TestCase):
         tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
         for partial_key_list in itertools.permutations(keys[:N], M):
-            tx2 = create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
+            tx2 = network.tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
             for key in partial_key_list:
                 self.assertEqual(tx2.bad_solution_count(), 1)
                 hash160_lookup = network.tx.solve.build_hash160_lookup([key.secret_exponent()])

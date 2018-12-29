@@ -1,6 +1,3 @@
-
-from pycoin.symbols.btc import network as BitcoinMainnet
-
 from ..convention import tx_fee
 
 
@@ -8,7 +5,7 @@ class SecretExponentMissing(Exception):
     pass
 
 
-def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, network=BitcoinMainnet):
+def create_tx(network, spendables, payables, fee="standard", lock_time=0, version=1):
     """
     This function provides the easiest way to create an unsigned transaction.
 
@@ -34,7 +31,7 @@ def create_tx(spendables, payables, fee="standard", lock_time=0, version=1, netw
     Usage::
 
         >>> spendables = spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
-        >>> tx = create_tx(spendables, ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"], fee=0)
+        >>> tx = create_tx(network, spendables, ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"], fee=0)
 
     This will move all available reported funds from 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
     to 1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP, with no transaction fees (which means it might
@@ -113,7 +110,7 @@ def distribute_from_split_pool(tx, fee):
     return zero_count
 
 
-def sign_tx(tx, wifs=[], network=BitcoinMainnet, **kwargs):
+def sign_tx(network, tx, wifs=[], **kwargs):
     """
     :param tx: a transaction
     :param wifs: the list of WIFs required to sign this transaction.
@@ -126,7 +123,7 @@ def sign_tx(tx, wifs=[], network=BitcoinMainnet, **kwargs):
 
     Usage::
 
-        >> sign_tx(tx, wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
+        >> sign_tx(network, tx, wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
     keychain = network.keychain()
     keychain.add_secrets((network.parse.wif(_) for _ in wifs))
@@ -134,8 +131,8 @@ def sign_tx(tx, wifs=[], network=BitcoinMainnet, **kwargs):
     solver.sign(keychain, **kwargs)
 
 
-def create_signed_tx(spendables, payables, wifs=[], fee="standard",
-                     lock_time=0, version=1, netcode='BTC', network=BitcoinMainnet, **kwargs):
+def create_signed_tx(network, spendables, payables, wifs=[], fee="standard",
+                     lock_time=0, version=1, **kwargs):
     """
     This convenience function calls :func:`create_tx` and :func:`sign_tx` in turn. Read the documentation
     for those functions for information on the parameters.
@@ -145,15 +142,15 @@ def create_signed_tx(spendables, payables, wifs=[], fee="standard",
         >>> spendables = spendables_for_address("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
         >>> wifs = ["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"]
         >>> payables = ["1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"]
-        >>> tx = create_signed_tx(spendables, payables, wifs=wifs, fee=0)
+        >>> tx = create_signed_tx(network, spendables, payables, wifs=wifs, fee=0)
 
     This will move all available reported funds from 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
     to 1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP, with no transaction fees (which means it might
     take a while to confirm, possibly never).
     """
 
-    tx = create_tx(spendables, payables, fee=fee, lock_time=lock_time, version=version, network=network)
-    sign_tx(tx, wifs=wifs, netcode=netcode, **kwargs)
+    tx = create_tx(network, spendables, payables, fee=fee, lock_time=lock_time, version=version)
+    sign_tx(network, tx, wifs=wifs, **kwargs)
     for idx, tx_out in enumerate(tx.txs_in):
         if not tx.is_solution_ok(idx):
             raise SecretExponentMissing("failed to sign spendable for %s" %

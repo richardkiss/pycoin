@@ -3,7 +3,6 @@ import struct
 import unittest
 
 from pycoin.coins.exceptions import BadSpendableError
-from pycoin.coins.tx_utils import create_signed_tx
 from pycoin.symbols.btc import network
 
 
@@ -40,7 +39,7 @@ class SpendTest(unittest.TestCase):
         ]
 
         for count in range(1, 11):
-            tx = create_signed_tx(spendables, BITCOIN_ADDRESSES[1:count+1], wifs=WIFS[:1])
+            tx = network.tx_utils.create_signed_tx(spendables, BITCOIN_ADDRESSES[1:count+1], wifs=WIFS[:1])
             self.assertEqual(tx.bad_solution_count(), 0)
             self.assertEqual(tx.fee(), FEE)
             self.assertEqual(tx.id(), EXPECTED_IDS[count-1])
@@ -58,19 +57,19 @@ class SpendTest(unittest.TestCase):
         COIN_VALUE = 100000000
         spendables = [Spendable(COIN_VALUE, network.contract.for_address(BITCOIN_ADDRESSES[0]), FAKE_HASH, 0)]
 
-        tx_1 = create_signed_tx(spendables, BITCOIN_ADDRESSES[1:2], wifs=WIFS[:1])
+        tx_1 = network.tx_utils.create_signed_tx(spendables, BITCOIN_ADDRESSES[1:2], wifs=WIFS[:1])
 
         spendables = tx_1.tx_outs_as_spendable()
 
         tx_db = dict((tx.hash(), tx) for tx in [tx_1])
 
-        tx_2 = create_signed_tx(spendables, BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
+        tx_2 = network.tx_utils.create_signed_tx(spendables, BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
         tx_2.validate_unspents(tx_db)
 
-        tx_2 = create_signed_tx([s.as_dict() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
+        tx_2 = network.tx_utils.create_signed_tx([s.as_dict() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
         tx_2.validate_unspents(tx_db)
 
-        tx_2 = create_signed_tx([s.as_text() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
+        tx_2 = network.tx_utils.create_signed_tx([s.as_text() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
         tx_2.validate_unspents(tx_db)
 
     def test_confirm_input_raises(self):
@@ -78,12 +77,12 @@ class SpendTest(unittest.TestCase):
         COIN_VALUE = 100000000
         spendables = [Spendable(COIN_VALUE, network.contract.for_address(BITCOIN_ADDRESSES[0]), FAKE_HASH, 0)]
 
-        tx_1 = create_signed_tx(spendables, BITCOIN_ADDRESSES[1:2], wifs=WIFS[:1])
+        tx_1 = network.tx_utils.create_signed_tx(spendables, BITCOIN_ADDRESSES[1:2], wifs=WIFS[:1])
         spendables = tx_1.tx_outs_as_spendable()
         spendables[0].coin_value += 100
 
         tx_db = dict((tx.hash(), tx) for tx in [tx_1])
-        tx_2 = create_signed_tx(spendables, BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
+        tx_2 = network.tx_utils.create_signed_tx(spendables, BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
 
         self.assertRaises(BadSpendableError, tx_2.validate_unspents, tx_db)
 

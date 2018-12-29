@@ -2,7 +2,6 @@
 
 import sys
 
-from pycoin.coins.tx_utils import sign_tx
 from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.btc import network
 
@@ -31,7 +30,7 @@ def main():
     p2sh_lookup = network.tx.solve.build_p2sh_lookup([p2sh_script])
 
     # sign the transaction with the given WIF
-    sign_tx(tx, wifs=[wif], p2sh_lookup=p2sh_lookup)
+    network.tx_utils.sign_tx(tx, wifs=[wif], p2sh_lookup=p2sh_lookup)
 
     bad_solution_count = tx.bad_solution_count()
     print("tx %s now has %d bad solution(s)" % (tx.id(), bad_solution_count))

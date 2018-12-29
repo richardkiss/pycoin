@@ -9,7 +9,6 @@
 
 import sys
 
-from pycoin.coins.tx_utils import create_tx
 from pycoin.symbols.btc import network
 
 
@@ -31,7 +30,7 @@ def main():
     assert network.parse.address(payable) is not None
 
     # create the unsigned transaction
-    tx = create_tx([spendable], [payable])
+    tx = network.tx_utils.create_tx([spendable], [payable])
 
     print("here is the transaction: %s" % tx.as_hex(include_unspents=True))
 

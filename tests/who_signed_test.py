@@ -1,6 +1,5 @@
 import unittest
 
-from pycoin.coins import tx_utils
 from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.symbols.btc import network
 
@@ -18,7 +17,7 @@ class WhoSignedTest(unittest.TestCase):
         script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
-        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
+        tx2 = network.tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         self.assertEqual(tx2.id(), unsigned_id)
         self.assertEqual(tx2.bad_solution_count(), 1)
         hash160_lookup = network.tx.solve.build_hash160_lookup((key.secret_exponent() for key in keys[:M]))
@@ -46,7 +45,7 @@ class WhoSignedTest(unittest.TestCase):
         script = network.contract.for_multisig(m=M, sec_keys=[key.sec() for key in keys[:N]])
         tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
-        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
+        tx2 = network.tx_utils.create_tx(tx1.tx_outs_as_spendable(), [keys[-1].address()])
         ids = ["403e5bfc59e097bb197bf77a692d158dd3a4f7affb4a1fa41072dafe7bec7058",
                "5931d9995e83721243dca24772d7012afcd4378996a8b953c458175f15a544db",
                "9bb4421088190bbbb5b42a9eaa9baed7ec7574a407c25f71992ba56ca43d9c44",
@@ -72,7 +71,7 @@ class WhoSignedTest(unittest.TestCase):
         script = network.contract.for_address(address)
         tx_out = Tx.TxOut(1000000, script)
         tx1 = Tx(version=1, txs_in=[tx_in], txs_out=[tx_out])
-        tx2 = tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])
+        tx2 = network.tx_utils.create_tx(tx1.tx_outs_as_spendable(), [address])
         hash160_lookup = network.tx.solve.build_hash160_lookup((key.secret_exponent() for key in keys[:N]))
         p2sh_lookup = network.tx.solve.build_p2sh_lookup([underlying_script])
         tx2.sign(hash160_lookup=hash160_lookup, p2sh_lookup=p2sh_lookup)

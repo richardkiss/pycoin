@@ -218,8 +218,6 @@ class ValidationTest(unittest.TestCase):
         self.assertEqual(tx_to_validate.bad_solution_count(), 0)
 
     def _make_tx(self, input_script, other_scripts=[]):
-        from pycoin.coins.tx_utils import create_signed_tx
-
         cv = int(50*1e8)
 
         key = self._key
@@ -232,7 +230,7 @@ class ValidationTest(unittest.TestCase):
         coinbase_tx.txs_out[0].script = input_script
         spendable = coinbase_tx.tx_outs_as_spendable()[0]
         payables = [(address, cv)]
-        tx = create_signed_tx(spendables=[spendable], payables=payables, wifs=[wif], p2sh_lookup=p2sh_lookup)
+        tx = network.tx_utils.create_signed_tx(spendables=[spendable], payables=payables, wifs=[wif], p2sh_lookup=p2sh_lookup)
         tx.unspents = [spendable]
         print(tx.as_hex(include_unspents=True))
         return tx

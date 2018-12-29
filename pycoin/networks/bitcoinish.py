@@ -1,6 +1,7 @@
 from pycoin.block import Block
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
+from pycoin.coins.tx_utils import create_tx, split_with_remainder, distribute_from_split_pool, sign_tx, create_signed_tx
 from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
@@ -255,6 +256,25 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.tx.solve.build_hash160_lookup = network_build_hash160_lookup
     network.tx.solve.build_p2sh_lookup = build_p2sh_lookup
     network.tx.solve.build_sec_lookup = build_sec_lookup
+
+    def my_create_tx(*args, **kwargs):
+        return create_tx(network, *args, **kwargs)
+
+    def my_sign_tx(*args, **kwargs):
+        return sign_tx(network, *args, **kwargs)
+
+    def my_create_signed_tx(*args, **kwargs):
+        return create_signed_tx(network, *args, **kwargs)
+
+    def my_split_with_remainder(*args, **kwargs):
+        return split_with_remainder(network, *args, **kwargs)
+
+    network.tx_utils = API()
+    network.tx_utils.create_tx = my_create_tx
+    network.tx_utils.sign_tx = my_sign_tx
+    network.tx_utils.create_signed_tx = my_create_signed_tx
+    network.tx_utils.split_with_remainder = my_split_with_remainder
+    network.tx_utils.distribute_from_split_pool = distribute_from_split_pool
 
     network.annotate = Annotate(script_tools, network.address)
 

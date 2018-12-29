@@ -1,6 +1,5 @@
 import unittest
 
-from pycoin.coins.tx_utils import create_tx, sign_tx
 from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.hash import double_sha256
 from pycoin.encoding.hexbytes import b2h, b2h_rev, h2b
@@ -56,18 +55,18 @@ class SegwitTest(unittest.TestCase):
         tx_out_index = 0
         spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
         key2 = network.keys.private(2)
-        tx = create_tx([spendable], [(key2.address(), coin_value)])
+        tx = network.tx_utils.create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
-        sign_tx(tx, [key1.wif()])
+        network.tx_utils.sign_tx(tx, [key1.wif()])
         self.check_signed(tx)
         self.assertEqual(len(tx.txs_in[0].witness), 2)
 
         s1 = network.contract.for_p2pkh(key1.hash160())
         address = network.address.for_p2s_wit(s1)
         spendable.script = network.contract.for_address(address)
-        tx = create_tx([spendable], [(key2.address(), coin_value)])
+        tx = network.tx_utils.create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
-        sign_tx(tx, [key1.wif()], p2sh_lookup=network.tx.solve.build_p2sh_lookup([s1]))
+        network.tx_utils.sign_tx(tx, [key1.wif()], p2sh_lookup=network.tx.solve.build_p2sh_lookup([s1]))
         self.check_signed(tx)
 
     def test_issue_224(self):
