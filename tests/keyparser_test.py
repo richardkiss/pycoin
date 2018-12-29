@@ -1,13 +1,13 @@
 import unittest
 
-from pycoin.symbols.btc import network as BitcoinMainnet
-from pycoin.symbols.xtn import network as BitcoinTestnet
+from pycoin.symbols.btc import network as BTC
+from pycoin.symbols.xtn import network as XTN
 
 
 class KeyParserTest(unittest.TestCase):
 
     def test_parse_bip32_prv(self):
-        key = BitcoinMainnet.parse("xprv9s21ZrQH143K31AgNK5pyVvW23gHnkBq2wh5aEk6g1s496M8ZMjx"
+        key = BTC.parse("xprv9s21ZrQH143K31AgNK5pyVvW23gHnkBq2wh5aEk6g1s496M8ZMjx"
                                    "ncCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtq")
         self.assertEqual(
             key.secret_exponent(), 0x91880b0e3017ba586b735fe7d04f1790f3c46b818a2151fb2def5f14dd2fd9c3)
@@ -17,7 +17,7 @@ class KeyParserTest(unittest.TestCase):
         self.assertEqual(subkey.address(), "1NV3j6NgeAkWBytXiQkWxMFLBtTdbef1rp")
 
     def test_parse_bip32_prv_xtn(self):
-        key = BitcoinTestnet.parse("tprv8ZgxMBicQKsPdpQD2swL99YVLB6W2GDqNVcCSfAZ9zMXvh6DYj5iJMZmUVrF66"
+        key = XTN.parse("tprv8ZgxMBicQKsPdpQD2swL99YVLB6W2GDqNVcCSfAZ9zMXvh6DYj5iJMZmUVrF66"
                                    "x7uXBDJSunexZjAtFLtd89iLTWGCEpBdBxs7GTBnEksxV")
         self.assertEqual(
             key.secret_exponent(), 0x91880b0e3017ba586b735fe7d04f1790f3c46b818a2151fb2def5f14dd2fd9c3)
@@ -27,7 +27,7 @@ class KeyParserTest(unittest.TestCase):
         self.assertEqual(subkey.address(), "n31129TfTCBky6N9RyitnGTf3t4LYwCV6A")
 
     def test_parse_bip32_pub(self):
-        key = BitcoinMainnet.parse("xpub661MyMwAqRbcFVF9ULcqLdsEa5WnCCugQAcgNd9iEMQ31tgH6u4"
+        key = BTC.parse("xpub661MyMwAqRbcFVF9ULcqLdsEa5WnCCugQAcgNd9iEMQ31tgH6u4"
                                    "DLQWoQayvtSVYFvXz2vPPpbXE1qpjoUFidhjFj82pVShWu9curWmb2zy")
         self.assertEqual(key.secret_exponent(), None)
         self.assertEqual(key.address(), "19Vqc8uLTfUonmxUEZac7fz1M5c5ZZbAii")
@@ -36,28 +36,28 @@ class KeyParserTest(unittest.TestCase):
         self.assertEqual(subkey.address(), "1NV3j6NgeAkWBytXiQkWxMFLBtTdbef1rp")
 
     def test_parse_bad_bip32_prv(self):
-        key = BitcoinMainnet.parse("xprv9s21ZrQH143K31AgNK5pyVvW23gHnkBq2wh5aEk6g1s496M8ZMjx"
+        key = BTC.parse("xprv9s21ZrQH143K31AgNK5pyVvW23gHnkBq2wh5aEk6g1s496M8ZMjx"
                                    "ncCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtr")
         self.assertEqual(key, None)
 
     def test_parse_wif(self):
-        key = BitcoinMainnet.parse("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn")
+        key = BTC.parse("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn")
         self.assertEqual(key.secret_exponent(), 1)
 
     def test_parse_bad_wif(self):
-        key = BitcoinMainnet.parse("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWo")
+        key = BTC.parse("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWo")
         self.assertEqual(key, None)
 
     def test_parse_address(self):
-        key = BitcoinMainnet.parse("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
+        key = BTC.parse("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
         self.assertEqual(key.address(), "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
 
     def test_parse_bad_address(self):
-        key = BitcoinMainnet.parse("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMW")
+        key = BTC.parse("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMW")
         self.assertEqual(key, None)
 
     def test_parse_electrum_seed(self):
-        key = BitcoinMainnet.parse("E:00000000000000000000000000000001")
+        key = BTC.parse("E:00000000000000000000000000000001")
         self.assertEqual(
             key.secret_exponent(), 0x2ccdb632d4630c8e5a417858f70876afe5585c15b1c0940771af9ac160201b1d)
         self.assertEqual(key.address(), "16e8FARWaEo7Cf2rYxzr8Lg3S8JP2dwBxh")
@@ -65,5 +65,5 @@ class KeyParserTest(unittest.TestCase):
         self.assertEqual(subkey.wif(), "5KYqyRxoMGnwsXfEFWtVifAKTzU9RcAZu1hme6GLMECKdWHybns")
 
     def test_parse_electrum_master_private(self):
-        key = BitcoinMainnet.parse("E:0000000000000000000000000000000000000000000000000000000000000001")
+        key = BTC.parse("E:0000000000000000000000000000000000000000000000000000000000000001")
         self.assertEqual(key.secret_exponent(), 1)

@@ -5,7 +5,7 @@ from pycoin.encoding.hexbytes import h2b
 from pycoin.encoding.sec import (
     is_sec_compressed, public_pair_to_sec, sec_to_public_pair, public_pair_to_hash160_sec
 )
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.btc import network
 
 """
 http://sourceforge.net/mailarchive/forum.php?thread_name=CAPg%2BsBhDFCjAn1tRRQhaudtqwsh4vcVbxzm%2BAA2OuFxN71fwUA%40mail.gmail.com&forum_name=bitcoin-development
@@ -13,18 +13,15 @@ http://sourceforge.net/mailarchive/forum.php?thread_name=CAPg%2BsBhDFCjAn1tRRQha
 
 
 def secret_exponent_to_wif(se, compressed):
-    blob = to_bytes_32(se)
-    if compressed:
-        blob += b'\01'
-    return BitcoinMainnet.wif_for_blob(blob)
+    return network.keys.private(se, compressed).wif()
 
 
 def public_pair_to_bitcoin_address(pair, compressed):
-    return BitcoinMainnet.address.for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
+    return network.keys.public(pair, is_compressed=compressed).address()
 
 
 def bitcoin_address_to_hash160_sec(bitcoin_address):
-    return BitcoinMainnet.parse.address(bitcoin_address).hash160()
+    return network.parse.address(bitcoin_address).hash160()
 
 
 class KeyTranslationTest(unittest.TestCase):
@@ -38,13 +35,13 @@ class KeyTranslationTest(unittest.TestCase):
             self.assertEqual(secret_exponent_to_wif(secret_exponent, compressed=False), wif)
             self.assertEqual(secret_exponent_to_wif(secret_exponent, compressed=True), c_wif)
 
-            key = BitcoinMainnet.parse.wif(wif)
+            key = network.parse.wif(wif)
             exponent = key.secret_exponent()
             compressed = key.is_compressed()
             self.assertEqual(exponent, secret_exponent)
             self.assertFalse(compressed)
 
-            key = BitcoinMainnet.parse.wif(c_wif)
+            key = network.parse.wif(c_wif)
             exponent = key.secret_exponent()
             compressed = key.is_compressed()
             self.assertEqual(exponent, secret_exponent)

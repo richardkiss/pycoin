@@ -2,9 +2,9 @@ import io
 import unittest
 
 from pycoin.encoding.hexbytes import b2h_rev, h2b
-from pycoin.symbols.btc import network as BitcoinMainnet
+from pycoin.symbols.btc import network
 
-Block = BitcoinMainnet.block
+Block = network.block
 
 
 class BlockTest(unittest.TestCase):

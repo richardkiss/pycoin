@@ -4,12 +4,10 @@ from pycoin.encoding.b58 import a2b_hashed_base58, b2a_hashed_base58
 from pycoin.key.Key import InvalidSecretExponentError
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.registry import network_codes
+from pycoin.symbols.btc import network as BTC
+from pycoin.symbols.xtn import network as XTN
 
 NETCODES = "BTC XTN DOGE".split()
-
-
-BitcoinMainnet = network_for_netcode("BTC")
-BitcoinTestnet = network_for_netcode("XTN")
 
 
 def change_prefix(address, new_prefix):
@@ -31,18 +29,18 @@ class KeyUtilsTest(unittest.TestCase):
 
     def test_address_valid_btc(self):
         for address in P2PKH_ADDRESSES:
-            self.assertEqual(BitcoinMainnet.parse.p2pkh(address).address(), address)
+            self.assertEqual(BTC.parse.p2pkh(address).address(), address)
             a = address[:-1] + chr(ord(address[-1])+1)
-            self.assertIsNone(BitcoinMainnet.parse.address(a))
+            self.assertIsNone(BTC.parse.address(a))
 
         for address in P2PKH_ADDRESSES:
-            self.assertIsNone(BitcoinMainnet.parse.p2sh(address))
-            self.assertEqual(BitcoinMainnet.parse.p2pkh(address).address(), address)
+            self.assertIsNone(BTC.parse.p2sh(address))
+            self.assertEqual(BTC.parse.p2pkh(address).address(), address)
 
         for address in P2SH_ADDRESSES:
             self.assertEqual(address[0], "3")
-            self.assertEqual(BitcoinMainnet.parse.p2sh(address).address(), address)
-            self.assertIsNone(BitcoinMainnet.parse.p2pkh(address))
+            self.assertEqual(BTC.parse.p2sh(address).address(), address)
+            self.assertIsNone(BTC.parse.p2pkh(address))
 
     def test_is_wif_valid(self):
         WIFS = ["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn",
@@ -51,9 +49,9 @@ class KeyUtilsTest(unittest.TestCase):
                 "5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAvUcVfH"]
 
         for wif in WIFS:
-            self.assertEqual(BitcoinMainnet.parse.wif(wif).wif(), wif)
+            self.assertEqual(BTC.parse.wif(wif).wif(), wif)
             a = wif[:-1] + chr(ord(wif[-1])+1)
-            self.assertIsNone(BitcoinMainnet.parse.wif(a))
+            self.assertIsNone(BTC.parse.wif(a))
 
         NETWORK_NAMES = network_codes()
         for netcode in NETWORK_NAMES:
@@ -93,27 +91,27 @@ class KeyUtilsTest(unittest.TestCase):
     def test_key_limits(self):
         nc = 'BTC'
         cc = b'000102030405060708090a0b0c0d0e0f'
-        order = BitcoinMainnet.keys.private(1)._generator.order()
+        order = BTC.keys.private(1)._generator.order()
 
         # BRAIN DAMAGE: hack
-        BIP32Node = BitcoinMainnet.keys.bip32_seed(b"foo").__class__
+        BIP32Node = BTC.keys.bip32_seed(b"foo").__class__
         for k in -1, 0, order, order + 1:
-            self.assertRaises(InvalidSecretExponentError, BitcoinMainnet.keys.private, secret_exponent=k)
+            self.assertRaises(InvalidSecretExponentError, BTC.keys.private, secret_exponent=k)
             self.assertRaises(InvalidSecretExponentError, BIP32Node, nc, cc, secret_exponent=k)
 
         for i in range(1, 512):
-            BitcoinMainnet.keys.private(secret_exponent=i)
+            BTC.keys.private(secret_exponent=i)
             BIP32Node(cc, secret_exponent=i)
 
     def test_repr(self):
-        key = BitcoinTestnet.keys.private(secret_exponent=273)
+        key = XTN.keys.private(secret_exponent=273)
 
         address = key.address()
-        pub_k = BitcoinTestnet.parse(address)
+        pub_k = XTN.parse(address)
         self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
 
         wif = key.wif()
-        priv_k = BitcoinTestnet.parse.wif(wif)
+        priv_k = XTN.parse.wif(wif)
         self.assertEqual(
             repr(priv_k),
             'private_for <XTNSEC:0264e1b1969f9102977691a40431b0b672055dcf31163897d996434420e6c95dc9>')
