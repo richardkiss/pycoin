@@ -1,14 +1,13 @@
 import unittest
 
 from pycoin.networks.registry import network_for_netcode
-from pycoin.vm.annotate import Annotate
 
 
 def make_tests_for_netcode(netcode):
     network = network_for_netcode(netcode)
 
     Tx = network.tx
-    annotate_scripts = Annotate(network.script, network.address).annotate_scripts
+    annotate_scripts = network.annotate.annotate_scripts
 
     class DisassembleTest(unittest.TestCase):
 
