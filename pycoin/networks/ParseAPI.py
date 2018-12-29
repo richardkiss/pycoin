@@ -52,6 +52,9 @@ class ParseAPI(object):
         self._wif_prefix = wif_prefix
         self._sec_prefix = sec_prefix
 
+    def parse_b58_hashed(self, s):
+        return parse_b58_double_sha256(s)
+
     # hierarchical key
     def bip32_seed(self, s):
         pair = parse_colon_prefix(s)
@@ -67,13 +70,13 @@ class ParseAPI(object):
         return self._network.keys.bip32_seed(master_secret)
 
     def bip32_prv(self, s):
-        data = parse_b58_double_sha256(s)
+        data = self.parse_b58_hashed(s)
         if data is None or not data.startswith(self._bip32_prv_prefix):
             return None
         return self._network.keys.bip32_deserialize(data)
 
     def bip32_pub(self, s):
-        data = parse_b58_double_sha256(s)
+        data = self.parse_b58_hashed(s)
         if data is None or not data.startswith(self._bip32_pub_prefix):
             return None
         return self._network.keys.bip32_deserialize(data)
@@ -106,7 +109,7 @@ class ParseAPI(object):
 
     # address
     def p2pkh(self, s):
-        data = parse_b58_double_sha256(s)
+        data = self.parse_b58_hashed(s)
         if data is None or not data.startswith(self._address_prefix):
             return None
         size = len(self._address_prefix)
@@ -115,7 +118,7 @@ class ParseAPI(object):
         return BitcoinishPayable(script_info, self._network)
 
     def p2sh(self, s):
-        data = parse_b58_double_sha256(s)
+        data = self.parse_b58_hashed(s)
         if (None in (data, self._pay_to_script_prefix) or
                 not data.startswith(self._pay_to_script_prefix)):
             return None
@@ -168,7 +171,7 @@ class ParseAPI(object):
 
     # private key
     def wif(self, s):
-        data = parse_b58_double_sha256(s)
+        data = self.parse_b58_hashed(s)
         if data is None or not data.startswith(self._wif_prefix):
             return None
         data = data[len(self._wif_prefix):]
