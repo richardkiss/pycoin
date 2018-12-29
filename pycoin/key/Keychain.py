@@ -87,9 +87,9 @@ class Keychain(object):
     def _add_key_to_cache(self, key):
         secret_exponent = key.secret_exponent()
         public_pair = key.public_pair()
-        for use_uncompressed in (True, False):
-            hash160 = key.hash160(use_uncompressed=use_uncompressed)
-            self._secret_exponent_cache[hash160] = (secret_exponent, public_pair, not use_uncompressed, key._generator)
+        for is_compressed in (True, False):
+            hash160 = key.hash160(is_compressed=is_compressed)
+            self._secret_exponent_cache[hash160] = (secret_exponent, public_pair, is_compressed, key._generator)
 
     def get(self, hash160, default=None):
         v = self.p2s_for_hash(hash160)

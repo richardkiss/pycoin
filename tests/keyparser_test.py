@@ -12,7 +12,7 @@ class KeyParserTest(unittest.TestCase):
         self.assertEqual(
             key.secret_exponent(), 0x91880b0e3017ba586b735fe7d04f1790f3c46b818a2151fb2def5f14dd2fd9c3)
         self.assertEqual(key.address(), "19Vqc8uLTfUonmxUEZac7fz1M5c5ZZbAii")
-        self.assertEqual(key.address(use_uncompressed=True), "1MwkRkogzBRMehBntgcq2aJhXCXStJTXHT")
+        self.assertEqual(key.address(is_compressed=False), "1MwkRkogzBRMehBntgcq2aJhXCXStJTXHT")
         subkey = key.subkey_for_path("0")
         self.assertEqual(subkey.address(), "1NV3j6NgeAkWBytXiQkWxMFLBtTdbef1rp")
 
@@ -22,7 +22,7 @@ class KeyParserTest(unittest.TestCase):
         self.assertEqual(
             key.secret_exponent(), 0x91880b0e3017ba586b735fe7d04f1790f3c46b818a2151fb2def5f14dd2fd9c3)
         self.assertEqual(key.address(), "mp1nuBzKGgv4ZtS5x8YywbCLD5CnVfT7hV")
-        self.assertEqual(key.address(use_uncompressed=True), "n2ThiotfoCrcRofQcFbCrVX2PC89s2KUjh")
+        self.assertEqual(key.address(is_compressed=False), "n2ThiotfoCrcRofQcFbCrVX2PC89s2KUjh")
         subkey = key.subkey_for_path("0")
         self.assertEqual(subkey.address(), "n31129TfTCBky6N9RyitnGTf3t4LYwCV6A")
 
@@ -31,7 +31,7 @@ class KeyParserTest(unittest.TestCase):
                                    "DLQWoQayvtSVYFvXz2vPPpbXE1qpjoUFidhjFj82pVShWu9curWmb2zy")
         self.assertEqual(key.secret_exponent(), None)
         self.assertEqual(key.address(), "19Vqc8uLTfUonmxUEZac7fz1M5c5ZZbAii")
-        self.assertEqual(key.address(use_uncompressed=True), "1MwkRkogzBRMehBntgcq2aJhXCXStJTXHT")
+        self.assertEqual(key.address(is_compressed=False), "1MwkRkogzBRMehBntgcq2aJhXCXStJTXHT")
         subkey = key.subkey_for_path("0")
         self.assertEqual(subkey.address(), "1NV3j6NgeAkWBytXiQkWxMFLBtTdbef1rp")
 

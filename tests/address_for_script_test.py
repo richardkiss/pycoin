@@ -19,8 +19,8 @@ def make_tests_for_netcode(netcode):
             for se in range(1, 100):
                 key = network.keys.private(secret_exponent=se)
                 for b in [True, False]:
-                    addr = key.address(use_uncompressed=b)
-                    sc = script_for_p2pkh(key.hash160(use_uncompressed=b))
+                    addr = key.address(is_compressed=b)
+                    sc = script_for_p2pkh(key.hash160(is_compressed=b))
                     afs_address = address_for_script(sc)
                     self.assertEqual(afs_address, addr)
 
@@ -28,8 +28,8 @@ def make_tests_for_netcode(netcode):
             for se in range(1, 10):
                 key = network.keys.private(secret_exponent=se)
                 for b in [True, False]:
-                    addr = key.address(use_uncompressed=b)
-                    script = script_for_p2pkh(key.hash160(use_uncompressed=b))
+                    addr = key.address(is_compressed=b)
+                    script = script_for_p2pkh(key.hash160(is_compressed=b))
                     afs_address = address_for_script(script)
                     self.assertEqual(afs_address, addr)
                     hl = network.tx.solve.build_hash160_lookup([se])
@@ -42,8 +42,8 @@ def make_tests_for_netcode(netcode):
             for se in range(1, 100):
                 key = network.keys.private(secret_exponent=se)
                 for b in [True, False]:
-                    addr = key.address(use_uncompressed=b)
-                    sc = script_for_p2pk(key.sec(use_uncompressed=b))
+                    addr = key.address(is_compressed=b)
+                    sc = script_for_p2pk(key.sec(is_compressed=b))
                     afs_address = address_for_script(sc)
                     self.assertEqual(afs_address, addr)
 
@@ -51,8 +51,8 @@ def make_tests_for_netcode(netcode):
             for se in range(1, 10):
                 key = network.keys.private(secret_exponent=se)
                 for b in [True, False]:
-                    addr = key.address(use_uncompressed=b)
-                    script = script_for_p2pk(key.sec(use_uncompressed=b))
+                    addr = key.address(is_compressed=b)
+                    script = script_for_p2pk(key.sec(is_compressed=b))
                     afs_address = address_for_script(script)
                     self.assertEqual(afs_address, addr)
                     hl = network.tx.solve.build_hash160_lookup([se])

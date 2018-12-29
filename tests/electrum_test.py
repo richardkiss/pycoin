@@ -52,7 +52,7 @@ class ElectrumTest(unittest.TestCase):
             "12XTLd4u9jeqw4egLAUhoKLxHARCdKWkty"
         ]
         k = network.keys.private(secret_exponent=1)
-        master_public_key = k.sec(use_uncompressed=True)[1:]
+        master_public_key = k.sec(is_compressed=False)[1:]
 
         wallet = network.keys.electrum_public(master_public_key)
         for idx, address in enumerate(RECEIVING_ADDRESSES):

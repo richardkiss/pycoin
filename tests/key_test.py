@@ -13,9 +13,6 @@ class KeyTest(unittest.TestCase):
         self.assertTrue(private_key.verify(h, sig))
         public_key = private_key.public_copy()
         self.assertTrue(public_key.verify(h, sig))
-        # BRAIN DAMAGE
-        h160_key = private_key.__class__(hash160=private_key.hash160())
-        self.assertTrue(h160_key.verify(h, sig))
 
     def test_translation(self):
         def do_test(exp_hex, wif, c_wif, public_pair_sec, c_public_pair_sec, address_b58, c_address_b58):
@@ -39,20 +36,20 @@ class KeyTest(unittest.TestCase):
                 repr(key)
                 if key.is_compressed():
                     self.assertEqual(key.wif(), c_wif)
-                self.assertEqual(key.wif(use_uncompressed=True), wif)
-                self.assertEqual(key.wif(use_uncompressed=False), c_wif)
+                self.assertEqual(key.wif(is_compressed=False), wif)
+                self.assertEqual(key.wif(is_compressed=True), c_wif)
 
             for key in keys_wif + keys_sec:
                 if key.is_compressed():
                     self.assertEqual(key.sec(), c_sec)
-                self.assertEqual(key.sec(use_uncompressed=True), sec)
-                self.assertEqual(key.sec(use_uncompressed=False), c_sec)
+                self.assertEqual(key.sec(is_compressed=False), sec)
+                self.assertEqual(key.sec(is_compressed=True), c_sec)
                 if key.is_compressed():
                     self.assertEqual(key.address(), c_address_b58)
                 else:
                     self.assertEqual(key.address(), address_b58)
-                self.assertEqual(key.address(use_uncompressed=False), c_address_b58)
-                self.assertEqual(key.address(use_uncompressed=True), address_b58)
+                self.assertEqual(key.address(is_compressed=True), c_address_b58)
+                self.assertEqual(key.address(is_compressed=False), address_b58)
 
             key_pub = network.parse.address(address_b58)
 

@@ -38,10 +38,10 @@ class BIP32Node(Key):
     """
 
     @classmethod
-    def from_master_secret(class_, master_secret, generator=None):
+    def from_master_secret(class_, master_secret):
         """Generate a Wallet from a master password."""
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
-        return class_(generator=generator, chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
+        return class_(chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
 
     @classmethod
     def deserialize(class_, data):
@@ -52,20 +52,18 @@ class BIP32Node(Key):
         if is_private:
             d["secret_exponent"] = from_bytes_32(data[46:])
         else:
-            d["public_pair"] = sec_to_public_pair(data[45:], generator=class_._default_generator)
+            d["public_pair"] = sec_to_public_pair(data[45:], generator=class_._generator)
         return class_(**d)
 
     def __init__(self, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0', child_index=0,
-                 secret_exponent=None, public_pair=None, generator=None):
+                 secret_exponent=None, public_pair=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
 
         if [secret_exponent, public_pair].count(None) != 1:
             raise ValueError("must include exactly one of public_pair and secret_exponent")
 
-        generator = generator or self._default_generator
         super(BIP32Node, self).__init__(
-            secret_exponent=secret_exponent, generator=generator, public_pair=public_pair,
-            prefer_uncompressed=False, is_compressed=True)
+            secret_exponent=secret_exponent, public_pair=public_pair, is_compressed=True)
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)
@@ -80,7 +78,6 @@ class BIP32Node(Key):
             raise EncodingError("parent_fingerprint wrong length")
         self._parent_fingerprint = parent_fingerprint
         self._child_index = child_index
-        self._prefer_uncompressed = False
         self._subkey_cache = dict()
 
     def chain_code(self):
@@ -111,7 +108,7 @@ class BIP32Node(Key):
         if as_private:
             ba += b'\0' + self._secret_exponent_bytes
         else:
-            ba += self.sec(use_uncompressed=False)
+            ba += self.sec(is_compressed=True)
         return bytes(ba)
 
     def hwif(self, as_private=False):
@@ -122,8 +119,8 @@ class BIP32Node(Key):
 
     def public_copy(self):
         """Yield the corresponding public node for this node."""
-        d = dict(generator=self._generator, chain_code=self._chain_code,
-                 depth=self._depth, parent_fingerprint=self._parent_fingerprint,
+        d = dict(chain_code=self._chain_code, depth=self._depth,
+                 parent_fingerprint=self._parent_fingerprint,
                  child_index=self._child_index, public_pair=self.public_pair())
         return self.__class__(**d)
 
@@ -147,7 +144,6 @@ class BIP32Node(Key):
             d["secret_exponent"], chain_code = subkey_secret_exponent_chain_code_pair(
                 self._generator, self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
         d["chain_code"] = chain_code
-        d["generator"] = self._generator
         key = self.__class__(**d)
         if not as_private:
             key = key.public_copy()

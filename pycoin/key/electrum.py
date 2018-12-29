@@ -21,8 +21,7 @@ def initial_key_to_master_key(initial_key):
 
 
 class ElectrumWallet(Key):
-    def __init__(self, generator=None, initial_key=None,
-                 master_private_key=None, public_pair=None, master_public_key=None):
+    def __init__(self, initial_key=None, master_private_key=None, public_pair=None, master_public_key=None):
         if [initial_key, public_pair, master_private_key, master_public_key].count(None) != 3:
             raise ValueError(
                 "exactly one of initial_key, master_private_key, master_public_key must be non-None")
@@ -33,7 +32,7 @@ class ElectrumWallet(Key):
         if master_public_key:
             public_pair = tuple(from_bytes_32(master_public_key[idx:idx+32]) for idx in (0, 32))
         super(ElectrumWallet, self).__init__(
-            generator=generator, secret_exponent=master_private_key, public_pair=public_pair, prefer_uncompressed=True)
+            secret_exponent=master_private_key, public_pair=public_pair, is_compressed=False)
 
     @classmethod
     def deserialize(class_, blob):
@@ -56,12 +55,12 @@ class ElectrumWallet(Key):
         return self.secret_exponent()
 
     def master_public_key(self):
-        return self.sec(use_uncompressed=True)[1:]
+        return self.sec()[1:]
 
     def public_copy(self):
         if self.secret_exponent() is None:
             return self
-        return self.__class__(self._generator, public_pair=self.public_pair())
+        return self.__class__(public_pair=self.public_pair())
 
     def subkey_for_path(self, path):
         return self.subkey(path)
@@ -82,14 +81,13 @@ class ElectrumWallet(Key):
         offset = from_bytes_32(double_sha256(b))
         if self.secret_exponent():
             return self.__class__(
-                generator=self._generator,
                 master_private_key=((self.master_private_key() + offset) % self._generator.order())
             )
         p1 = offset * self._generator
         x, y = self.public_pair()
         p2 = self._generator.Point(x, y)
         p = p1 + p2
-        return self.__class__(public_pair=p, generator=self._generator)
+        return self.__class__(public_pair=p)
 
     def subkeys(self, path):
         """

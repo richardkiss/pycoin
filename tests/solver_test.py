@@ -51,8 +51,8 @@ class SolverTest(unittest.TestCase):
 
     def test_p2pk(self):
         key = network.keys.private(1)
-        self.do_test_tx(network.contract.for_p2pk(key.sec(use_uncompressed=True)))
-        self.do_test_tx(network.contract.for_p2pk(key.sec(use_uncompressed=False)))
+        self.do_test_tx(network.contract.for_p2pk(key.sec(is_compressed=False)))
+        self.do_test_tx(network.contract.for_p2pk(key.sec(is_compressed=True)))
 
     def test_nonstandard_p2pkh(self):
         key = network.keys.private(1)

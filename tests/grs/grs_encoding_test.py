@@ -48,5 +48,5 @@ class GroestlcoinEncodingTestCase(unittest.TestCase):
 
         self.assertEqual(parsed.wif(), 'Kybw8izYevo5xMh1TK7aUr7jHFCxXS1zv8p3oqFz3o2zFbjGCYKc')
         self.assertEqual(parsed.address(), 'FpjSHmYBamwxWSsPtaL2rUz98FSS17VmY2')
-        self.assertEqual(parsed.wif(use_uncompressed=True), '5JMbvQZXHJAzJyoDnqWasGCwtiHJZivF2ckjn3n5mazYYwQHway')
-        self.assertEqual(parsed.address(use_uncompressed=True), 'FrH6KqPfsLPHArqCJ8WciGyvnWcRmvAsHC')
+        self.assertEqual(parsed.wif(is_compressed=False), '5JMbvQZXHJAzJyoDnqWasGCwtiHJZivF2ckjn3n5mazYYwQHway')
+        self.assertEqual(parsed.address(is_compressed=False), 'FrH6KqPfsLPHArqCJ8WciGyvnWcRmvAsHC')

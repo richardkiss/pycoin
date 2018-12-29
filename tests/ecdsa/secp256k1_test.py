@@ -220,7 +220,10 @@ class Secp256k1Test(unittest.TestCase):
         self.assertRaises(ValueError, lambda: secp256k1_generator.Point(0, 0))
 
     def test_bad_0_key(self):
-        self.assertRaises(InvalidPublicPairError, Key, public_pair=(0, 0), generator=secp256k1_generator)
+        class MyKey(Key):
+            _generator = secp256k1_generator
+
+        self.assertRaises(InvalidPublicPairError, MyKey, public_pair=(0, 0))
 
 
 def inject():

@@ -74,8 +74,8 @@ def make_output_for_secret_exponent(Key):
         yield ("secret_exponent", '%d' % secret_exponent, None)
         yield ("secret_exponent_hex", '%x' % secret_exponent, " hex")
         key = Key(secret_exponent)
-        yield ("wif", key.wif(use_uncompressed=False), None)
-        yield ("wif_uncompressed", key.wif(use_uncompressed=True), " uncompressed")
+        yield ("wif", key.wif(is_compressed=True), None)
+        yield ("wif_uncompressed", key.wif(is_compressed=False), " uncompressed")
     return f
 
 
@@ -88,29 +88,25 @@ def make_output_for_public_pair(Key, network):
         yield ("y_parity", "odd" if (public_pair[1] & 1) else "even", None)
 
         key = Key(public_pair=public_pair)
-        yield ("key_pair_as_sec", b2h(key.sec(use_uncompressed=False)), None)
-        yield ("key_pair_as_sec_uncompressed", b2h(key.sec(use_uncompressed=True)), " uncompressed")
+        yield ("key_pair_as_sec", b2h(key.sec(is_compressed=True)), None)
+        yield ("key_pair_as_sec_uncompressed", b2h(key.sec(is_compressed=False)), " uncompressed")
 
         network_name = network.network_name
-        hash160_c = key.hash160(use_uncompressed=False)
-        hash160_u = key.hash160(use_uncompressed=True)
-        hash160 = None
-        if hash160_c is None and hash160_u is None:
-            hash160 = key.hash160()
+        hash160_u = key.hash160(is_compressed=False)
+        hash160_c = key.hash160(is_compressed=True)
 
-        yield ("hash160", b2h(hash160 or hash160_c), None)
+        yield ("hash160", b2h(hash160_c), None)
 
         if hash160_c and hash160_u:
             yield ("hash160_uncompressed", b2h(hash160_u), " uncompressed")
 
-        address = network.address.for_p2pkh(hash160 or hash160_c)
+        address = network.address.for_p2pkh(hash160_c)
         yield ("address", address, "%s address" % network_name)
         yield ("%s_address" % network.symbol, address, "legacy")
 
-        if hash160_c and hash160_u:
-            address = key.address(use_uncompressed=True)
-            yield ("address_uncompressed", address, "%s address uncompressed" % network_name)
-            yield ("%s_address_uncompressed" % network.symbol, address, "legacy")
+        address = key.address(is_compressed=False)
+        yield ("address_uncompressed", address, "%s address uncompressed" % network_name)
+        yield ("%s_address_uncompressed" % network.symbol, address, "legacy")
 
         # don't print segwit addresses unless we're sure we have a compressed key
         if hash160_c and hasattr(network.address, "for_p2pkh_wit"):
@@ -198,13 +194,15 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.address = make_address_api(network.contract, **ui_kwargs)
 
-    def keys_private(secret_exponent, is_compressed=None):
+    def keys_private(secret_exponent, is_compressed=True):
         return NetworkKey(secret_exponent=secret_exponent, is_compressed=is_compressed)
 
     def keys_public(item, is_compressed=None):
         if isinstance(item, tuple):
+            if is_compressed is None:
+                is_compressed = True
             # it's a public pair
-            return NetworkKey(public_pair=item, prefer_uncompressed=not is_compressed)
+            return NetworkKey(public_pair=item, is_compressed=is_compressed)
         if is_compressed is not None:
             raise ValueError("can't set is_compressed from sec")
         return NetworkKey.from_sec(item)

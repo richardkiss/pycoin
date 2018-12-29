@@ -61,7 +61,7 @@ class KeyUtilsTest(unittest.TestCase):
             for se in range(1, 10):
                 key = network.Key(secret_exponent=se)
                 for tv in [True, False]:
-                    wif = key.wif(use_uncompressed=tv)
+                    wif = key.wif(is_compressed=tv)
                     self.assertEqual(network.parse.wif(wif).wif(), wif)
                     a = wif[:-1] + chr(ord(wif[-1])+1)
                     self.assertIsNone(network.parse.wif(a))
