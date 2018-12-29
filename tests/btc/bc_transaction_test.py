@@ -34,11 +34,8 @@ import os
 
 from pycoin.coins.exceptions import ValidationFailureError
 from pycoin.encoding.hexbytes import h2b_rev
-from pycoin.networks.registry import network_for_netcode
 from pycoin.satoshi import flags
-
-
-BitcoinMainnet = network_for_netcode("BTC")
+from pycoin.symbols.btc import network
 
 
 DEBUG_TX_ID_LIST = []
@@ -81,19 +78,19 @@ def txs_from_json(path):
 
             flag_mask = parse_flags(tvec[2])
             try:
-                tx = BitcoinMainnet.tx.from_hex(tx_hex)
+                tx = network.tx.from_hex(tx_hex)
             except Exception:
                 print("Cannot parse tx_hex: %s" % tx_hex)
                 raise
 
             spendable_db = {}
-            blank_spendable = BitcoinMainnet.tx.Spendable(0, b'', b'\0' * 32, 0)
+            blank_spendable = network.tx.Spendable(0, b'', b'\0' * 32, 0)
             for prevout in prevouts:
                 coin_value = 1000000
                 if len(prevout) == 4:
                     coin_value = prevout[3]
-                spendable = BitcoinMainnet.tx.Spendable(
-                    coin_value=coin_value, script=BitcoinMainnet.script.compile(prevout[2]),
+                spendable = network.tx.Spendable(
+                    coin_value=coin_value, script=network.script.compile(prevout[2]),
                     tx_hash=h2b_rev(prevout[0]), tx_out_index=prevout[1])
                 spendable_db[(spendable.tx_hash, spendable.tx_out_index)] = spendable
             unspents = [

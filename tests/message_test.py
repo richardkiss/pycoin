@@ -8,10 +8,7 @@ from pycoin.message.make_parser_and_packer import (
 )
 from pycoin.message.PeerAddress import ip_bin_to_ip4_addr, ip_bin_to_ip6_addr, PeerAddress, IP4_HEADER
 from pycoin.message.InvItem import InvItem, ITEM_TYPE_BLOCK, ITEM_TYPE_TX
-from pycoin.networks.registry import network_for_netcode
-
-
-network = network_for_netcode("BTC")
+from pycoin.symbols.btc import network
 
 
 def to_bin(obj):

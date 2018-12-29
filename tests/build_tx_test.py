@@ -1,16 +1,12 @@
 import io
 import unittest
 
-from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.encoding.hexbytes import h2b
-from pycoin.encoding.sec import public_pair_to_sec, public_pair_to_hash160_sec
-from pycoin.networks.registry import network_for_netcode
+from pycoin.symbols.btc import network
 
 from pycoin.satoshi.flags import SIGHASH_ALL
 
-
-network = network_for_netcode("BTC")
 
 Block = network.block
 Tx = network.tx
@@ -70,20 +66,16 @@ def standard_tx(coins_from, coins_to):
     return tx
 
 
-def public_pair_to_bitcoin_address(pair, compressed):
-    return network.address.for_p2pkh(public_pair_to_hash160_sec(pair, compressed=compressed))
-
-
 class BuildTxTest(unittest.TestCase):
 
     def test_signature_hash(self):
         compressed = False
         exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
-        address_2 = public_pair_to_bitcoin_address(exponent_2 * secp256k1_generator, compressed=compressed)
+        address_2 = network.keys.private(exponent_2, is_compressed=compressed).address()
         key = network.parse.wif("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
         exponent = key.secret_exponent()
 
-        public_key_sec = public_pair_to_sec(exponent * secp256k1_generator, compressed=compressed)
+        public_key_sec = network.keys.private(exponent, is_compressed=compressed).sec()
 
         the_coinbase_tx = Tx.coinbase_tx(public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
         coins_from = [(the_coinbase_tx.hash(), 0, the_coinbase_tx.txs_out[0])]
@@ -131,7 +123,7 @@ class BuildTxTest(unittest.TestCase):
         exponent = key.secret_exponent()
         compressed = False
 
-        public_key_sec = public_pair_to_sec(exponent * secp256k1_generator, compressed=compressed)
+        public_key_sec = network.keys.private(exponent, is_compressed=compressed).sec()
 
         the_coinbase_tx = Tx.coinbase_tx(public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
         TX_DB[the_coinbase_tx.hash()] = the_coinbase_tx
@@ -141,7 +133,7 @@ class BuildTxTest(unittest.TestCase):
         compressed = False
 
         exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
-        address_2 = public_pair_to_bitcoin_address(exponent_2 * secp256k1_generator, compressed=compressed)
+        address_2 = network.keys.private(exponent_2, is_compressed=compressed).address()
 
         self.assertEqual("12WivmEn8AUth6x6U8HuJuXHaJzDw3gHNZ", address_2)
 
@@ -159,7 +151,7 @@ class BuildTxTest(unittest.TestCase):
         compressed = True
 
         exponent_3 = int("f8d39b8ecd0e1b6fee5a340519f239097569d7a403a50bb14fb2f04eff8db0ff", 16)
-        address_3 = public_pair_to_bitcoin_address(exponent_3 * secp256k1_generator, compressed=compressed)
+        address_3 = network.keys.private(exponent_3, is_compressed=compressed).address()
 
         self.assertEqual("13zzEHPCH2WUZJzANymow3ZrxcZ8iFBrY5", address_3)
 
