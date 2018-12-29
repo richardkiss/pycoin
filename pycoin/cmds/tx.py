@@ -20,7 +20,6 @@ from pycoin.coins.tx_utils import distribute_from_split_pool
 from pycoin.convention import tx_fee, satoshi_to_mbtc
 from pycoin.encoding.hexbytes import b2h, h2b, h2b_rev
 from pycoin.key.subpaths import subpaths_for_path_range
-from pycoin.key.Keychain import Keychain
 from pycoin.networks.registry import network_codes, network_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.services import spendables_for_address, get_tx_db
@@ -416,7 +415,7 @@ def parse_context(args, parser):
         coinbase_tx = build_coinbase_tx(network, args.coinbase)
         txs.append(coinbase_tx)
 
-    keychain = Keychain(sqlite3.connect(args.keychain))
+    keychain = network.keychain(sqlite3.connect(args.keychain))
 
     # there are a few warnings we might optionally print out, but only if
     # they are relevant. We don't want to print them out multiple times, so we

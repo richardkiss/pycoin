@@ -1,5 +1,4 @@
 
-from pycoin.key.Keychain import Keychain
 from pycoin.symbols.btc import network as BitcoinMainnet
 
 from ..convention import tx_fee
@@ -129,7 +128,7 @@ def sign_tx(tx, wifs=[], network=BitcoinMainnet, **kwargs):
 
         >> sign_tx(tx, wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
-    keychain = Keychain()
+    keychain = network.keychain()
     keychain.add_secrets((network.parse.wif(_) for _ in wifs))
     solver = tx.Solver(tx)
     solver.sign(keychain, **kwargs)

@@ -1,6 +1,5 @@
 import unittest
 
-from pycoin.key.Keychain import Keychain
 from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.networks.registry import network_for_netcode
 
@@ -10,7 +9,7 @@ class KeychainTest(unittest.TestCase):
     def test_keychain(self):
         netcode = "BTC"
         network = network_for_netcode(netcode)
-        keychain = Keychain()
+        keychain = network.keychain()
         bip32_list = [network.keys.bip32_seed(_) for _ in [b"foo", b"bar"]]
         for bip32 in bip32_list:
             keychain.add_key_paths(bip32.public_copy(), subpaths_for_path_range("0-1/0-10"))

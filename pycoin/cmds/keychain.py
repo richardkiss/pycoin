@@ -6,7 +6,6 @@ import argparse
 import sqlite3
 import sys
 
-from pycoin.key.Keychain import Keychain
 from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.networks.registry import (
     network_codes, network_for_netcode
@@ -36,7 +35,7 @@ def keychain(args, parser):
 
     parse = network.ui.parse
 
-    keychain = Keychain(sqlite3.connect(args.keychain))
+    keychain = network.keychain(sqlite3.connect(args.keychain))
 
     keys = []
     for _ in args.key:
