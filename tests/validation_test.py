@@ -230,7 +230,8 @@ class ValidationTest(unittest.TestCase):
         coinbase_tx.txs_out[0].script = input_script
         spendable = coinbase_tx.tx_outs_as_spendable()[0]
         payables = [(address, cv)]
-        tx = network.tx_utils.create_signed_tx(spendables=[spendable], payables=payables, wifs=[wif], p2sh_lookup=p2sh_lookup)
+        tx = network.tx_utils.create_signed_tx(
+            spendables=[spendable], payables=payables, wifs=[wif], p2sh_lookup=p2sh_lookup)
         tx.unspents = [spendable]
         print(tx.as_hex(include_unspents=True))
         return tx

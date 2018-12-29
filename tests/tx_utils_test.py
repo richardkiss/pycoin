@@ -66,10 +66,12 @@ class SpendTest(unittest.TestCase):
         tx_2 = network.tx_utils.create_signed_tx(spendables, BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
         tx_2.validate_unspents(tx_db)
 
-        tx_2 = network.tx_utils.create_signed_tx([s.as_dict() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
+        tx_2 = network.tx_utils.create_signed_tx(
+            [s.as_dict() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
         tx_2.validate_unspents(tx_db)
 
-        tx_2 = network.tx_utils.create_signed_tx([s.as_text() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
+        tx_2 = network.tx_utils.create_signed_tx(
+            [s.as_text() for s in spendables], BITCOIN_ADDRESSES[2:3], wifs=WIFS[:3])
         tx_2.validate_unspents(tx_db)
 
     def test_confirm_input_raises(self):

@@ -24,6 +24,7 @@ _wif_prefix = h2b("80")
 _bip32_prv_prefix = h2b("0488ade4")
 _bip32_pub_prefix = h2b("0488B21E")
 
+
 def b2a_hashed_base58_grs(data):
     return b2a_base58(data + groestlHash(data)[:4])
 
@@ -43,9 +44,12 @@ network.wif_for_blob = wif_for_blob
 
 # Cause parsing to fail and tests to skip.
 try:
-    import groestlcoin_hash
+    import groestlcoin_hash  # noqa
 except ImportError:
     network.Key = None
-    none_parser = lambda *args, **kwargs: None
+
+    def none_parser(*args, **kwargs):
+        return None
+
     for attr in "hierarchical_key private_key public_key address".split():
         setattr(network.parse, attr, none_parser)

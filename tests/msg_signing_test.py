@@ -1,7 +1,6 @@
 import textwrap
 import unittest
 
-from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.symbols.btc import network as BTC
 from pycoin.symbols.xtn import network as XTN
 

@@ -119,7 +119,7 @@ class EncodingTestCase(unittest.TestCase):
                              as_hash160_sec)
 
             self.assertEqual(network.address.for_p2pkh(as_hash160_sec), as_bitcoin_address)
-            self.assertTrue(network.parse.address(as_bitcoin_address) != None)
+            self.assertIsNotNone(network.parse.address(as_bitcoin_address))
             bad_address = as_bitcoin_address[:17] + chr(ord(as_bitcoin_address[17]) + 1) + as_bitcoin_address[18:]
             self.assertIsNone(network.parse.address(bad_address))
 

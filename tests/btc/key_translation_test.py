@@ -1,6 +1,5 @@
 import unittest
 
-from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.hexbytes import h2b
 from pycoin.encoding.sec import (
     is_sec_compressed, public_pair_to_sec, sec_to_public_pair, public_pair_to_hash160_sec
