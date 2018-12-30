@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/richardkiss/pycoin.png?branch=master)](https://travis-ci.org/richardkiss/pycoin)
+[![codecov.io](https://codecov.io/github/richardkiss/pycoin/coverage.svg?branch=master)](https://codecov.io/github/richardkiss/pycoin)
+
 
 pycoin -- Python Cryptocoin Utilities
 =====================================
@@ -14,8 +16,62 @@ Documentation at [readthedocs](http://pycoin.readthedocs.io/en/latest/)
 High Level
 ==========
 
-Keys & BIP32
-------------
+Networks
+--------
+
+As of 0.9, pycoin supports many coins to various degrees via the "network" class. Since many features
+vary based on the network (for example, bitcoin mainnet addresses start with a "1", but testnet
+addresses start with an "m" or "n"), all API descends from a network object. Everything related to a
+particular network is scoped under this class.
+
+Bitcoin has the highest level of support, including keys, transactions, validation of signed transactions, and
+signing unsigned transactions, including partial signing of multisig. These are in level of increasing
+difficulty, so features for other coins will likely be supported in that order.
+
+There are two main ways to get a network:
+
+```
+from pycoin.symbols.btc import network
+```
+
+OR
+
+```
+from pycoin.networks.registry import network_for_netcode
+
+network = network_for_netcode("BTC")
+```
+
+
+Keys
+----
+
+You can create a new private key.
+
+```
+key = network.keys.private(secret_exponent=1)  # this is a terrible key because it's very guessable
+print(key.wif())
+print(key.sec())
+print(key.address())
+print(key.address(is_compressed=False))
+
+same_key = network.parse.private(key.wif())
+print(same_key.address())
+```
+
+BIP32
+-----
+
+You can create a BIP32 key.
+
+```
+key = network.keys.bip32_seed(b"foo")  # this is a terrible key because it's very guessable
+print(key.hwif())
+print(key.wif())
+print(key.sec())
+print(key.address())
+```
+
 
 The class pycoin.key.Key contains a convenience Key class that will parse the base58 representation of a BIP 32
 wallet [BIP0032] or a WIF or a bitcoin (or altcoin) address, and convert downwards.
