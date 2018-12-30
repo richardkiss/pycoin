@@ -6,10 +6,13 @@ python:
   - "3.5"
   - "3.6"
   - "pypy"
-install: pip install tox-travis
+  - "pypy3.5"
+  - "nightly"
+install: pip install coverage
 matrix:
   allow_failures:
     python:
+      - "nightly"
       - "3.8-dev"
   include:
     - python: 3.7
@@ -18,4 +21,6 @@ matrix:
     - python: 3.8-dev
       dist: xenial
       sudo: true
-script: tox
+script:
+    - coverage run -m py.test tests
+    - bash <(curl -s https://codecov.io/bash)

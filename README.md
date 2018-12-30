@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/richardkiss/pycoin.png?branch=master)](https://travis-ci.org/richardkiss/pycoin)
+[![codecov.io](https://codecov.io/github/richardkiss/pycoin/coverage.svg?branch=master)](https://codecov.io/github/richardkiss/pycoin)
+
 
 pycoin -- Python Cryptocoin Utilities
 =====================================
