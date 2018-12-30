@@ -1,3 +1,22 @@
+class TxIn(object):
+    """
+    The input part of a Tx that specifies where funds come from.
+    """
+
+    @classmethod
+    def parse(class_, f):
+        raise NotImplemented()
+
+    def __init__(self, *args, **kwargs):
+        raise NotImplemented()
+
+    def stream(self, f):
+        raise NotImplemented()
+
+    def __str__(self):
+        raise NotImplemented()
+
+
 """
 The MIT License (MIT)
 
@@ -21,22 +40,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-
-
-class TxIn(object):
-    """
-    The input part of a Tx that specifies where funds come from.
-    """
-
-    @classmethod
-    def parse(class_, f):
-        raise NotImplemented()
-
-    def __init__(self, *args, **kwargs):
-        raise NotImplemented()
-
-    def stream(self, f):
-        raise NotImplemented()
-
-    def __str__(self):
-        raise NotImplemented()
