@@ -5,7 +5,6 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
-  - "3.7"
   - "pypy"
   - "pypy3.5"
   - "nightly"
@@ -16,6 +15,9 @@ matrix:
       - "nightly"
       - "3.8-dev"
   include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
     - python: 3.8-dev
       dist: xenial
       sudo: true
