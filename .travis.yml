@@ -7,7 +7,7 @@ python:
   - "3.6"
   - "3.7"
   - "pypy"
-install: pip install tox-travis
+install: pip install tox-travis coverage
 matrix:
   allow_failures:
     python:
