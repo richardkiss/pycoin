@@ -19,4 +19,6 @@ matrix:
     - python: 3.8-dev
       dist: xenial
       sudo: true
-script: coverage run -m py.test tests
+script: 
+    - coverage run -m py.test tests
+    - bash <(curl -s https://codecov.io/bash)
