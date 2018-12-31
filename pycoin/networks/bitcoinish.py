@@ -1,13 +1,15 @@
 from pycoin.block import Block
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
+from pycoin.coins.exceptions import ValidationFailureError
 from pycoin.coins.tx_utils import create_tx, split_with_remainder, distribute_from_split_pool, sign_tx, create_signed_tx
+from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.b58 import b2a_hashed_base58
 from pycoin.key.Keychain import Keychain
-from pycoin.key.Key import Key
+from pycoin.key.Key import Key, InvalidSecretExponentError, InvalidPublicPairError
 from pycoin.key.BIP32Node import BIP32Node
 from pycoin.key.electrum import ElectrumWallet
 from pycoin.message.make_parser_and_packer import (
@@ -15,6 +17,7 @@ from pycoin.message.make_parser_and_packer import (
     standard_message_post_unpacks, standard_streamer, standard_parsing_functions
 )
 from pycoin.encoding.hexbytes import b2h, h2b
+from pycoin.satoshi import errno, flags
 from pycoin.solve.utils import build_hash160_lookup, build_p2sh_lookup, build_sec_lookup
 from pycoin.vm.annotate import Annotate
 
@@ -232,6 +235,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.keys.electrum_seed = electrum_seed
     network.keys.electrum_private = electrum_private
     network.keys.electrum_public = electrum_public
+    network.keys.InvalidSecretExponentError = InvalidSecretExponentError
+    network.keys.InvalidPublicPairError = InvalidPublicPairError
 
     network.msg = API()
     message_signer = MessageSigner(network, generator)
@@ -254,6 +259,12 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.tx.solve.build_hash160_lookup = network_build_hash160_lookup
     network.tx.solve.build_p2sh_lookup = build_p2sh_lookup
     network.tx.solve.build_sec_lookup = build_sec_lookup
+
+    network.validator = API()
+    network.validator.ScriptError = ScriptError
+    network.validator.ValidationFailureError = ValidationFailureError
+    network.validator.errno = errno
+    network.validator.flags = flags
 
     def my_create_tx(*args, **kwargs):
         return create_tx(network, *args, **kwargs)

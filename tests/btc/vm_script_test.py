@@ -2,12 +2,13 @@ import json
 import unittest
 import os
 
-from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.encoding.hexbytes import h2b
-from pycoin.satoshi import errno
-from pycoin.satoshi import flags
 from pycoin.symbols.btc import network
 
+
+errno = network.validator.errno
+flags = network.validator.flags
+ScriptError = network.validator.ScriptError
 
 SCRIPT_TESTS_JSON = os.path.dirname(__file__) + '/data/script_tests.json'
 

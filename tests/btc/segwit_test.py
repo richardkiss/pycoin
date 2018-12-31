@@ -3,13 +3,17 @@ import unittest
 from pycoin.encoding.bytes32 import to_bytes_32
 from pycoin.encoding.hash import double_sha256
 from pycoin.encoding.hexbytes import b2h, b2h_rev, h2b
-from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, SIGHASH_ANYONECANPAY
 from pycoin.symbols.btc import network
 
 
 # BRAIN DAMAGE
 Tx = network.tx
 TxOut = network.tx.TxOut
+
+SIGHASH_ALL = network.validator.flags.SIGHASH_ALL
+SIGHASH_SINGLE = network.validator.flags.SIGHASH_SINGLE
+SIGHASH_NONE = network.validator.flags.SIGHASH_NONE
+SIGHASH_ANYONECANPAY = network.validator.flags.SIGHASH_ANYONECANPAY
 
 
 class SegwitTest(unittest.TestCase):
