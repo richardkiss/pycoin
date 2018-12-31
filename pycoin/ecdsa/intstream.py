@@ -3,12 +3,12 @@ from pycoin.intbytes import iterbytes, byte2int
 
 
 def _to_bytes(v, length, byteorder="big"):
-    """For python 3, which has a native implementation of this function."""
+    """This is the same functionality as ``int.to_bytes`` in python 3"""
     return v.to_bytes(length, byteorder=byteorder)
 
 
 def _from_bytes(bytes, byteorder="big", signed=False):
-    """For python 3, which has a native implementation of this function."""
+    """This is the same functionality as ``int.from_bytes`` in python 3"""
     return int.from_bytes(bytes, byteorder=byteorder, signed=signed)
 
 
@@ -17,7 +17,7 @@ if hasattr(int, "to_bytes"):
     from_bytes = _from_bytes
 else:
     def to_bytes(v, length, byteorder="big"):
-        "See int.to_bytes in python 3"
+        """This is the same functionality as ``int.to_bytes`` in python 3"""
         ba = bytearray()
         for i in range(length):
             mod = v & 0xff
@@ -28,7 +28,7 @@ else:
         return bytes(ba)
 
     def from_bytes(bytes, byteorder="big", signed=False):
-        "See int.from_bytes in python 3"
+        """This is the same functionality as ``int.from_bytes`` in python 3"""
         if byteorder != "big":
             bytes = reversed(bytes)
         v = 0

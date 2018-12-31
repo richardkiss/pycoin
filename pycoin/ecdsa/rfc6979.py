@@ -6,12 +6,13 @@ from . import intstream
 
 if hasattr(1, "bit_length"):
     def bit_length(v):
+        "the ``int.bit_length`` in `python 3 <https://docs.python.org/3/library/stdtypes.html#int.bit_length>`_"
         return v.bit_length()
 else:
     def bit_length(self):
-        # Make this library compatible with python < 2.7
-        # https://docs.python.org/3.5/library/stdtypes.html#int.bit_length
+        "the ``int.bit_length`` in `python 3 <https://docs.python.org/3/library/stdtypes.html#int.bit_length>`_"
         # compared to "while n>0: bl +=1 ; n >>= 1", this is much faster in both python2 and pypy
+        # code taken from the link above
         s = bin(self)  # binary representation:  bin(-37) --> '-0b100101'
         s = s.lstrip('-0b')  # remove leading zeros and minus sign
         return len(s)  # len('100101') --> 6
@@ -19,7 +20,12 @@ else:
 
 def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashlib.sha256):
     """
-    Generate K value according to https://tools.ietf.org/html/rfc6979
+    :param generator_order: result from :method:`pycoin.ecdsa.Generator.Generator.order`,
+        necessary to ensure the k value is within bound
+    :param secret_exponent: an integer secret_exponent to generate the k value for
+    :param val: the value to be signed, also used as an entropy source for the k value
+    :returns: an integer k such that ``1 <= k < generator_order``, complying with
+        <https://tools.ietf.org/html/rfc6979>
     """
     n = generator_order
     bln = bit_length(n)

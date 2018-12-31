@@ -37,28 +37,10 @@ Key
     :show-inheritance:
 
 
-:mod:`key_from_text` Module
-----------------------------------
-
-.. automodule:: pycoin.key.key_from_text
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 :mod:`Key` Module
 ----------------------------------
 
 .. automodule:: pycoin.key.Key
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-:mod:`validate` Module
-----------------------------------
-
-.. automodule:: pycoin.key.validate
     :members:
     :undoc-members:
     :show-inheritance:

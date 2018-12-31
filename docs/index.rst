@@ -1,7 +1,10 @@
 pycoin
 ======
 
-Release v\ |version|. (:ref:`Installation <install>`)
+Release v\ |version|. (:ref:`Installation <source/install>`)
+
+.. image:: https://codecov.io/github/richardkiss/pycoin/coverage.svg?branch=master
+    :target: https://codecov.io/github/richardkiss/pycoin
 
 .. image:: https://img.shields.io/pypi/l/pycoin.svg
     :target: https://pypi.python.org/pypi/pycoin
@@ -23,9 +26,8 @@ Contents:
    getting-started
    bitcoin
    overview
-   source/recipes
    source/pycoin
-   source/tests
+   source/pycoin.symbols
 
 Indices and tables
 ==================

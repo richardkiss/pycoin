@@ -16,11 +16,29 @@ def _leftmost_bit(x):
 
 class Curve(object):
     """
-    Elliptic Curve over the field of integers modulo a prime.
-    A curve is instantiated with a prime modulus p, and coefficients a and b.
+    This class implements an `Elliptic curve <https://en.wikipedia.org/wiki/Elliptic_curve>`_ intended
+    for use in `Elliptic curve cryptography <https://en.wikipedia.org/wiki/Elliptic-curve_cryptography>`_
+
+    An elliptic curve ``EC<p, a, b>`` for a (usually large) prime p and integers a and b is a
+    `group <https://en.wikipedia.org/wiki/Group_(mathematics)>`_. The members of the group are
+    (x, y) points (where x and y are integers over the field of integers modulo p) that satisfy the relation
+    ``y**2 = x**3 + a*x + b (mod p)``. There is a group operation ``+`` and an extra point known
+    as the "point at infinity" thrown in to act as the identity for the group.
+
+    The group operation is a marvelous thing but unfortunately this margin is too narrow to contain
+    a description of it, so please refer to the links above for more information.
+
+    :param p: a prime
+    :param a: an integer coefficient
+    :param b: an integer constant
+    :param order: (optional) the order of the group made up by the points on the
+        curve. Any point on the curve times the order is the identity for this
+        group (the point at infinity). Although this is optional, it's required
+        for some operations.
     """
     def __init__(self, p, a, b, order=None):
-        """The curve of points satisfying y^2 = x^3 + a*x + b (mod p)."""
+        """
+        """
         self._p = p
         self._a = a
         self._b = b
@@ -28,24 +46,37 @@ class Curve(object):
         self._infinity = Point(None, None, self)
 
     def p(self):
-        """The prime modulus of the curve."""
+        """
+        :returns: the prime modulus of the curve.
+        """
         return self._p
 
     def order(self):
+        """
+        :returns: the order of the curve.
+        """
         return self._order
 
     def infinity(self):
-        """The "point at infinity" (also known as 0)."""
+        """:returns: the "point at infinity" (also known as 0, or the identity)."""
         return self._infinity
 
     def contains_point(self, x, y):
-        """Is the point (x, y) on the curve?"""
+        """
+        :param x: x coordinate of a point
+        :param y: y coordinate of a point
+        :returns: True if the point (x, y) is on the curve, False otherwise
+        """
         if x is None and y is None:
             return True
         return (y * y - (x * x * x + self._a * x + self._b)) % self._p == 0
 
     def add(self, p0, p1):
-        """Add one point to another point."""
+        """
+        :param p0: a point
+        :param p1: a point
+        :returns: the sum of the two points
+        """
         p = self._p
         infinity = self._infinity
 
@@ -70,7 +101,13 @@ class Curve(object):
         return self.Point(x3, y3)
 
     def multiply(self, p, e):
-        """Multiply a point by an integer."""
+        """
+        multiply a point by an integer.
+
+        :param p: a point
+        :param e: an integer
+        :returns: the result, equivalent to adding p to itself e times
+        """
 
         if self._order:
             e %= self._order
@@ -92,7 +129,11 @@ class Curve(object):
         return result
 
     def inverse_mod(self, a, m):
-        """Inverse of a mod m."""
+        """
+        :param a: an integer
+        :param m: another integer
+        :returns: the value ``b`` such that ``a * b == 1 (mod m)``
+        """
 
         if a < 0 or m <= a:
             a = a % m
@@ -116,7 +157,7 @@ class Curve(object):
 
     def Point(self, x, y):
         """
-        The point constructor for this curve
+        :returns: a :class:`Point <.Point>` object with coordinates ``(x, y)``
         """
         return Point(x, y, self)
 

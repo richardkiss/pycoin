@@ -34,7 +34,7 @@ class PublicPrivateMismatchError(Exception):
 class BIP32Node(Key):
     """
     This is a deterministic wallet that complies with BIP0032
-    https://en.bitcoin.it/wiki/BIP_0032
+    [https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki]
     """
 
     @classmethod
