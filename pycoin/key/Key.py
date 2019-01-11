@@ -29,15 +29,18 @@ class Key(object):
 
         return Key
 
-    def __init__(self, secret_exponent=None, public_pair=None, is_compressed=None):
+    def __init__(self, secret_exponent=None, public_pair=None, is_compressed=True):
         """
+        Include at most one of secret_exponent or public_pair.
+
         secret_exponent:
             a long representing the secret exponent
         public_pair:
             a tuple of long integers on the ecdsa curve
-
-        Include at most one of secret_exponent or public_pair.
-        is_compressed is optional.
+        is_compressed:
+            Is this key in the compressed form? The uncompressed form is obsolete.
+            Note that any function which produces output that depends on this can override
+            this default value.
         """
         if [secret_exponent, public_pair].count(None) != 1:
             raise ValueError("exactly one of secret_exponent or public_pair must be passed.")
@@ -189,6 +192,9 @@ class Key(object):
         return self._generator.verify(pubkey, val, sigdecode_der(sig))
 
     def is_compressed(self):
+        """
+        Return whether this key has been marked as compressed when it was created.
+        """
         return self._is_compressed
 
     def __repr__(self):

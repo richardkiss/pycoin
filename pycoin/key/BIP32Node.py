@@ -156,12 +156,17 @@ class BIP32Node(Key):
         return "<%s>" % r
 
     def subkey(self, i=0, is_hardened=False, as_private=None):
-        """Yield a child node for this node.
+        """
+        Yield a child node for this node.
 
-        i: the index for this node.
-        is_hardened: use "hardened key derivation". That is, the public version
+        i:
+            the index for this node.
+        is_hardened:
+            use "hardened key derivation". That is, the public version
             of this node cannot calculate this child.
-        as_private: set to True to get a private subkey."""
+        as_private:
+            set to True to get a private subkey.
+        """
         if as_private is None:
             as_private = self.secret_exponent() is not None
         is_hardened = not not is_hardened

@@ -53,6 +53,9 @@ class ParseAPI(object):
         self._sec_prefix = sec_prefix
 
     def parse_b58_hashed(self, s):
+        """
+        Override me to change how the b58 hashing check is done.
+        """
         return parse_b58_double_sha256(s)
 
     # hierarchical key
@@ -80,6 +83,10 @@ class ParseAPI(object):
         if data is None or not data.startswith(self._bip32_pub_prefix):
             return None
         return self._network.keys.bip32_deserialize(data)
+
+    def bip32(self, s):
+        data = self.parse_b58_hashed(s)
+        return self.bip32_prv(s) or self.bip32_pub(s)
 
     def electrum_to_blob(self, s):
         pair = parse_colon_prefix(s)
