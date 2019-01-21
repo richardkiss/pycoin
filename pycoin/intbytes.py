@@ -1,5 +1,6 @@
 """
-Provide the following functions, all cribbed from six http://pythonhosted.org/six/
+Provide the following functions, all cribbed from the library
+`six <http://pythonhosted.org/six/>`_.
 
 iterbytes(buf):
     return an iterator of ints corresponding to the bytes of buf

@@ -1,7 +1,6 @@
 import unittest
 
 from pycoin.encoding.b58 import a2b_hashed_base58, b2a_hashed_base58
-from pycoin.key.Key import InvalidSecretExponentError
 from pycoin.networks.registry import network_for_netcode
 from pycoin.networks.registry import network_codes
 from pycoin.symbols.btc import network as BTC
@@ -96,8 +95,8 @@ class KeyUtilsTest(unittest.TestCase):
         # BRAIN DAMAGE: hack
         BIP32Node = BTC.keys.bip32_seed(b"foo").__class__
         for k in -1, 0, order, order + 1:
-            self.assertRaises(InvalidSecretExponentError, BTC.keys.private, secret_exponent=k)
-            self.assertRaises(InvalidSecretExponentError, BIP32Node, nc, cc, secret_exponent=k)
+            self.assertRaises(BTC.keys.InvalidSecretExponentError, BTC.keys.private, secret_exponent=k)
+            self.assertRaises(BTC.keys.InvalidSecretExponentError, BIP32Node, nc, cc, secret_exponent=k)
 
         for i in range(1, 512):
             BTC.keys.private(secret_exponent=i)

@@ -1,8 +1,6 @@
 import hashlib
 import unittest
 
-from pycoin.coins.SolutionChecker import ScriptError
-
 from pycoin.encoding.hexbytes import b2h
 from pycoin.symbols.btc import network
 
@@ -13,6 +11,7 @@ TxIn = Tx.TxIn
 TxOut = Tx.TxOut
 Solver = Tx.Solver
 
+ScriptError = network.validator.ScriptError
 
 class SolverTest(unittest.TestCase):
 

@@ -10,28 +10,55 @@ ECDSA
     :show-inheritance:
 
 
-:mod:`ecdsa` Module
+:mod:`Curve` Module
 ----------------------------------
 
-.. automodule:: pycoin.ecdsa.ecdsa
+.. automodule:: pycoin.ecdsa.Curve
+    :members:
+    :undoc-members:
+
+:mod:`Generator` Module
+----------------------------------
+
+.. automodule:: pycoin.ecdsa.Generator
+    :members:
+    :special-members: __mul__
+    :undoc-members:
+    :show-inheritance:
+
+
+:mod:`Point` Module
+----------------------------------
+
+.. automodule:: pycoin.ecdsa.Point
+    :members:
+    :special-members: __add__, __mul__, __sub__, __neg__
+    :undoc-members:
+    :show-inheritance:
+
+
+:mod:`encrypt` Module
+----------------------------------
+
+.. automodule:: pycoin.ecdsa.encrypt
     :members:
     :undoc-members:
     :show-inheritance:
 
 
-:mod:`ellipticcurve` Module
+:mod:`intstream` Module
 ----------------------------------
 
-.. automodule:: pycoin.ecdsa.ellipticcurve
+.. automodule:: pycoin.ecdsa.intstream
     :members:
     :undoc-members:
     :show-inheritance:
 
 
-:mod:`numbertheory` Module
+:mod:`rfc6979` Module
 ----------------------------------
 
-.. automodule:: pycoin.ecdsa.numbertheory
+.. automodule:: pycoin.ecdsa.rfc6979
     :members:
     :undoc-members:
     :show-inheritance:
@@ -46,6 +73,15 @@ ECDSA
     :show-inheritance:
 
 
+:mod:`secp256r1` Module
+----------------------------------
+
+.. automodule:: pycoin.ecdsa.secp256r1
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 :mod:`native.bignum` Module
 ----------------------------------
 
@@ -55,10 +91,19 @@ ECDSA
     :show-inheritance:
 
 
-:mod:`native.library` Module
+:mod:`native.openssl` Module
 ----------------------------------
 
-.. automodule:: pycoin.ecdsa.native.library
+.. automodule:: pycoin.ecdsa.native.openssl
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+:mod:`native.secp256k1` Module
+----------------------------------
+
+.. automodule:: pycoin.ecdsa.native.secp256k1
     :members:
     :undoc-members:
     :show-inheritance:

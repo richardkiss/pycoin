@@ -5,11 +5,10 @@ from pycoin.coins.bitcoin.SolutionChecker import BitcoinSolutionChecker
 from pycoin.encoding.hexbytes import h2b
 from pycoin.symbols.btc import network
 
-from pycoin.satoshi.flags import SIGHASH_ALL
-
 
 Block = network.block
 Tx = network.tx
+flags = network.validator.flags
 
 # block 80971
 block_80971_cs = h2b('00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC')
@@ -85,7 +84,7 @@ class BuildTxTest(unittest.TestCase):
         tx_out_script_to_check = the_coinbase_tx.txs_out[0].script
         idx = 0
         solution_checker = BitcoinSolutionChecker(unsigned_coinbase_spend_tx)
-        actual_hash = solution_checker._signature_hash(tx_out_script_to_check, idx, hash_type=SIGHASH_ALL)
+        actual_hash = solution_checker._signature_hash(tx_out_script_to_check, idx, hash_type=flags.SIGHASH_ALL)
         self.assertEqual(actual_hash, 29819170155392455064899446505816569230970401928540834591675173488544269166940)
 
     def test_standard_tx_out(self):

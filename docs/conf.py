@@ -71,7 +71,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'pycoin'
-copyright = '2013, Richard Kiss'
+copyright = '2019, Richard Kiss'
 author = 'Richard Kiss'
 
 # The version info for the project you're documenting, acts as replacement for

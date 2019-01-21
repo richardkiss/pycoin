@@ -4,7 +4,6 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import b2h, b2h_rev
 from pycoin.intbytes import int2byte
 from pycoin.networks.registry import network_for_netcode
-from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_ANYONECANPAY, SIGHASH_SINGLE
 from pycoin.satoshi.der import sigdecode_der, sigencode_der
 
 
@@ -28,7 +27,7 @@ def sigcheck(a_key, a_hash_for_sig, a_sig):
     return secp256k1_generator.verify(a_key.public_pair(), a_hash_for_sig, (r, s))
 
 
-def sigmake(a_key, a_hash_for_sig, a_sig_type=SIGHASH_ALL):
+def sigmake(a_key, a_hash_for_sig, a_sig_type):
     """
     Signs a_hash_for_sig with a_key and returns a DER-encoded signature
     with a_sig_type appended.
@@ -46,10 +45,11 @@ class SighashSingleTest(unittest.TestCase):
 
     def test_sighash_single(self):
         for netcode in ["BTC", "XTN"]:
-            self._test_sighash_single(netcode)
+            self._test_sighash_single(network_for_netcode(netcode))
 
-    def _test_sighash_single(self, netcode):
-        network = network_for_netcode(netcode)
+    def _test_sighash_single(self, network):
+        flags = network.validator.flags
+
         k0, k1, k2, k3, k4, k5 = [
             network.keys.private(secret_exponent=se, is_compressed=True) for se in PRIV_KEYS]
 
@@ -78,7 +78,7 @@ class SighashSingleTest(unittest.TestCase):
 
         self.assertEqual('791b98ef0a3ac87584fe273bc65abd89821569fd7c83538ac0625a8ca85ba587', b2h_rev(tx.hash()))
 
-        sig_type = SIGHASH_SINGLE
+        sig_type = flags.SIGHASH_SINGLE
 
         solution_checker = network.tx.SolutionChecker(tx)
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[0].script, 0, sig_type)
@@ -108,7 +108,7 @@ class SighashSingleTest(unittest.TestCase):
         tx.txs_in[2].script = network.script.compile(b2h(sig))
         self.assertTrue(tx.is_solution_ok(2))
 
-        sig_type = SIGHASH_SINGLE | SIGHASH_ANYONECANPAY
+        sig_type = flags.SIGHASH_SINGLE | flags.SIGHASH_ANYONECANPAY
 
         sig_hash = solution_checker._signature_hash(coinbase_tx.txs_out[0].script, 0, sig_type)
         self.assertEqual(0x2003393d246a7f136692ce7ab819c6eadc54ffea38eb4377ac75d7d461144e75, sig_hash)

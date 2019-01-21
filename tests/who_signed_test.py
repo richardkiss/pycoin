@@ -1,12 +1,12 @@
 import unittest
 
-from pycoin.satoshi.flags import SIGHASH_ALL
 from pycoin.symbols.btc import network
 
 
 # BRAIN DAMAGE
 who_signed_tx = network.who_signed.who_signed_tx
 Tx = network.tx
+SIGHASH_ALL = network.validator.flags.SIGHASH_ALL
 
 
 class WhoSignedTest(unittest.TestCase):

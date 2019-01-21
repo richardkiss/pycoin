@@ -7,8 +7,20 @@ class Point(tuple):
     """
     A point on an elliptic curve. This is a subclass of tuple (forced to a 2-tuple),
     and also includes a reference to the underlying Curve.
+
+    This class supports the operators ``+``, ``-`` (unary and binary) and ``*``.
+
+    :param x: x coordinate
+    :param y: y coordinate
+    :param curve: the :class:`Curve <pycoin.ecdsa.Curve.Curve>` this point must be on
+
+    The constructor raises :class:`NoSuchPointError` if the point is invalid.
+    The point at infinity is ``(x, y) == (None, None)``.
     """
     def __new__(self, x, y, curve):
+        """
+        Subclasses of tuple require __new__ to be overridden.
+        """
         return tuple.__new__(self, (x, y))
 
     def __init__(self, x, y, curve):
@@ -17,7 +29,7 @@ class Point(tuple):
         self.check_on_curve()
 
     def check_on_curve(self):
-        """raise NoSuchPointError (which is a ValueError) if the point is not actually on the curve."""
+        """raise :class:`NoSuchPointError` if the point is not actually on the curve."""
         if not self._curve.contains_point(*self):
             raise NoSuchPointError('({},{}) is not on the curve {}'.format(self[0], self[1], self._curve))
 
@@ -42,5 +54,5 @@ class Point(tuple):
         return self.__class__(self[0], self._curve.p()-self[1], self._curve)
 
     def curve(self):
-        """The curve this point is on."""
+        """:return: the :class:`Curve <pycoin.ecdsa.Curve>` this point is on"""
         return self._curve

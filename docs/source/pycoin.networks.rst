@@ -10,15 +10,6 @@ Networks
     :show-inheritance:
 
 
-:mod:`all` Module
-----------------------------------
-
-.. automodule:: pycoin.networks.all
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 :mod:`default` Module
 ----------------------------------
 
@@ -28,28 +19,19 @@ Networks
     :show-inheritance:
 
 
-:mod:`legacy_networks` Module
-----------------------------------
-
-.. automodule:: pycoin.networks.legacy_networks
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-:mod:`network` Module
-----------------------------------
-
-.. automodule:: pycoin.networks.network
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 :mod:`registry` Module
 ----------------------------------
 
 .. automodule:: pycoin.networks.registry
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+:mod:`ParseAPI` Module
+----------------------------------
+
+.. automodule:: pycoin.networks.ParseAPI
     :members:
     :undoc-members:
     :show-inheritance:
