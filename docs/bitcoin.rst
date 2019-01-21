@@ -116,7 +116,7 @@ eventually reach validating nodes known as "miners". Miners attempt to
 bundle transactions into a *block* using a proof-of-work trick that
 makes finding blocks a time-consuming process.
 
-Although blocks are hard to find, their correctness is easy to verify. Once a block is found, it's shared with peers on the network who can verify it's correctness, accept the block as the next "ledger page" in the ledger, and begin trying to 
+Although blocks are hard to find, their correctness is easy to verify. Once a block is found, it's shared with peers on the network who can verify its correctness, accept the block as the next "ledger page" in the ledger, and begin trying to find the subsequent block.
 
 Mining
 ^^^^^^
