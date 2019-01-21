@@ -181,7 +181,9 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.Block = network.block = kwargs.get("block") or Block.make_subclass(network.tx)
 
     streamer = standard_streamer(standard_parsing_functions(network.block, network.tx))
-    network.parse_message, network.pack_message = make_parser_and_packer(
+
+    network.message = API()
+    network.message.parse, network.message.pack = make_parser_and_packer(
         streamer, standard_messages(), standard_message_post_unpacks(streamer))
 
     network.output_for_hwif = make_output_for_hwif(network)
