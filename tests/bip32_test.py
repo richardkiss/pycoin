@@ -259,7 +259,7 @@ class Bip0032TestCase(unittest.TestCase):
                          '35ohQTdNykjkF1Mn9nAVEFjupyAtsPAK1W')
         self.assertEqual(node.subkey(1).subkey(0).address(),
                          '3KaBTcviBLEJajTEMstsA2GWjYoPzPK7Y7')
-    
+
     def test_p2wpkh_native(self):
         from pycoin.key import Key
         node = Key.from_text('zpub6nsHdRuY92FsMKdbn9BfjBCG6X8pyhCibNP6uDvpnw2cyrVhecvHRMa3Ne8kdJZxjxgwnpbHLkcR4bfnhHy6auHPJyDTQ3kianeuVLdkCYQ')
@@ -267,5 +267,29 @@ class Bip0032TestCase(unittest.TestCase):
                          'bc1q3g5tmkmlvxryhh843v4dz026avatc0zzr6h3af')
         self.assertEqual(node.subkey(1).subkey(0).address(),
                          'bc1qdy94n2q5qcp0kg7v9yzwe6wvfkhnvyzje7nx2p')
+
+    def test_p2wpkh_native_testnet(self):
+        from pycoin.key import Key
+        node = Key.from_text('tpubDEenJGgVMucDfF8qb3MdhJhiGVZ8P2DUzw8NBtNc4uWRPGqUNNmxqUR8M3c1KwN3yE3CFm8nMLQmZH47Q65RQmsSiLenXhxD42DSU1CWyiz')
+        self.assertEqual(node.subkey(1).subkey(2).address(),
+                         'mvq2eqwKs9LQdFNH6BKEhw11udKjqDjo5J')
+        self.assertEqual(node.subkey(3).subkey(4).address(),
+                         'mpAgWFoJM5HYCz4byuvaHBfP8taCFPVPR7')
+
+    def test_p2wpkh_in_p2sh_testnet(self):
+        from pycoin.key import Key
+        node = Key.from_text('upub5FS3DrUQtjhPtXF9ckWB6wZVpW42bVU696FJKGohDu4KGTEkkxsAQNdkqU7ihyMKPCtPauBQ8EGN4zJWasC3TrTTdFhR9XyATvjeM5AHgrR')
+        self.assertEqual(node.subkey(1).subkey(2).address(),
+                         '2MuAxAoui1rKSr9Ugp2w5G5PbYjdFkuEo1x')
+        self.assertEqual(node.subkey(3).subkey(4).address(),
+                         '2NE2981iCZBoYgBynpSDWuqF8RWMuBVxdoL')
+
+    def test_p2wpkh_native_testnet(self):
+        from pycoin.key import Key
+        node = Key.from_text('vpub5aHCMN33HjfXNzN9F3FkUVwr43DMj6FgjVbeAKgUWf9iS56RTGw5MaNdLi7jy49eZmJmP7eQYcA3m6CjWc3UduXfZr4ggipy6wfofB6xtaV')
+        self.assertEqual(node.subkey(1).subkey(2).address(),
+                         'tb1qweczj5ypy6x92e98f5leq8x3frrqdhp6yearkh')
+        self.assertEqual(node.subkey(3).subkey(4).address(),
+                         'tb1qpkwg0m8xtxg95gczglc4x04ccq52ns3ez74kq2')
 if __name__ == '__main__':
     unittest.main()

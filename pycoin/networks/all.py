@@ -60,8 +60,9 @@ BUILT_IN_NETWORKS = [
     ),
 
     # BTC bitcoin testnet : uprv/upub
+    # Ref. https://github.com/satoshilabs/slips/blob/master/slip-0132.md#registered-hd-version-bytes
     Network(
-        "BTCU", "Bitcoin", "testnet3_segwit_not_native",
+        "YTN", "Bitcoin", "testnet3_segwit_not_native",
         b'\xef', b'\x6f', b'\xc4', h2b("044a4e28"), h2b("044a5262"),
         BitcoinTx, BitcoinBlock,
         h2b('0B110907'), 18333, [
@@ -73,8 +74,9 @@ BUILT_IN_NETWORKS = [
     ),
 
     # BTC bitcoin testnet : vprv/vpub
+    # Ref. https://github.com/satoshilabs/slips/blob/master/slip-0132.md#registered-hd-version-bytes
     Network(
-        "BTCV", "Bitcoin", "testnet3_segwit_native",
+        "ZTN", "Bitcoin", "testnet3_segwit_native",
         b'\xef', b'\x6f', b'\xc4', h2b("045f18bc"), h2b("045f1cf6"),
         BitcoinTx, BitcoinBlock,
         h2b('0B110907'), 18333, [
