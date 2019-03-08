@@ -199,7 +199,7 @@ class Key(object):
             is_p2pwk = address_wit_for_netcode(self._netcode)
             if is_p2pwk:
                 witness = ScriptPayToAddressWit(b'\0', hash_160)
-                return witness.info()['address_f']()
+                return witness.info(self._netcode)['address_f']()
             is_p2pwk_in_p2sh = pay_to_script_wit_for_netcode(self._netcode)
             if is_p2pwk_in_p2sh:
                 address_prefix = pay_to_script_prefix_for_netcode(self._netcode)

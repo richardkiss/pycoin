@@ -20,7 +20,7 @@ BUILT_IN_NETWORKS = [
         ],
         bech32_hrp='bc'
     ),
-    
+
     # BTC bitcoin mainnet : yprv/ypub
     Network(
         'BTCY', "Bitcoin", "mainnet_segwit_not_native",
@@ -33,7 +33,7 @@ BUILT_IN_NETWORKS = [
         bech32_hrp='bc',
         pay_to_script_wit=True
     ),
-    
+
     # BTC bitcoin mainnet : zprv/zpub
     Network(
         'BTCZ', "Bitcoin", "mainnet_segwit_native",
@@ -57,6 +57,34 @@ BUILT_IN_NETWORKS = [
             "bluematt.me", "testnet-seed.bluematt.me"
         ],
         bech32_hrp='tb'
+    ),
+
+    # BTC bitcoin testnet : uprv/upub
+    # Ref. https://github.com/satoshilabs/slips/blob/master/slip-0132.md#registered-hd-version-bytes
+    Network(
+        "YTN", "Bitcoin", "testnet3_segwit_not_native",
+        b'\xef', b'\x6f', b'\xc4', h2b("044a4e28"), h2b("044a5262"),
+        BitcoinTx, BitcoinBlock,
+        h2b('0B110907'), 18333, [
+            "bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org",
+            "bluematt.me", "testnet-seed.bluematt.me"
+        ],
+        bech32_hrp='tb',
+        pay_to_script_wit=True
+    ),
+
+    # BTC bitcoin testnet : vprv/vpub
+    # Ref. https://github.com/satoshilabs/slips/blob/master/slip-0132.md#registered-hd-version-bytes
+    Network(
+        "ZTN", "Bitcoin", "testnet3_segwit_native",
+        b'\xef', b'\x6f', b'\xc4', h2b("045f18bc"), h2b("045f1cf6"),
+        BitcoinTx, BitcoinBlock,
+        h2b('0B110907'), 18333, [
+            "bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org",
+            "bluematt.me", "testnet-seed.bluematt.me"
+        ],
+        bech32_hrp='tb',
+        address_wit=True
     ),
 
     # LTC litecoin mainnet : Ltpv/Ltub
