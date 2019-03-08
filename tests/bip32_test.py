@@ -268,7 +268,7 @@ class Bip0032TestCase(unittest.TestCase):
         self.assertEqual(node.subkey(1).subkey(0).address(),
                          'bc1qdy94n2q5qcp0kg7v9yzwe6wvfkhnvyzje7nx2p')
 
-    def test_p2wpkh_native_testnet(self):
+    def test_testnet(self):
         from pycoin.key import Key
         node = Key.from_text('tpubDEenJGgVMucDfF8qb3MdhJhiGVZ8P2DUzw8NBtNc4uWRPGqUNNmxqUR8M3c1KwN3yE3CFm8nMLQmZH47Q65RQmsSiLenXhxD42DSU1CWyiz')
         self.assertEqual(node.subkey(1).subkey(2).address(),
