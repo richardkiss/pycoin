@@ -5,57 +5,7 @@ from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.intbytes import int2byte
 from pycoin.encoding.hexbytes import b2h, h2b
 
-
-class BitcoinishPayable(object):
-    """
-    A script that encumbers coins.
-    """
-    def __init__(self, script_info, network):
-        self._script_info = script_info
-        self._network = network
-
-    def info(self):
-        return self._script_info
-
-    def hash160(self):
-        """
-        Return a 20-byte hash corresponding to this script (or None if not applicable).
-        """
-        return self._script_info.get("hash160")
-
-    def address(self):
-        """
-        Return a string with the address for this script (or None if this script does
-        have a corresponding address).
-        """
-        return self._network.address.for_script_info(self._script_info)
-
-    def script(self):
-        """
-        Return a :class:`bytes <bytes>` with a binary image of the script.
-        """
-        return self._network.contract.for_info(self._script_info)
-
-    def disassemble(self):
-        """
-        Return a text string of the disassembly of the script.
-        """
-        return self._network.script.disassemble(self.script())
-
-    def output(self):
-        """
-        Return a 20-byte hash corresponding to this script (or None if not applicable).
-        """
-        hash160 = self._script_info.get("hash160", None)
-        if hash160:
-            yield ("hash160", b2h(hash160), None)
-
-        address = self.address()
-        yield ("address", address, "%s address" % self._network.network_name)
-        yield ("%s_address" % self._network.symbol, address, "legacy")
-
-    def __repr__(self):
-        return "<%s>" % self.address()
+from .Contract import Contract
 
 
 class ParseAPI(object):
@@ -168,7 +118,7 @@ class ParseAPI(object):
     def p2pkh(self, s):
         """
         Parse a pay-to-public-key-hash address.
-        Return a :class:`BitcoinishPayable` or None.
+        Return a :class:`Contract` or None.
         """
         data = self.parse_b58_hashed(s)
         if data is None or not data.startswith(self._address_prefix):
@@ -176,12 +126,12 @@ class ParseAPI(object):
         size = len(self._address_prefix)
         script = self._network.contract.for_p2pkh(data[size:])
         script_info = self._network.contract.info_for_script(script)
-        return BitcoinishPayable(script_info, self._network)
+        return Contract(script_info, self._network)
 
     def p2sh(self, s):
         """
         Parse a pay-to-script-hash address.
-        Return a :class:`BitcoinishPayable` or None.
+        Return a :class:`Contract` or None.
         """
         data = self.parse_b58_hashed(s)
         if (None in (data, self._pay_to_script_prefix) or
@@ -190,9 +140,9 @@ class ParseAPI(object):
         size = len(self._pay_to_script_prefix)
         script = self._network.contract.for_p2sh(data[size:])
         script_info = self._network.contract.info_for_script(script)
-        return BitcoinishPayable(script_info, self._network)
+        return Contract(script_info, self._network)
 
-    def segwit(self, s, blob_len, segwit_attr):
+    def _segwit(self, s, blob_len, segwit_attr):
         script_f = getattr(self._network.contract, segwit_attr, None)
         if script_f is None:
             return None
@@ -207,32 +157,32 @@ class ParseAPI(object):
             return None
         script = script_f(decoded_data)
         script_info = self._network.contract.info_for_script(script)
-        return BitcoinishPayable(script_info, self._network)
+        return Contract(script_info, self._network)
 
     def p2pkh_segwit(self, s):
         """
         Parse a pay-to-pubkey-hash segwit address.
-        Return a :class:`BitcoinishPayable` or None.
+        Return a :class:`Contract` or None.
         """
-        return self.segwit(s, 20, "for_p2pkh_wit")
+        return self._segwit(s, 20, "for_p2pkh_wit")
 
     def p2sh_segwit(self, s):
         """
         Parse a pay-to-script-hash segwit address.
-        Return a :class:`BitcoinishPayable` or None.
+        Return a :class:`Contract` or None.
         """
-        return self.segwit(s, 32, "for_p2sh_wit")
+        return self._segwit(s, 32, "for_p2sh_wit")
 
     # payable (+ all address types)
     def script(self, s):
         """
         Parse a script by compiling it.
-        Return a :class:`BitcoinishPayable` or None.
+        Return a :class:`Contract` or None.
         """
         try:
             script = self._network.script.compile(s)
             script_info = self._network.contract.info_for_script(script)
-            return BitcoinishPayable(script_info, self._network)
+            return Contract(script_info, self._network)
         except Exception:
             return None
 
@@ -317,7 +267,7 @@ class ParseAPI(object):
     def address(self, s):
         """
         Parse an address, any of p2pkh, p2sh, p2pkh_segwit, or p2sh_segwit.
-        Return a :class:`BitcoinishPayable <BitcoinishPayable>`, or None.
+        Return a :class:`Contract <Contract>`, or None.
         """
         s = parseable_str(s)
         return self.p2pkh(s) or self.p2sh(s) or self.p2pkh_segwit(s) or self.p2sh_segwit(s)
@@ -325,7 +275,7 @@ class ParseAPI(object):
     def payable(self, s):
         """
         Parse text as either an address or a script to be compiled.
-        Return a :class:`BitcoinishPayable <BitcoinishPayable>`, or None.
+        Return a :class:`Contract <Contract>`, or None.
         """
         s = parseable_str(s)
         return self.address(s) or self.script(s)
