@@ -1,6 +1,5 @@
 from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.encoding.hash import double_sha256
-from ..SolutionChecker import ScriptError
 from pycoin.satoshi.flags import SIGHASH_FORKID
 
 from ..bitcoin.SolutionChecker import BitcoinSolutionChecker
@@ -23,7 +22,7 @@ class BgoldSolutionChecker(BitcoinSolutionChecker):
         """
 
         if hash_type & SIGHASH_FORKID != SIGHASH_FORKID:
-            raise ScriptError()
+            raise self.ScriptError()
 
         return self._signature_for_hash_type_segwit(tx_out_script, unsigned_txs_out_idx, hash_type)
 

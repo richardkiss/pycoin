@@ -3,7 +3,6 @@ from .VM import BitcoinVM
 
 from ...encoding.bytes32 import from_bytes_32
 
-from ..SolutionChecker import ScriptError
 from pycoin.satoshi import errno
 from pycoin.satoshi.flags import (
     SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
@@ -75,7 +74,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         while pc < len(script):
             opcode, data, pc, is_ok = scriptStreamer.get_opcode(script, pc)
             if opcode not in scriptStreamer.data_opcodes:
-                raise ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
+                raise self.ScriptError("signature has non-push opcodes", errno.SIG_PUSHONLY)
 
     def _tx_in_for_idx(self, idx, tx_in, tx_out_script, unsigned_txs_out_idx):
         if idx == unsigned_txs_out_idx:
@@ -190,10 +189,10 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
 
             stack = vm.eval_script()
             if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
-                raise ScriptError("eval false", errno.EVAL_FALSE)
+                raise self.ScriptError("eval false", errno.EVAL_FALSE)
 
         if flags & VERIFY_CLEANSTACK and len(stack) != 1:
-            raise ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
+            raise self.ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
 
     def puzzle_and_solution_iterator(self, tx_context, flags=None, traceback_f=None):
         if flags is None:
