@@ -107,7 +107,7 @@ class KeyUtilsTest(unittest.TestCase):
 
         address = key.address()
         pub_k = XTN.parse(address)
-        self.assertEqual(repr(pub_k),  '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
+        self.assertEqual(repr(pub_k), '<mhDVBkZBWLtJkpbszdjZRkH1o5RZxMwxca>')
 
         wif = key.wif()
         priv_k = XTN.parse.wif(wif)
