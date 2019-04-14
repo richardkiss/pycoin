@@ -147,7 +147,7 @@ def _create_bip32(network):
     for _ in range(max_retries):
         try:
             return network.keys.bip32_seed(get_entropy())
-        except ValueError as e:
+        except ValueError:
             continue
     # Probably a bug if we get here
     raise RuntimeError("can't create BIP32 key")
