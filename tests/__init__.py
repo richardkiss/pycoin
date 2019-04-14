@@ -1,4 +1,3 @@
-import doctest
 
 
 def load_tests(loader, tests, ignore):
