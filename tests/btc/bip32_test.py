@@ -245,7 +245,7 @@ class Bip0032TestCase(unittest.TestCase):
 
         address = wallet.address()
         pub_k = XTN.parse.address(address)
-        self.assertEqual(repr(pub_k),  '<myb5gZNXePNf2E2ksrjnHRFCwyuvt7oEay>')
+        self.assertEqual(repr(pub_k), '<myb5gZNXePNf2E2ksrjnHRFCwyuvt7oEay>')
 
         wif = wallet.wif()
         priv_k = XTN.parse.secret(wif)
