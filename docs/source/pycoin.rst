@@ -1,21 +1,8 @@
 pycoin Package
 ==============
 
-:mod:`intbytes` Module
-----------------------
-
-.. automodule:: pycoin.intbytes
+.. automodule:: pycoin.symbols.btc
     :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`merkle` Module
---------------------
-
-.. automodule:: pycoin.merkle
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 Subpackages
 -----------
@@ -27,5 +14,4 @@ Subpackages
     pycoin.message
     pycoin.networks
     pycoin.services
-    pycoin.tools
-
+    pycoin.symbols.btc

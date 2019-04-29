@@ -118,7 +118,7 @@ class ParseAPI(object):
     def p2pkh(self, s):
         """
         Parse a pay-to-public-key-hash address.
-        Return a :class:`Contract` or None.
+        Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         data = self.parse_b58_hashed(s)
         if data is None or not data.startswith(self._address_prefix):
@@ -131,7 +131,7 @@ class ParseAPI(object):
     def p2sh(self, s):
         """
         Parse a pay-to-script-hash address.
-        Return a :class:`Contract` or None.
+        Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         data = self.parse_b58_hashed(s)
         if (None in (data, self._pay_to_script_prefix) or
@@ -162,14 +162,14 @@ class ParseAPI(object):
     def p2pkh_segwit(self, s):
         """
         Parse a pay-to-pubkey-hash segwit address.
-        Return a :class:`Contract` or None.
+        Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         return self._segwit(s, 20, "for_p2pkh_wit")
 
     def p2sh_segwit(self, s):
         """
         Parse a pay-to-script-hash segwit address.
-        Return a :class:`Contract` or None.
+        Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         return self._segwit(s, 32, "for_p2sh_wit")
 
@@ -177,7 +177,7 @@ class ParseAPI(object):
     def script(self, s):
         """
         Parse a script by compiling it.
-        Return a :class:`Contract` or None.
+        Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         try:
             script = self._network.script.compile(s)
@@ -267,7 +267,7 @@ class ParseAPI(object):
     def address(self, s):
         """
         Parse an address, any of p2pkh, p2sh, p2pkh_segwit, or p2sh_segwit.
-        Return a :class:`Contract <Contract>`, or None.
+        Return a :class:`Contract <pycoin.networks.Contract.Contract>`, or None.
         """
         s = parseable_str(s)
         return self.p2pkh(s) or self.p2sh(s) or self.p2pkh_segwit(s) or self.p2sh_segwit(s)
@@ -275,7 +275,7 @@ class ParseAPI(object):
     def payable(self, s):
         """
         Parse text as either an address or a script to be compiled.
-        Return a :class:`Contract <Contract>`, or None.
+        Return a :class:`Contract <pycoin.networks.Contract.Contract>`, or None.
         """
         s = parseable_str(s)
         return self.address(s) or self.script(s)

@@ -3,6 +3,7 @@ Version xxxx
 
 * rewrite of ecdsa package
 * change how ScriptNullData works (arbitrary data now allowed after OP_RETURN)
+* API moved under pycoin.symbols.*.network
 
 
 Version 0.80

@@ -1,9 +1,8 @@
-A Cryptocurrency Primer
-=======================
+A Bitcoin Primer
+================
 
 We will describe bitcoin specifically here. Many cryptocurrencies
-are minor variations of bitcoin, so certain details may be modified,
-but the overall structure is the same.
+are variations of bitcoin that tweak a few details.
 
 Overview
 --------
@@ -14,24 +13,24 @@ subdivided into ten million (1e8) quantum units each of which is known
 as a "satoshi".
 
 The Bitcoin network is a distributed append-only database that is
-designed to append one blockto the linked-list of blocks once every
+designed to append one block to the linked-list of blocks once every
 ten minutes. This database keeps track of *unspents* (more commonly
 known as "UTXOs" for *unspent transaction outputs*).
 
 Unspents
-^^^^^^^^
+--------
 
-An unspent corresponds to a roll of coins of any size (the quantum
-unit being 1 satoshi, 1e8 of which make a bitcoin) protected by a
-*puzzle script* (more commonly known as a "script pubkey", because
+An unspent can be thought of as a roll of coins of any number of satoshis
+protected by a *puzzle script* (more commonly known as a "script pubkey", because
 it almost always contains a reference to a public key). This puzzle
 is written in a custom bitcoin stack-based low level scripting language,
-but is usually one of only a few common forms.
+but is usually one of only a few common forms, including pay-to-public-key,
+and pay-to-script.
 
 An unspent is a potential input to a transaction.
 
 Unspent Database
-^^^^^^^^^^^^^^^^
+----------------
 
 The bitcoin database is a ledger of unspents. It doesn't explicitly
 define ownership of bitcoins; instead, rules are applied that allow
@@ -42,14 +41,14 @@ confers is the ability to reassign ownership. This may seem odd at first,
 but it's the essence of how all money works.
 
 Transactions
-^^^^^^^^^^^^
+------------
 
 To spend coins, one creates a *transaction* (or *Tx*). Roughly speaking,
 a transaction unrolls rolled-up and locked coins from unspents,
 puts them in a big pile, then rerolls them and locks them in new unspents.
-The old unspents are now spent (and so no longer considered "unspents").
+The old unspents are now spent and discarded as historical relics.
 
-A transaction consists of a little metadata, one or more inputs, each of
+A transaction consists of a bit of metadata, one or more inputs, each of
 which is known as a *TxIn* (commonly known as a vin), and one or more
 outputs, each of which is known as a *TxOut* (or vout).
 
@@ -65,7 +64,12 @@ order.
 
 
 TxIn
-^^^^
+----
+
+A TxIn defines the input coins for a transaction. It points to unspent coins
+via transaction ID and the index of the TxOut. This TxOut must not be spent
+by any other confirmed transaction (this is called a "double-spend", and is
+akin to offering the same ten dollar bill to two different people).
 
 Each TxIn refers to exactly one unspent, and includes a *solution script*
 that corresponds to the unspent's puzzle script, and "unlocks" it. If the
@@ -81,20 +85,8 @@ hashing parts of the transaction, including the TxOut list, and having the
 solution include a digital signature on that hash.
 
 
-TxIn
-^^^^
-
-A TxIn defines the input coins for a transaction. It points to unspent coins
-via transaction ID and the index of the TxOut. This TxOut must not be spent
-by any other confirmed transaction (this is called a "double-spend", and is
-akin to offering the same ten dollar bill to two different people).
-
-A TxIn also contains a solution script, that solves the puzzle script
-protecting the coins in the TxOut.
-
-
 TxOut
-^^^^^
+-----
 
 A TxOut defines the output coins of a transaction. It's a structure that
 includes an integer representing the number of satoshis dedicated to this
@@ -105,7 +97,7 @@ referred to by a TxIn in a future transaction (but only one!).
 
 
 Fees
-^^^^
+----
 
 The total coins reassigned in the list of TxOut objects must be no greater
 than the coins collected up in the list of TxIn objects (or else coins can
@@ -117,7 +109,7 @@ proportional to the size of the transaction in bytes.
 
 
 Puzzle Script
-^^^^^^^^^^^^^
+-------------
 
 A puzzle script is a program written in a non-Turing-complete language known
 as Bitcoin script. Bitcoin script is a low-level interpreted stack-based
@@ -126,7 +118,7 @@ opcodes tuned to verifying ECDSA digital cryptographic signatures.
 
 
 Block
-^^^^^
+-----
 
 Transactions are passed around the peer-to-peer Bitcoin network, and
 eventually reach validating nodes known as "miners". Miners attempt to
@@ -143,7 +135,7 @@ the previous.
 
 
 Mining
-^^^^^^
+------
 
 Mining is conceptually akin to this process: create a lottery ticket (a
 block that includes a list of transactions), check to see if the ticket is a
@@ -160,8 +152,8 @@ coins in existence can be traced back to the initial block in which they are
 generated as a reward for creating the block.
 
 
-Keys
-----
+ECDSA Keys
+----------
 
 A bitcoin ECDSA private key is an integer between 1 and
 115792089237316195423570985008687907852837564279074904382605163141518161494336
@@ -183,7 +175,7 @@ uncompressed form is a 04 byte, followed by the 32 bytes of x value, then the
 
 
 Public Key Hash (PKH)
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 After public keys is formatted as a binary blob using the SEC standard, it
 is hashed twice: first to a 256 bit value using sha256, then that result is
@@ -192,7 +184,7 @@ a public key hash (pkh).
 
 
 Base58
-^^^^^^
+------
 
 Base 58 is frequently used by bitcoin to encode data that would otherwise be
 binary. It consists of the digits (10 characters), the upper case letter (26
@@ -203,7 +195,7 @@ characters. Note that 10 + 26 + 26 - 4 = 58.
 
 
 BIP32
-^^^^^
+-----
 
 BIP32 (where BIP stands for "Bitcoin improvement proposal") describes a way to
 create a hierarchical tree of private or public keys, where child keys can be

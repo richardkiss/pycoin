@@ -26,12 +26,3 @@ Networks
     :members:
     :undoc-members:
     :show-inheritance:
-
-
-:mod:`ParseAPI` Module
-----------------------------------
-
-.. automodule:: pycoin.networks.ParseAPI
-    :members:
-    :undoc-members:
-    :show-inheritance:

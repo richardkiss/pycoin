@@ -1,8 +1,6 @@
-Getting Started with pycoin
-===========================
-
 Installation
 ------------
+
 To install pycoin, run this command the terminal::
 
     $ pip install pycoin
@@ -16,16 +14,3 @@ To see if pycoin is correctly installed, try a command-line tool::
 
 You should see several lines of output, describing information about the
 bitcoin key corresponding to private key 1.
-
-
-Networks
---------
-
-A "network" is a particular coin, such as Bitcoin Mainnet or Bitcoin Testnet. There
-are two main ways to fetch a network::
-
-    from pycoin.symbols.btc import network
-or ::
-
-    from pycoin.networks.registry import network_for_netcode
-    network = network_for_netcode("BTC")
