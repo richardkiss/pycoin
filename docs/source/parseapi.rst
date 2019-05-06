@@ -1,3 +1,5 @@
+.. _parse-api:
+
 Parse API
 ---------
 

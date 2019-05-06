@@ -38,7 +38,7 @@ Some useful network attributes include:
         an object to aggregate private key information, useful for signing transactions
 
     network.parse
-        api for parsing human-readable items like keys, WIFs, addresses
+        :ref:`parse-api` for parsing human-readable items like keys, WIFs, addresses
 
     network.contract
         api for creating standard scripts in bitcoin
