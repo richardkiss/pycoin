@@ -1,5 +1,8 @@
+.. _pycoin.ecdsa:
+
 ECDSA
-================
+=====
+
 
 :mod:`__init__` Module
 ----------------------------------
@@ -16,6 +19,7 @@ ECDSA
 .. automodule:: pycoin.ecdsa.Curve
     :members:
     :undoc-members:
+
 
 :mod:`Generator` Module
 ----------------------------------

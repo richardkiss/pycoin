@@ -63,8 +63,7 @@ class Generator(Curve, Point):
         :return: (p0, p1) where each p is a :class:`Point` with given x coordinate,
             and p0's y value is even.
 
-        To get a point with particular parity, use
-        ::
+        To get a point with particular parity, use::
             points_for_x(x)[1 if is_y_supposed_to_be_odd else 0]
         """
         p = self._p

@@ -25,8 +25,8 @@ class Curve(object):
     ``y**2 = x**3 + a*x + b (mod p)``. There is a group operation ``+`` and an extra point known
     as the "point at infinity" thrown in to act as the identity for the group.
 
-    The group operation is a marvelous thing but unfortunately this margin is too narrow to contain
-    a description of it, so please refer to the links above for more information.
+    The group operation is a truly marvelous property of this construct, a description of which
+    this margin is too narrow to contain, so please refer to the links above for more information.
 
     :param p: a prime
     :param a: an integer coefficient
