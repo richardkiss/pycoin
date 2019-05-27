@@ -21,6 +21,8 @@ ECDSA
     :undoc-members:
 
 
+.. _ecdsa.Generator:
+
 :mod:`Generator` Module
 ----------------------------------
 

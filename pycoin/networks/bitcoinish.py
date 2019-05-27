@@ -293,4 +293,6 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.str = parseable_str
 
+    network.generator = generator
+
     return network

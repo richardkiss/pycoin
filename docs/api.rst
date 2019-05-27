@@ -179,6 +179,22 @@ network.keys
 
 .. _network.msg:
 
+
+network.generator
+-----------------
+
+Most bitcoin-like cryptocurrencies use an ECC group called secp256k1 for digital signatures.
+The ecdsa.secp256k1 generator for this group provides most of the functionality you will need.
+
+.. code-block:: python
+
+    from pycoin.symbols.btc import network
+    public_key = network.generator * 1
+    print(public_key)
+
+For bitcoin, network.generator is pycoin.ecdsa.secp256k1.secp256k1_generator, which is an instance of a :class:`Generator <pycoin.ecdsa.Generator.Generator>`.
+
+
 network.msg
 -----------
 
