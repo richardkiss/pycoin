@@ -145,6 +145,8 @@ class Generator(Curve, Point):
             of ``val`` using ``public_pair`` public key.
         """
         order = self._order
+        if val == 0:
+            return False
         r, s = sig
         if r < 1 or r >= order or s < 1 or s >= order:
             return False
@@ -170,6 +172,8 @@ class Generator(Curve, Point):
         K value should be returned. Otherwise, the default K value, generated according
         to rfc6979 will be used.
         """
+        if val == 0:
+            raise ValueError()
         if gen_k is None:
             gen_k = deterministic_generate_k
         n = self._order
