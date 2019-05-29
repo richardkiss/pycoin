@@ -8,7 +8,7 @@ class KeyTest(unittest.TestCase):
 
     def test_sign_verify(self):
         private_key = network.keys.private(secret_exponent=1)
-        h = b"\x00" * 32
+        h = b"\x16" * 32
         sig = private_key.sign(h)
         self.assertTrue(private_key.verify(h, sig))
         public_key = private_key.public_copy()
