@@ -1,3 +1,4 @@
+ku -n CHA -j P:foo -s 5-10
 {
    "CHA_address": "cZpmeGGqmZ5QNjiguiTcRmsqnK1fBxJBHa",
    "CHA_address_uncompressed": "cZ5BVqUCchYfyZAvq8c1Hrj6p9bG6EvACz",
