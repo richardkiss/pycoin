@@ -1,10 +1,14 @@
-Version xxxx
-------------
+Version 0.90.20190630
+---------------------
 
+* all API moved under pycoin.symbols.*.network
 * rewrite of ecdsa package
 * change how ScriptNullData works (arbitrary data now allowed after OP_RETURN)
-* API moved under pycoin.symbols.*.network
-
+* first crack at documentation
+* added b58, coinc, keychain command-line tools
+* removed obsolete genwallet, spend, and bu tools
+* "netcode" renamed to "symbol"
+* many, many other changes, big and small
 
 Version 0.80
 ------------
