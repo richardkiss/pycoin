@@ -12,6 +12,8 @@ See also [pycoinnet](http://github.com/richardkiss/pycoinnet/) for a library tha
 
 Documentation at [readthedocs](http://pycoin.readthedocs.io/en/latest/)
 
+Discussion at [zulipchat](https://pycoin.zulipchat.com/)
+
 
 Networks
 --------
