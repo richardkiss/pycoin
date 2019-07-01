@@ -50,6 +50,13 @@ class Key(object):
         self._hash160_uncompressed = None
         self._hash160_compressed = None
 
+        if self._generator is None:
+            from pycoin.ecdsa.secp256k1 import secp256k1_generator
+            self._generator = secp256k1_generator
+        if self._network is None:
+            from pycoin.networks.default import get_current_network
+            self._network = get_current_network()
+
         if self._secret_exponent is not None:
             if self._secret_exponent < 1 \
                     or self._secret_exponent >= self._generator.order():
