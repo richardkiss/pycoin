@@ -69,7 +69,7 @@ def load_library():
         r = secp256k1.secp256k1_context_randomize(secp256k1.ctx, os.urandom(32))
         if r:
             return secp256k1
-    except (OSError, AttributeError):
+    except (OSError, AttributeError, TypeError):
         if PYCOIN_LIBSECP256K1_PATH:
             warnings.warn("PYCOIN_LIBSECP256K1_PATH set but libsecp256k1 optimizations not loaded")
         return None
