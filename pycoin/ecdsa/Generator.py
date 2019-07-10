@@ -180,11 +180,11 @@ class Generator(Curve, Point):
         k = gen_k(n, secret_exponent, val)
         while True:
             p1 = k * self
-            r = p1[0]
+            r = p1[0] % n
             s = (self.inverse(k) * (val + (secret_exponent * r) % n)) % n
             if r != 0 and s != 0:
                 recid = p1[1] & 1
-                if p1[1] > self._p:
+                if p1[0] > n:
                     recid += 2
                 return r, s, recid
             k += 1
