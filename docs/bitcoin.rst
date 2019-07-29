@@ -34,7 +34,7 @@ Unspent Database
 
 The bitcoin database is a ledger of unspents. It doesn't explicitly
 define ownership of bitcoins; instead, rules are applied that allow
-bitcoin to be reassigned if the puzzles can be solve. So you can think
+bitcoin to be reassigned if the puzzles can be solved. So you can think
 of "owning" bitcoin as being equivalent to having the information
 required to solve the puzzle. In other words, the only benefit ownership
 confers is the ability to reassign ownership. This may seem odd at first,

@@ -56,6 +56,7 @@ Contents:
    cmdtools
    source/recipes
    bitcoin
+   source/contract
    source/pycoin.ecdsa
    source/pycoin.services
 
