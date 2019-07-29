@@ -1,3 +1,12 @@
+Version 0.90.20190728
+---------------------
+
+* fix problem with recid > 1 (probably, hard to test)
+* fix problem on Windows
+* add Chaucha, STRAT
+* fix Dogecoin bip32 prefix
+* add documentation for pycoin.networks.Contract.Contract class
+
 Version 0.90.20190630
 ---------------------
 
