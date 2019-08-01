@@ -15,7 +15,7 @@ class BlockchainInfoProvider(object):
         elif netcode == "XTN":
             self.api_domain = "https://testnet.blockchain.info"
         elif netcode == "BCH":
-            self.api_domain "http://api.blockchain.info/bch"
+            self.api_domain = "http://api.blockchain.info/bch"
         else:
             raise ValueError("unsupported netcode %s" % netcode)
 
