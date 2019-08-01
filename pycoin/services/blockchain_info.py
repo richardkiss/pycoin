@@ -10,10 +10,12 @@ from pycoin.encoding.hexbytes import b2h, h2b, b2h_rev
 
 class BlockchainInfoProvider(object):
     def __init__(self, netcode):
-        if netcode == 'BTC':
+        if netcode == "BTC":
             self.api_domain = "https://blockchain.info"
         elif netcode == "XTN":
             self.api_domain = "https://testnet.blockchain.info"
+        elif netcode == "BCH":
+            self.api_domain "http://api.blockchain.info/bch"
         else:
             raise ValueError("unsupported netcode %s" % netcode)
 
