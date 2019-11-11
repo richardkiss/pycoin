@@ -33,7 +33,12 @@ def load_library():
             library_path = ctypes.util.find_library('libeay32')
 
     else:
-        library_path = ctypes.util.find_library('crypto')
+        # on Mac OS 10.15.1 trying to load "libcrypto" crashes
+        # but crypto.0.9.8 works, so try to load that one first
+        for p in ["crypto.0.9.8", "crypto"]:
+            library_path = ctypes.util.find_library(p)
+            if library_path:
+                break
 
     if library_path is None:
         return None
