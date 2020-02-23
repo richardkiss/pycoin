@@ -49,7 +49,7 @@ You can create a private key and get the corresponding address.
 ```
 from pycoin.symbols.btc import network
 
-key = network.keys.wif(secret_exponent=1)  # this is a terrible key because it's very guessable
+key = network.keys.private(secret_exponent=1)  # this is a terrible key because it's very guessable
 print(key.wif())
 print(key.sec())
 print(key.address())
