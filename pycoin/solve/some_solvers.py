@@ -76,10 +76,26 @@ def constant_equality_solver(m):
 constant_equality_solver.pattern = ('EQUAL', VAR("var"), CONSTANT('const'))
 
 
+def all_signature_hints(public_pair, signature_for_hash_type_f, **kwargs):
+    default_sig_type = [kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)]
+    sig_hash_types_to_try = kwargs.get("sig_hash_types_to_try", default_sig_type)
+    shfsh = kwargs.get("signature_hints_for_sig_hash")
+    if shfsh:
+        for sig_hash_type in sig_hash_types_to_try:
+            sig_hash = signature_for_hash_type_f(sig_hash_type)
+            for _ in shfsh.get(sig_hash, []):
+                yield _
+    shfpp = kwargs.get("signature_hints_for_public_pair")
+    if shfpp:
+        for _ in shfpp.get(public_pair, []):
+            yield _
+    for _ in kwargs.get("signature_hints", []):
+        yield _
+
+
 def signing_solver(m):
     def f(solved_values, **kwargs):
         signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
-        signature_hints = kwargs.get("signature_hints", [])
         generator_for_signature_type_f = kwargs["generator_for_signature_type_f"]
         signature_for_hash_type_f = m["signature_for_hash_type_f"]
         existing_script = kwargs.get("existing_script", b'')
@@ -108,10 +124,10 @@ def signing_solver(m):
                 r, s = generator.sign(secret_exponent, sig_hash)
             else:
                 # try existing signatures
-                for sig in signature_hints:
+                generator = generator_for_signature_type_f(signature_type)
+                public_pair = sec_to_public_pair(sec_key, generator=generator)
+                for sig in all_signature_hints(public_pair, signature_for_hash_type_f, **kwargs):
                     sig_hash = signature_for_hash_type_f(indexbytes(sig, -1))
-                    generator = generator_for_signature_type_f(signature_type)
-                    public_pair = sec_to_public_pair(sec_key, generator=generator)
                     sig_pair = der.sigdecode_der(sig[:-1])
                     if generator.verify(public_pair, sig_hash, sig_pair):
                         r, s = sig_pair
