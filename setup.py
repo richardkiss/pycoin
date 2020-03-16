@@ -2,11 +2,11 @@
 
 from setuptools import setup
 
-from pycoin.version import version
+with open("README.md", "rt") as fh:
+    long_description = fh.read()
 
 setup(
     name="pycoin",
-    version=version,
     packages=[
         "pycoin",
         "pycoin.blockchain",
@@ -50,6 +50,8 @@ setup(
     url="https://github.com/richardkiss/pycoin",
     license="http://opensource.org/licenses/MIT",
     description="Utilities for Bitcoin and altcoin addresses and transaction manipulation.",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 2.7',
