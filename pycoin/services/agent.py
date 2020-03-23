@@ -1,4 +1,4 @@
-from pycoin.version import version
+from pycoin import version
 
 try:
     import urllib2 as request
