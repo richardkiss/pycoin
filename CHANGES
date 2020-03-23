@@ -1,3 +1,13 @@
+Version 0.90.20200322
+---------------------
+
+* fix crasher due to openssl version on Mac OS
+* fix problem with blockcypher provider
+* add support for keywords sig_hash_types_to_try, signature_hints_for_public_pair to solver
+* add support for generating Digibyte addresses
+* update to modern LTC address
+* build with pyproject.toml
+
 Version 0.90.20190728
 ---------------------
 
