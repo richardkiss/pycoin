@@ -93,4 +93,4 @@ class ScriptTools(object):
             f.write(self.scriptStreamer.compile_push_data(t))
 
     def compile_push_data_list(self, data_list):
-        return b''.join(self.scriptStreamer.compile_push_data(d) for d in data_list)
+        return b''.join(self.scriptStreamer.compile_push_data(d) for d in data_list if d is not None)
