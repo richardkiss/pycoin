@@ -1,5 +1,4 @@
 import hashlib
-import sqlite3
 import textwrap
 
 from collections import defaultdict
@@ -9,6 +8,7 @@ from pycoin.encoding.hash import hash160
 
 class Keychain(object):
     def __init__(self, sqlite3_db=None):
+        import sqlite3
         self._db = sqlite3_db or sqlite3.connect(":memory:")
         self._db.text_factory = type(b'')
         self._init_tables()
