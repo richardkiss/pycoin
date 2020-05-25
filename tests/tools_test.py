@@ -108,6 +108,11 @@ class ToolsTest(unittest.TestCase):
         self.assertEqual(IntStreamer.int_to_script_bytes(127), b"\x7f")
         self.assertEqual(IntStreamer.int_to_script_bytes(128), b"\x80\x00")
 
+    def test_pr_364(self):
+        """ See https://github.com/richardkiss/pycoin/pull/364
+        """
+        assert network.script.compile_push_data_list([None]) == b''
+
 
 if __name__ == "__main__":
     unittest.main()
