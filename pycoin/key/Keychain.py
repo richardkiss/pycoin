@@ -1,6 +1,10 @@
 import hashlib
-import sqlite3
 import textwrap
+
+try:
+    import sqlite3
+except ImportError:
+    pass
 
 from collections import defaultdict
 
