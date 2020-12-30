@@ -98,7 +98,7 @@ def create_OpenSSLOptimizations(curve_id):
             openssl_group = OpenSSL.EC_GROUP_new_by_curve_name(curve_id)
 
         def multiply(self, p, e):
-            "Use OpenSSL to perform point mulitiplication."
+            "Use OpenSSL to perform point multiplication."
             if e == 0 or p == self._infinity:
                 return self._infinity
 
