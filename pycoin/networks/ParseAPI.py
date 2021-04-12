@@ -10,11 +10,16 @@ from .Contract import Contract
 
 class ParseAPI(object):
     def __init__(
-            self, network, bip32_prv_prefix=None, bip32_pub_prefix=None, address_prefix=None,
+            self, network, bip32_prv_prefix=None, bip32_pub_prefix=None, bip49_prv_prefix=None,
+            bip49_pub_prefix=None, bip84_prv_prefix=None, bip84_pub_prefix=None, address_prefix=None,
             pay_to_script_prefix=None, bech32_hrp=None, wif_prefix=None, sec_prefix=None):
         self._network = network
         self._bip32_prv_prefix = bip32_prv_prefix
         self._bip32_pub_prefix = bip32_pub_prefix
+        self._bip49_prv_prefix = bip49_prv_prefix
+        self._bip49_pub_prefix = bip49_pub_prefix
+        self._bip84_prv_prefix = bip84_prv_prefix
+        self._bip84_pub_prefix = bip84_pub_prefix
         self._address_prefix = address_prefix
         self._pay_to_script_prefix = pay_to_script_prefix
         self._bech32_hrp = bech32_hrp
@@ -72,6 +77,16 @@ class ParseAPI(object):
         """
         s = parseable_str(s)
         return self.bip32_prv(s) or self.bip32_pub(s)
+
+    def bip84_pub(self, s):
+        """
+        Parse a bip84 public key from a text string ("zpub" type).
+        Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
+        """
+        data = self.parse_b58_hashed(s)
+        if data is None or not data.startswith(self._bip84_pub_prefix):
+            return None
+        return self._network.keys.bip32_deserialize(data, pay_to_native_wit=True)
 
     def _electrum_to_blob(self, s):
         pair = parse_colon_prefix(s)
@@ -287,7 +302,7 @@ class ParseAPI(object):
         Return a subclass of :class:`Key <pycoin.key.Key>`, or None.
         """
         s = parseable_str(s)
-        for f in [self.bip32_seed, self.bip32_prv, self.bip32_pub,
+        for f in [self.bip32_seed, self.bip32_prv, self.bip32_pub, self.bip84_pub,
                   self.electrum_seed, self.electrum_prv, self.electrum_pub]:
             v = f(s)
             if v:

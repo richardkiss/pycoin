@@ -140,7 +140,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     generator = kwargs.get("generator", secp256k1_generator)
     kwargs.setdefault("sec_prefix", "%sSEC" % symbol.upper())
-    KEYS_TO_H2B = ("bip32_prv_prefix bip32_pub_prefix wif_prefix address_prefix "
+    KEYS_TO_H2B = ("bip32_prv_prefix bip32_pub_prefix bip49_prv_prefix bip49_pub_prefix "
+                   "bip84_prv_prefix bip84_pub_prefix wif_prefix address_prefix "
                    "pay_to_script_prefix sec_prefix magic_header").split()
     for k in KEYS_TO_H2B:
         k_hex = "%s_hex" % k
@@ -149,12 +150,16 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     script_tools = kwargs.get("script_tools", BitcoinScriptTools)
 
-    UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
-               "address_prefix pay_to_script_prefix bech32_hrp").split()
+    UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix bip49_prv_prefix bip49_pub_prefix "
+               "bip84_prv_prefix bip84_pub_prefix wif_prefix address_prefix").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
     _bip32_prv_prefix = ui_kwargs.get("bip32_prv_prefix")
     _bip32_pub_prefix = ui_kwargs.get("bip32_pub_prefix")
+    _bip49_prv_prefix = ui_kwargs.get("bip49_prv_prefix")
+    _bip49_pub_prefix = ui_kwargs.get("bip49_pub_prefix")
+    _bip84_prv_prefix = ui_kwargs.get("bip84_prv_prefix")
+    _bip84_pub_prefix = ui_kwargs.get("bip84_pub_prefix")
     _wif_prefix = ui_kwargs.get("wif_prefix")
     _sec_prefix = ui_kwargs.get("sec_prefix")
 
@@ -228,8 +233,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     def bip32_seed(seed):
         return NetworkBIP32Node.from_master_secret(seed)
 
-    def bip32_deserialize(data):
-        return NetworkBIP32Node.deserialize(data)
+    def bip32_deserialize(data, pay_to_script_wit=False, pay_to_native_wit=False):
+        return NetworkBIP32Node.deserialize(data, pay_to_script_wit=pay_to_script_wit, pay_to_native_wit=pay_to_native_wit)
 
     network.keys.bip32_seed = bip32_seed
     network.keys.bip32_deserialize = bip32_deserialize

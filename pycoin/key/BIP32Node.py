@@ -44,7 +44,7 @@ class BIP32Node(Key):
         return class_(chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
 
     @classmethod
-    def deserialize(class_, data):
+    def deserialize(class_, data, pay_to_script_wit=False, pay_to_native_wit=False):
         parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
         d = dict(chain_code=data[13:45], depth=ord(data[4:5]), parent_fingerprint=parent_fingerprint,
                  child_index=child_index)
@@ -53,10 +53,11 @@ class BIP32Node(Key):
             d["secret_exponent"] = from_bytes_32(data[46:])
         else:
             d["public_pair"] = sec_to_public_pair(data[45:], generator=class_._generator)
+        d["pay_to_native_wit"] = pay_to_native_wit
         return class_(**d)
 
     def __init__(self, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0', child_index=0,
-                 secret_exponent=None, public_pair=None):
+                 pay_to_script_wit=False, pay_to_native_wit=False, secret_exponent=None, public_pair=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
 
         if [secret_exponent, public_pair].count(None) != 1:
@@ -79,9 +80,16 @@ class BIP32Node(Key):
         self._parent_fingerprint = parent_fingerprint
         self._child_index = child_index
         self._subkey_cache = dict()
+        self.pay_to_script_wit = pay_to_script_wit
+        self.pay_to_native_wit = pay_to_native_wit
 
     def chain_code(self):
         return self._chain_code
+
+    # def address(self, is_compressed=None):
+    #     if self.pay_to_native_wit:
+    #         return self._network.address.for_p2pkh_wit(self.hash160(is_compressed=is_compressed))
+    #     return self._network.address.for_p2pkh(self.hash160(is_compressed=is_compressed))
 
     def tree_depth(self):
         return self._depth
@@ -121,7 +129,8 @@ class BIP32Node(Key):
         """Yield the corresponding public node for this node."""
         d = dict(chain_code=self._chain_code, depth=self._depth,
                  parent_fingerprint=self._parent_fingerprint,
-                 child_index=self._child_index, public_pair=self.public_pair())
+                 child_index=self._child_index, public_pair=self.public_pair(),
+                 pay_to_native_wit=self.pay_to_native_wit)
         return self.__class__(**d)
 
     def _subkey(self, i, is_hardened, as_private):
@@ -144,6 +153,7 @@ class BIP32Node(Key):
             d["secret_exponent"], chain_code = subkey_secret_exponent_chain_code_pair(
                 self._generator, self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
         d["chain_code"] = chain_code
+        d["pay_to_native_wit"] = self.pay_to_native_wit
         key = self.__class__(**d)
         if not as_private:
             key = key.public_copy()

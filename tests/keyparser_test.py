@@ -40,6 +40,12 @@ class KeyParserTest(unittest.TestCase):
                         "ncCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtr")
         self.assertEqual(key, None)
 
+    def test_parse_p2wpkh_native(self):
+        key = BTC.parse("zpub6mjuZRsjH7htP5ERSBQZbTQDPdJuueG85D4MGRTEg5YyYBKTPbqEGz9iiPmKkCrTn2dMFsp2tgs3MQ1zExvNFTEnHrrABy4dayJk9foR6K9")
+        self.assertEqual(key.secret_exponent(), None)
+        subkey = key.subkey_for_path("0/0")
+        self.assertEqual(subkey.address(), "bc1q3g5tmkmlvxryhh843v4dz026avatc0zzr6h3af")
+
     def test_parse_wif(self):
         key = BTC.parse("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn")
         self.assertEqual(key.secret_exponent(), 1)
@@ -55,6 +61,10 @@ class KeyParserTest(unittest.TestCase):
     def test_parse_bad_address(self):
         key = BTC.parse("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMW")
         self.assertEqual(key, None)
+
+    def test_parse_p2wpkh_address(self):
+        key = BTC.parse("bc1q3g5tmkmlvxryhh843v4dz026avatc0zzr6h3af")
+        self.assertEqual(key.address(), "bc1q3g5tmkmlvxryhh843v4dz026avatc0zzr6h3af")
 
     def test_parse_electrum_seed(self):
         key = BTC.parse("E:00000000000000000000000000000001")
