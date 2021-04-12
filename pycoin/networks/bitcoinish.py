@@ -151,7 +151,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     script_tools = kwargs.get("script_tools", BitcoinScriptTools)
 
     UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix bip49_prv_prefix bip49_pub_prefix "
-               "bip84_prv_prefix bip84_pub_prefix wif_prefix address_prefix").split()
+               "bip84_prv_prefix bip84_pub_prefix wif_prefix address_prefix "
+               "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
     _bip32_prv_prefix = ui_kwargs.get("bip32_prv_prefix")
