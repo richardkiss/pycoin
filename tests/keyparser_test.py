@@ -44,7 +44,13 @@ class KeyParserTest(unittest.TestCase):
         key = BTC.parse("zpub6mjuZRsjH7htP5ERSBQZbTQDPdJuueG85D4MGRTEg5YyYBKTPbqEGz9iiPmKkCrTn2dMFsp2tgs3MQ1zExvNFTEnHrrABy4dayJk9foR6K9")
         self.assertEqual(key.secret_exponent(), None)
         subkey = key.subkey_for_path("0/0")
-        self.assertEqual(subkey.address(), "bc1q3g5tmkmlvxryhh843v4dz026avatc0zzr6h3af")
+        self.assertEqual(subkey.address(), "bc1qz0e8kyqvhr2j4xzlzr2r5rkpxykerv6vdawckn")
+
+    def test_parse_p2wpkh_in_p2sh(self):
+        key = BTC.parse("ypub6XBLL6jnweSSSPTqcwWAs8RXKKuN2FHH7LABWKE6aLoEnw5c2AbEBYSmQytdE1yDQtyJgdmi1K45ytkfDwrksXjefVCHw3thJ4xwyJPJnQk")
+        self.assertEqual(key.secret_exponent(), None)
+        subkey = key.subkey_for_path("0/0")
+        self.assertEqual(subkey.address(), "3Q8QcAFXNRKSWmYDzjYzoZEMNrEf1jXaRG")
 
     def test_parse_wif(self):
         key = BTC.parse("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn")
@@ -63,8 +69,12 @@ class KeyParserTest(unittest.TestCase):
         self.assertEqual(key, None)
 
     def test_parse_p2wpkh_address(self):
-        key = BTC.parse("bc1q3g5tmkmlvxryhh843v4dz026avatc0zzr6h3af")
-        self.assertEqual(key.address(), "bc1q3g5tmkmlvxryhh843v4dz026avatc0zzr6h3af")
+        key = BTC.parse("bc1qz0e8kyqvhr2j4xzlzr2r5rkpxykerv6vdawckn")
+        self.assertEqual(key.address(), "bc1qz0e8kyqvhr2j4xzlzr2r5rkpxykerv6vdawckn")
+
+    def test_parse_p2wpkh_in_p2sh_address(self):
+        key = BTC.parse("3Q8QcAFXNRKSWmYDzjYzoZEMNrEf1jXaRG")
+        self.assertEqual(key.address(), "3Q8QcAFXNRKSWmYDzjYzoZEMNrEf1jXaRG")
 
     def test_parse_electrum_seed(self):
         key = BTC.parse("E:00000000000000000000000000000001")
