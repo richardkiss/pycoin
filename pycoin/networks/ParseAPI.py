@@ -78,6 +78,16 @@ class ParseAPI(object):
         s = parseable_str(s)
         return self.bip32_prv(s) or self.bip32_pub(s)
 
+    def bip49_pub(self, s):
+        """
+        Parse a bip84 public key from a text string ("ypub" type).
+        Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
+        """
+        data = self.parse_b58_hashed(s)
+        if data is None or not data.startswith(self._bip49_pub_prefix):
+            return None
+        return self._network.keys.bip32_deserialize(data, pay_to_script_wit=True)
+
     def bip84_pub(self, s):
         """
         Parse a bip84 public key from a text string ("zpub" type).
@@ -302,8 +312,8 @@ class ParseAPI(object):
         Return a subclass of :class:`Key <pycoin.key.Key>`, or None.
         """
         s = parseable_str(s)
-        for f in [self.bip32_seed, self.bip32_prv, self.bip32_pub, self.bip84_pub,
-                  self.electrum_seed, self.electrum_prv, self.electrum_pub]:
+        for f in [self.bip32_seed, self.bip32_prv, self.bip32_pub, self.bip49_pub,
+                  self.bip84_pub, self.electrum_seed, self.electrum_prv, self.electrum_pub]:
             v = f(s)
             if v:
                 return v

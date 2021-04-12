@@ -53,6 +53,7 @@ class BIP32Node(Key):
             d["secret_exponent"] = from_bytes_32(data[46:])
         else:
             d["public_pair"] = sec_to_public_pair(data[45:], generator=class_._generator)
+        d["pay_to_script_wit"] = pay_to_script_wit
         d["pay_to_native_wit"] = pay_to_native_wit
         return class_(**d)
 
@@ -86,10 +87,19 @@ class BIP32Node(Key):
     def chain_code(self):
         return self._chain_code
 
-    # def address(self, is_compressed=None):
-    #     if self.pay_to_native_wit:
-    #         return self._network.address.for_p2pkh_wit(self.hash160(is_compressed=is_compressed))
-    #     return self._network.address.for_p2pkh(self.hash160(is_compressed=is_compressed))
+    def hash160_bytes(self, byte_input):
+        return hashlib.new('ripemd160', hashlib.sha256(byte_input).digest()).digest()
+
+    def address(self, is_compressed=None):
+        if self.pay_to_script_wit:
+            pk_hash = self.hash160(is_compressed=is_compressed)
+            push_20 = bytes.fromhex("0014")
+            script_sig = push_20 + pk_hash
+            address_bytes = self.hash160_bytes(script_sig)
+            return self._network.address.for_p2sh(address_bytes)
+        if self.pay_to_native_wit:
+            return self._network.address.for_p2pkh_wit(self.hash160(is_compressed=is_compressed))
+        return self._network.address.for_p2pkh(self.hash160(is_compressed=is_compressed))
 
     def tree_depth(self):
         return self._depth
@@ -130,7 +140,8 @@ class BIP32Node(Key):
         d = dict(chain_code=self._chain_code, depth=self._depth,
                  parent_fingerprint=self._parent_fingerprint,
                  child_index=self._child_index, public_pair=self.public_pair(),
-                 pay_to_native_wit=self.pay_to_native_wit)
+                 pay_to_native_wit=self.pay_to_native_wit,
+                 pay_to_script_wit=self.pay_to_script_wit)
         return self.__class__(**d)
 
     def _subkey(self, i, is_hardened, as_private):
@@ -153,6 +164,7 @@ class BIP32Node(Key):
             d["secret_exponent"], chain_code = subkey_secret_exponent_chain_code_pair(
                 self._generator, self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
         d["chain_code"] = chain_code
+        d["pay_to_script_wit"] = self.pay_to_script_wit
         d["pay_to_native_wit"] = self.pay_to_native_wit
         key = self.__class__(**d)
         if not as_private:
