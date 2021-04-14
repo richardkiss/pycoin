@@ -78,6 +78,16 @@ class ParseAPI(object):
         s = parseable_str(s)
         return self.bip32_prv(s) or self.bip32_pub(s)
 
+    def bip49_prv(self, s):
+        """
+        Parse a bip84 private key from a text string ("zprv" type).
+        Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
+        """
+        data = self.parse_b58_hashed(s)
+        if data is None or not data.startswith(self._bip49_prv_prefix):
+            return None
+        return self._network.keys.bip32_deserialize(data, pay_to_script_wit=True)
+
     def bip49_pub(self, s):
         """
         Parse a bip84 public key from a text string ("ypub" type).
@@ -88,6 +98,24 @@ class ParseAPI(object):
             return None
         return self._network.keys.bip32_deserialize(data, pay_to_script_wit=True)
 
+    def bip84_prv(self, s):
+        """
+        Parse a bip84 private key from a text string ("zprv" type).
+        Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
+        """
+        data = self.parse_b58_hashed(s)
+        if data is None or not data.startswith(self._bip84_prv_prefix):
+            return None
+        return self._network.keys.bip32_deserialize(data, pay_to_native_wit=True)
+
+    def bip49(self, s):
+        """
+        Parse a bip49 public key from a text string, either a seed, a prv or a pub.
+        Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
+        """
+        s = parseable_str(s)
+        return self.bip49_prv(s) or self.bip49_pub(s)
+
     def bip84_pub(self, s):
         """
         Parse a bip84 public key from a text string ("zpub" type).
@@ -97,6 +125,14 @@ class ParseAPI(object):
         if data is None or not data.startswith(self._bip84_pub_prefix):
             return None
         return self._network.keys.bip32_deserialize(data, pay_to_native_wit=True)
+
+    def bip84(self, s):
+        """
+        Parse a bip84 public key from a text string, either a seed, a prv or a pub.
+        Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
+        """
+        s = parseable_str(s)
+        return self.bip84_prv(s) or self.bip84_pub(s)
 
     def _electrum_to_blob(self, s):
         pair = parse_colon_prefix(s)
@@ -313,7 +349,8 @@ class ParseAPI(object):
         """
         s = parseable_str(s)
         for f in [self.bip32_seed, self.bip32_prv, self.bip32_pub, self.bip49_pub,
-                  self.bip84_pub, self.electrum_seed, self.electrum_prv, self.electrum_pub]:
+                  self.bip49_prv, self.bip84_prv, self.bip84_pub, self.electrum_seed,
+                  self.electrum_prv, self.electrum_pub]:
             v = f(s)
             if v:
                 return v
