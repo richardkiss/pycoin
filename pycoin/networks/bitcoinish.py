@@ -150,7 +150,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
             setattr(network, k, kwargs[k])
 
     network.Tx = network.tx = kwargs.get("tx") or Tx
-    network.Block = network.block = kwargs.get("block") or Block.make_subclass(network.tx)
+    network.Block = network.block = kwargs.get("block") or Block.make_subclass(symbol, network.tx)
 
     streamer = standard_streamer(standard_parsing_functions(network.block, network.tx))
 

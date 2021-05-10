@@ -21,12 +21,12 @@ class Block(object):
     """A Block is an element of the Bitcoin chain."""
 
     @classmethod
-    def make_subclass(class_, tx):
-
-        class Block(class_):
-            Tx = tx
-
-        return Block
+    def make_subclass(class_, symbol, tx):
+        return type(
+            "%s_%s" % (symbol, class_.__name__),
+            (class_,),
+            dict(Tx=tx),
+        )
 
     @classmethod
     def parse(class_, f, include_transactions=True, include_offsets=None, check_merkle_hash=True):

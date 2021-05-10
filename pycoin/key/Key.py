@@ -21,13 +21,12 @@ class Key(object):
     _generator = None
 
     @classmethod
-    def make_subclass(class_, network, generator):
-
-        class Key(class_):
-            _network = network
-            _generator = generator
-
-        return Key
+    def make_subclass(class_, symbol, network, generator):
+        return type(
+            "%s_%s" % (symbol, class_.__name__),
+            (class_,),
+            dict(_network=network, _generator=generator),
+        )
 
     def __init__(self, secret_exponent=None, public_pair=None, is_compressed=True):
         """
