@@ -22,7 +22,7 @@ import struct
 from ..encoding.bytes32 import from_bytes_32, to_bytes_32
 from ..encoding.exceptions import EncodingError
 from ..encoding.sec import sec_to_public_pair
-from .Key import Key
+from .HierarchicalKey import HierarchicalKey
 from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
 from .subpaths import subpaths_for_path_range
 
@@ -31,7 +31,7 @@ class PublicPrivateMismatchError(Exception):
     pass
 
 
-class BIP32Node(Key):
+class BIP32Node(HierarchicalKey):
     """
     This is a deterministic wallet that complies with BIP0032
     [https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki]
@@ -205,13 +205,6 @@ class BIP32Node(Key):
         if force_public and key.secret_exponent() is not None:
             key = key.public_copy()
         return key
-
-    def subkeys(self, path):
-        """
-        A generalized form that can return multiple subkeys.
-        """
-        for _ in subpaths_for_path_range(path, hardening_chars="'pH"):
-            yield self.subkey_for_path(_)
 
     def children(self, max_level=50, start_index=0, include_hardened=True):
         for i in range(start_index, max_level+start_index+1):

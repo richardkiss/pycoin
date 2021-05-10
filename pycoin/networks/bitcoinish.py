@@ -44,34 +44,6 @@ class Network(object):
         return "<Network %s>" % self.full_name()
 
 
-def make_output_for_hwif(network):
-    def f(key_data, network, subkey_path, add_output):
-        key = None
-        if len(key_data) == 74:
-            key = network.keys.bip32_deserialize(b'0000' + key_data)
-        if key is None:
-            return
-
-        yield ("wallet_key", key.hwif(as_private=key.is_private()), None)
-        if key.is_private():
-            yield ("public_version", key.hwif(as_private=False), None)
-
-        child_number = key.child_index()
-        if child_number >= 0x80000000:
-            wc = child_number - 0x80000000
-            child_index = "%dH (%d)" % (wc, child_number)
-        else:
-            child_index = "%d" % child_number
-        yield ("tree_depth", "%d" % key.tree_depth(), None)
-        yield ("fingerprint", b2h(key.fingerprint()), None)
-        yield ("parent_fingerprint", b2h(key.parent_fingerprint()), "parent f'print")
-        yield ("child_index", child_index, None)
-        yield ("chain_code", b2h(key.chain_code()), None)
-
-        yield ("private_key", "yes" if key.is_private() else "no", None)
-    return f
-
-
 def make_output_for_secret_exponent(Key):
     def f(secret_exponent):
         yield ("secret_exponent", '%d' % secret_exponent, None)
@@ -186,7 +158,6 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.message.parse, network.message.pack = make_parser_and_packer(
         streamer, standard_messages(), standard_message_post_unpacks(streamer))
 
-    network.output_for_hwif = make_output_for_hwif(network)
     network.output_for_secret_exponent = make_output_for_secret_exponent(NetworkKey)
     network.output_for_public_pair = make_output_for_public_pair(NetworkKey, network)
 

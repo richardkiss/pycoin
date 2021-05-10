@@ -64,14 +64,11 @@ def create_output(item, key, network, output_key_set, subkey_path=None):
     add_output("network", full_network_name)
     add_output("symbol", network.symbol)
 
+    if subkey_path:
+        add_output("subkey_path", subkey_path)
+
     if hasattr(key, "output"):
         for k, v, text in key.output():
-            add_output(k, v, text)
-
-    if hasattr(key, "hwif"):
-        if subkey_path:
-            add_output("subkey_path", subkey_path)
-        for k, v, text in network.output_for_hwif(key.serialize(), network, subkey_path, add_output):
             add_output(k, v, text)
 
     secret_exponent = getattr(key, "secret_exponent", lambda: None)()

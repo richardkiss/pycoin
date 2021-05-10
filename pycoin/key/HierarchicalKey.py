@@ -1,3 +1,5 @@
+from ..encoding.hexbytes import b2h
+
 from .Key import Key
 from .subpaths import subpaths_for_path_range
 
