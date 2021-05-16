@@ -8,13 +8,32 @@ from pycoin.encoding.hexbytes import b2h, h2b
 from .Contract import Contract
 
 
+def hparse(api, pub_prv, key_type, s):
+    """
+    Generalize parsing bip32-type b58-encoded strings.
+    """
+    data = api.parse_b58_hashed(s)
+    attr_name = "_%s_%s_prefix" % (key_type, pub_prv)
+    prefix = getattr(api, attr_name, None)
+    if data is None or prefix is None or not data.startswith(prefix):
+        return None
+    parse_method_name = "%s_deserialize" % key_type
+    parse_method = getattr(api._network.keys, parse_method_name, lambda *args: None)
+    return parse_method(data)
+
+
 class ParseAPI(object):
     def __init__(
-            self, network, bip32_prv_prefix=None, bip32_pub_prefix=None, address_prefix=None,
+            self, network, bip32_prv_prefix=None, bip32_pub_prefix=None, bip49_prv_prefix=None,
+            bip49_pub_prefix=None, bip84_prv_prefix=None, bip84_pub_prefix=None, address_prefix=None,
             pay_to_script_prefix=None, bech32_hrp=None, wif_prefix=None, sec_prefix=None):
         self._network = network
         self._bip32_prv_prefix = bip32_prv_prefix
         self._bip32_pub_prefix = bip32_pub_prefix
+        self._bip49_prv_prefix = bip49_prv_prefix
+        self._bip49_pub_prefix = bip49_pub_prefix
+        self._bip84_prv_prefix = bip84_prv_prefix
+        self._bip84_pub_prefix = bip84_pub_prefix
         self._address_prefix = address_prefix
         self._pay_to_script_prefix = pay_to_script_prefix
         self._bech32_hrp = bech32_hrp
@@ -45,25 +64,37 @@ class ParseAPI(object):
             master_secret = pair[1].encode("utf8")
         return self._network.keys.bip32_seed(master_secret)
 
+    # hierarchical key
+    def hd_seed(self, s):
+        """
+        Parse a bip32 private key from a seed.
+        Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
+        """
+        pair = parse_colon_prefix(s)
+        if pair is None or pair[0] not in "HP":
+            return None
+        if pair[0] == "H":
+            try:
+                master_secret = h2b(pair[1])
+            except ValueError:
+                return None
+        else:
+            master_secret = pair[1].encode("utf8")
+        return self._network.keys.hd_seed(master_secret)
+
     def bip32_prv(self, s):
         """
         Parse a bip32 private key from a text string ("xprv" type).
         Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
         """
-        data = self.parse_b58_hashed(s)
-        if data is None or not data.startswith(self._bip32_prv_prefix):
-            return None
-        return self._network.keys.bip32_deserialize(data)
+        return hparse(self, "prv", "bip32", s)
 
     def bip32_pub(self, s):
         """
         Parse a bip32 public key from a text string ("xpub" type).
         Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
         """
-        data = self.parse_b58_hashed(s)
-        if data is None or not data.startswith(self._bip32_pub_prefix):
-            return None
-        return self._network.keys.bip32_deserialize(data)
+        return hparse(self, "pub", "bip32", s)
 
     def bip32(self, s):
         """
@@ -72,6 +103,50 @@ class ParseAPI(object):
         """
         s = parseable_str(s)
         return self.bip32_prv(s) or self.bip32_pub(s)
+
+    def bip49_prv(self, s):
+        """
+        Parse a bip84 private key from a text string ("yprv" type).
+        Return a :class:`BIP49 <pycoin.key.BIP49Node.BIP49Node>` or None.
+        """
+        return hparse(self, "prv", "bip49", s)
+
+    def bip49_pub(self, s):
+        """
+        Parse a bip84 public key from a text string ("ypub" type).
+        Return a :class:`BIP49 <pycoin.key.BIP49Node.BIP49Node>` or None.
+        """
+        return hparse(self, "pub", "bip49", s)
+
+    def bip49(self, s):
+        """
+        Parse a bip49 public key from a text string, either a seed, a prv or a pub.
+        Return a :class:`BIP49 <pycoin.key.BIP49Node.BIP49Node>` or None.
+        """
+        s = parseable_str(s)
+        return self.bip49_prv(s) or self.bip49_pub(s)
+
+    def bip84_prv(self, s):
+        """
+        Parse a bip84 private key from a text string ("zprv" type).
+        Return a :class:`BIP84 <pycoin.key.BIP84Node.BIP84Node>` or None.
+        """
+        return hparse(self, "prv", "bip84", s)
+
+    def bip84_pub(self, s):
+        """
+        Parse a bip84 public key from a text string ("zpub" type).
+        Return a :class:`BIP84 <pycoin.key.BIP84Node.BIP84Node>` or None.
+        """
+        return hparse(self, "pub", "bip84", s)
+
+    def bip84(self, s):
+        """
+        Parse a bip84 public key from a text string, either a seed, a prv or a pub.
+        Return a :class:`BIP84 <pycoin.key.BIP84Node.BIP84Node>` or None.
+        """
+        s = parseable_str(s)
+        return self.bip84_prv(s) or self.bip84_pub(s)
 
     def _electrum_to_blob(self, s):
         pair = parse_colon_prefix(s)
@@ -287,7 +362,7 @@ class ParseAPI(object):
         Return a subclass of :class:`Key <pycoin.key.Key>`, or None.
         """
         s = parseable_str(s)
-        for f in [self.bip32_seed, self.bip32_prv, self.bip32_pub,
+        for f in [self.bip32_seed, self.bip32, self.bip49, self.bip84,
                   self.electrum_seed, self.electrum_prv, self.electrum_pub]:
             v = f(s)
             if v:

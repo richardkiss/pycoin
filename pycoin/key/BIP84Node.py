@@ -10,20 +10,19 @@ class PublicPrivateMismatchError(Exception):
     pass
 
 
-class BIP49Node(BIP32Node):
+class BIP84Node(BIP32Node):
     """
-    This is a deterministic wallet that complies with BIP0049 ("ypub" on mainnet)
-    [https://github.com/bitcoin/bips/blob/master/bip-0049.mediawiki]
+    This is a deterministic wallet that complies with BIP0084 ("zpub" on mainnet)
+    [https://github.com/bitcoin/bips/blob/master/bip-0084.mediawiki]
     """
 
     def address(self, is_compressed=True):
         pk_hash = self.hash160(is_compressed=is_compressed)
-        underlying_script = self._network.contract.for_p2pkh_wit(pk_hash)
-        return self._network.address.for_p2s(underlying_script)
+        return self._network.address.for_p2pkh_wit(pk_hash)
 
     def hwif(self, as_private=False):
         """Yield a 111-byte string corresponding to this node."""
-        return self._network.bip49_as_string(
+        return self._network.bip84_as_string(
             self.serialize(as_private=as_private), as_private=as_private
         )
 

@@ -9,8 +9,9 @@ from pycoin.intbytes import iterbytes
 
 def make_address_api(
         contracts,
-        bip32_prv_prefix=None, bip32_pub_prefix=None, wif_prefix=None,
-        sec_prefix=None, address_prefix=None, pay_to_script_prefix=None,
+        bip32_prv_prefix=None, bip32_pub_prefix=None, bip49_prv_prefix=None,
+        bip49_pub_prefix=None, bip84_prv_prefix=None, bip84_pub_prefix=None,
+        wif_prefix=None, sec_prefix=None, address_prefix=None, pay_to_script_prefix=None,
         bech32_hrp=None):
 
     class AddressAPI(object):

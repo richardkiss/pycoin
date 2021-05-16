@@ -9,6 +9,7 @@ import subprocess
 import sys
 
 from pycoin.encoding.hexbytes import h2b
+from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
 
@@ -42,8 +43,7 @@ def get_entropy():
     return entropy
 
 
-def create_output(item, key, network, output_key_set, subkey_path=None):
-    key._network = network
+def create_output(item, key, output_key_set, subkey_path=None):
     output_dict = {}
     output_order = []
 
@@ -59,27 +59,16 @@ def create_output(item, key, network, output_key_set, subkey_path=None):
                 output_dict[json_key.strip().lower()] = value
                 output_order.append((json_key.lower(), human_readable_key))
 
-    full_network_name = "%s %s" % (network.network_name, network.subnet_name)
+    full_network_name = "%s %s" % (key._network.network_name, key._network.subnet_name)
     add_output("input", item)
     add_output("network", full_network_name)
-    add_output("symbol", network.symbol)
+    add_output("symbol", key._network.symbol)
 
     if subkey_path:
         add_output("subkey_path", subkey_path)
 
-    if hasattr(key, "output"):
-        for k, v, text in key.output():
-            add_output(k, v, text)
-
-    secret_exponent = getattr(key, "secret_exponent", lambda: None)()
-    if secret_exponent:
-        for k, v, text in network.output_for_secret_exponent(secret_exponent):
-            add_output(k, v, text)
-
-    public_pair = getattr(key, "public_pair", lambda: None)()
-    if public_pair:
-        for k, v, text in network.output_for_public_pair(public_pair):
-            add_output(k, v, text)
+    for k, v, text in key.ku_output():
+        add_output(k, v, text)
 
     return output_dict, output_order
 
@@ -153,7 +142,7 @@ def _create_bip32(network):
 def parse_key(item, networks):
     default_network = networks[0]
     if item == 'create':
-        return None, _create_bip32(default_network)
+        return _create_bip32(default_network)
 
     if HASH160_RE.match(item):
         # BRAIN DAMAGE: lame hack for now
@@ -165,9 +154,9 @@ def parse_key(item, networks):
         for f in "hierarchical_key private_key public_key address".split():
             v = getattr(network.parse, f)(item)
             if v:
-                return network, v
+                return v
 
-    return None, None
+    return None
 
 
 def generate_output(args, output_dict, output_order):
@@ -183,6 +172,15 @@ def generate_output(args, output_dict, output_order):
         print(output_dict[output_order[0][0]])
     else:
         dump_output(output_dict, output_order)
+
+
+def handle_override_network(key, override_network):
+    if isinstance(key, BIP32Node):
+        blob = key.serialize()
+        padded_blob = b"\0\0\0\0" + blob
+        return override_network.keys.bip32_deserialize(padded_blob)
+
+    raise ValueError("can't convert %s to %s" % (key, override_network))
 
 
 def ku(args, parser):
@@ -211,12 +209,15 @@ def ku(args, parser):
     items = args.item if len(args.item) > 0 else parse_stdin()
 
     for item in items:
-        key_network, key = parse_key(item, parse_networks)
+        key = parse_key(item, parse_networks)
         if key is None:
             print("can't parse %s" % item, file=sys.stderr)
             continue
 
-        display_network = override_network or key_network or fallback_network
+        if override_network:
+            key = handle_override_network(key, override_network)
+
+        display_network = override_network or key._network or fallback_network
 
         if hasattr(key, "subkeys"):
             key_iter = key.subkeys(args.subkey)
@@ -226,7 +227,7 @@ def ku(args, parser):
             if args.public:
                 key = key.public_copy()
 
-            output_dict, output_order = create_output(item, key, display_network, output_key_set)
+            output_dict, output_order = create_output(item, key, output_key_set)
 
             generate_output(args, output_dict, output_order)
 

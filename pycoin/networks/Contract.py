@@ -37,7 +37,7 @@ class Contract(object):
         """
         return self._network.script.disassemble(self.script())
 
-    def output(self):
+    def ku_output(self):
         """
         Return a 20-byte hash corresponding to this script (or None if not applicable).
         """

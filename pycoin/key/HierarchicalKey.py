@@ -12,7 +12,7 @@ class HierarchicalKey(Key):
         for _ in subpaths_for_path_range(path, hardening_chars="'pH"):
             yield self.subkey_for_path(_)
 
-    def output(self):
+    def ku_output_for_hk(self):
         yield ("wallet_key", self.hwif(as_private=self.is_private()), None)
         if self.is_private():
             yield ("public_version", self.hwif(as_private=False), None)
@@ -30,3 +30,10 @@ class HierarchicalKey(Key):
         yield ("chain_code", b2h(self.chain_code()), None)
 
         yield ("private_key", "yes" if self.is_private() else "no", None)
+
+    def ku_output(self):
+        for _ in self.ku_output_for_hk():
+            yield _
+
+        for _ in super(HierarchicalKey, self).ku_output():
+            yield _

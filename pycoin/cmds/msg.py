@@ -54,7 +54,7 @@ def msg_sign(args, parser):
     network = network_for_netcode(args.network)
     message_signer = network.msg
     message_hash = get_message_hash(args, message_signer)
-    network, key = parse_key(args.WIF, [network])
+    key = parse_key(args.WIF, [network])
     is_compressed = key.is_compressed()
     sig = message_signer.signature_for_message_hash(
         key.secret_exponent(), msg_hash=message_hash, is_compressed=is_compressed)

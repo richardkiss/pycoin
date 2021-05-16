@@ -8,9 +8,12 @@ from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.b58 import b2a_hashed_base58
+from pycoin.key.HDSeed import HDSeed
 from pycoin.key.Keychain import Keychain
 from pycoin.key.Key import Key, InvalidSecretExponentError, InvalidPublicPairError
 from pycoin.key.BIP32Node import BIP32Node
+from pycoin.key.BIP49Node import BIP49Node
+from pycoin.key.BIP84Node import BIP84Node
 from pycoin.key.electrum import ElectrumWallet
 from pycoin.message.make_parser_and_packer import (
     make_parser_and_packer, standard_messages,
@@ -107,12 +110,14 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     #   tx, block, magic_header_hex, default_port, dns_bootstrap,
     #   wif_prefix_hex, address_prefix_hex, pay_to_script_prefix_hex
     #   bip32_prv_prefix_hex, bip32_pub_prefix_hex, sec_prefix, script_tools
+    #   bip49_prv_prefix, bip49_pub_prefix, bip84_prv_prefix, bip84_pub_prefix
 
     network = Network(symbol, network_name, subnet_name)
 
     generator = kwargs.get("generator", secp256k1_generator)
     kwargs.setdefault("sec_prefix", "%sSEC" % symbol.upper())
-    KEYS_TO_H2B = ("bip32_prv_prefix bip32_pub_prefix wif_prefix address_prefix "
+    KEYS_TO_H2B = ("bip32_prv_prefix bip32_pub_prefix bip49_prv_prefix bip49_pub_prefix "
+                   "bip84_prv_prefix bip84_pub_prefix wif_prefix address_prefix "
                    "pay_to_script_prefix sec_prefix magic_header").split()
     for k in KEYS_TO_H2B:
         k_hex = "%s_hex" % k
@@ -121,9 +126,12 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     script_tools = kwargs.get("script_tools", BitcoinScriptTools)
 
-    UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix wif_prefix sec_prefix "
+    UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix bip49_prv_prefix bip49_pub_prefix "
+               "bip84_prv_prefix bip84_pub_prefix wif_prefix sec_prefix "
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
+
+    supports_bip49 = ui_kwargs.get("bip49_prv_prefix") is not None
 
     _bip32_prv_prefix = ui_kwargs.get("bip32_prv_prefix")
     _bip32_pub_prefix = ui_kwargs.get("bip32_pub_prefix")
@@ -131,7 +139,11 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     _sec_prefix = ui_kwargs.get("sec_prefix")
 
     def bip32_as_string(blob, as_private):
-        prefix = _bip32_prv_prefix if as_private else _bip32_pub_prefix
+        prefix = ui_kwargs.get("bip32_%s_prefix" % ("prv" if as_private else "pub"))
+        return b2a_hashed_base58(prefix + blob)
+
+    def bip49_as_string(blob, as_private):
+        prefix = ui_kwargs.get("bip49_%s_prefix" % ("prv" if as_private else "pub"))
         return b2a_hashed_base58(prefix + blob)
 
     def wif_for_blob(blob):
@@ -140,9 +152,11 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     def sec_text_for_blob(blob):
         return _sec_prefix + b2h(blob)
 
-    NetworkKey = Key.make_subclass(network=network, generator=generator)
-    NetworkElectrumKey = ElectrumWallet.make_subclass(network=network, generator=generator)
-    NetworkBIP32Node = BIP32Node.make_subclass(network=network, generator=generator)
+    NetworkKey = Key.make_subclass(symbol, network=network, generator=generator)
+    NetworkElectrumKey = ElectrumWallet.make_subclass(symbol, network=network, generator=generator)
+    NetworkBIP32Node = BIP32Node.make_subclass(symbol, network=network, generator=generator)
+    NetworkBIP49Node = BIP49Node.make_subclass(symbol, network=network, generator=generator)
+    NetworkBIP84Node = BIP84Node.make_subclass(symbol, network=network, generator=generator)
 
     NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
     for k in NETWORK_KEYS:
@@ -196,14 +210,10 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     def electrum_public(master_public_key):
         return NetworkElectrumKey(master_public_key=master_public_key)
 
-    def bip32_seed(seed):
-        return NetworkBIP32Node.from_master_secret(seed)
-
-    def bip32_deserialize(data):
-        return NetworkBIP32Node.deserialize(data)
-
-    network.keys.bip32_seed = bip32_seed
-    network.keys.bip32_deserialize = bip32_deserialize
+    network.keys.bip32_seed = NetworkBIP32Node.from_master_secret
+    network.keys.bip32_deserialize = NetworkBIP32Node.deserialize
+    network.keys.bip49_deserialize = NetworkBIP49Node.deserialize
+    network.keys.bip84_deserialize = NetworkBIP84Node.deserialize
 
     network.keys.electrum_seed = electrum_seed
     network.keys.electrum_private = electrum_private
@@ -222,6 +232,8 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.script = script_tools
 
     network.bip32_as_string = bip32_as_string
+    if supports_bip49:
+        network.bip49_as_string = bip49_as_string
     network.sec_text_for_blob = sec_text_for_blob
     network.wif_for_blob = wif_for_blob
 

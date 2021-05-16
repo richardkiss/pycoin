@@ -40,6 +40,30 @@ class KeyParserTest(unittest.TestCase):
                         "ncCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtr")
         self.assertEqual(key, None)
 
+    def test_parse_p2wpkh_priv(self):
+        key = BTC.parse("zprvAYkZ9vLqSk9bAb9xL9sZEKTUqbURWBYGhz8kU33d7k1zfNzJr4Wy"
+                        "jBqEs8iCWn6jATSJGHdmPUNWXAUHm3hX1f4XjFcP1YsQUvGR9zJd6e5")
+        subkey = key.subkey_for_path("0/0")
+        self.assertEqual(subkey.address(), "bc1qz0e8kyqvhr2j4xzlzr2r5rkpxykerv6vdawckn")
+
+    def test_parse_p2wpkh_pub(self):
+        key = BTC.parse("zpub6mjuZRsjH7htP5ERSBQZbTQDPdJuueG85D4MGRTEg5YyYBKTPbqEGz9iiPmKkCrTn2dMFsp2tgs3MQ1zExvNFTEnHrrABy4dayJk9foR6K9")
+        self.assertEqual(key.secret_exponent(), None)
+        subkey = key.subkey_for_path("0/0")
+        self.assertEqual(subkey.address(), "bc1qz0e8kyqvhr2j4xzlzr2r5rkpxykerv6vdawckn")
+
+    def test_parse_p2wpkh_in_p2sh_priv(self):
+        key = BTC.parse("yprvAHcaFzWG6Xu7N2Tum3WGs6gj4sbSv6DSrWyWgNaHmm6i9aHP8uG2f"
+                        "qUHzgHQc4S48Q5cfS8MfBdhCY32e15AZ6qVnXGzZsJe8njSKXh8Y3g")
+        subkey = key.subkey_for_path("0/0")
+        self.assertEqual(subkey.address(), "3F6bDarXnXbCsVuE5CbquM6ubg16qDRbHh")
+
+    def test_parse_p2wpkh_in_pub(self):
+        key = BTC.parse("ypub6WbvfW39vuTQaWYNs53HEEdTcuRwKYwJDju7UkyuL6dh2NcXgSaHDdnmqyg2sRSxXYCLix5r5JAEufkNeS2ugPj3UA6o98W7yWrcUzg8HoD")
+        self.assertEqual(key.secret_exponent(), None)
+        subkey = key.subkey_for_path("0/0")
+        self.assertEqual(subkey.address(), "3F6bDarXnXbCsVuE5CbquM6ubg16qDRbHh")
+
     def test_parse_wif(self):
         key = BTC.parse("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn")
         self.assertEqual(key.secret_exponent(), 1)
@@ -55,6 +79,14 @@ class KeyParserTest(unittest.TestCase):
     def test_parse_bad_address(self):
         key = BTC.parse("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMW")
         self.assertEqual(key, None)
+
+    def test_parse_p2wpkh_address(self):
+        key = BTC.parse("bc1qz0e8kyqvhr2j4xzlzr2r5rkpxykerv6vdawckn")
+        self.assertEqual(key.address(), "bc1qz0e8kyqvhr2j4xzlzr2r5rkpxykerv6vdawckn")
+
+    def test_parse_p2wpkh_in_p2sh_address(self):
+        key = BTC.parse("3F6bDarXnXbCsVuE5CbquM6ubg16qDRbHh")
+        self.assertEqual(key.address(), "3F6bDarXnXbCsVuE5CbquM6ubg16qDRbHh")
 
     def test_parse_electrum_seed(self):
         key = BTC.parse("E:00000000000000000000000000000001")
