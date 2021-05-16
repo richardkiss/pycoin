@@ -1,0 +1,8 @@
+# test --override-network with LTC address
+ku --override-network BTC LTinsMDAYKis3aedQhZuPh3mZHyMkAVsMR
+
+input           : LTinsMDAYKis3aedQhZuPh3mZHyMkAVsMR
+network         : Bitcoin mainnet
+symbol          : BTC
+hash160         : 5d353a2ecdb262477172852d57a3f11de0c19286
+Bitcoin address : 19Vqc8uLTfUonmxUEZac7fz1M5c5ZZbAii

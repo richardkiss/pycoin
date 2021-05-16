@@ -4,6 +4,8 @@ import hashlib
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
 
+from .Contract import Contract
+
 
 class ContractAPI(object):
     def __init__(self, network, script_tools):
@@ -96,6 +98,9 @@ class ContractAPI(object):
             return info["script"]
         script_text = self._SCRIPT_LOOKUP[type](info)
         return self._script_tools.compile(script_text)
+
+    def new(self, script_info):
+        return Contract(script_info, self._network)
 
     # MISSING to consider
     # p2s: SCRIPTHASH160

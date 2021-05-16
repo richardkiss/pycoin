@@ -28,6 +28,12 @@ class Key(object):
             dict(_network=network, _generator=generator),
         )
 
+    def override_network(self, override_network):
+        secret_exponent = self.secret_exponent()
+        if secret_exponent:
+            return override_network.parse.secret_exponent(secret_exponent)
+        raise ValueError("can't convert %s to %s" % (self, override_network))
+
     def __init__(self, secret_exponent=None, public_pair=None, is_compressed=True):
         """
         Include at most one of secret_exponent or public_pair.

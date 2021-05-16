@@ -49,5 +49,8 @@ class Contract(object):
         yield ("address", address, "%s address" % self._network.network_name)
         yield ("%s_address" % self._network.symbol, address, "legacy")
 
+    def override_network(self, override_network):
+        return override_network.contract.new(self.info())
+
     def __repr__(self):
         return "<%s>" % self.address()

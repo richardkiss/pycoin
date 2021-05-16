@@ -1,0 +1,25 @@
+# test --override-network with WIF
+ku --override-network LTC KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+
+input                         : KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+network                       : Litecoin mainnet
+symbol                        : LTC
+secret exponent               : 1
+ hex                          : 1
+wif                           : T33ydQRKp4FCW5LCLLUB7deioUMoveiwekdwUwyfRDeGZm76aUjV
+ uncompressed                 : 6u823ozcyt2rjPH8Z2ErsSXJB5PPQwK7VVTwwN4mxLBFrao69XQ
+public pair x                 : 55066263022277343669578718895168534326250603453777594175500187360389116729240
+public pair y                 : 32670510020758816978083085130507043184471273380659243275938904335757337482424
+ x as hex                     : 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+ y as hex                     : 483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
+y parity                      : even
+key pair as sec               : 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+ uncompressed                 : 0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798\
+                                  483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
+hash160                       : 751e76e8199196d454941c45d1b3a323f1433bd6
+ uncompressed                 : 91b24bf9f5288532960ac687abb035127b1d28a5
+Litecoin address              : LVuDpNCSSj6pQ7t9Pv6d6sUkLKoqDEVUnJ
+Litecoin address uncompressed : LYWKqJhtPeGyBAw7WC8R3F7ovxtzAiubdM
+Litecoin segwit address       : ltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kgmn4n9
+p2sh segwit                   : MR8UQSBr5ULwWheBHznrHk2jxyxkHQu8vB
+ corresponding p2sh script    : 0014751e76e8199196d454941c45d1b3a323f1433bd6

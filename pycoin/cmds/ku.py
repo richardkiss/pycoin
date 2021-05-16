@@ -174,15 +174,6 @@ def generate_output(args, output_dict, output_order):
         dump_output(output_dict, output_order)
 
 
-def handle_override_network(key, override_network):
-    if isinstance(key, BIP32Node):
-        blob = key.serialize()
-        padded_blob = b"\0\0\0\0" + blob
-        return override_network.keys.bip32_deserialize(padded_blob)
-
-    raise ValueError("can't convert %s to %s" % (key, override_network))
-
-
 def ku(args, parser):
     fallback_network = network_for_netcode(args.network or get_current_netcode())
     parse_networks = [fallback_network] + [network_for_netcode(netcode) for netcode in network_codes()]
@@ -215,7 +206,7 @@ def ku(args, parser):
             continue
 
         if override_network:
-            key = handle_override_network(key, override_network)
+            key = key.override_network(override_network)
 
         display_network = override_network or key._network or fallback_network
 

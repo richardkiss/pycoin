@@ -55,6 +55,11 @@ class BIP32Node(HierarchicalKey):
             d["public_pair"] = sec_to_public_pair(data[45:], generator=class_._generator)
         return class_(**d)
 
+    def override_network(self, override_network):
+        blob = self.serialize()
+        padded_blob = b"\0\0\0\0" + blob
+        return override_network.keys.bip32_deserialize(padded_blob)
+
     def __init__(self, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0', child_index=0,
                  secret_exponent=None, public_pair=None):
         """Don't use this. Use a classmethod to generate from a string instead."""
