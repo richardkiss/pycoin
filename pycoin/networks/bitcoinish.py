@@ -131,8 +131,6 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
                "address_prefix pay_to_script_prefix bech32_hrp").split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
-    supports_bip49 = ui_kwargs.get("bip49_prv_prefix") is not None
-
     _bip32_prv_prefix = ui_kwargs.get("bip32_prv_prefix")
     _bip32_pub_prefix = ui_kwargs.get("bip32_pub_prefix")
     _wif_prefix = ui_kwargs.get("wif_prefix")
@@ -144,6 +142,10 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     def bip49_as_string(blob, as_private):
         prefix = ui_kwargs.get("bip49_%s_prefix" % ("prv" if as_private else "pub"))
+        return b2a_hashed_base58(prefix + blob)
+
+    def bip84_as_string(blob, as_private):
+        prefix = ui_kwargs.get("bip84_%s_prefix" % ("prv" if as_private else "pub"))
         return b2a_hashed_base58(prefix + blob)
 
     def wif_for_blob(blob):
@@ -232,8 +234,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
     network.script = script_tools
 
     network.bip32_as_string = bip32_as_string
-    if supports_bip49:
-        network.bip49_as_string = bip49_as_string
+    network.bip49_as_string = bip49_as_string
     network.sec_text_for_blob = sec_text_for_blob
     network.wif_for_blob = wif_for_blob
 
