@@ -5,6 +5,10 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
+  - "3.7"
+  - "3.8"
+  - "3.9"
+  - "3.10-dev"
   - "pypy"
   - "pypy3.5"
   - "nightly"
@@ -13,7 +17,7 @@ matrix:
   allow_failures:
     python:
       - "nightly"
-      - "3.8-dev"
+      - "3.10-dev"
   include:
     - python: 3.7
       dist: xenial
