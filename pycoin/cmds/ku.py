@@ -13,7 +13,6 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
 
-
 HASH160_RE = re.compile(r"^([0-9a-fA-F]{40})$")
 
 
@@ -43,7 +42,7 @@ def get_entropy():
     return entropy
 
 
-def create_output(item, key, output_key_set, args, subkey_path=None):
+def create_output(item, key, output_key_set, subkey_path=None):
     output_dict = {}
     output_order = []
 
@@ -67,17 +66,20 @@ def create_output(item, key, output_key_set, args, subkey_path=None):
     if subkey_path:
         add_output("subkey_path", subkey_path)
 
-    if args.p2sh_segwit:
-        add_output("p2sh_segwit wallet key",
-            key._network.bip49_as_string(key.serialize(as_private=True), as_private=True))
-        add_output("p2sh_segwit public version",
-            key._network.bip49_as_string(key.serialize(as_private=False), as_private=False))
+    if isinstance(key, BIP32Node):
+        if(key._network.parse._bip49_pub_prefix and key._network.parse._bip49_prv_prefix):
+            if key._secret_exponent:
+                add_output("p2sh_segwit wallet key",
+                    key._network.bip49_as_string(key.serialize(as_private=True), as_private=True))
+            add_output("p2sh_segwit public version",
+                key._network.bip49_as_string(key.serialize(as_private=False), as_private=False))
 
-    if args.segwit:
-        add_output("segwit wallet key",
-            key._network.bip84_as_string(key.serialize(as_private=True), as_private=True))
-        add_output("segwit public version",
-            key._network.bip84_as_string(key.serialize(as_private=False), as_private=False))
+        if(key._network.parse._bip84_pub_prefix and key._network.parse._bip84_prv_prefix):
+            if key._secret_exponent:
+                add_output("segwit wallet key",
+                    key._network.bip84_as_string(key.serialize(as_private=True), as_private=True))
+            add_output("segwit public version",
+                key._network.bip84_as_string(key.serialize(as_private=False), as_private=False))
 
     for k, v, text in key.ku_output():
         add_output(k, v, text)
@@ -120,8 +122,6 @@ def create_parser():
     parser.add_argument('-b', "--brief", nargs="*", help='brief output; display a single field')
 
     parser.add_argument('-s', "--subkey", help='subkey path (example: 0H/2/15-20)', default="")
-    parser.add_argument("--p2sh-segwit", help='output bitcoin non-native segwit xpub', action='store_true')
-    parser.add_argument("--segwit", help='output bitcoin segwit xpub', action='store_true')
     parser.add_argument('-n', "--network", help='specify network', choices=codes)
     parser.add_argument(
         "--override-network", help='override detected network type', default=None, choices=codes)
@@ -232,7 +232,7 @@ def ku(args, parser):
             if args.public:
                 key = key.public_copy()
 
-            output_dict, output_order = create_output(item, key, output_key_set, args)
+            output_dict, output_order = create_output(item, key, output_key_set)
 
             generate_output(args, output_dict, output_order)
 
