@@ -26,6 +26,18 @@ class KeyParserTest(unittest.TestCase):
         subkey = key.subkey_for_path("0")
         self.assertEqual(subkey.address(), "n31129TfTCBky6N9RyitnGTf3t4LYwCV6A")
 
+    def test_parse_p2wpkh_pub_xtn(self):
+        key = XTN.parse("vpub5UFa1gPZYUUvrtiRnW6ZLPXLheCKL7NNhmemq5hJYsvBbANm8YorXbS2goXnySq2CNzNTi6FH2medK918d3hgmDgJN3F2cxNPoeyynGsdaQ")
+        self.assertEqual(key.secret_exponent(), None)
+        subkey = key.subkey_for_path("0/0")
+        self.assertEqual(subkey.address(), "tb1qwx3au3elr7lwhmet33x9yh225r9rktzsu938w9")
+
+    def test_parse_p2wpkh_in_p2sh_pub_xtn(self):
+        key = XTN.parse("upub5E6ugGxVutPUyK12NdvrA36uNUPiXqjtEiPDeixpKxFn53kYUwzJf56UWKFM7dZWkcDret3cMMFjNMC8WXs5VWc5Wvgc631KGDNxDyuVkEH")
+        self.assertEqual(key.secret_exponent(), None)
+        subkey = key.subkey_for_path("0/0")
+        self.assertEqual(subkey.address(), "2MwQatzbgYLtyNQr2Z2Bskrm6apHNq2qbDo")
+
     def test_parse_bip32_pub(self):
         key = BTC.parse("xpub661MyMwAqRbcFVF9ULcqLdsEa5WnCCugQAcgNd9iEMQ31tgH6u4"
                         "DLQWoQayvtSVYFvXz2vPPpbXE1qpjoUFidhjFj82pVShWu9curWmb2zy")
