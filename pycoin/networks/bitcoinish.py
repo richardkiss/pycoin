@@ -235,6 +235,7 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     network.bip32_as_string = bip32_as_string
     network.bip49_as_string = bip49_as_string
+    network.bip84_as_string = bip84_as_string
     network.sec_text_for_blob = sec_text_for_blob
     network.wif_for_blob = wif_for_blob
 
