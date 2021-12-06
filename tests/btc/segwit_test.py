@@ -55,7 +55,7 @@ class SegwitTest(unittest.TestCase):
         key1 = network.keys.private(1)
         coin_value = 5000000
         script = network.contract.for_p2pkh_wit(key1.hash160())
-        tx_hash = b'\ee' * 32
+        tx_hash = b'\xee' * 32
         tx_out_index = 0
         spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
         key2 = network.keys.private(2)
