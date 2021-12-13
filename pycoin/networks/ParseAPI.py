@@ -217,23 +217,25 @@ class ParseAPI(object):
         script_info = self._network.contract.info_for_script(script)
         return Contract(script_info, self._network)
 
-    def _segwit(self, s, blob_len, segwit_attr):
+    def _bech32m(self, s, expected_version, blob_len, segwit_attr):
+        v = parse_bech32(s)
+        if v is None:
+            return None
+        (hr_prefix, version, decoded_data, spec) = v
+
         script_f = getattr(self._network.contract, segwit_attr, None)
         if script_f is None:
             return None
-        triple = parse_bech32(s)
-        if triple is None or triple[0] != self._bech32_hrp or triple[1] is None:
+
+        if hr_prefix != self._bech32_hrp:
             return None
-        data = triple[1]
-        spec = triple[2]
-        version_byte = int2byte(data[0])
-        decoded = bech32m.convertbits(data[1:], 5, 8, False)
-        decoded_data = b''.join(int2byte(d) for d in decoded)
         if len(decoded_data) != blob_len:
             return None
-        if version_byte == b'\0' and spec != bech32m.Encoding.BECH32:
+        if expected_version != version:
             return None
-        if version_byte != b'\0' and spec != bech32m.Encoding.BECH32M:
+        if version == 0 and spec != bech32m.Encoding.BECH32:
+            return None
+        if version != 0 and spec != bech32m.Encoding.BECH32M:
             return None
         script = script_f(decoded_data)
         script_info = self._network.contract.info_for_script(script)
@@ -244,14 +246,14 @@ class ParseAPI(object):
         Parse a pay-to-pubkey-hash segwit address.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
-        return self._segwit(s, 20, "for_p2pkh_wit")
+        return self._bech32m(s, 0, 20, "for_p2pkh_wit")
 
     def p2sh_segwit(self, s):
         """
         Parse a pay-to-script-hash segwit address.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
-        return self._segwit(s, 32, "for_p2sh_wit")
+        return self._bech32m(s, 0, 32, "for_p2sh_wit")
 
     # payable (+ all address types)
     def script(self, s):
