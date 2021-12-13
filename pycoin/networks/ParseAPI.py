@@ -255,6 +255,13 @@ class ParseAPI(object):
         """
         return self._bech32m(s, 0, 32, "for_p2sh_wit")
 
+    def p2tr(self, s):
+        """
+        Parse a pay-to-taproot segwit address.
+        Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
+        """
+        return self._bech32m(s, 1, 32, "for_p2tr")
+
     # payable (+ all address types)
     def script(self, s):
         """
@@ -352,7 +359,10 @@ class ParseAPI(object):
         Return a :class:`Contract <pycoin.networks.Contract.Contract>`, or None.
         """
         s = parseable_str(s)
-        return self.p2pkh(s) or self.p2sh(s) or self.p2pkh_segwit(s) or self.p2sh_segwit(s)
+        return (
+            self.p2pkh(s) or self.p2sh(s) or self.p2pkh_segwit(s) or self.p2sh_segwit(s)
+            or self.p2tr(s)
+        )
 
     def payable(self, s):
         """

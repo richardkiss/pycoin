@@ -44,6 +44,9 @@ def make_address_api(
             if type == "p2sh":
                 return self.for_p2sh(script_info["hash160"])
 
+            if type == "p2tr":
+                return self.for_p2tr(script_info["synthetic_key"])
+
             if type == "nulldata":
                 return "(nulldata %s)" % b2h(script_info["data"])
 
@@ -66,6 +69,10 @@ def make_address_api(
             def for_p2sh_wit(self, hash256):
                 assert len(hash256) == 32
                 return bech32m.encode(bech32_hrp, 0, iterbytes(hash256))
+
+        if bech32_hrp:
+            def for_p2tr(self, synthetic_key):
+                return bech32m.encode(bech32_hrp, 1, iterbytes(synthetic_key))
 
         # p2s and p2s_wit helpers
 
