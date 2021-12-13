@@ -1,6 +1,6 @@
 import hashlib
 
-from pycoin.contrib import segwit_addr
+from pycoin.contrib import bech32m
 from pycoin.encoding.b58 import b2a_hashed_base58
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
@@ -60,12 +60,12 @@ def make_address_api(
         if bech32_hrp:
             def for_p2pkh_wit(self, h160):
                 assert len(h160) == 20
-                return segwit_addr.encode(bech32_hrp, 0, iterbytes(h160))
+                return bech32m.encode(bech32_hrp, 0, iterbytes(h160))
 
         if bech32_hrp:
             def for_p2sh_wit(self, hash256):
                 assert len(hash256) == 32
-                return segwit_addr.encode(bech32_hrp, 0, iterbytes(hash256))
+                return bech32m.encode(bech32_hrp, 0, iterbytes(hash256))
 
         # p2s and p2s_wit helpers
 

@@ -1,6 +1,6 @@
 from .parseable_str import parse_b58_double_sha256, parse_bech32, parse_colon_prefix, parseable_str
 
-from pycoin.contrib import segwit_addr
+from pycoin.contrib import bech32m
 from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.intbytes import int2byte
 from pycoin.encoding.hexbytes import b2h, h2b
@@ -221,14 +221,19 @@ class ParseAPI(object):
         script_f = getattr(self._network.contract, segwit_attr, None)
         if script_f is None:
             return None
-        pair = parse_bech32(s)
-        if pair is None or pair[0] != self._bech32_hrp or pair[1] is None:
+        triple = parse_bech32(s)
+        if triple is None or triple[0] != self._bech32_hrp or triple[1] is None:
             return None
-        data = pair[1]
+        data = triple[1]
+        spec = triple[2]
         version_byte = int2byte(data[0])
-        decoded = segwit_addr.convertbits(data[1:], 5, 8, False)
+        decoded = bech32m.convertbits(data[1:], 5, 8, False)
         decoded_data = b''.join(int2byte(d) for d in decoded)
-        if version_byte != b'\0' or len(decoded_data) != blob_len:
+        if len(decoded_data) != blob_len:
+            return None
+        if version_byte == b'\0' and spec != bech32m.Encoding.BECH32:
+            return None
+        if version_byte != b'\0' and spec != bech32m.Encoding.BECH32M:
             return None
         script = script_f(decoded_data)
         script_info = self._network.contract.info_for_script(script)

@@ -1,6 +1,6 @@
 from pycoin.encoding.b58 import a2b_base58
 from pycoin.encoding.hash import double_sha256
-from pycoin.contrib import segwit_addr
+from pycoin.contrib import bech32m
 
 
 class parseable_str(str):
@@ -51,7 +51,7 @@ def parse_b58_double_sha256(s):
 
 def parse_bech32(s):
     s = parseable_str(s)
-    return s.cache("bech32", segwit_addr.bech32_decode)
+    return s.cache("bech32", bech32m.bech32_decode)
 
 
 def parse_colon_prefix(s):
