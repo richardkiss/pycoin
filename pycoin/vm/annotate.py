@@ -33,7 +33,10 @@ class Annotate(object):
     def instruction_for_opcode(self, opcode, data):
         if data is None or len(data) == 0:
             return self._script_tools.disassemble_for_opcode_data(opcode, data)
-        return "[PUSH_%d] %s" % (opcode, b2h(data))
+        b2h_data = b2h(data)
+        if len(data) == 1:
+            return "OP_%d" % byte2int(data)
+        return "[PUSH_%s] %s" % (opcode, b2h_data)
 
     def annotate_pubkey(self, blob, da):
         is_compressed = is_sec_compressed(blob)

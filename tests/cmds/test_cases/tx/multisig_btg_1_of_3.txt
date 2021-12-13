@@ -20,14 +20,14 @@ Input:
        1: 14  [PUSH_20] ba3aeafd237bc9334e5b6f627aef94d61cabc652
       16: 87  OP_EQUAL
            --- PUBLIC KEY SCRIPT START
-       0: 53  [PUSH_83] 03
+       0: 53  OP_3
        1: 21  [PUSH_33] 025540b1be0fa622c16c35347dc8f03fb2f10bb9c08f59e39aa49d83f0b9b1fa0f
            SEC for compressed GPcvCW5LCCy56KBVC4RXGP2pBntZpPCko1
       23: 21  [PUSH_33] 02673717a66d62e8e9d5b7751a1107fd3990bf18cc312ff0037347b0b170462c3d
            SEC for compressed GKg8aCw6jPQeMiqyeG8NBHSzJA5wXhKLhL
       45: 21  [PUSH_33] 02c29794ab45b4c98896e16b191ef182a3bbf5813e362a481b621f0d5c7b559005
            SEC for compressed GKq9c2ajkAYaSSASCE97TH6TdMb4Qi6rvR
-      67: 53  [PUSH_83] 03
+      67: 53  OP_3
       68: ae  OP_CHECKMULTISIG
 Output:
    0: AYkZusJAWcKQf8FWJx2THgmXav1HWLqjdu receives  49999.90000 mBTG

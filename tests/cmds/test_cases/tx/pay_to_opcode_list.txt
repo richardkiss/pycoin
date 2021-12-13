@@ -14,8 +14,8 @@ Input:
 Outputs:
    0:                                ??? receives    123.00000 mBTC
            --- PUBLIC KEY SCRIPT START
-       0: 51  [PUSH_81] 01
-       1: 52  [PUSH_82] 02
+       0: 51  OP_1
+       1: 52  OP_2
        2: 9a  OP_BOOLAND
        3: 02  [PUSH_2] d007
        6: 6b  OP_TOALTSTACK
