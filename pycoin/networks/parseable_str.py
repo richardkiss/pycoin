@@ -1,6 +1,7 @@
 from pycoin.encoding.b58 import a2b_base58
 from pycoin.encoding.hash import double_sha256
 from pycoin.contrib import bech32m
+from pycoin.intbytes import int2byte
 
 
 class parseable_str(str):
@@ -49,9 +50,23 @@ def parse_b58_double_sha256(s):
     return s.cache("b58_double_sha256", b58_double_sha256)
 
 
+def parse_bech32_or_32m(s):
+    triple = bech32m.bech32_decode(s)
+    if triple is None or triple[1] is None:
+        return None
+    hr_prefix = triple[0]
+    data = triple[1]
+    spec = triple[2]
+    version = data[0]
+    decoded = bech32m.convertbits(data[1:], 5, 8, False)
+    decoded_data = b''.join(int2byte(d) for d in decoded)
+    rv = (hr_prefix, version, decoded_data, spec)
+    return rv
+
+
 def parse_bech32(s):
     s = parseable_str(s)
-    return s.cache("bech32", bech32m.bech32_decode)
+    return s.cache("bech32", parse_bech32_or_32m)
 
 
 def parse_colon_prefix(s):
