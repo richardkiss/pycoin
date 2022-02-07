@@ -1,7 +1,7 @@
 0.91.20210515
 -------------
 
-* add support for BIP49 ("ypub") and BIP88 ("zpub")
+* add support for BIP49 ("ypub") and BIP84 ("zpub")
 * change how `override_network` is implemented
 
 0.90.20201031
