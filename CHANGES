@@ -3,7 +3,7 @@
 
 * add (beta) support for pay-to-taproot (P2TR)
 * fix disassembly bug for `OP_X` for X>1
-* add support for Groestlecoin mainnet, testnet
+* add support for Groestlcoin testnet and regtest
 * fix litecoin testnet p2sh addresses
 
 
