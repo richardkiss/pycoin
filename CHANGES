@@ -1,7 +1,16 @@
+0.92.20220212
+-------------
+
+* add (beta) support for pay-to-taproot (P2TR)
+* fix disassembly bug for `OP_X` for X>1
+* add support for Groestlecoin mainnet, testnet
+* fix litecoin testnet p2sh addresses
+
+
 0.91.20210515
 -------------
 
-* add support for BIP49 ("ypub") and BIP84 ("zpub")
+* add support for BIP49 ("ypub") and BIP88 ("zpub")
 * change how `override_network` is implemented
 
 0.90.20201031
