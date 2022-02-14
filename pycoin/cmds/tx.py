@@ -687,7 +687,7 @@ def tx(args, parser):
 
     tx_db = cache_result(tx, tx_db, args.cache, network)
 
-    tx_db = validate_against_bitcoind(tx, tx_db, args.network, args.bitcoind_url)
+    tx_db = validate_against_bitcoind(tx, tx_db, network, args.bitcoind_url)
 
     if args.dump_inputs:
         dump_inputs(tx, network)
