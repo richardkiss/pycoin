@@ -93,7 +93,7 @@ class ContractAPI(object):
         p2pkh_wit=lambda info: "OP_0 %s" % b2h(info.get("hash160")),
         p2sh=lambda info: "OP_HASH160 %s OP_EQUAL" % b2h(info.get("hash160")),
         p2sh_wit=lambda info: "OP_0 %s" % b2h(info.get("hash256")),
-        p2tr=lambda info: "PUSH_81 %s" % b2h(info.get("synthetic_key")),
+        p2tr=lambda info: "OP_1 %s" % b2h(info.get("synthetic_key")),
         multisig=lambda info: "%d %s %d OP_CHECKMULTISIG" % (
             info.get("m"), " ".join(b2h(sk) for sk in info.get("sec_keys")), len(info.get("sec_keys"))),
     )
