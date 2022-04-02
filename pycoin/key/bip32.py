@@ -76,7 +76,7 @@ def subkey_secret_exponent_chain_code_pair(
             failed = True
 
         if failed:
-            data = b'\0' + I64[32:]
+            data = b'\1' + I64[32:] + i_as_bytes
         else:
             break
 
