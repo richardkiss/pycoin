@@ -63,13 +63,24 @@ def subkey_secret_exponent_chain_code_pair(
         sec = public_pair_to_sec(public_pair, compressed=True)
         data = sec + i_as_bytes
 
-    I64 = hmac.HMAC(key=chain_code_bytes, msg=data, digestmod=hashlib.sha512).digest()
-    I_left_as_exponent = from_bytes_32(I64[:32]) % ORDER
-    new_secret_exponent = (I_left_as_exponent + secret_exponent) % ORDER
-    if new_secret_exponent == 0:
-        logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
-        raise DerivationError('k_{} == 0'.format(i))
+    while True:
+        I64 = hmac.HMAC(key=chain_code_bytes, msg=data, digestmod=hashlib.sha512).digest()
+        I_left_as_exponent = from_bytes_32(I64[:32])
 
+        failed = False
+        if I_left_as_exponent < ORDER:
+            I_left_as_exponent = (I_left_as_exponent + secret_exponent) % ORDER
+            if I_left_as_exponent == 0:
+                failed = True
+        else:
+            failed = True
+
+        if failed:
+            data = b'\0' + I64[32:]
+        else:
+            break
+
+    new_secret_exponent = I_left_as_exponent
     new_chain_code = I64[32:]
     return new_secret_exponent, new_chain_code
 
