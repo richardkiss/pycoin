@@ -1,22 +1,51 @@
-
 import hashlib
+import os
+
+import pycoin.contrib.ripemd160
 
 from .hexbytes import bytes_as_revhex
 
 
-def ripemd160(data):
+def ripemd160_native(data):
     return hashlib.new("ripemd160", data)
 
 
-try:
-    ripemd160(b'').digest()
-except Exception:
+def get_best_ripemd160():
+    # ubuntu 22 features an openssl without ripemd160, where python gets its
+    # implementation from. To top it off, `"ripemd160" in hashlib.algorithms_available`
+    # still evaluates to true, so we actually have to try it to see if we'll fail.
+
+    USE_NATIVE = "ripemd160" in hashlib.algorithms_available and not os.getenv(
+        "PYCOIN_USE_PYTHON_RIPEMD160"
+    )
+
+    if USE_NATIVE:
+        try:
+            ripemd160_native(b"").digest()
+            return ripemd160_native
+        except Exception:
+            pass
+
     # stupid Google App Engine hashlib doesn't support ripemd160 for some stupid reason
     # import it from pycrypto. You need to add
     # - name: pycrypto
     #   version: "latest"
     # to the "libraries" section of your app.yaml
-    from Crypto.Hash.RIPEMD import RIPEMD160Hash as ripemd160
+    try:
+        from Crypto.Hash.RIPEMD import RIPEMD160Hash
+    except Exception:
+
+        class RIPEMD160Hash:
+            def __init__(self, data):
+                self._digest = pycoin.contrib.ripemd160.ripemd160(data)
+
+            def digest(self):
+                return self._digest
+
+    return RIPEMD160Hash
+
+
+ripemd160 = get_best_ripemd160()
 
 
 def double_sha256(data):
