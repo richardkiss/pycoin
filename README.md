@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/richardkiss/pycoin.png?branch=master)](https://travis-ci.org/richardkiss/pycoin)
+[![GitHub Actions Status](https://github.com/richardkiss/pycoin/actions/workflows/test.yml/badge.svg)](https://github.com/richardkiss/pycoin/actions/workflows/test.yml)
 [![codecov.io](https://codecov.io/github/richardkiss/pycoin/coverage.svg?branch=master)](https://codecov.io/github/richardkiss/pycoin)
 
 
