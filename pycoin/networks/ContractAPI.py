@@ -62,7 +62,7 @@ class ContractAPI(object):
                 return r
             if pc1 >= len(script) or pc2 >= len(template):
                 break
-            opcode1, data1, pc1, is_ok2 = self._script_tools.scriptStreamer.get_opcode(script, pc1)
+            opcode1, data1, pc1, is_ok1 = self._script_tools.scriptStreamer.get_opcode(script, pc1)
             opcode2, data2, pc2, is_ok2 = self._script_tools.scriptStreamer.get_opcode(template, pc2)
             l1 = 0 if data1 is None else len(data1)
             if data2 == b'PUBKEY':
