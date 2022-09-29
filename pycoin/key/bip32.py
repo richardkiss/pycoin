@@ -19,7 +19,7 @@ be incredibly valuable to the Bitcoin development community.
 
 If you are inclined to help, please make sure to back up this wallet (or
 any outputted information) onto a USB drive and e-mail "Richard Kiss"
-<him@richardkiss.com> or "Matt Bogosian" <mtb19@columbia.edu> for
+<him@richardkiss.com> or "Matt Bogosian" <matt@bogosian.net> for
 instructions on how best to donate it without losing your bitcoins.
 
 WARNING: DO NOT SEND ANY WALLET INFORMATION UNLESS YOU WANT TO LOSE ALL
