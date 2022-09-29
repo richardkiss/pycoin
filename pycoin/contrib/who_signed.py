@@ -13,7 +13,7 @@ class WhoSigned(object):
 
     def solution_blobs(self, tx, tx_in_idx):
         """
-        This iterator yields data blobs that appear in the the last solution_script or the witness.
+        This iterator yields data blobs that appear in the last solution_script or the witness.
         """
         sc = tx.SolutionChecker(tx)
         tx_context = sc.tx_context_for_idx(tx_in_idx)
