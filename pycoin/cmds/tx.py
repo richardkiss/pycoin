@@ -71,7 +71,7 @@ def check_fees(tx):
               file=sys.stderr)
     elif actual_tx_fee < recommended_tx_fee:
         print("warning: transaction fee lower than (casually calculated)"
-              " expected value of %s mBTC, transaction might not propogate" %
+              " expected value of %s mBTC, transaction might not propagate" %
               satoshi_to_mbtc(recommended_tx_fee), file=sys.stderr)
     return actual_tx_fee
 
