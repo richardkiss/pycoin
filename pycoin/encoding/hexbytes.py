@@ -28,16 +28,10 @@ def b2h_rev(the_bytes):
 
 
 class bytes_as_revhex(bytes):
-    def __str__(self):
-        return b2h_rev(self)
-
     def __repr__(self):
         return b2h_rev(self)
 
 
 class bytes_as_hex(bytes):
-    def __str__(self):
-        return b2h(self)
-
     def __repr__(self):
         return b2h(self)
