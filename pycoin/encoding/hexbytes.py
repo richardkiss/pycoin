@@ -31,7 +31,17 @@ class bytes_as_revhex(bytes):
     def __repr__(self):
         return b2h_rev(self)
 
+    # both __repr__ and __str__ must be overloaded as bytes implements both.
+    # see https://github.com/richardkiss/pycoin/pull/407
+    def __str__(self):
+        return self.__repr__()
+
 
 class bytes_as_hex(bytes):
     def __repr__(self):
         return b2h(self)
+
+    # both __repr__ and __str__ must be overloaded as bytes implements both.
+    # see https://github.com/richardkiss/pycoin/pull/407
+    def __str__(self):
+        return self.__repr__()
