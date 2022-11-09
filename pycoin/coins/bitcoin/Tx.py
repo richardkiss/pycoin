@@ -58,8 +58,6 @@ class Tx(BaseTx):
         """
         if allow_segwit is None:
             allow_segwit = class_.ALLOW_SEGWIT
-        txs_in = []
-        txs_out = []
         version, = parse_struct("L", f)
         v1 = ord(f.read(1))
         is_segwit = allow_segwit and (v1 == 0)
