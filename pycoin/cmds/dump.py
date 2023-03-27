@@ -85,21 +85,21 @@ def dump_disassembly(output, tx, tx_in_idx, annotate):
 
 def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
     sc = tx.SolutionChecker(tx)
-    signatures = [parse_signature_blob(blob) for blob, sig_hash in network.who_signed.extract_signatures(tx, idx)]
+    signatures = [parse_signature_blob(blob) + (sig_hash, ) for blob, sig_hash in network.who_signed.extract_signatures(tx, idx)]
     if signatures:
         sig_types_identical = (
             tuple(zip(*signatures))[1].count(signatures[0][1]) == len(signatures))
         i = 1 if len(signatures) > 1 else ''
-        for sig_pair, sig_type in signatures:
+        for sig_pair, sig_type, sig_hash in signatures:
             output.append("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
-                output.append("      z{}: {:#x} {}".format(i, sc._signature_hash(tx_out.script, idx, sig_type),
+                output.append("      z{}: {:#066x} {}".format(i, sig_hash,
                               network.annotate.sighash_type_to_string(sig_type)))
             if i:
                 i += 1
         if sig_types_identical and tx_out:
-            output.append("      z:{} {:#x} {}".format(' ' if i else '', sc._signature_hash(
-                tx_out.script, idx, sig_type), network.annotate.sighash_type_to_string(sig_type)))
+            output.append("      z:{} {:#066x} {}".format(' ' if i else '', sig_hash,
+                           network.annotate.sighash_type_to_string(sig_type)))
 
 
 def dump_footer(network, output, tx, missing_unspents):
