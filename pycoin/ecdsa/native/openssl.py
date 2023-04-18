@@ -99,6 +99,8 @@ def create_OpenSSLOptimizations(curve_id):
 
         def multiply(self, p, e):
             "Use OpenSSL to perform point multiplication."
+            if self._order:
+                e %= self._order
             if e == 0 or p == self._infinity:
                 return self._infinity
 
