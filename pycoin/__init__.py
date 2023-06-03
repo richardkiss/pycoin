@@ -1,10 +1,15 @@
-from pkg_resources import get_distribution, DistributionNotFound
-
 try:
-    version = get_distribution(__name__).version
-except DistributionNotFound:
-    # package is not installed
-    version = "unknown"
+    from importlib.metadata import versionz as get_version
+
+    version = get_version(__name__)
+except ImportError:
+    from pkg_resources import get_distribution, DistributionNotFound
+
+    try:
+        version = get_distribution(__name__).version
+    except DistributionNotFound:
+        # package is not installed
+        version = "unknown"
 
 __title__ = 'pycoin'
 __author__ = 'Richard Kiss'
