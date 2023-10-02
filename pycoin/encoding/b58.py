@@ -2,21 +2,76 @@
 Utilities to convert to and from base58.
 """
 
+import math
+
 from .base_conversion import from_long, to_long, EncodingError
 from .hash import double_sha256
 from ..intbytes import iterbytes
 
 
 BASE58_ALPHABET = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+BASE58_ALPHABET_UTF = BASE58_ALPHABET.decode()
 BASE58_BASE = len(BASE58_ALPHABET)
 BASE58_LOOKUP = dict((c, i) for i, c in enumerate(BASE58_ALPHABET))
 
+LOG_58_BASE_2 = math.log(58, 2)
 
-def b2a_base58(s):
+POWERS_OF_58 = [pow(58, n) for n in range(math.ceil(256 / LOG_58_BASE_2))]
+
+
+def b2a_base58_py2(s):
     """Convert binary to base58 using BASE58_ALPHABET. Like Bitcoin addresses."""
     v, prefix = to_long(256, lambda x: x, iterbytes(s))
     s = from_long(v, prefix, BASE58_BASE, lambda v: BASE58_ALPHABET[v])
     return s.decode("utf8")
+
+
+def b2a_base58_py3(s):
+    """Convert binary to base58 using BASE58_ALPHABET. Like Bitcoin addresses."""
+    global POWERS_OF_58
+    text = []
+    s = memoryview(s)
+
+    zero_index = 0
+    while zero_index < len(s) and s[zero_index] == 0:
+        text.append(BASE58_ALPHABET_UTF[0])
+        zero_index += 1
+
+    s = s[zero_index:]
+
+    as_int = int.from_bytes(s, byteorder="big", signed=False)
+    bit_length = len(s) << 3
+
+    # find the best index
+    index = math.floor(bit_length / LOG_58_BASE_2)
+
+    while len(POWERS_OF_58) <= index:
+        POWERS_OF_58.append(POWERS_OF_58[-1] * 58)
+
+    while POWERS_OF_58[index] > as_int:
+        index -= 1
+
+    while index >= 0:
+        q, r = divmod(as_int, POWERS_OF_58[index])
+        text.append(BASE58_ALPHABET_UTF[q])
+        as_int = r
+        index -= 1
+    s = ''.join(text)
+    return s
+
+
+b2a_base58 = b2a_base58_py3 if hasattr(int, "from_bytes") else b2a_base58_py2
+
+def b2a_base58_test(s):
+    """Convert binary to base58 using BASE58_ALPHABET. Like Bitcoin addresses."""
+    r1 = b2a_base58_slow(s)
+    return r1
+    r2 = b2a_base58_fast(s)
+    return r2
+    if r1 != r2:
+        breakpoint()
+    assert r1 == r2
+    return r1
 
 
 def a2b_base58(s):
