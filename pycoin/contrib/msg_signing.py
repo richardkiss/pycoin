@@ -38,7 +38,7 @@ class MessageSigner(object):
             # trim any junk in front
             _, body = msg_in.split('SIGNED MESSAGE-----\n', 1)
         except ValueError:
-            raise EncodingError("expecting text SIGNED MESSSAGE somewhere")
+            raise EncodingError("expecting text SIGNED MESSAGE somewhere")
 
         # - sometimes middle sep is BEGIN BITCOIN SIGNATURE, other times just BEGIN SIGNATURE
         # - choose the last instance, in case someone signs a signed message

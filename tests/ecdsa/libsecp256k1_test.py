@@ -31,7 +31,7 @@ class ECDSATestCase(unittest.TestCase):
              27657251006027960104028534670901169416706551781681983309292004861017889370444)
         )
 
-    def test_sign_verify_mutual_compatability(self):
+    def test_sign_verify_mutual_compatibility(self):
         if libsecp256k1 is None:
             raise unittest.SkipTest("no libsecp256k1")
         ctx = libsecp256k1.ctx

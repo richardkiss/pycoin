@@ -107,7 +107,7 @@ Version 0.75
 * move messages.py to messages module
 * add electrum key support to ku tool
 * add bloomfilter.py
-* add recipies for multisig
+* add recipes for multisig
 
 Version 0.70
 ------------

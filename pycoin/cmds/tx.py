@@ -187,7 +187,7 @@ def create_parser():
                         help='URL to bitcoind instance to validate against (http://user:pass@host:port).')
 
     parser.add_argument('-o', "--output-file", metavar="path-to-output-file", type=argparse.FileType('wb'),
-                        help='file to write transaction to. This supresses most other output.')
+                        help='file to write transaction to. This suppresses most other output.')
 
     parser.add_argument('-d', "--disassemble", action='store_true',
                         help='Disassemble scripts.')
