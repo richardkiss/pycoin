@@ -50,6 +50,7 @@ STANDARD_P2P_MESSAGES = {
     # 'checkorder': obsolete
     # 'submitorder': obsolete
     # 'reply': obsolete
+    'sendaddrv2': "",
     'ping': "nonce:Q",
     'pong': "nonce:Q",
     'filterload': "filter:[1] hash_function_count:L tweak:L flags:b",
