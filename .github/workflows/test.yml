@@ -30,5 +30,6 @@ jobs:
 
     - name: Test core code with pytest
       run: |
+        pip install --upgrade pip
         pip install coverage pytest
         coverage run -m pytest tests
