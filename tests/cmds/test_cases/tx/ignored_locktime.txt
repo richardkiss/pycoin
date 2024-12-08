@@ -1,0 +1,14 @@
+tx 80f8aae59cc70d783382d3d44628f628203b021bb31c8422f688fb21f2814c7a/0/76a91487d51ab052be0036d512c2127f93a758a7cd053588ac/119567/0/0/0 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH -l 9999
+Version:  1  tx hash fcd534bd83b7c0eb4a926756f5b59dfbee29d59d00ffdfb4f6e5abc3dba69428  85 bytes
+TxIn count: 1; TxOut count: 1
+Lock time: 9999 (IGNORED as all inputs have sequence 0xffffffff)
+Input:
+   0: 1DPDWe8aSEEx23zzHFzQuRPmFtL5Jo2Q16 from 80f8aae59cc70d783382d3d44628f628203b021bb31c8422f688fb21f2814c7a:0         1.19567 mBTC  BAD SIG
+Output:
+   0: 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH receives      1.09567 mBTC
+Total input       1.19567 mBTC
+Total output      1.09567 mBTC
+Total fees        0.10000 mBTC
+including unspents in hex dump since transaction not fully signed
+01000000017a4c81f221fb88f622841cb31b023b2028f62846d4d38233780dc79ce5aaf8800000000000ffffffff01ffab0100000000001976a914751e76e8199196d454941c45d1b3a323f1433bd688ac0f2700000fd30100000000001976a91487d51ab052be0036d512c2127f93a758a7cd053588ac
+all incoming transaction values validated
