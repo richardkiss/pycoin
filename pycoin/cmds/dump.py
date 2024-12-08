@@ -24,6 +24,9 @@ def dump_header(output, tx):
     else:
         when = datetime.datetime.utcfromtimestamp(tx.lock_time)
         meaning = "valid on or after %s utc" % when.isoformat()
+    if tx.lock_time != 0:
+        if all(tx_in.sequence == 0xffffffff for tx_in in tx.txs_in):
+            meaning = "IGNORED as all inputs have sequence 0xffffffff"
     output.append("Lock time: %d (%s)" % (tx.lock_time, meaning))
     output.append("Input%s:" % ('s' if len(tx.txs_in) != 1 else ''))
 
@@ -62,8 +65,9 @@ def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly
             sig_result = " sig ok" if tx.is_solution_ok(idx, traceback_f=traceback_f) else " BAD SIG"
             suffix = " %12.5f m%s %s" % (satoshi_to_mbtc(tx_out.coin_value), network.symbol, sig_result)
             address = network.address.for_script(tx_out.puzzle_script())
-        t = "%4d: %34s from %s:%-4d%s" % (idx, address, b2h_rev(tx_in.previous_hash),
-                                          tx_in.previous_index, suffix)
+        seq_text = "" if tx_in.sequence == 0xffffffff else "  %8x" % tx_in.sequence
+        t = "%4d: %34s from %s:%-4d%s%s" % (idx, address, b2h_rev(tx_in.previous_hash),
+                                          tx_in.previous_index, suffix, seq_text)
         output.append(t.rstrip())
         if disassembly_level > 0:
             dump_disassembly(output, tx, idx, network.annotate)

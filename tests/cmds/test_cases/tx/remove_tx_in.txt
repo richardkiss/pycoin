@@ -4,8 +4,8 @@ Version:  2  tx hash 5b8e32dc53c9b3267ca2e5966f174bd8731e1b1351b614a1e97a0ce66a8
 TxIn count: 2; TxOut count: 2
 Lock time: 480399 (valid after block index 480399)
 Inputs:
-   0: 1LNYwcAqg7sF6nfEfRWG243kYTV5ja2QxY from a6f5d2d7336894e27e7411d8b3aadd2204cf9ef47ecc0e4115ad659d1ff84a6a:1         1.35947 mBTC  BAD SIG
-   1: 1Dy8GKBND7vYCWWW8SPooCyE2jpfEYa5tx from fcad37863eff07eb2dc6d313f1a0189e3f877a41e39608e1166957a12ff9211f:0         9.47580 mBTC  BAD SIG
+   0: 1LNYwcAqg7sF6nfEfRWG243kYTV5ja2QxY from a6f5d2d7336894e27e7411d8b3aadd2204cf9ef47ecc0e4115ad659d1ff84a6a:1         1.35947 mBTC  BAD SIG  fffffffe
+   1: 1Dy8GKBND7vYCWWW8SPooCyE2jpfEYa5tx from fcad37863eff07eb2dc6d313f1a0189e3f877a41e39608e1166957a12ff9211f:0         9.47580 mBTC  BAD SIG  fffffffe
 Outputs:
    0: 1DPDWe8aSEEx23zzHFzQuRPmFtL5Jo2Q16 receives      1.19567 mBTC
    1: 17vVQ7KbpcKmFRe4MqaNiPtKm5b46WdsMu receives      9.49631 mBTC

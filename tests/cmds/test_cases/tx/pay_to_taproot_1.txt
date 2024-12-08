@@ -4,7 +4,7 @@ Version:  1  tx hash 33e794d097969002ee05d336686fc03c9e15a597c1b9827669460fac987
 TxIn count: 1; TxOut count: 2
 Lock time: 709631 (valid after block index 709631)
 Input:
-   0: bc1pxwww0ct9ue7e8tdnlmug5m2tamfn7q06sahstg39ys4c9f3340qqxrdu9k from 5849051cf3ce36257a1d844e28959f368a35adc9520fb9679175f6cdf8c1f1d1:1         0.88480 mBTC  sig ok
+   0: bc1pxwww0ct9ue7e8tdnlmug5m2tamfn7q06sahstg39ys4c9f3340qqxrdu9k from 5849051cf3ce36257a1d844e28959f368a35adc9520fb9679175f6cdf8c1f1d1:1         0.88480 mBTC  sig ok  fffffffd
 Outputs:
    0: (nulldata 2f49206c696b65205363686e6f7272207369677320616e6420492063616e6e6f74206c69652e20406269746275673432) receives      0.00000 mBTC
    1: bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297 receives      0.67230 mBTC

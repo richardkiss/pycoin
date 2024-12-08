@@ -125,6 +125,9 @@ def create_parser():
     parser.add_argument('-l', "--lock-time", type=parse_locktime, help='Lock time; either a block'
                         'index, or a date/time (example: "2014-01-01T15:00:00"')
 
+    parser.add_argument('-q', "--sequence", type=int, default=0xffffffff,
+                        help='Sequence for new tx_in objects. Must be non-default for lock_time to be respected. (Try 1)')
+
     parser.add_argument('-n', "--network", default=get_current_netcode(), choices=codes,
                         help=('Default network code (environment variable PYCOIN_DEFAULT_NETCODE '
                               'or "BTC"=Bitcoin mainnet if unset'))
@@ -451,7 +454,7 @@ def parse_context(args, parser):
     return (network, txs, spendables, payables, keychain, tx_db, warning_spendables)
 
 
-def merge_txs(network, txs, spendables, payables):
+def merge_txs(network, txs, spendables, payables, sequence):
 
     tx_class = network.tx
     txs_in = []
@@ -470,7 +473,7 @@ def merge_txs(network, txs, spendables, payables):
         txs_out.extend(tx.txs_out[smaller:])
         unspents.extend(tx.unspents[smaller:])
     for spendable in spendables:
-        txs_in.append(spendable.tx_in())
+        txs_in.append(spendable.tx_in(sequence=sequence))
         unspents.append(spendable)
     for script, coin_value in payables:
         txs_out.append(tx_class.TxOut(coin_value, script))
@@ -522,7 +525,7 @@ def wif_iter(iters):
 
 
 def generate_tx(network, txs, spendables, payables, args):
-    txs_in, txs_out, unspents = merge_txs(network, txs, spendables, payables)
+    txs_in, txs_out, unspents = merge_txs(network, txs, spendables, payables, args.sequence)
     lock_time, version = calculate_lock_time_and_version(args, txs)
     if len(unspents) == len(txs_in):
         unspents = remove_indices(unspents, args.remove_tx_in)

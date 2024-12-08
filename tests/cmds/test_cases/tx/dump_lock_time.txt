@@ -5,7 +5,7 @@ Version:  1  tx hash e8151a2af31c368a35053ddd4bdb285a8595c769a3ad83e0fa02314a602
 TxIn count: 2; TxOut count: 2
 Lock time: 17 (valid after block index 17)
 Inputs:
-   0:                          (unknown) from 9f96ade4b41d5433f4eda31e1738ec2b36f6e7d1420d94a6af99801a88f7f7ff:0
+   0:                          (unknown) from 9f96ade4b41d5433f4eda31e1738ec2b36f6e7d1420d94a6af99801a88f7f7ff:0     ffffffee
    1:                          (unknown) from 8ac60eb9575db5b2d987e29f301b5b819ea83a5c6579d282d189cc04b8e151ef:1
 Outputs:
    0: 1Cu32FVupVCgHkMMRJdYJugxwo2Aprgk7H receives   1123.40000 mBTC
