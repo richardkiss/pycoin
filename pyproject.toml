@@ -2,5 +2,44 @@
 requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.5.0"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "pycoin"
+dynamic = ["version"]
+authors = [
+    {name = "Richard Kiss", email = "him@richardkiss.com"}
+]
+description = "Utilities for Bitcoin and altcoin addresses and transaction manipulation."
+readme = "README.md"
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Internet",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "ecdsa>=0.13",
+    "requests",
+    "websocket-client",
+    "pyaes>=1.6.0",
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy",
+]
+
+[project.urls]
+Homepage = "https://github.com/richardkiss/pycoin"
+
 [tool.setuptools_scm]
 local_scheme = "no-local-version"

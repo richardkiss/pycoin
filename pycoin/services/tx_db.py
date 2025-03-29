@@ -1,4 +1,3 @@
-
 import os.path
 
 from pycoin.coins.bitcoin.Tx import Tx
@@ -9,6 +8,7 @@ class TxDb(object):
     """
     This object can be used in many places that expect a dict.
     """
+
     def __init__(self, lookup_methods=[], read_only_paths=[], writable_cache_path=None):
         self.lookup_methods = lookup_methods
         self.read_only_paths = read_only_paths
@@ -54,7 +54,7 @@ class TxDb(object):
         return None
 
     def __getitem__(self, key):
-        raise NotImplemented
+        raise NotImplementedError
 
     def __setitem__(self, key, val):
         if val.hash() != key:

@@ -7,7 +7,6 @@ from pycoin.coins.SolutionChecker import ScriptError
 
 
 class ScriptTools(object):
-
     def __init__(self, opcode_list, IntStreamer, scriptStreamer):
         self.intStreamer = IntStreamer
         self.scriptStreamer = scriptStreamer
@@ -19,13 +18,13 @@ class ScriptTools(object):
         return self.opcode_to_int.get(opcode)
 
     def compile_expression(self, t):
-        if (t[0], t[-1]) == ('[', ']'):
+        if (t[0], t[-1]) == ("[", "]"):
             return binascii.unhexlify(t[1:-1])
         if t.startswith("'") and t.endswith("'"):
             return t[1:-1].encode("utf8")
         try:
             t0 = int(t)
-            if abs(t0) <= 0xffffffffffffffff and t[0] != '0':
+            if abs(t0) <= 0xFFFFFFFFFFFFFFFF and t[0] != "0":
                 return self.intStreamer.int_to_script_bytes(t0)
         except (SyntaxError, ValueError):
             pass
@@ -67,7 +66,8 @@ class ScriptTools(object):
         """
         while pc < len(script):
             opcode, data, new_pc, is_ok = self.scriptStreamer.get_opcode(
-                script, pc, verify_minimal_data=verify_minimal_data)
+                script, pc, verify_minimal_data=verify_minimal_data
+            )
             yield opcode, data, pc, new_pc
             pc = new_pc
 
@@ -85,7 +85,7 @@ class ScriptTools(object):
 
     def disassemble(self, script):
         """Disassemble the given script. Returns a string."""
-        return ' '.join(self.opcode_list(script))
+        return " ".join(self.opcode_list(script))
 
     def write_push_data(self, data_list, f):
         # return bytes that causes the given data to be pushed onto the stack
@@ -93,4 +93,6 @@ class ScriptTools(object):
             f.write(self.scriptStreamer.compile_push_data(t))
 
     def compile_push_data_list(self, data_list):
-        return b''.join(self.scriptStreamer.compile_push_data(d) for d in data_list if d is not None)
+        return b"".join(
+            self.scriptStreamer.compile_push_data(d) for d in data_list if d is not None
+        )

@@ -1,4 +1,3 @@
-
 from .SolutionChecker import BcashSolutionChecker
 from .Solver import BcashSolver
 

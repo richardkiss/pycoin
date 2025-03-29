@@ -21,7 +21,7 @@ class InsightProvider(object):
     def __init__(self, base_url="https://insight.bitpay.com", netcode=None):
         if netcode is None:
             netcode = get_current_netcode()
-        while base_url[-1] == '/':
+        while base_url[-1] == "/":
             base_url = base_url[:-1]
         self.base_url = base_url
 
@@ -44,7 +44,9 @@ class InsightProvider(object):
         difficulty = int(r.get("bits"), 16)
         nonce = int(r.get("nonce"))
         tx_hashes = [h2b_rev(tx_hash) for tx_hash in r.get("tx")]
-        blockheader = Block(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
+        blockheader = Block(
+            version, previous_block_hash, merkle_root, timestamp, difficulty, nonce
+        )
         if blockheader.hash() != block_hash:
             return None, None
         calculated_hash = merkle(tx_hashes, double_sha256)
@@ -80,7 +82,9 @@ class InsightProvider(object):
             script = h2b(u.get("scriptPubKey"))
             previous_hash = h2b_rev(u.get("txid"))
             previous_index = u.get("vout")
-            spendables.append(Tx.Spendable(coin_value, script, previous_hash, previous_index))
+            spendables.append(
+                Tx.Spendable(coin_value, script, previous_hash, previous_index)
+            )
         return spendables
 
     def spendables_for_addresses(self, addresses):
@@ -110,7 +114,7 @@ def tx_from_json_dict(r):
     txs_in = []
     for vin in r.get("vin"):
         if "coinbase" in vin:
-            previous_hash = b'\0' * 32
+            previous_hash = b"\0" * 32
             script = h2b(vin.get("coinbase"))
             previous_index = 4294967295
         else:

@@ -4,7 +4,6 @@ from pycoin.symbols.btc import network
 
 
 class ParseTest(unittest.TestCase):
-
     def test_parse_wif(self):
         WIF = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"
         k = network.parse.wif(WIF)
@@ -13,21 +12,24 @@ class ParseTest(unittest.TestCase):
     def test_parse_bip32_prv(self):
         HWIF = (
             "xprv9s21ZrQH143K31AgNK5pyVvW23gHnkBq2wh5aEk6g1s496M8ZMj"
-            "xncCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtq")
+            "xncCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtq"
+        )
         k = network.parse.bip32_prv(HWIF)
         self.assertEqual(k.as_text(as_private=True), HWIF)
 
     def test_parse_bip32_pub(self):
         HWIF = (
             "xpub661MyMwAqRbcFVF9ULcqLdsEa5WnCCugQAcgNd9iEMQ31tgH6u4DL"
-            "QWoQayvtSVYFvXz2vPPpbXE1qpjoUFidhjFj82pVShWu9curWmb2zy")
+            "QWoQayvtSVYFvXz2vPPpbXE1qpjoUFidhjFj82pVShWu9curWmb2zy"
+        )
         k = network.parse.bip32_pub(HWIF)
         self.assertEqual(k.as_text(), HWIF)
 
     def test_parse_bip32_seed(self):
         expected_hwif = (
             "xprv9s21ZrQH143K31AgNK5pyVvW23gHnkBq2wh5aEk6g1s496M8ZMjxn"
-            "cCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtq")
+            "cCKZKgb5jZoY5eSJMJ2Vbyvi2hbmQnCuHBujZ2WXGTux1X2k9Krdtq"
+        )
         k = network.parse.bip32_seed("P:foo")
         self.assertEqual(k.as_text(as_private=True), expected_hwif)
         k = network.parse.bip32_seed("H:666f6f")
@@ -38,7 +40,8 @@ class ParseTest(unittest.TestCase):
         k = network.parse.electrum_seed(E_INIT)
         self.assertEqual(
             k.secret_exponent(),
-            0x2ccdb632d4630c8e5a417858f70876afe5585c15b1c0940771af9ac160201b1d)
+            0x2CCDB632D4630C8E5A417858F70876AFE5585C15B1C0940771AF9AC160201B1D,
+        )
 
     def test_parse_electrum_prv(self):
         E_PRV = "E:0000000000000000000000000000000000000000000000000000000000000001"
@@ -49,7 +52,8 @@ class ParseTest(unittest.TestCase):
         E_PUB = (
             "E:"
             "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-            "483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8")
+            "483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"
+        )
         k = network.parse.electrum_pub(E_PUB)
         self.assertEqual(k.address(), "1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm")
 
@@ -70,7 +74,8 @@ class ParseTest(unittest.TestCase):
 
     def test_parse_address_p2sh_wit(self):
         import hashlib
-        address = network.address.for_p2sh_wit(hashlib.sha256(b'').digest())
+
+        address = network.address.for_p2sh_wit(hashlib.sha256(b"").digest())
 
         k = network.parse.p2sh_segwit(address)
         self.assertEqual(k.address(), address)

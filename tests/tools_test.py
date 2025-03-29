@@ -10,9 +10,7 @@ from pycoin.symbols.btc import network
 
 
 class ToolsTest(unittest.TestCase):
-
     def test_compile_push_data_list(self):
-
         def test_bytes(as_bytes):
             script = network.script.compile_push_data_list([as_bytes])
             # this is a pretty horrible hack to test the vm with long scripts. But it works
@@ -20,7 +18,9 @@ class ToolsTest(unittest.TestCase):
             tx_context.signature_for_hash_type_f = None
             tx_context.flags = 0
             tx_context.traceback_f = None
-            vm = BitcoinVM(script, tx_context, tx_context.signature_for_hash_type_f, flags=0)
+            vm = BitcoinVM(
+                script, tx_context, tx_context.signature_for_hash_type_f, flags=0
+            )
             vm.MAX_SCRIPT_LENGTH = int(1e9)
             vm.MAX_BLOB_LENGTH = int(1e9)
             stack = vm.eval_script()
@@ -33,19 +33,34 @@ class ToolsTest(unittest.TestCase):
 
         for i in range(100):
             test_val(100)
-        for i in range(0xfff0, 0x10004):
+        for i in range(0xFFF0, 0x10004):
             test_val(i)
-        for i in range(0xfffff0, 0x1000005):
+        for i in range(0xFFFFF0, 0x1000005):
             test_val(i)
 
-        for l in (1, 2, 3, 254, 255, 256, 257, 258, 0xfff9, 0xfffe, 0xffff, 0x10000, 0x10001, 0x10005):
+        for length in (
+            1,
+            2,
+            3,
+            254,
+            255,
+            256,
+            257,
+            258,
+            0xFFF9,
+            0xFFFE,
+            0xFFFF,
+            0x10000,
+            0x10001,
+            0x10005,
+        ):
             for v in (1, 2, 3, 4, 15, 16, 17, 18):
-                b = int2byte(v) * l
+                b = int2byte(v) * length
                 test_bytes(b)
 
-        b = int2byte(30) * (0x1000000+1)
-        for l in (0x1000000-1, 0x1000000, 0x1000000+1):
-            test_bytes(b[:l])
+        b = int2byte(30) * (0x1000000 + 1)
+        for length in (0x1000000 - 1, 0x1000000, 0x1000000 + 1):
+            test_bytes(b[:length])
 
     def test_compile_decompile(self):
         def check(s):
@@ -57,7 +72,9 @@ class ToolsTest(unittest.TestCase):
 
         def build_hex(size, a, b):
             "build some random-looking hex"
-            return "[%s]" % "".join("%02x" % (((i+a)*b) & 0xff) for i in range(size))
+            return "[%s]" % "".join(
+                "%02x" % (((i + a) * b) & 0xFF) for i in range(size)
+            )
 
         check("[ff]")
         check("[ff03]")
@@ -91,7 +108,8 @@ class ToolsTest(unittest.TestCase):
             "2a4104f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9"
             "388f7b0f632de8140fe337e62a37f3566500a99934c2231b6cb9fd7584b8e6724104e4"
             "93dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351ed993e"
-            "a0d455b75642e2098ea51448d967ae33bfbdfe40cfe97bdc4773992254ae00")
+            "a0d455b75642e2098ea51448d967ae33bfbdfe40cfe97bdc4773992254ae00"
+        )
 
         d1 = network.script.disassemble(script).split()
         self.assertEqual(len(d1), 5)
@@ -99,19 +117,24 @@ class ToolsTest(unittest.TestCase):
 
     def test_int_to_from_script_bytes(self):
         for i in range(-127, 127):
-            self.assertEqual(IntStreamer.int_from_script_bytes(IntStreamer.int_to_script_bytes(i)), i)
+            self.assertEqual(
+                IntStreamer.int_from_script_bytes(IntStreamer.int_to_script_bytes(i)), i
+            )
         for i in range(-1024, 1024, 16):
-            self.assertEqual(IntStreamer.int_from_script_bytes(IntStreamer.int_to_script_bytes(i)), i)
-        for i in range(-1024*1024, 1024*1024, 10000):
-            self.assertEqual(IntStreamer.int_from_script_bytes(IntStreamer.int_to_script_bytes(i)), i)
+            self.assertEqual(
+                IntStreamer.int_from_script_bytes(IntStreamer.int_to_script_bytes(i)), i
+            )
+        for i in range(-1024 * 1024, 1024 * 1024, 10000):
+            self.assertEqual(
+                IntStreamer.int_from_script_bytes(IntStreamer.int_to_script_bytes(i)), i
+            )
         self.assertEqual(IntStreamer.int_to_script_bytes(1), b"\1")
         self.assertEqual(IntStreamer.int_to_script_bytes(127), b"\x7f")
         self.assertEqual(IntStreamer.int_to_script_bytes(128), b"\x80\x00")
 
     def test_pr_364(self):
-        """ See https://github.com/richardkiss/pycoin/pull/364
-        """
-        assert network.script.compile_push_data_list([None]) == b''
+        """See https://github.com/richardkiss/pycoin/pull/364"""
+        assert network.script.compile_push_data_list([None]) == b""
 
 
 if __name__ == "__main__":

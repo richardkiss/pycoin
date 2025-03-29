@@ -19,11 +19,11 @@ def main():
 
     print("creating coinbase transaction to %s" % address)
 
-    tx_in = network.tx.TxIn.coinbase_tx_in(script=b'')
-    tx_out = network.tx.TxOut(50*1e8, network.contract.for_address(address))
+    tx_in = network.tx.TxIn.coinbase_tx_in(script=b"")
+    tx_out = network.tx.TxOut(50 * 1e8, network.contract.for_address(address))
     tx = network.tx(1, [tx_in], [tx_out])
     print("Here is the tx as hex:\n%s" % tx.as_hex())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

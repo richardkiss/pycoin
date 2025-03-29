@@ -48,8 +48,15 @@ class PeerAddress(object):
         return self(services, self.ip_bin, port)
 
     def __lt__(self, other):
-        return (self.ip_bin, self.port, self.services) < (other.ip_bin, other.port, other.services)
+        return (self.ip_bin, self.port, self.services) < (
+            other.ip_bin,
+            other.port,
+            other.services,
+        )
 
     def __eq__(self, other):
-        return self.services == other.services and \
-            self.ip_bin == other.ip_bin and self.port == other.port
+        return (
+            self.services == other.services
+            and self.ip_bin == other.ip_bin
+            and self.port == other.port
+        )

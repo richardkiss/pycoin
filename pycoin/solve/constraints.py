@@ -53,25 +53,25 @@ class Operator(Atom):
         return self._dependencies
 
     def __repr__(self):
-        return "(%s %s)" % (self._op_name, ' '.join(repr(a) for a in self._args))
+        return "(%s %s)" % (self._op_name, " ".join(repr(a) for a in self._args))
 
 
 def make_op_if(constraints):
-
     def my_op_if(vm):
         pdb.set_trace()
         t = vm.stack.pop()
-        t = Operator('IF', t)
+        t = Operator("IF", t)
         vm.stack.append(t)
+
     return my_op_if
 
 
 def make_op_hash160(constraints):
-
     def my_op_hash160(vm):
         t = vm.stack.pop()
-        t = Operator('HASH160', t)
+        t = Operator("HASH160", t)
         vm.stack.append(t)
+
     my_op_hash160.stack_size = 1
     return my_op_hash160
 
@@ -80,8 +80,9 @@ def make_op_equal(constraints):
     def my_op_equal(vm):
         t1 = vm.stack.pop()
         t2 = vm.stack.pop()
-        c = Operator('EQUAL', t1, t2)
+        c = Operator("EQUAL", t1, t2)
         vm.append(c)
+
     my_op_equal.stack_size = 2
     return my_op_equal
 
@@ -90,52 +91,56 @@ def make_op_equalverify(constraints):
     def my_op_equalverify(vm):
         t1 = vm.stack.pop()
         t2 = vm.stack.pop()
-        c = Operator('EQUAL', t1, t2)
+        c = Operator("EQUAL", t1, t2)
         constraints.append(c)
+
     my_op_equalverify.stack_size = 2
     return my_op_equalverify
 
 
 def make_op_checksig(constraints):
     def my_op_checksig(vm):
-
         def sighash_f(signature_type):
             return vm.signature_for_hash_type_f(signature_type, [], vm)
 
         t1 = vm.stack.pop()
         t2 = vm.stack.pop()
-        t = Operator('SIGNATURES_CORRECT', [t1], [t2], sighash_f)
-        constraints.append(Operator('IS_PUBKEY', t1))
-        constraints.append(Operator('IS_SIGNATURE', t2))
+        t = Operator("SIGNATURES_CORRECT", [t1], [t2], sighash_f)
+        constraints.append(Operator("IS_PUBKEY", t1))
+        constraints.append(Operator("IS_SIGNATURE", t2))
         vm.stack.append(t)
+
     return my_op_checksig
 
 
 def make_op_checkmultisig(constraints):
     def my_op_checkmultisig(vm):
-
         def sighash_f(signature_type):
             return vm.signature_for_hash_type_f(signature_type, [], vm)
 
-        key_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
+        key_count = vm.IntStreamer.int_from_script_bytes(
+            vm.stack.pop(), require_minimal=False
+        )
         public_pair_blobs = []
         for i in range(key_count):
-            constraints.append(Operator('IS_PUBKEY', vm.stack[-1]))
+            constraints.append(Operator("IS_PUBKEY", vm.stack[-1]))
             public_pair_blobs.append(vm.stack.pop())
-        signature_count = vm.IntStreamer.int_from_script_bytes(vm.stack.pop(), require_minimal=False)
+        signature_count = vm.IntStreamer.int_from_script_bytes(
+            vm.stack.pop(), require_minimal=False
+        )
         sig_blobs = []
         for i in range(signature_count):
-            constraints.append(Operator('IS_SIGNATURE', vm.stack[-1]))
+            constraints.append(Operator("IS_SIGNATURE", vm.stack[-1]))
             sig_blobs.append(vm.stack.pop())
         t1 = vm.stack.pop()
-        constraints.append(Operator('EQUAL', t1, b''))
-        t = Operator('SIGNATURES_CORRECT', public_pair_blobs, sig_blobs, sighash_f)
+        constraints.append(Operator("EQUAL", t1, b""))
+        t = Operator("SIGNATURES_CORRECT", public_pair_blobs, sig_blobs, sighash_f)
         vm.stack.append(t)
+
     return my_op_checkmultisig
 
 
 def make_traceback_f(constraints, int_for_opcode_f, reset_stack_f):
-
     TWEAKED_OPCODES = (
         ("OP_HASH160", make_op_hash160),
         ("OP_EQUALVERIFY", make_op_equalverify),

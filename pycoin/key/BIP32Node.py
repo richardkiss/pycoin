@@ -23,8 +23,10 @@ from ..encoding.bytes32 import from_bytes_32, to_bytes_32
 from ..encoding.exceptions import EncodingError
 from ..encoding.sec import sec_to_public_pair
 from .HierarchicalKey import HierarchicalKey
-from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
-from .subpaths import subpaths_for_path_range
+from .bip32 import (
+    subkey_public_pair_chain_code_pair,
+    subkey_secret_exponent_chain_code_pair,
+)
 
 
 class PublicPrivateMismatchError(Exception):
@@ -40,19 +42,27 @@ class BIP32Node(HierarchicalKey):
     @classmethod
     def from_master_secret(class_, master_secret):
         """Generate a Wallet from a master password."""
-        I64 = hmac.HMAC(key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512).digest()
+        I64 = hmac.HMAC(
+            key=b"Bitcoin seed", msg=master_secret, digestmod=hashlib.sha512
+        ).digest()
         return class_(chain_code=I64[32:], secret_exponent=from_bytes_32(I64[:32]))
 
     @classmethod
     def deserialize(class_, data):
         parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
-        d = dict(chain_code=data[13:45], depth=ord(data[4:5]), parent_fingerprint=parent_fingerprint,
-                 child_index=child_index)
-        is_private = (data[45:46] == b'\0')
+        d = dict(
+            chain_code=data[13:45],
+            depth=ord(data[4:5]),
+            parent_fingerprint=parent_fingerprint,
+            child_index=child_index,
+        )
+        is_private = data[45:46] == b"\0"
         if is_private:
             d["secret_exponent"] = from_bytes_32(data[46:])
         else:
-            d["public_pair"] = sec_to_public_pair(data[45:], generator=class_._generator)
+            d["public_pair"] = sec_to_public_pair(
+                data[45:], generator=class_._generator
+            )
         return class_(**d)
 
     def override_network(self, override_network):
@@ -60,15 +70,25 @@ class BIP32Node(HierarchicalKey):
         padded_blob = b"\0\0\0\0" + blob
         return override_network.keys.bip32_deserialize(padded_blob)
 
-    def __init__(self, chain_code, depth=0, parent_fingerprint=b'\0\0\0\0', child_index=0,
-                 secret_exponent=None, public_pair=None):
+    def __init__(
+        self,
+        chain_code,
+        depth=0,
+        parent_fingerprint=b"\0\0\0\0",
+        child_index=0,
+        secret_exponent=None,
+        public_pair=None,
+    ):
         """Don't use this. Use a classmethod to generate from a string instead."""
 
         if [secret_exponent, public_pair].count(None) != 1:
-            raise ValueError("must include exactly one of public_pair and secret_exponent")
+            raise ValueError(
+                "must include exactly one of public_pair and secret_exponent"
+            )
 
         super(BIP32Node, self).__init__(
-            secret_exponent=secret_exponent, public_pair=public_pair, is_compressed=True)
+            secret_exponent=secret_exponent, public_pair=public_pair, is_compressed=True
+        )
 
         if secret_exponent:
             self._secret_exponent_bytes = to_bytes_32(secret_exponent)
@@ -109,24 +129,34 @@ class BIP32Node(HierarchicalKey):
 
         ba = bytearray()
         ba.extend([self._depth])
-        ba.extend(self._parent_fingerprint + struct.pack(">L", self._child_index) + self._chain_code)
+        ba.extend(
+            self._parent_fingerprint
+            + struct.pack(">L", self._child_index)
+            + self._chain_code
+        )
         if as_private:
-            ba += b'\0' + self._secret_exponent_bytes
+            ba += b"\0" + self._secret_exponent_bytes
         else:
             ba += self.sec(is_compressed=True)
         return bytes(ba)
 
     def hwif(self, as_private=False):
         """Yield a 111-byte string corresponding to this node."""
-        return self._network.bip32_as_string(self.serialize(as_private=as_private), as_private=as_private)
+        return self._network.bip32_as_string(
+            self.serialize(as_private=as_private), as_private=as_private
+        )
 
     as_text = hwif
 
     def public_copy(self):
         """Yield the corresponding public node for this node."""
-        d = dict(chain_code=self._chain_code, depth=self._depth,
-                 parent_fingerprint=self._parent_fingerprint,
-                 child_index=self._child_index, public_pair=self.public_pair())
+        d = dict(
+            chain_code=self._chain_code,
+            depth=self._depth,
+            parent_fingerprint=self._parent_fingerprint,
+            child_index=self._child_index,
+            public_pair=self.public_pair(),
+        )
         return self.__class__(**d)
 
     def _subkey(self, i, is_hardened, as_private):
@@ -134,20 +164,31 @@ class BIP32Node(HierarchicalKey):
             raise ValueError("i can't be negative")
         if i >= 0x80000000:
             raise ValueError("subkey index 0x%x too large" % i)
-        i &= 0x7fffffff
+        i &= 0x7FFFFFFF
         if is_hardened:
             i |= 0x80000000
 
-        d = dict(depth=self._depth+1, parent_fingerprint=self.fingerprint(), child_index=i)
+        d = dict(
+            depth=self._depth + 1, parent_fingerprint=self.fingerprint(), child_index=i
+        )
 
         if self.secret_exponent() is None:
             if is_hardened:
-                raise PublicPrivateMismatchError("can't derive a private key from a public key")
+                raise PublicPrivateMismatchError(
+                    "can't derive a private key from a public key"
+                )
             d["public_pair"], chain_code = subkey_public_pair_chain_code_pair(
-                self._generator, self.public_pair(), self._chain_code, i)
+                self._generator, self.public_pair(), self._chain_code, i
+            )
         else:
             d["secret_exponent"], chain_code = subkey_secret_exponent_chain_code_pair(
-                self._generator, self.secret_exponent(), self._chain_code, i, is_hardened, self.public_pair())
+                self._generator,
+                self.secret_exponent(),
+                self._chain_code,
+                i,
+                is_hardened,
+                self.public_pair(),
+            )
         d["chain_code"] = chain_code
         key = self.__class__(**d)
         if not as_private:
@@ -195,7 +236,7 @@ class BIP32Node(HierarchicalKey):
         You should choose one of the H or p convention for private key
         derivation and stick with it.
         """
-        force_public = (path[-4:] == '.pub')
+        force_public = path[-4:] == ".pub"
         if force_public:
             path = path[:-4]
         key = self
@@ -206,13 +247,17 @@ class BIP32Node(HierarchicalKey):
                 if is_hardened:
                     v = v[:-1]
                 v = int(v)
-                key = key.subkey(i=v, is_hardened=is_hardened, as_private=key.secret_exponent() is not None)
+                key = key.subkey(
+                    i=v,
+                    is_hardened=is_hardened,
+                    as_private=key.secret_exponent() is not None,
+                )
         if force_public and key.secret_exponent() is not None:
             key = key.public_copy()
         return key
 
     def children(self, max_level=50, start_index=0, include_hardened=True):
-        for i in range(start_index, max_level+start_index+1):
+        for i in range(start_index, max_level + start_index + 1):
             yield self.subkey(i)
             if include_hardened:
                 yield self.subkey(i, is_hardened=True)

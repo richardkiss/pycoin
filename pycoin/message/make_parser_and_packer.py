@@ -24,42 +24,40 @@ from .PeerAddress import PeerAddress
 
 
 STANDARD_P2P_MESSAGES = {
-    'version': (
+    "version": (
         "version:L services:Q timestamp:Q remote_address:A local_address:A"
         " nonce:Q subversion:S last_block_index:L relay:O"
     ),
-    'verack': "",
-    'addr': "date_address_tuples:[LA]",
-    'inv': "items:[v]",
-    'getdata': "items:[v]",
-    'notfound': "items:[v]",
-    'reject': "message:S code:1 reason:S data:#",
-    'getblocks': "version:L hashes:[#] hash_stop:#",
-    'getheaders': "version:L hashes:[#] hash_stop:#",
-    'sendheaders': "",
-    'tx': "tx:T",
-    'block': "block:B",
-    'headers': "headers:[zI]",
-    'getaddr': "",
-    'mempool': "",
-    'feefilter': "fee_filter_value:Q",
-    'sendcmpct': "enabled:b version:Q",
-    'cmpctblock': "header_hash:# nonce:Q short_ids:[6] prefilled_txs:[IT]",
-    'getblocktxn': "header_hash:# indices:[I]",
-    'blocktxn': "header_hash:# txs:[T]",
+    "verack": "",
+    "addr": "date_address_tuples:[LA]",
+    "inv": "items:[v]",
+    "getdata": "items:[v]",
+    "notfound": "items:[v]",
+    "reject": "message:S code:1 reason:S data:#",
+    "getblocks": "version:L hashes:[#] hash_stop:#",
+    "getheaders": "version:L hashes:[#] hash_stop:#",
+    "sendheaders": "",
+    "tx": "tx:T",
+    "block": "block:B",
+    "headers": "headers:[zI]",
+    "getaddr": "",
+    "mempool": "",
+    "feefilter": "fee_filter_value:Q",
+    "sendcmpct": "enabled:b version:Q",
+    "cmpctblock": "header_hash:# nonce:Q short_ids:[6] prefilled_txs:[IT]",
+    "getblocktxn": "header_hash:# indices:[I]",
+    "blocktxn": "header_hash:# txs:[T]",
     # 'checkorder': obsolete
     # 'submitorder': obsolete
     # 'reply': obsolete
-    'sendaddrv2': "",
-    'ping': "nonce:Q",
-    'pong': "nonce:Q",
-    'filterload': "filter:[1] hash_function_count:L tweak:L flags:b",
-    'filteradd': "data:[1]",
-    'filterclear': "",
-    'merkleblock': (
-        "header:z total_transactions:L hashes:[#] flags:[1]"
-    ),
-    'alert': "payload:S signature:S",
+    "sendaddrv2": "",
+    "ping": "nonce:Q",
+    "pong": "nonce:Q",
+    "filterload": "filter:[1] hash_function_count:L tweak:L flags:b",
+    "filteradd": "data:[1]",
+    "filterclear": "",
+    "merkleblock": ("header:z total_transactions:L hashes:[#] flags:[1]"),
+    "alert": "payload:S signature:S",
 }
 
 
@@ -69,7 +67,7 @@ def standard_messages():
 
 def _recurse(level_widths, level_index, node_index, hashes, flags, flag_index, tx_acc):
     idx, r = divmod(flag_index, 8)
-    mask = (1 << r)
+    mask = 1 << r
     flag_index += 1
     if flags[idx] & mask == 0:
         h = hashes.pop()
@@ -82,15 +80,25 @@ def _recurse(level_widths, level_index, node_index, hashes, flags, flag_index, t
 
     # traverse the left
     left_hash, flag_index = _recurse(
-        level_widths, level_index+1, node_index*2, hashes, flags, flag_index, tx_acc)
+        level_widths, level_index + 1, node_index * 2, hashes, flags, flag_index, tx_acc
+    )
 
     # is there a right?
-    if node_index*2+1 < level_widths[level_index+1]:
+    if node_index * 2 + 1 < level_widths[level_index + 1]:
         right_hash, flag_index = _recurse(
-            level_widths, level_index+1, node_index*2+1, hashes, flags, flag_index, tx_acc)
+            level_widths,
+            level_index + 1,
+            node_index * 2 + 1,
+            hashes,
+            flags,
+            flag_index,
+            tx_acc,
+        )
 
         if left_hash == right_hash:
-            raise ValueError("merkle hash has same left and right value at node %d" % node_index)
+            raise ValueError(
+                "merkle hash has same left and right value at node %d" % node_index
+            )
     else:
         right_hash = left_hash
 
@@ -123,17 +131,18 @@ def post_unpack_merkleblock(d, f):
     if len(hashes) > 0:
         raise ValueError("extra hashes: %s" % hashes)
 
-    idx, r = divmod(flag_index-1, 8)
+    idx, r = divmod(flag_index - 1, 8)
     if idx != len(flags) - 1:
         raise ValueError("not enough flags consumed")
 
-    if flags[idx] > (1 << (r+1))-1:
+    if flags[idx] > (1 << (r + 1)) - 1:
         raise ValueError("unconsumed 1 flag bits set")
 
     if left_hash != d["header"].merkle_root:
         raise ValueError(
-            "merkle root %s does not match calculated hash %s" % (
-                b2h_rev(d["header"].merkle_root), b2h_rev(left_hash)))
+            "merkle root %s does not match calculated hash %s"
+            % (b2h_rev(d["header"].merkle_root), b2h_rev(left_hash))
+        )
 
     d["tx_hashes"] = tx_acc
     return d
@@ -143,10 +152,11 @@ def _make_parser(streamer, the_struct):
     "Return a function that parses the given structure into a dict"
     struct_items = [s.split(":") for s in the_struct.split()]
     names = [s[0] for s in struct_items]
-    types = ''.join(s[1] for s in struct_items)
+    types = "".join(s[1] for s in struct_items)
 
     def f(message_stream):
         return streamer.parse_as_dict(names, types, message_stream)
+
     return f
 
 
@@ -155,8 +165,10 @@ def make_post_unpack_alert(streamer):
     Post-processor to "alert" message, to add an "alert_info" dictionary of parsed
     alert information.
     """
-    the_struct = ("version:L relayUntil:Q expiration:Q id:L cancel:L setCancel:[L] minVer:L "
-                  "maxVer:L setSubVer:[S] priority:L comment:S statusBar:S reserved:S")
+    the_struct = (
+        "version:L relayUntil:Q expiration:Q id:L cancel:L setCancel:[L] minVer:L "
+        "maxVer:L setSubVer:[S] priority:L comment:S statusBar:S reserved:S"
+    )
 
     alert_submessage_parser = _make_parser(streamer, the_struct)
 
@@ -164,6 +176,7 @@ def make_post_unpack_alert(streamer):
         d1 = alert_submessage_parser(io.BytesIO(d["payload"]))
         d["alert_info"] = d1
         return d
+
     return post_unpack_alert
 
 
@@ -172,6 +185,7 @@ def standard_parsing_functions(Block, Tx):
     Return the standard parsing functions for a given Block and Tx class.
     The return value is expected to be used with the standard_streamer function.
     """
+
     def stream_block(f, block):
         assert isinstance(block, Block)
         block.stream(f)
@@ -185,7 +199,7 @@ def standard_parsing_functions(Block, Tx):
         tx.stream(f)
 
     def parse_int_6(f):
-        b = f.read(6) + b'\0\0'
+        b = f.read(6) + b"\0\0"
         return struct.unpack(b, "<L")[0]
 
     def stream_int_6(f, v):
@@ -197,10 +211,21 @@ def standard_parsing_functions(Block, Tx):
         ("T", (Tx.parse, stream_tx)),
         ("B", (Block.parse, stream_block)),
         ("z", (Block.parse_as_header, stream_blockheader)),
-        ("1", (lambda f: struct.unpack("B", f.read(1))[0], lambda f, v: f.write(struct.pack("B", v)))),
+        (
+            "1",
+            (
+                lambda f: struct.unpack("B", f.read(1))[0],
+                lambda f, v: f.write(struct.pack("B", v)),
+            ),
+        ),
         ("6", (parse_int_6, stream_int_6)),
-        ("O", (lambda f: True if f.read(1) else False,
-               lambda f, v: f.write(b'' if v is None else struct.pack("B", v)))),
+        (
+            "O",
+            (
+                lambda f: True if f.read(1) else False,
+                lambda f, v: f.write(b"" if v is None else struct.pack("B", v)),
+            ),
+        ),
     ]
     all_items = list(STREAMER_FUNCTIONS.items())
     all_items.extend(more_parsing)
@@ -223,7 +248,9 @@ def standard_message_post_unpacks(streamer):
     The standard message post-processors: one for the version message,
     one for the alert message, and one for the merkleblock message.
     """
-    return dict(alert=make_post_unpack_alert(streamer), merkleblock=post_unpack_merkleblock)
+    return dict(
+        alert=make_post_unpack_alert(streamer), merkleblock=post_unpack_merkleblock
+    )
 
 
 def make_parser_and_packer(streamer, message_dict, message_post_unpacks):
@@ -240,7 +267,9 @@ def make_parser_and_packer(streamer, message_dict, message_post_unpacks):
         a dictionary specifying functions to call to postprocess message to, for example
         extract submessages, like in "alert"
     """
-    message_parsers = dict((k, _make_parser(streamer, v)) for k, v in message_dict.items())
+    message_parsers = dict(
+        (k, _make_parser(streamer, v)) for k, v in message_dict.items()
+    )
 
     def parse_from_data(message_name, data):
         message_stream = io.BytesIO(data)
@@ -256,12 +285,12 @@ def make_parser_and_packer(streamer, message_dict, message_post_unpacks):
     def pack_from_data(message_name, **kwargs):
         the_struct = message_dict[message_name]
         if not the_struct:
-            return b''
+            return b""
         f = io.BytesIO()
         the_fields = the_struct.split(" ")
         pairs = [t.split(":") for t in the_fields]
         for name, type in pairs:
-            if type[0] == '[':
+            if type[0] == "[":
                 streamer.stream_struct("I", f, len(kwargs[name]))
                 for v in kwargs[name]:
                     if not isinstance(v, (tuple, list)):

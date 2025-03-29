@@ -6,7 +6,6 @@ from pycoin.ecdsa.Curve import Curve
 
 
 class GeneratorTestCase(unittest.TestCase):
-
     c23 = Curve(23, 1, 1)
 
     def do_test_add(self, c, x1, y1, x2, y2, x3, y3):
@@ -76,9 +75,9 @@ class GeneratorTestCase(unittest.TestCase):
         r = 6277101735386680763835789423176059013767194773182842284081
         #  s = 0x3045ae6fc8422f64ed579528d38120eae12196d5L
         #  c = 0x3099d2bbbfcb2538542dcd5fb078b6ef5f3d6fe2c745de65
-        b = 0x64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1
-        Gx = 0x188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012
-        Gy = 0x07192b95ffc8da78631011ed6b24cdd573f977a11e794811
+        b = 0x64210519E59C80E70FA7E9AB72243049FEB8DEECC146B9B1
+        Gx = 0x188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF1012
+        Gy = 0x07192B95FFC8DA78631011ED6B24CDD573F977A11E794811
 
         p192 = Generator(p, -3, b, (Gx, Gy), r)
 
@@ -94,8 +93,10 @@ class GeneratorTestCase(unittest.TestCase):
 
         k = 6140507067065001063065065565667405560006161556565665656654
         R = k * p192
-        if R[0] != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD \
-           or R[1] != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
+        if (
+            R[0] != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD
+            or R[1] != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835
+        ):
             raise unittest.FailedTest("k * p192 came out wrong.")
         else:
             print("k * p192 came out right.")
@@ -103,8 +104,10 @@ class GeneratorTestCase(unittest.TestCase):
         u1 = 2563697409189434185194736134579731015366492496392189760599
         u2 = 6266643813348617967186477710235785849136406323338782220568
         temp = u1 * p192 + u2 * Q
-        if temp[0] != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD \
-           or temp[1] != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
+        if (
+            temp[0] != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD
+            or temp[1] != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835
+        ):
             raise unittest.FailedTest("u1 * p192 + u2 * Q came out wrong.")
         else:
             print("u1 * p192 + u2 * Q came out right.")

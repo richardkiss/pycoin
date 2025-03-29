@@ -1,4 +1,3 @@
-
 import io
 
 from .encoding.hash import double_sha256
@@ -13,7 +12,7 @@ class BadMerkleRootError(Exception):
 
 def difficulty_max_mask_for_bits(bits):
     prefix = bits >> 24
-    mask = (bits & 0x7ffff) << (8 * (prefix - 3))
+    mask = (bits & 0x7FFFF) << (8 * (prefix - 3))
     return mask
 
 
@@ -29,7 +28,13 @@ class Block(object):
         )
 
     @classmethod
-    def parse(class_, f, include_transactions=True, include_offsets=None, check_merkle_hash=True):
+    def parse(
+        class_,
+        f,
+        include_transactions=True,
+        include_offsets=None,
+        check_merkle_hash=True,
+    ):
         """
         Parse the Block from the file-like object
         """
@@ -45,16 +50,21 @@ class Block(object):
         """
         Parse the Block header from the file-like object
         """
-        (version, previous_block_hash, merkle_root, timestamp,
-            difficulty, nonce) = parse_struct("L##LLL", f)
-        return class_(version, previous_block_hash, merkle_root, timestamp, difficulty, nonce)
+        (version, previous_block_hash, merkle_root, timestamp, difficulty, nonce) = (
+            parse_struct("L##LLL", f)
+        )
+        return class_(
+            version, previous_block_hash, merkle_root, timestamp, difficulty, nonce
+        )
 
     @classmethod
     def from_bin(class_, bytes):
         f = io.BytesIO(bytes)
         return class_.parse(f)
 
-    def __init__(self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce):
+    def __init__(
+        self, version, previous_block_hash, merkle_root, timestamp, difficulty, nonce
+    ):
         self.version = version
         self.previous_block_hash = previous_block_hash
         self.merkle_root = merkle_root
@@ -103,13 +113,27 @@ class Block(object):
             self.check_merkle_hash()
 
     def as_blockheader(self):
-        return Block(self.version, self.previous_block_hash, self.merkle_root,
-                     self.timestamp, self.difficulty, self.nonce)
+        return Block(
+            self.version,
+            self.previous_block_hash,
+            self.merkle_root,
+            self.timestamp,
+            self.difficulty,
+            self.nonce,
+        )
 
     def stream_header(self, f):
         """Stream the block header in the standard way to the file-like object f."""
-        stream_struct("L##LLL", f, self.version, self.previous_block_hash,
-                      self.merkle_root, self.timestamp, self.difficulty, self.nonce)
+        stream_struct(
+            "L##LLL",
+            f,
+            self.version,
+            self.previous_block_hash,
+            self.merkle_root,
+            self.timestamp,
+            self.difficulty,
+            self.nonce,
+        )
 
     def _stream_transactions(self, f):
         if self.txs:
@@ -149,10 +173,12 @@ class Block(object):
         calculated_hash = merkle([tx.hash() for tx in self.txs], double_sha256)
         if calculated_hash != self.merkle_root:
             raise BadMerkleRootError(
-                "calculated %s but block contains %s" % (b2h(calculated_hash), b2h(self.merkle_root)))
+                "calculated %s but block contains %s"
+                % (b2h(calculated_hash), b2h(self.merkle_root))
+            )
 
     def __str__(self):
-        c = '%s%s' % (self.__class__.__name__, '' if self.txs else 'Header')
+        c = "%s%s" % (self.__class__.__name__, "" if self.txs else "Header")
         return "%s [%s] (previous %s)" % (c, self.id(), self.previous_block_id())
 
     def __repr__(self):

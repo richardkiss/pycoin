@@ -2,7 +2,9 @@ from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
 from pycoin.encoding.sec import (
-    is_sec_compressed, public_pair_to_sec, sec_to_public_pair
+    is_sec_compressed,
+    public_pair_to_sec,
+    sec_to_public_pair,
 )
 from pycoin.satoshi.der import sigencode_der, sigdecode_der
 
@@ -16,7 +18,6 @@ class InvalidSecretExponentError(ValueError):
 
 
 class Key(object):
-
     _network = None
     _generator = None
 
@@ -48,7 +49,9 @@ class Key(object):
             this default value.
         """
         if [secret_exponent, public_pair].count(None) != 1:
-            raise ValueError("exactly one of secret_exponent or public_pair must be passed.")
+            raise ValueError(
+                "exactly one of secret_exponent or public_pair must be passed."
+            )
         self._secret_exponent = secret_exponent
         self._public_pair = public_pair
         self._is_compressed = is_compressed
@@ -57,14 +60,17 @@ class Key(object):
         self._hash256 = None
 
         if self._secret_exponent is not None:
-            if self._secret_exponent < 1 \
-                    or self._secret_exponent >= self._generator.order():
+            if (
+                self._secret_exponent < 1
+                or self._secret_exponent >= self._generator.order()
+            ):
                 raise InvalidSecretExponentError()
             public_pair = self._secret_exponent * self._generator
             self._public_pair = public_pair
 
         if (None in self._public_pair) or (
-               not self._generator.contains_point(*self._public_pair)):
+            not self._generator.contains_point(*self._public_pair)
+        ):
             raise InvalidPublicPairError()
 
     @classmethod
@@ -95,7 +101,7 @@ class Key(object):
             is_compressed = self.is_compressed()
         blob = to_bytes_32(secret_exponent)
         if is_compressed:
-            blob += b'\01'
+            blob += b"\01"
         return self._network.wif_for_blob(blob)
 
     def public_pair(self):
@@ -130,7 +136,9 @@ class Key(object):
             is_compressed = self.is_compressed()
         if is_compressed:
             if self._hash160_compressed is None:
-                self._hash160_compressed = hash160(self.sec(is_compressed=is_compressed))
+                self._hash160_compressed = hash160(
+                    self.sec(is_compressed=is_compressed)
+                )
             return self._hash160_compressed
 
         if self._hash160_uncompressed is None:
@@ -144,7 +152,9 @@ class Key(object):
         """
         Return the public address representation of this key, if available.
         """
-        return self._network.address.for_p2pkh(self.hash160(is_compressed=is_compressed))
+        return self._network.address.for_p2pkh(
+            self.hash160(is_compressed=is_compressed)
+        )
 
     def as_text(self):
         """
@@ -160,7 +170,9 @@ class Key(object):
     def public_copy(self):
         if self.secret_exponent() is None:
             return self
-        return self.__class__(public_pair=self.public_pair(), is_compressed=self.is_compressed())
+        return self.__class__(
+            public_pair=self.public_pair(), is_compressed=self.is_compressed()
+        )
 
     def subkey_for_path(self, path):
         return self
@@ -216,27 +228,35 @@ class Key(object):
         return "<%s>" % s
 
     def ku_output(self):
-        for f in [self.ku_output_for_secret_exponent, self.ku_output_for_public_pair, self.ku_output_for_address]:
+        for f in [
+            self.ku_output_for_secret_exponent,
+            self.ku_output_for_public_pair,
+            self.ku_output_for_address,
+        ]:
             for _ in f():
                 yield _
 
     def ku_output_for_secret_exponent(self):
         if self._secret_exponent:
-            yield ("secret_exponent", '%d' % self._secret_exponent, None)
-            yield ("secret_exponent_hex", '%x' % self._secret_exponent, " hex")
+            yield ("secret_exponent", "%d" % self._secret_exponent, None)
+            yield ("secret_exponent_hex", "%x" % self._secret_exponent, " hex")
             yield ("wif", self.wif(is_compressed=True), None)
             yield ("wif_uncompressed", self.wif(is_compressed=False), " uncompressed")
 
     def ku_output_for_public_pair(self):
         if self._public_pair:
-            yield ("public_pair_x", '%d' % self._public_pair[0], None)
-            yield ("public_pair_y", '%d' % self._public_pair[1], None)
-            yield ("public_pair_x_hex", '%x' % self._public_pair[0], " x as hex")
-            yield ("public_pair_y_hex", '%x' % self._public_pair[1], " y as hex")
+            yield ("public_pair_x", "%d" % self._public_pair[0], None)
+            yield ("public_pair_y", "%d" % self._public_pair[1], None)
+            yield ("public_pair_x_hex", "%x" % self._public_pair[0], " x as hex")
+            yield ("public_pair_y_hex", "%x" % self._public_pair[1], " y as hex")
             yield ("y_parity", "odd" if (self._public_pair[1] & 1) else "even", None)
 
             yield ("key_pair_as_sec", b2h(self.sec(is_compressed=True)), None)
-            yield ("key_pair_as_sec_uncompressed", b2h(self.sec(is_compressed=False)), " uncompressed")
+            yield (
+                "key_pair_as_sec_uncompressed",
+                b2h(self.sec(is_compressed=False)),
+                " uncompressed",
+            )
 
     def ku_output_for_address(self):
         network_name = self._network.network_name
@@ -253,7 +273,11 @@ class Key(object):
         yield ("%s_address" % self._network.symbol, address, "legacy")
 
         address = self.address(is_compressed=False)
-        yield ("address_uncompressed", address, "%s address uncompressed" % self._network.network_name)
+        yield (
+            "address_uncompressed",
+            address,
+            "%s address uncompressed" % self._network.network_name,
+        )
         yield ("%s_address_uncompressed" % self._network.symbol, address, "legacy")
 
         # don't print segwit addresses unless we're sure we have a compressed key
@@ -261,8 +285,16 @@ class Key(object):
             address_segwit = self._network.address.for_p2pkh_wit(hash160_c)
             if address_segwit:
                 # this network seems to support segwit
-                yield ("address_segwit", address_segwit, "%s segwit address" % self._network.network_name)
-                yield ("%s_address_segwit" % self._network.symbol, address_segwit, "legacy")
+                yield (
+                    "address_segwit",
+                    address_segwit,
+                    "%s segwit address" % self._network.network_name,
+                )
+                yield (
+                    "%s_address_segwit" % self._network.symbol,
+                    address_segwit,
+                    "legacy",
+                )
 
                 p2sh_script = self._network.contract.for_p2pkh_wit(hash160_c)
                 p2s_address = self._network.address.for_p2s(p2sh_script)
@@ -270,4 +302,8 @@ class Key(object):
                     yield ("p2sh_segwit", p2s_address, None)
 
                 p2sh_script_hex = b2h(p2sh_script)
-                yield ("p2sh_segwit_script", p2sh_script_hex, " corresponding p2sh script")
+                yield (
+                    "p2sh_segwit_script",
+                    p2sh_script_hex,
+                    " corresponding p2sh script",
+                )

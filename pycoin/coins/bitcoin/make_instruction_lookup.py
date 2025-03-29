@@ -1,4 +1,3 @@
-
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi import intops, stackops, checksigops, miscops
 from pycoin.satoshi import errno
@@ -8,7 +7,10 @@ from .ScriptStreamer import BitcoinScriptStreamer
 
 def _make_bad_instruction(v):
     def f(vm_state):
-        raise ScriptError("invalid instruction x%02x at %d" % (v, vm_state.pc), errno.BAD_OPCODE)
+        raise ScriptError(
+            "invalid instruction x%02x at %d" % (v, vm_state.pc), errno.BAD_OPCODE
+        )
+
     return f
 
 

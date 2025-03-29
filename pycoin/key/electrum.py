@@ -21,18 +21,32 @@ def initial_key_to_master_key(initial_key):
 
 
 class ElectrumWallet(Key):
-    def __init__(self, initial_key=None, master_private_key=None, public_pair=None, master_public_key=None):
-        if [initial_key, public_pair, master_private_key, master_public_key].count(None) != 3:
+    def __init__(
+        self,
+        initial_key=None,
+        master_private_key=None,
+        public_pair=None,
+        master_public_key=None,
+    ):
+        if [initial_key, public_pair, master_private_key, master_public_key].count(
+            None
+        ) != 3:
             raise ValueError(
-                "exactly one of initial_key, master_private_key, master_public_key must be non-None")
+                "exactly one of initial_key, master_private_key, master_public_key must be non-None"
+            )
         self._initial_key = initial_key
 
         if initial_key is not None:
             master_private_key = initial_key_to_master_key(initial_key)
         if master_public_key:
-            public_pair = tuple(from_bytes_32(master_public_key[idx:idx+32]) for idx in (0, 32))
+            public_pair = tuple(
+                from_bytes_32(master_public_key[idx : idx + 32]) for idx in (0, 32)
+            )
         super(ElectrumWallet, self).__init__(
-            secret_exponent=master_private_key, public_pair=public_pair, is_compressed=False)
+            secret_exponent=master_private_key,
+            public_pair=public_pair,
+            is_compressed=False,
+        )
 
     @classmethod
     def deserialize(class_, blob):
@@ -75,13 +89,17 @@ class ElectrumWallet(Key):
         if len(t) == 2:
             n, for_change = t
         else:
-            n, = t
+            (n,) = t
             for_change = 0
-        b = (str(n) + ':' + str(for_change) + ':').encode("utf8") + self.master_public_key()
+        b = (str(n) + ":" + str(for_change) + ":").encode(
+            "utf8"
+        ) + self.master_public_key()
         offset = from_bytes_32(double_sha256(b))
         if self.secret_exponent():
             return self.__class__(
-                master_private_key=((self.master_private_key() + offset) % self._generator.order())
+                master_private_key=(
+                    (self.master_private_key() + offset) % self._generator.order()
+                )
             )
         p1 = offset * self._generator
         x, y = self.public_pair()

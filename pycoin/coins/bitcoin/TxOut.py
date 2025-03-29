@@ -5,7 +5,6 @@ from pycoin.satoshi.satoshi_struct import parse_struct, stream_struct
 
 
 class TxOut(object):
-
     COIN_VALUE_CAST_F = int
 
     """
@@ -28,7 +27,7 @@ class TxOut(object):
         return '%s<%s mbtc "%s">' % (
             self.__class__.__name__,
             satoshi_to_mbtc(self.coin_value),
-            BitcoinScriptTools.disassemble(self.script)
+            BitcoinScriptTools.disassemble(self.script),
         )
 
     def puzzle_script(self):

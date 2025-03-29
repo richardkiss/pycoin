@@ -14,7 +14,6 @@ def make_tests_for_netcode(netcode):
     Tx = network.tx
 
     class AddressForScriptTest(unittest.TestCase):
-
         def test_script_type_pay_to_address(self):
             for se in range(1, 100):
                 key = network.keys.private(secret_exponent=se)
@@ -63,7 +62,7 @@ def make_tests_for_netcode(netcode):
 
         def test_weird_tx(self):
             # this is from tx 12a8d1d62d12307eac6e62f2f14d7e826604e53c320a154593845aa7c8e59fbf
-            afs_address = address_for_script(b'Q')
+            afs_address = address_for_script(b"Q")
             self.assertNotEqual(afs_address, None)
             self.assertEqual(afs_address, "???")
 

@@ -8,17 +8,31 @@ from pycoin.networks.bitcoinish import create_bitcoinish_network
 
 
 network = create_bitcoinish_network(
-    symbol="GRS", network_name="Groestlcoin", subnet_name="mainnet", tx=GrsTx, block=GrsBlock,
-    wif_prefix_hex="80", sec_prefix="GRSSEC:", address_prefix_hex="24", pay_to_script_prefix_hex="05",
-    bip32_prv_prefix_hex="0488ade4", bip32_pub_prefix_hex="0488B21E", bech32_hrp="grs",
-    bip49_prv_prefix_hex="049d7878", bip49_pub_prefix_hex="049D7CB2",
-    bip84_prv_prefix_hex="04b2430c", bip84_pub_prefix_hex="04B24746",
-    magic_header_hex="F9BEB4D4", default_port=1331,
+    symbol="GRS",
+    network_name="Groestlcoin",
+    subnet_name="mainnet",
+    tx=GrsTx,
+    block=GrsBlock,
+    wif_prefix_hex="80",
+    sec_prefix="GRSSEC:",
+    address_prefix_hex="24",
+    pay_to_script_prefix_hex="05",
+    bip32_prv_prefix_hex="0488ade4",
+    bip32_pub_prefix_hex="0488B21E",
+    bech32_hrp="grs",
+    bip49_prv_prefix_hex="049d7878",
+    bip49_pub_prefix_hex="049D7CB2",
+    bip84_prv_prefix_hex="04b2430c",
+    bip84_pub_prefix_hex="04B24746",
+    magic_header_hex="F9BEB4D4",
+    default_port=1331,
     parse_api_class=GRSParseAPI,
     dns_bootstrap=[
-        "dnsseed1.groestlcoin.org", "dnsseed2.groestlcoin.org",
-        "dnsseed3.groestlcoin.org", "dnsseed4.groestlcoin.org"
-    ]
+        "dnsseed1.groestlcoin.org",
+        "dnsseed2.groestlcoin.org",
+        "dnsseed3.groestlcoin.org",
+        "dnsseed4.groestlcoin.org",
+    ],
 )
 
 # monkey patches

@@ -9,7 +9,8 @@ def make_const_handler(data):
     data = bytes_as_hex(data)
 
     def constant_data_opcode_handler(script, pc, verify_minimal_data=False):
-        return pc+1, data
+        return pc + 1, data
+
     return constant_data_opcode_handler
 
 
@@ -21,12 +22,13 @@ def make_sized_handler(size, const_values, non_minimal_data_handler):
 
     def constant_size_opcode_handler(script, pc, verify_minimal_data=False):
         pc += 1
-        data = bytes_as_hex(script[pc:pc+size])
+        data = bytes_as_hex(script[pc : pc + size])
         if len(data) < size:
-            return pc+1, None
+            return pc + 1, None
         if verify_minimal_data and data in const_values:
             non_minimal_data_handler("not minimal push of %s" % repr(data))
-        return pc+size, data
+        return pc + size, data
+
     return constant_size_opcode_handler
 
 
@@ -39,13 +41,14 @@ def make_variable_handler(dec_f, sized_values, min_size, non_minimal_data_handle
 
     def f(script, pc, verify_minimal_data=False):
         size, pc = dec_f(script, pc)
-        data = bytes_as_hex(script[pc:pc+size])
+        data = bytes_as_hex(script[pc : pc + size])
         if len(data) < size:
-            return pc+1, None
+            return pc + 1, None
         if verify_minimal_data:
             if size in sized_values or size <= min_size:
                 non_minimal_data_handler("not minimal push of data with size %d" % size)
-        return pc+size, data
+        return pc + size, data
+
     return f
 
 
@@ -58,6 +61,7 @@ def make_sized_encoder(opcode_value):
 
     def f(data):
         return opcode_bin + data
+
     return f
 
 
@@ -77,8 +81,15 @@ class ScriptStreamer(object):
     This gives a "canonical" version of solution scripts, which can be used to
     help reduce the impact of malleability.
     """
-    def __init__(self, opcode_const_list, opcode_sized_list, opcode_variable_list,
-                 opcode_lookup, non_minimal_data_handler):
+
+    def __init__(
+        self,
+        opcode_const_list,
+        opcode_sized_list,
+        opcode_variable_list,
+        opcode_lookup,
+        non_minimal_data_handler,
+    ):
         """
         :param opcode_const_list: list of ("OPCODE_NAME", const_value) pairs, where
             OPCODE_NAME is the name of an opcode and const_value is the value to be pushed
@@ -98,15 +109,20 @@ class ScriptStreamer(object):
         """
 
         # build encoders
-        const_pairs = [(opcode_lookup.get(opcode), val) for opcode, val in opcode_const_list]
+        const_pairs = [
+            (opcode_lookup.get(opcode), val) for opcode, val in opcode_const_list
+        ]
         self.const_encoder = {v: int2byte(k) for k, v in const_pairs}
 
-        sized_pairs = [(opcode_lookup.get(opcode), size) for opcode, size in opcode_sized_list]
+        sized_pairs = [
+            (opcode_lookup.get(opcode), size) for opcode, size in opcode_sized_list
+        ]
         self.sized_encoder = {v: make_sized_encoder(k) for k, v in sized_pairs}
         opcode_variable_list = sorted(opcode_variable_list, key=lambda o: o[0])
         self.variable_encoder = list(
             (max_size, opcode_lookup.get(opcode), enc_f)
-            for opcode, max_size, enc_f, dec_f in opcode_variable_list)
+            for opcode, max_size, enc_f, dec_f in opcode_variable_list
+        )
 
         # build decoder
 
@@ -117,14 +133,20 @@ class ScriptStreamer(object):
         min_size = 0
         for o, max_size, enc_f, dec_f in opcode_variable_list:
             self.decoder[opcode_lookup.get(o)] = make_variable_handler(
-                dec_f, self.sized_encoder.keys(), min_size, non_minimal_data_handler)
+                dec_f, self.sized_encoder.keys(), min_size, non_minimal_data_handler
+            )
             min_size = max_size + 1
 
         # deal with sized data opcodes
 
         self.decoder.update(
-            {o: make_sized_handler(
-                v, self.const_encoder.keys(), non_minimal_data_handler) for o, v in sized_pairs})
+            {
+                o: make_sized_handler(
+                    v, self.const_encoder.keys(), non_minimal_data_handler
+                )
+                for o, v in sized_pairs
+            }
+        )
 
         # deal with constant data opcodes
 
@@ -143,7 +165,7 @@ class ScriptStreamer(object):
         # lambda s, p, verify_minimal_data: (p+1, None))
         if decoder:
             pc, data = decoder(script, pc, verify_minimal_data=verify_minimal_data)
-            is_ok = (data is not None)
+            is_ok = data is not None
         else:
             pc += 1
             data = None

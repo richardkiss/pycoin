@@ -1,4 +1,3 @@
-
 import io
 
 from pycoin.encoding.hash import double_sha256
@@ -10,7 +9,7 @@ from .Tx import Tx
 
 
 # Allow NON_FORKID in legacy tests and blocks under BTG hard fork height
-ALLOW_NON_FORKID = (1 << 17)
+ALLOW_NON_FORKID = 1 << 17
 
 # BRAIN DAMAGE: TODO: implement this in vm
 
@@ -31,11 +30,28 @@ class Block(BaseBlock):
         # https://github.com/BTCGPU/BTCGPU/wiki/Technical-Spec
         f.read(28)  # reserved area
         (timestamp, difficulty, nonce, solution) = parse_struct("LL#S", f)
-        return class_(version, previous_block_hash, merkle_root, timestamp,
-                      difficulty, nonce, height, solution)
+        return class_(
+            version,
+            previous_block_hash,
+            merkle_root,
+            timestamp,
+            difficulty,
+            nonce,
+            height,
+            solution,
+        )
 
-    def __init__(self, version, previous_block_hash, merkle_root, timestamp,
-                 difficulty, nonce, height, solution):
+    def __init__(
+        self,
+        version,
+        previous_block_hash,
+        merkle_root,
+        timestamp,
+        difficulty,
+        nonce,
+        height,
+        solution,
+    ):
         self.version = version
         self.previous_block_hash = previous_block_hash
         self.merkle_root = merkle_root
@@ -55,19 +71,41 @@ class Block(BaseBlock):
         return double_sha256(s.getvalue())
 
     def as_blockheader(self):
-        return Block(self.version, self.previous_block_hash, self.merkle_root,
-                     self.timestamp, self.difficulty, self.nonce,
-                     self.height, self.solution)
+        return Block(
+            self.version,
+            self.previous_block_hash,
+            self.merkle_root,
+            self.timestamp,
+            self.difficulty,
+            self.nonce,
+            self.height,
+            self.solution,
+        )
 
     def stream_header_legacy(self, f):
         """Stream the block header in the standard way to the file-like object f."""
-        stream_struct("L##LL", f, self.version, self.previous_block_hash,
-                      self.merkle_root, self.timestamp, self.difficulty)
+        stream_struct(
+            "L##LL",
+            f,
+            self.version,
+            self.previous_block_hash,
+            self.merkle_root,
+            self.timestamp,
+            self.difficulty,
+        )
         f.write(self.nonce[:4])
 
     def stream_header(self, f):
         """Stream the block header in the standard way to the file-like object f."""
-        stream_struct("L##L", f, self.version, self.previous_block_hash,
-                      self.merkle_root, self.height)
-        f.write(b'\0' * 28)
-        stream_struct("LL#S", f, self.timestamp, self.difficulty, self.nonce, self.solution)
+        stream_struct(
+            "L##L",
+            f,
+            self.version,
+            self.previous_block_hash,
+            self.merkle_root,
+            self.height,
+        )
+        f.write(b"\0" * 28)
+        stream_struct(
+            "LL#S", f, self.timestamp, self.difficulty, self.nonce, self.solution
+        )

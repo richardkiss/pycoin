@@ -25,21 +25,23 @@ def bignum_type_for_library(library):
         """
 
         _fields_ = [
-            ('d', ctypes.POINTER(ctypes.c_ulong)),
-            ('top', ctypes.c_int),
-            ('dmax', ctypes.c_int),
-            ('neg', ctypes.c_int),
-            ('flags', ctypes.c_int),
+            ("d", ctypes.POINTER(ctypes.c_ulong)),
+            ("top", ctypes.c_int),
+            ("dmax", ctypes.c_int),
+            ("neg", ctypes.c_int),
+            ("flags", ctypes.c_int),
         ]
 
         def __init__(self, n=0):
             "Create a BignumType from an int"
-            negative = (n < 0)
+            negative = n < 0
             if negative:
                 n = -n
-            the_len = (n.bit_length() + 7)//8
-            sign = b'\x80' if negative else b'\0'
-            the_bytes = struct.pack(">L", the_len+1) + sign + to_bytes(n, the_len, "big")
+            the_len = (n.bit_length() + 7) // 8
+            sign = b"\x80" if negative else b"\0"
+            the_bytes = (
+                struct.pack(">L", the_len + 1) + sign + to_bytes(n, the_len, "big")
+            )
             library.BN_mpi2bn(the_bytes, the_len + 5, self)
 
         def __del__(self):
@@ -66,4 +68,5 @@ def bignum_type_for_library(library):
 
         def __repr__(self):
             return "BignumType(%d)" % self.to_int()
+
     return BignumType

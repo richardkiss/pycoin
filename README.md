@@ -6,7 +6,7 @@ pycoin -- Python Cryptocoin Utilities
 =====================================
 
 The pycoin library implements many utilities useful when dealing with bitcoin and some bitcoin-like
-alt-coins. It has been tested with Python 2.7, 3.7-3.13.
+alt-coins. It has been tested with Python 3.8 and above.
 
 See also [pycoinnet](http://github.com/richardkiss/pycoinnet/) for a library that speaks the bitcoin protocol.
 

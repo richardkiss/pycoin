@@ -2,13 +2,18 @@ from pycoin.block import Block
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.coins.exceptions import ValidationFailureError
-from pycoin.coins.tx_utils import create_tx, split_with_remainder, distribute_from_split_pool, sign_tx, create_signed_tx
+from pycoin.coins.tx_utils import (
+    create_tx,
+    split_with_remainder,
+    distribute_from_split_pool,
+    sign_tx,
+    create_signed_tx,
+)
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.b58 import b2a_hashed_base58
-from pycoin.key.HDSeed import HDSeed
 from pycoin.key.Keychain import Keychain
 from pycoin.key.Key import Key, InvalidSecretExponentError, InvalidPublicPairError
 from pycoin.key.BIP32Node import BIP32Node
@@ -16,8 +21,11 @@ from pycoin.key.BIP49Node import BIP49Node
 from pycoin.key.BIP84Node import BIP84Node
 from pycoin.key.electrum import ElectrumWallet
 from pycoin.message.make_parser_and_packer import (
-    make_parser_and_packer, standard_messages,
-    standard_message_post_unpacks, standard_streamer, standard_parsing_functions
+    make_parser_and_packer,
+    standard_messages,
+    standard_message_post_unpacks,
+    standard_streamer,
+    standard_parsing_functions,
 )
 from pycoin.encoding.hexbytes import b2h, h2b
 from pycoin.satoshi import errno, flags
@@ -49,25 +57,30 @@ class Network(object):
 
 def make_output_for_secret_exponent(Key):
     def f(secret_exponent):
-        yield ("secret_exponent", '%d' % secret_exponent, None)
-        yield ("secret_exponent_hex", '%x' % secret_exponent, " hex")
+        yield ("secret_exponent", "%d" % secret_exponent, None)
+        yield ("secret_exponent_hex", "%x" % secret_exponent, " hex")
         key = Key(secret_exponent)
         yield ("wif", key.wif(is_compressed=True), None)
         yield ("wif_uncompressed", key.wif(is_compressed=False), " uncompressed")
+
     return f
 
 
 def make_output_for_public_pair(Key, network):
     def f(public_pair):
-        yield ("public_pair_x", '%d' % public_pair[0], None)
-        yield ("public_pair_y", '%d' % public_pair[1], None)
-        yield ("public_pair_x_hex", '%x' % public_pair[0], " x as hex")
-        yield ("public_pair_y_hex", '%x' % public_pair[1], " y as hex")
+        yield ("public_pair_x", "%d" % public_pair[0], None)
+        yield ("public_pair_y", "%d" % public_pair[1], None)
+        yield ("public_pair_x_hex", "%x" % public_pair[0], " x as hex")
+        yield ("public_pair_y_hex", "%x" % public_pair[1], " y as hex")
         yield ("y_parity", "odd" if (public_pair[1] & 1) else "even", None)
 
         key = Key(public_pair=public_pair)
         yield ("key_pair_as_sec", b2h(key.sec(is_compressed=True)), None)
-        yield ("key_pair_as_sec_uncompressed", b2h(key.sec(is_compressed=False)), " uncompressed")
+        yield (
+            "key_pair_as_sec_uncompressed",
+            b2h(key.sec(is_compressed=False)),
+            " uncompressed",
+        )
 
         network_name = network.network_name
         hash160_u = key.hash160(is_compressed=False)
@@ -83,7 +96,11 @@ def make_output_for_public_pair(Key, network):
         yield ("%s_address" % network.symbol, address, "legacy")
 
         address = key.address(is_compressed=False)
-        yield ("address_uncompressed", address, "%s address uncompressed" % network_name)
+        yield (
+            "address_uncompressed",
+            address,
+            "%s address uncompressed" % network_name,
+        )
         yield ("%s_address_uncompressed" % network.symbol, address, "legacy")
 
         # don't print segwit addresses unless we're sure we have a compressed key
@@ -91,7 +108,11 @@ def make_output_for_public_pair(Key, network):
             address_segwit = network.address.for_p2pkh_wit(hash160_c)
             if address_segwit:
                 # this network seems to support segwit
-                yield ("address_segwit", address_segwit, "%s segwit address" % network_name)
+                yield (
+                    "address_segwit",
+                    address_segwit,
+                    "%s segwit address" % network_name,
+                )
                 yield ("%s_address_segwit" % network.symbol, address_segwit, "legacy")
 
                 p2sh_script = network.contract.for_p2pkh_wit(hash160_c)
@@ -100,7 +121,11 @@ def make_output_for_public_pair(Key, network):
                     yield ("p2sh_segwit", p2s_address, None)
 
                 p2sh_script_hex = b2h(p2sh_script)
-                yield ("p2sh_segwit_script", p2sh_script_hex, " corresponding p2sh script")
+                yield (
+                    "p2sh_segwit_script",
+                    p2sh_script_hex,
+                    " corresponding p2sh script",
+                )
 
     return f
 
@@ -116,9 +141,11 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     generator = kwargs.get("generator", secp256k1_generator)
     kwargs.setdefault("sec_prefix", "%sSEC" % symbol.upper())
-    KEYS_TO_H2B = ("bip32_prv_prefix bip32_pub_prefix bip49_prv_prefix bip49_pub_prefix "
-                   "bip84_prv_prefix bip84_pub_prefix wif_prefix address_prefix "
-                   "pay_to_script_prefix sec_prefix magic_header").split()
+    KEYS_TO_H2B = (
+        "bip32_prv_prefix bip32_pub_prefix bip49_prv_prefix bip49_pub_prefix "
+        "bip84_prv_prefix bip84_pub_prefix wif_prefix address_prefix "
+        "pay_to_script_prefix sec_prefix magic_header"
+    ).split()
     for k in KEYS_TO_H2B:
         k_hex = "%s_hex" % k
         if k_hex in kwargs:
@@ -126,9 +153,11 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
 
     script_tools = kwargs.get("script_tools", BitcoinScriptTools)
 
-    UI_KEYS = ("bip32_prv_prefix bip32_pub_prefix bip49_prv_prefix bip49_pub_prefix "
-               "bip84_prv_prefix bip84_pub_prefix wif_prefix sec_prefix "
-               "address_prefix pay_to_script_prefix bech32_hrp").split()
+    UI_KEYS = (
+        "bip32_prv_prefix bip32_pub_prefix bip49_prv_prefix bip49_pub_prefix "
+        "bip84_prv_prefix bip84_pub_prefix wif_prefix sec_prefix "
+        "address_prefix pay_to_script_prefix bech32_hrp"
+    ).split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
     _bip32_prv_prefix = ui_kwargs.get("bip32_prv_prefix")
@@ -155,24 +184,37 @@ def create_bitcoinish_network(symbol, network_name, subnet_name, **kwargs):
         return _sec_prefix + b2h(blob)
 
     NetworkKey = Key.make_subclass(symbol, network=network, generator=generator)
-    NetworkElectrumKey = ElectrumWallet.make_subclass(symbol, network=network, generator=generator)
-    NetworkBIP32Node = BIP32Node.make_subclass(symbol, network=network, generator=generator)
-    NetworkBIP49Node = BIP49Node.make_subclass(symbol, network=network, generator=generator)
-    NetworkBIP84Node = BIP84Node.make_subclass(symbol, network=network, generator=generator)
+    NetworkElectrumKey = ElectrumWallet.make_subclass(
+        symbol, network=network, generator=generator
+    )
+    NetworkBIP32Node = BIP32Node.make_subclass(
+        symbol, network=network, generator=generator
+    )
+    NetworkBIP49Node = BIP49Node.make_subclass(
+        symbol, network=network, generator=generator
+    )
+    NetworkBIP84Node = BIP84Node.make_subclass(
+        symbol, network=network, generator=generator
+    )
 
-    NETWORK_KEYS = "network_name subnet_name dns_bootstrap default_port magic_header".split()
+    NETWORK_KEYS = (
+        "network_name subnet_name dns_bootstrap default_port magic_header".split()
+    )
     for k in NETWORK_KEYS:
         if k in kwargs:
             setattr(network, k, kwargs[k])
 
     network.Tx = network.tx = kwargs.get("tx") or Tx
-    network.Block = network.block = kwargs.get("block") or Block.make_subclass(symbol, network.tx)
+    network.Block = network.block = kwargs.get("block") or Block.make_subclass(
+        symbol, network.tx
+    )
 
     streamer = standard_streamer(standard_parsing_functions(network.block, network.tx))
 
     network.message = API()
     network.message.parse, network.message.pack = make_parser_and_packer(
-        streamer, standard_messages(), standard_message_post_unpacks(streamer))
+        streamer, standard_messages(), standard_message_post_unpacks(streamer)
+    )
 
     network.output_for_secret_exponent = make_output_for_secret_exponent(NetworkKey)
     network.output_for_public_pair = make_output_for_public_pair(NetworkKey, network)

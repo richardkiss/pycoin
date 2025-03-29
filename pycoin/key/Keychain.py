@@ -14,7 +14,7 @@ from pycoin.encoding.hash import hash160
 class Keychain(object):
     def __init__(self, sqlite3_db=None):
         self._db = sqlite3_db or sqlite3.connect(":memory:")
-        self._db.text_factory = type(b'')
+        self._db.text_factory = type(b"")
         self._init_tables()
         self.clear_secrets()
 
@@ -31,15 +31,19 @@ class Keychain(object):
             self._exec_sql(sql)
 
     def _init_table_hash160(self):
-        self._exec_sql_list([
-            "create table if not exists HASH160 (hash160 blob primary key, path text, fingerprint blob)",
-        ])
+        self._exec_sql_list(
+            [
+                "create table if not exists HASH160 (hash160 blob primary key, path text, fingerprint blob)",
+            ]
+        )
 
     def _init_table_p2s(self):
-        self._exec_sql_list([
-            "create table if not exists P2S (hash160 blob primary key, hash256 blob, script blob)",
-            "create index if not exists P2S_H256 on P2S (hash256)",
-        ])
+        self._exec_sql_list(
+            [
+                "create table if not exists P2S (hash160 blob primary key, hash256 blob, script blob)",
+                "create index if not exists P2S_H256 on P2S (hash256)",
+            ]
+        )
 
     def _init_tables(self):
         self._init_table_hash160()
@@ -51,7 +55,12 @@ class Keychain(object):
         for key in keys:
             fingerprint = key.fingerprint()
             hash160 = key.subkey_for_path(path).hash160()
-            self._exec_sql("insert or ignore into HASH160 values (?, ?, ?)", hash160, path, fingerprint)
+            self._exec_sql(
+                "insert or ignore into HASH160 values (?, ?, ?)",
+                hash160,
+                path,
+                fingerprint,
+            )
             total += 1
         return total
 
@@ -60,7 +69,12 @@ class Keychain(object):
         total = 0
         for path in path_iterator:
             hash160 = key.subkey_for_path(path).hash160()
-            self._exec_sql("insert or ignore into HASH160 values (?, ?, ?)", hash160, path, fingerprint)
+            self._exec_sql(
+                "insert or ignore into HASH160 values (?, ?, ?)",
+                hash160,
+                path,
+                fingerprint,
+            )
             total += 1
         return total
 
@@ -93,7 +107,12 @@ class Keychain(object):
         public_pair = key.public_pair()
         for is_compressed in (True, False):
             hash160 = key.hash160(is_compressed=is_compressed)
-            self._secret_exponent_cache[hash160] = (secret_exponent, public_pair, is_compressed, key._generator)
+            self._secret_exponent_cache[hash160] = (
+                secret_exponent,
+                public_pair,
+                is_compressed,
+                key._generator,
+            )
 
     def get(self, hash160, default=None):
         v = self.p2s_for_hash(hash160)

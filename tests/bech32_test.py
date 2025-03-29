@@ -1,6 +1,6 @@
 import unittest
 
-from pycoin.contrib.bech32m import bech32_decode, bech32_encode, decode, encode, Encoding
+from pycoin.contrib.bech32m import bech32_decode, bech32_encode, decode, Encoding
 from pycoin.encoding.hexbytes import b2h
 
 
@@ -25,20 +25,20 @@ class Bech32Test(unittest.TestCase):
             self.assertEqual(_.lower(), encoded)
 
         INVALID = [
-            "\x201xj0phk", # : HRP character out of range
-            "\x7f1g6xzxy", # : HRP character out of range
-            "\x801vctc34", # : HRP character out of range
-            "an84characterslonghumanreadablepartthatcontainsthetheexcludedcharactersbioandnumber11d6pts4", # : overall max length exceeded
-            "qyrz8wqd2c9m", # : No separator character
-            "1qyrz8wqd2c9m", # : Empty HRP
-            "y1b0jsk6g", # : Invalid data character
-            "lt1igcx5c0", # : Invalid data character
-            "in1muywd", # : Too short checksum
-            "mm1crxm3i", # : Invalid character in checksum
-            "au1s5cgom", # : Invalid character in checksum
-            "M1VUXWEZ", # : checksum calculated with uppercase form of HRP
-            "16plkw9", # : empty HRP
-            "1p2gdwpf", # : e
+            "\x201xj0phk",  # : HRP character out of range
+            "\x7f1g6xzxy",  # : HRP character out of range
+            "\x801vctc34",  # : HRP character out of range
+            "an84characterslonghumanreadablepartthatcontainsthetheexcludedcharactersbioandnumber11d6pts4",  # : overall max length exceeded
+            "qyrz8wqd2c9m",  # : No separator character
+            "1qyrz8wqd2c9m",  # : Empty HRP
+            "y1b0jsk6g",  # : Invalid data character
+            "lt1igcx5c0",  # : Invalid data character
+            "in1muywd",  # : Too short checksum
+            "mm1crxm3i",  # : Invalid character in checksum
+            "au1s5cgom",  # : Invalid character in checksum
+            "M1VUXWEZ",  # : checksum calculated with uppercase form of HRP
+            "16plkw9",  # : empty HRP
+            "1p2gdwpf",  # : e
         ]
         for _ in INVALID:
             hrp, data, spec = bech32_decode(_)

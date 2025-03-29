@@ -4,4 +4,6 @@ from pycoin.vm.ScriptTools import ScriptTools
 
 from .ScriptStreamer import BitcoinScriptStreamer
 
-BitcoinScriptTools = ScriptTools(opcodes.OPCODE_LIST, IntStreamer, BitcoinScriptStreamer)
+BitcoinScriptTools = ScriptTools(
+    opcodes.OPCODE_LIST, IntStreamer, BitcoinScriptStreamer
+)

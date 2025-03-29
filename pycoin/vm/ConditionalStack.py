@@ -1,4 +1,3 @@
-
 class ConditionalStack(object):
     def __init__(self, error_f):
         self.true_count = 0

@@ -39,7 +39,9 @@ class BlockcypherProvider(object):
             script = h2b(txn.get("script"))
             previous_hash = h2b_rev(txn.get("tx_hash"))
             previous_index = txn.get("tx_output_n")
-            spendables.append(Tx.Spendable(coin_value, script, previous_hash, previous_index))
+            spendables.append(
+                Tx.Spendable(coin_value, script, previous_hash, previous_index)
+            )
         return spendables
 
     def tx_for_tx_hash(self, tx_hash):
@@ -70,5 +72,7 @@ class BlockcypherProvider(object):
         """
         url = self.base_url("txs/push")
         data = {"tx": tx.as_hex()}
-        result = json.loads(urlopen(url, data=json.dumps(data).encode("utf8")).read().decode("utf8"))
+        result = json.loads(
+            urlopen(url, data=json.dumps(data).encode("utf8")).read().decode("utf8")
+        )
         return result

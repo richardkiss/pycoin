@@ -3,10 +3,18 @@ import unittest
 
 from pycoin.encoding.hexbytes import h2b
 from pycoin.message.make_parser_and_packer import (
-    make_parser_and_packer, standard_messages, standard_message_post_unpacks,
-    standard_parsing_functions, standard_streamer
+    make_parser_and_packer,
+    standard_messages,
+    standard_message_post_unpacks,
+    standard_parsing_functions,
+    standard_streamer,
 )
-from pycoin.message.PeerAddress import ip_bin_to_ip4_addr, ip_bin_to_ip6_addr, PeerAddress, IP4_HEADER
+from pycoin.message.PeerAddress import (
+    ip_bin_to_ip4_addr,
+    ip_bin_to_ip6_addr,
+    PeerAddress,
+    IP4_HEADER,
+)
 from pycoin.message.InvItem import InvItem, ITEM_TYPE_BLOCK, ITEM_TYPE_TX
 from pycoin.symbols.btc import network
 
@@ -23,13 +31,21 @@ def from_bin(cls, blob):
 
 
 class MessageTest(unittest.TestCase):
-
     def test_make_parser_and_packer(self):
-        streamer = standard_streamer(standard_parsing_functions(network.block, network.tx))
+        streamer = standard_streamer(
+            standard_parsing_functions(network.block, network.tx)
+        )
         btc_parser, btc_packer = make_parser_and_packer(
-            streamer, standard_messages(), standard_message_post_unpacks(streamer))
-        parser, packer = make_parser_and_packer(streamer, standard_messages(), standard_message_post_unpacks(streamer))
-        cases = [("verack", {}), ("ping", dict(nonce=1929)), ("pong", dict(nonce=18373))]
+            streamer, standard_messages(), standard_message_post_unpacks(streamer)
+        )
+        parser, packer = make_parser_and_packer(
+            streamer, standard_messages(), standard_message_post_unpacks(streamer)
+        )
+        cases = [
+            ("verack", {}),
+            ("ping", dict(nonce=1929)),
+            ("pong", dict(nonce=18373)),
+        ]
         for msg_name, kwargs in cases:
             data = packer(msg_name, **kwargs)
             v = parser(msg_name, data)
@@ -38,7 +54,7 @@ class MessageTest(unittest.TestCase):
     def test_ipv6(self):
         self.assertEqual(
             ip_bin_to_ip6_addr(h2b("2607f8b04006080a000000000000200e")),
-            "2607:f8b0:4006:80a:0:0:0:200e"
+            "2607:f8b0:4006:80a:0:0:0:200e",
         )
 
     def test_ipv4(self):
@@ -65,8 +81,8 @@ class MessageTest(unittest.TestCase):
         self.assertEqual(pa_v6.host(), "2607:f8b0:4006:80a:0:0:0:200e")
 
     def test_InvItem(self):
-        ii0 = InvItem(ITEM_TYPE_TX, b'\0' * 32)
-        ii1 = InvItem(ITEM_TYPE_BLOCK, b'\0' * 32)
+        ii0 = InvItem(ITEM_TYPE_TX, b"\0" * 32)
+        ii1 = InvItem(ITEM_TYPE_BLOCK, b"\0" * 32)
         self.assertTrue(ii0 < ii1)
         self.assertTrue(ii1 > ii0)
         self.assertTrue(ii0 <= ii1)
