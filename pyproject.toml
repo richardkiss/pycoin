@@ -4,6 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pycoin"
+dynamic = ["version"]
 authors = [
     {name = "Richard Kiss", email = "him@richardkiss.com"}
 ]

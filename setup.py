@@ -6,6 +6,7 @@ with open("README.md", "rt") as fh:
     long_description = fh.read()
 
 setup(
+    use_scm_version=True,
     name="pycoin",
     packages=[
         "pycoin",
