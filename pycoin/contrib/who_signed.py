@@ -29,7 +29,6 @@ class WhoSigned(object):
             yield s
 
     def _handle_checksig(self, vmc):
-        s = list(vmc.stack)
         sec_blob = sig_blob = None
         sig_hash = 0
         try:

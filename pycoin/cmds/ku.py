@@ -207,8 +207,6 @@ def ku(args, parser):
         if override_network:
             key = key.override_network(override_network)
 
-        display_network = override_network or key._network or fallback_network
-
         if hasattr(key, "subkeys"):
             key_iter = key.subkeys(args.subkey)
         else:

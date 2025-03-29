@@ -7,6 +7,9 @@ from pycoin.solve.constraints import Atom, Operator, make_traceback_f
 from pycoin.solve.ConstraintSolver import SolvingError, ConstraintSolver
 from pycoin.solve.some_solvers import register_all
 
+from .ScriptTools import BitcoinScriptTools
+from .SolutionChecker import BitcoinSolutionChecker
+
 
 def generate_default_placeholder_signature(generator):
     return h2b(
@@ -180,9 +183,6 @@ class Solver(object):
 
 BitcoinConstraintSolver = ConstraintSolver()
 register_all(BitcoinConstraintSolver)
-
-from .ScriptTools import BitcoinScriptTools
-from .SolutionChecker import BitcoinSolutionChecker
 
 
 class BitcoinSolver(Solver):

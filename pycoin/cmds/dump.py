@@ -79,16 +79,15 @@ def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly
 def dump_disassembly(output, tx, tx_in_idx, annotate):
     for (pre_annotations, pc, opcode, instruction, post_annotations) in \
             annotate.annotate_scripts(tx, tx_in_idx):
-        for l in pre_annotations:
-            output.append("           %s" % l)
+        for length in pre_annotations:
+            output.append("           %s" % length)
         if 1:
             output.append("    %4x: %02x  %s" % (pc, opcode, instruction))
-        for l in post_annotations:
-            output.append("           %s" % l)
+        for length in post_annotations:
+            output.append("           %s" % length)
 
 
 def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
-    sc = tx.SolutionChecker(tx)
     signatures = [parse_signature_blob(blob) + (sig_hash, ) for blob, sig_hash in network.who_signed.extract_signatures(tx, idx)]
     if signatures:
         sig_types_identical = (
@@ -131,11 +130,11 @@ def dump_tx(output, tx, network, verbose_signature, disassembly_level, do_trace,
         if disassembly_level > 0:
             for (pre_annotations, pc, opcode, instruction, post_annotations) in \
                     network.annotate.annotate_spendable(tx.__class__, tx_out):
-                for l in pre_annotations:
-                    output.append("           %s" % l)
+                for length in pre_annotations:
+                    output.append("           %s" % length)
                 if 1:
                     output.append("    %4x: %02x  %s" % (pc, opcode, instruction))
-                for l in post_annotations:
-                    output.append("           %s" % l)
+                for length in post_annotations:
+                    output.append("           %s" % length)
 
     dump_footer(network, output, tx, missing_unspents)

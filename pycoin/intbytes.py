@@ -20,11 +20,12 @@ import itertools
 import operator
 import struct
 
-if bytes == str:
-    iterbytes = functools.partial(itertools.imap, ord)
+if bytes is str:
+    iterbytes = functools.partial(itertools.imap, ord)  # lint:ok
 
     def indexbytes(buf, i):
         return ord(buf[i])
+
     int2byte = chr
 
     def byte2int(bs):

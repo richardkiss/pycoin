@@ -51,4 +51,4 @@ BLOCK_BLOB = h2b(
 
 class LTCMWebTestCase(unittest.TestCase):
     def test_parse_block(self):
-        block = network.Block.from_bin(BLOCK_BLOB)
+        _block = network.Block.from_bin(BLOCK_BLOB)

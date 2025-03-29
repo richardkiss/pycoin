@@ -313,9 +313,9 @@ def parse_scripts(args, keychain):
     hex_re = re.compile(r"[0-9a-fA-F]+")
     for f in args.pay_to_script_file or []:
         count = 0
-        for l in f:
+        for length in f:
             try:
-                m = hex_re.search(l)
+                m = hex_re.search(length)
                 if m:
                     p2s = m.group(0)
                     keychain.add_p2s_script(h2b(p2s))

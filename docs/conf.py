@@ -37,7 +37,7 @@ tests_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
 if tests_path not in sys.path:
     sys.path.append(tests_path)
 
-import pycoin
+import pycoin  # noqa
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

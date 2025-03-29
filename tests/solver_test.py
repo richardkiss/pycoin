@@ -98,7 +98,7 @@ class SolverTest(unittest.TestCase):
         self.do_test_tx(script, p2sh_lookup=network.tx.solve.build_p2sh_lookup([underlying_script, p2sh_script]))
 
     def test_if(self):
-        script = network.script.compile("IF 1 ELSE 0 ENDIF")
+        _script = network.script.compile("IF 1 ELSE 0 ENDIF")
         # self.do_test_tx(script)
 
     def test_p2multisig_incremental(self):
