@@ -63,4 +63,12 @@ setup(
         'Topic :: Internet',
         'Topic :: Security :: Cryptography',
         'Topic :: Software Development :: Libraries :: Python Modules',
-    ],)
+    ],
+    extras_require={
+        'dev': [
+            'pytest',
+            'ruff',
+            'mypy',
+        ],
+    },
+)
