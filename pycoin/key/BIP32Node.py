@@ -24,7 +24,6 @@ from ..encoding.exceptions import EncodingError
 from ..encoding.sec import sec_to_public_pair
 from .HierarchicalKey import HierarchicalKey
 from .bip32 import subkey_public_pair_chain_code_pair, subkey_secret_exponent_chain_code_pair
-from .subpaths import subpaths_for_path_range
 
 
 class PublicPrivateMismatchError(Exception):

@@ -8,7 +8,6 @@ from pycoin.contrib.msg_signing import MessageSigner
 from pycoin.contrib.who_signed import WhoSigned
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.b58 import b2a_hashed_base58
-from pycoin.key.HDSeed import HDSeed
 from pycoin.key.Keychain import Keychain
 from pycoin.key.Key import Key, InvalidSecretExponentError, InvalidPublicPairError
 from pycoin.key.BIP32Node import BIP32Node

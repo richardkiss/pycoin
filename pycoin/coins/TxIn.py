@@ -5,16 +5,16 @@ class TxIn(object):
 
     @classmethod
     def parse(class_, f):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def __init__(self, *args, **kwargs):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def stream(self, f):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def __str__(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 """

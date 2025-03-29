@@ -1,4 +1,4 @@
-from ..encoding.sec import is_sec, public_pair_to_hash160_sec, sec_to_public_pair, EncodingError
+from ..encoding.sec import public_pair_to_hash160_sec, sec_to_public_pair, EncodingError
 
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.intbytes import byte2int

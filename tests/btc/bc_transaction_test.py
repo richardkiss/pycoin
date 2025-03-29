@@ -90,7 +90,7 @@ def make_f(tx, flag_mask, comments, expect_ok=True):
                     import pdb
                     pdb.set_trace()
                 tx.check_solution(tx_in_idx=tx_in_idx, flags=flag_mask)
-            except tx.SolutionChecker.ScriptError as se:
+            except tx.SolutionChecker.ScriptError:
                 bs += 1
         if bs > 0:
             why = "bad sig count = %d" % bs

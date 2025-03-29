@@ -49,7 +49,7 @@ class VM(object):
             raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)
 
     def pop_int(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def pop_nonnegative(self):
         v = self.pop_int()
@@ -58,19 +58,19 @@ class VM(object):
         return v
 
     def push_int(self, v):
-        raise NotImplemented
+        raise NotImplementedError
 
     @classmethod
     def bool_from_script_bytes(class_, v, require_minimal=False):
-        raise NotImplemented
+        raise NotImplementedError
 
     @classmethod
     def bool_to_script_bytes(class_, v):
-        raise NotImplemented
+        raise NotImplementedError
 
     @classmethod
     def generator_for_signature_type(class_, signature_type):
-        raise NotImplemented
+        raise NotImplementedError
 
     def eval_script(self):
         if len(self.script) > self.MAX_SCRIPT_LENGTH:

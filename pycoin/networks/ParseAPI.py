@@ -2,7 +2,6 @@ from .parseable_str import parse_b58_double_sha256, parse_bech32, parse_colon_pr
 
 from pycoin.contrib import bech32m
 from pycoin.encoding.bytes32 import from_bytes_32
-from pycoin.intbytes import int2byte
 from pycoin.encoding.hexbytes import b2h, h2b
 
 from .Contract import Contract
