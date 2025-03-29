@@ -12,24 +12,24 @@ def public_pair_to_sec(public_pair, compressed=True):
     if compressed:
         return int2byte((2 + (public_pair[1] & 1))) + x_str
     y_str = to_bytes_32(public_pair[1])
-    return b'\4' + x_str + y_str
+    return b"\4" + x_str + y_str
 
 
 def sec_to_public_pair(sec, generator=None, strict=True):
     """Convert a public key in sec binary format to a public pair."""
     byte_count = (generator.p().bit_length() + 7) >> 3 if generator else (len(sec) - 1)
-    x = from_bytes_32(sec[1:1 + byte_count])
+    x = from_bytes_32(sec[1 : 1 + byte_count])
     sec0 = sec[:1]
     if len(sec) == 1 + byte_count * 2:
-        isok = sec0 == b'\4'
+        isok = sec0 == b"\4"
         if not strict:
-            isok = isok or (sec0 in [b'\6', b'\7'])
+            isok = isok or (sec0 in [b"\6", b"\7"])
         if isok:
-            y = from_bytes_32(sec[1+byte_count:1+2*byte_count])
+            y = from_bytes_32(sec[1 + byte_count : 1 + 2 * byte_count])
             return (x, y)
     elif len(sec) == 1 + byte_count:
-        if not strict or (sec0 in (b'\2', b'\3')):
-            is_y_odd = (sec0 != b'\2')
+        if not strict or (sec0 in (b"\2", b"\3")):
+            is_y_odd = sec0 != b"\2"
             return generator.points_for_x(x)[is_y_odd]
     raise EncodingError("bad sec encoding for public key")
 
@@ -37,14 +37,14 @@ def sec_to_public_pair(sec, generator=None, strict=True):
 def is_sec(sec):
     c = sec[:1]
     size = len(sec)
-    if c in (b'\2', b'\3') and size == 33:
+    if c in (b"\2", b"\3") and size == 33:
         return True
-    return c == b'\4' and size == 65
+    return c == b"\4" and size == 65
 
 
 def is_sec_compressed(sec):
     """Return a boolean indicating if the sec represents a compressed public key."""
-    return sec[:1] in (b'\2', b'\3')
+    return sec[:1] in (b"\2", b"\3")
 
 
 def public_pair_to_hash160_sec(public_pair, compressed=True):

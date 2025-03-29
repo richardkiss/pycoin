@@ -12,7 +12,9 @@ class WhoSigned(object):
         self._address = address_api
         self._generator = generator
         for _ in "CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():
-            setattr(self, "OP_%s" % _, byte2int(self._script_tools.compile('OP_%s' % _)))
+            setattr(
+                self, "OP_%s" % _, byte2int(self._script_tools.compile("OP_%s" % _))
+            )
 
     def solution_blobs(self, tx, tx_in_idx):
         """
@@ -22,7 +24,12 @@ class WhoSigned(object):
         tx_context = sc.tx_context_for_idx(tx_in_idx)
         # set solution_stack in case there are no results from puzzle_and_solution_iterator
         solution_stack = []
-        for puzzle_script, solution_stack, flags, sighash_f in sc.puzzle_and_solution_iterator(tx_context):
+        for (
+            puzzle_script,
+            solution_stack,
+            flags,
+            sighash_f,
+        ) in sc.puzzle_and_solution_iterator(tx_context):
             pass
             # we only care about the last one
         for s in solution_stack:
@@ -71,12 +78,16 @@ class WhoSigned(object):
         return (sec_blobs, sig_blobs)
 
     def extract_secs(self, tx, tx_in_idx):
-        for sec_blobs, sig_and_hash_pairs in self.extract_secs_and_signatures(tx, tx_in_idx):
+        for sec_blobs, sig_and_hash_pairs in self.extract_secs_and_signatures(
+            tx, tx_in_idx
+        ):
             for blob in sec_blobs:
                 yield blob
 
     def extract_signatures(self, tx, tx_in_idx):
-        for sec_blobs, sig_and_hash_pairs in self.extract_secs_and_signatures(tx, tx_in_idx):
+        for sec_blobs, sig_and_hash_pairs in self.extract_secs_and_signatures(
+            tx, tx_in_idx
+        ):
             for sig_blob, sig_hash in sig_and_hash_pairs:
                 try:
                     sig_pair, sig_type = parse_signature_blob(sig_blob)
@@ -92,6 +103,7 @@ class WhoSigned(object):
         tx_context = sc.tx_context_for_idx(tx_in_idx)
 
         blobs_for_sig_ops = []
+
         def traceback_f(opcode, data, pc, vmc):
             if opcode in (self.OP_CHECKSIG, self.OP_CHECKSIGVERIFY):
                 blobs_for_sig_ops.append(self._handle_checksig(vmc))
@@ -142,6 +154,8 @@ class WhoSigned(object):
         """
         public_pair_sig_type_list = self.public_pairs_signed(tx, tx_in_idx)
         sig_type_list = [pp[-1] for pp in public_pair_sig_type_list]
-        hash160_list = [public_pair_to_hash160_sec(pp[0]) for pp in public_pair_sig_type_list]
+        hash160_list = [
+            public_pair_to_hash160_sec(pp[0]) for pp in public_pair_sig_type_list
+        ]
         address_list = [self._address.for_p2pkh(h160) for h160 in hash160_list]
         return list(zip(address_list, sig_type_list))

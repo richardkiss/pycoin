@@ -7,26 +7,42 @@ import sqlite3
 import sys
 
 from pycoin.key.subpaths import subpaths_for_path_range
-from pycoin.networks.registry import (
-    network_codes, network_for_netcode
-)
+from pycoin.networks.registry import network_codes, network_for_netcode
 
 
 def create_parser():
     codes = network_codes()
     parser = argparse.ArgumentParser(
         description=(
-            'Cache look-up information into a Keychain for use with tx. '
-            'Useful for hiearchical keys with many children.'),
-        epilog=('Known networks codes:\n  ' +
-                ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
+            "Cache look-up information into a Keychain for use with tx. "
+            "Useful for hiearchical keys with many children."
+        ),
+        epilog=(
+            "Known networks codes:\n  "
+            + ", ".join(
+                ["%s (%s)" % (i, network_for_netcode(i).full_name()) for i in codes]
+            )
+        ),
     )
-    parser.add_argument('-n', "--netcode", help='specify network by netcode', choices=codes, default="BTC")
-    parser.add_argument('-m', "--multisig", metavar="sigcount", type=int,
-                        help='multisig, with this many signatures need to unencumber the funds')
-    parser.add_argument('keychain', help='the keychain file (SQLite3 formatted)')
-    parser.add_argument('subkey_paths', help='subkey paths (example: 0H/2/15-20)')
-    parser.add_argument('key', nargs="+", help='a hierarchical wallet key string (public suffices)')
+    parser.add_argument(
+        "-n",
+        "--netcode",
+        help="specify network by netcode",
+        choices=codes,
+        default="BTC",
+    )
+    parser.add_argument(
+        "-m",
+        "--multisig",
+        metavar="sigcount",
+        type=int,
+        help="multisig, with this many signatures need to unencumber the funds",
+    )
+    parser.add_argument("keychain", help="the keychain file (SQLite3 formatted)")
+    parser.add_argument("subkey_paths", help="subkey paths (example: 0H/2/15-20)")
+    parser.add_argument(
+        "key", nargs="+", help="a hierarchical wallet key string (public suffices)"
+    )
     return parser
 
 
@@ -69,5 +85,5 @@ def main():
     keychain(args, parser)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

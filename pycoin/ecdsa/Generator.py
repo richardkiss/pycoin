@@ -23,6 +23,7 @@ class Generator(Curve, Point):
     The constructor raises :class:`NoSuchPointError` if the point is invalid.
     The point at infinity is ``(x, y) == (None, None)``.
     """
+
     def __new__(self, p, a, b, basis, order):
         # since Generator extends tuple (via Point), we need to override __new__
         return tuple.__new__(self, basis)

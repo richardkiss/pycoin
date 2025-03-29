@@ -32,17 +32,17 @@ setup(
         "pycoin.solve",
         "pycoin.symbols",
         "pycoin.vm",
-        "pycoin.wallet"
+        "pycoin.wallet",
     ],
     entry_points={
-        'console_scripts': [
-            'block = pycoin.cmds.block:main',
-            'ku = pycoin.cmds.ku:main',
-            'tx = pycoin.cmds.tx:main',
-            'msg = pycoin.cmds.msg:main',
-            'keychain = pycoin.cmds.keychain:main',
-            'b58 = pycoin.cmds.b58:main',
-            'coinc = pycoin.cmds.coinc:main',
+        "console_scripts": [
+            "block = pycoin.cmds.block:main",
+            "ku = pycoin.cmds.ku:main",
+            "tx = pycoin.cmds.tx:main",
+            "msg = pycoin.cmds.msg:main",
+            "keychain = pycoin.cmds.keychain:main",
+            "b58 = pycoin.cmds.b58:main",
+            "coinc = pycoin.cmds.coinc:main",
         ]
     },
 )

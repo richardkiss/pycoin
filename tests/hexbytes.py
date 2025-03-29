@@ -4,7 +4,6 @@ from pycoin.encoding.hexbytes import h2b, h2b_rev, b2h, b2h_rev
 
 
 class HexbytesTest(unittest.TestCase):
-
     def test_h2b(self):
         h = "000102"
         b = b"\x00\x01\x02"
@@ -14,5 +13,5 @@ class HexbytesTest(unittest.TestCase):
         self.assertEqual(b2h_rev(b), "020100")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

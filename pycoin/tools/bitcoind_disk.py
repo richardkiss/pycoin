@@ -39,11 +39,15 @@ class Blockfiles(object):
         self.f.close()
 
     def default_base(self):
-        LOOKUP = dict(Darwin="~/Library/Application Support/Bitcoin/", Linux="~/.bitcoin/")
+        LOOKUP = dict(
+            Darwin="~/Library/Application Support/Bitcoin/", Linux="~/.bitcoin/"
+        )
         system = platform.system()
         path = LOOKUP.get(system)
         if path is None:
-            raise ValueError("unknown base path for system %s; you should submit a patch!" % system)
+            raise ValueError(
+                "unknown base path for system %s; you should submit a patch!" % system
+            )
         return os.path.expanduser(path)
 
     def read(self, N):
@@ -51,7 +55,7 @@ class Blockfiles(object):
         if len(d) >= N:
             return d
         if self._next_file():
-            d1 = d + self.f.read(N-len(d))
+            d1 = d + self.f.read(N - len(d))
             return d1
         return b""
 
@@ -101,7 +105,9 @@ class Blockfiles(object):
         return self._file_index, self.f.tell()
 
 
-def locked_blocks_iterator(blockfile, start_info=(0, 0), cached_headers=50, batch_size=50):
+def locked_blocks_iterator(
+    blockfile, start_info=(0, 0), cached_headers=50, batch_size=50
+):
     """
     This method loads blocks from disk, skipping any orphan blocks.
     """
@@ -110,11 +116,12 @@ def locked_blocks_iterator(blockfile, start_info=(0, 0), cached_headers=50, batc
 
     def change_state(bc, ops):
         for op, bh, work in ops:
-            if op == 'add':
+            if op == "add":
                 current_state.append(bh)
                 pass
             else:
                 current_state.pop()
+
     bc = BlockChain()
     bc.add_change_callback(change_state)
     bhs = []

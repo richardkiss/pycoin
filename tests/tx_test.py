@@ -14,41 +14,63 @@ TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX = (
     "0bd8450a5723a05c1c89ff2d85230d2e62c0c7690b8272cf85868a0a0fc02f99a5b793"
     "f22d5c7092ffffffff02bb5b0700000000001976a9145b78716d137e386ae2befc4296"
     "d938372559f37888acdd3c71000000000017a914c6572ee1c85a1b9ce1921753871bda"
-    "0b5ce889ac8700000000")
+    "0b5ce889ac8700000000"
+)
 
 
 address_for_script = network.address.for_script
 
 
 class TxTest(unittest.TestCase):
-
     def test_tx_api(self):
-        tx = Tx.from_hex(TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX)
+        tx = Tx.from_hex(
+            TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX
+        )
         # this transaction is a pay-to-hash transaction
-        self.assertEqual(tx.id(), "e1a18b843fc420734deeb68ff6df041a2585e1a0d7dbf3b82aab98291a6d9952")
+        self.assertEqual(
+            tx.id(), "e1a18b843fc420734deeb68ff6df041a2585e1a0d7dbf3b82aab98291a6d9952"
+        )
         address = address_for_script(tx.txs_out[0].puzzle_script())
         self.assertEqual(address, "19LemzJ3XPdUxp113uynqCAivDbXZBdBy3")
         address = address_for_script(tx.txs_out[1].puzzle_script())
         self.assertEqual(address, "3KmkA7hvqG2wKkWUGz1BySioUywvcmdPLR")
 
     def test_blanked_hash(self):
-        tx = Tx.from_hex(TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX)
-        self.assertEqual(tx.id(), "e1a18b843fc420734deeb68ff6df041a2585e1a0d7dbf3b82aab98291a6d9952")
+        tx = Tx.from_hex(
+            TX_E1A18B843FC420734DEEB68FF6DF041A2585E1A0D7DBF3B82AAB98291A6D9952_HEX
+        )
         self.assertEqual(
-            b2h(tx.blanked_hash()), "909579526c4c2c441687c7478d3f96249724d2ff071d2272b44500d6cf70d5d6")
+            tx.id(), "e1a18b843fc420734deeb68ff6df041a2585e1a0d7dbf3b82aab98291a6d9952"
+        )
+        self.assertEqual(
+            b2h(tx.blanked_hash()),
+            "909579526c4c2c441687c7478d3f96249724d2ff071d2272b44500d6cf70d5d6",
+        )
         tx.txs_in[0].script = b"foo"
         self.assertEqual(
-            b2h(tx.blanked_hash()), "909579526c4c2c441687c7478d3f96249724d2ff071d2272b44500d6cf70d5d6")
+            b2h(tx.blanked_hash()),
+            "909579526c4c2c441687c7478d3f96249724d2ff071d2272b44500d6cf70d5d6",
+        )
         tx.txs_out[0].coin_value += 1
         self.assertEqual(
-            b2h(tx.blanked_hash()), "10d4e87f7bf35f2949e7693e7a4a84189aad8631f0b2b0999e88f7261066cbe5")
+            b2h(tx.blanked_hash()),
+            "10d4e87f7bf35f2949e7693e7a4a84189aad8631f0b2b0999e88f7261066cbe5",
+        )
         tx.txs_in[0].script = b"bar"
         self.assertEqual(
-            b2h(tx.blanked_hash()), "10d4e87f7bf35f2949e7693e7a4a84189aad8631f0b2b0999e88f7261066cbe5")
+            b2h(tx.blanked_hash()),
+            "10d4e87f7bf35f2949e7693e7a4a84189aad8631f0b2b0999e88f7261066cbe5",
+        )
         tx.txs_in[0].script = b""
-        self.assertEqual(b2h(tx.hash()), "10d4e87f7bf35f2949e7693e7a4a84189aad8631f0b2b0999e88f7261066cbe5")
+        self.assertEqual(
+            b2h(tx.hash()),
+            "10d4e87f7bf35f2949e7693e7a4a84189aad8631f0b2b0999e88f7261066cbe5",
+        )
         tx.txs_in[0].script = b"foo"
-        self.assertEqual(b2h(tx.hash()), "c91910058722f1c0f52fc5c734939053c9b87882a9c72b609f21632e0bd13751")
+        self.assertEqual(
+            b2h(tx.hash()),
+            "c91910058722f1c0f52fc5c734939053c9b87882a9c72b609f21632e0bd13751",
+        )
 
     def test_issue_39(self):
         """
@@ -175,23 +197,28 @@ class TxTest(unittest.TestCase):
                 "rTbE1VNMhxALbOWEYeu0bvtW4isAAAAAA=="
             ),
             (  # 3c9018e8d5615c306d72397f8f5eef44308c98fb576a88e030c25456b4f3a7ac
-               # input of
-               # 837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba
+                # input of
+                # 837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba
                 "AQAAAAGJYyhI+ZcikVcnxcddqNstvxlDQqBCmCj2b/iPqyr31gAAAACLSDBFA"
                 "iEAq7yKc/4gVEgL2j8ygdotDFHihBORq9TAn0+QiiA0wY0CIFvJ5NaOr7kY8+"
                 "lmIzhkekQZwN4aZQq4mD8dIW4qMdjjAUEEb1XXre/2ARx+rClP5UDFeDC+gOk"
                 "1XIOGnJJgpLi/R2ema6y9cLgE3GPVvusUGAKSrX87CDNysdAtejfdl/9cnv//"
                 "//8BQEIPAAAAAAAXqRT4FbA22bu85enyoAq9G/PckelVEIcAAAAA"
-            )
+            ),
         ]
 
-        TX_LIST = [Tx.from_hex(b2h(binascii.a2b_base64(b64.encode("utf8")))) for b64 in TX_B64_LIST]
+        TX_LIST = [
+            Tx.from_hex(b2h(binascii.a2b_base64(b64.encode("utf8"))))
+            for b64 in TX_B64_LIST
+        ]
         TX_DB = dict((tx.hash(), tx) for tx in TX_LIST)
-        for h in ["315ac7d4c26d69668129cc352851d9389b4a6868f1509c6c8b66bead11e2619f",
-                  "dbf38261224ebff0c455c405e2435cfc69adb6b8a42d7b10674d9a4eb0464dca",
-                  "de744408e4198c0a39310c8106d1830206e8d8a5392bcf715c9b5ec97d784edd",
-                  "485716e53b422aca0fe5b1ded21360695ce5f49255d80e10db56458ed6962ff3",
-                  "837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba"]:
+        for h in [
+            "315ac7d4c26d69668129cc352851d9389b4a6868f1509c6c8b66bead11e2619f",
+            "dbf38261224ebff0c455c405e2435cfc69adb6b8a42d7b10674d9a4eb0464dca",
+            "de744408e4198c0a39310c8106d1830206e8d8a5392bcf715c9b5ec97d784edd",
+            "485716e53b422aca0fe5b1ded21360695ce5f49255d80e10db56458ed6962ff3",
+            "837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba",
+        ]:
             tx = TX_DB.get(h2b_rev(h))
             self.assertNotEqual(tx, None)
             tx.unspents_from_db(TX_DB)
@@ -204,7 +231,7 @@ def tx_to_b64(tx_hex):
     tx = Tx.from_hex(tx_hex)
     d = tx.as_bin()
     for idx in range(0, len(d), 45):
-        print('"%s"' % binascii.b2a_base64(d[idx:idx+45]).decode("utf8")[:-1])
+        print('"%s"' % binascii.b2a_base64(d[idx : idx + 45]).decode("utf8")[:-1])
 
 
 if __name__ == "__main__":

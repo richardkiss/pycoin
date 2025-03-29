@@ -8,13 +8,26 @@ from pycoin.networks.bitcoinish import create_bitcoinish_network
 
 
 network = create_bitcoinish_network(
-    symbol="GRSRT", network_name="Groestlcoin", subnet_name="regtest", tx=GrsTx, block=GrsBlock,
-    wif_prefix_hex="ef", sec_prefix="GRSRTSEC:", address_prefix_hex="6f", pay_to_script_prefix_hex="c4",
-    bip32_prv_prefix_hex="04358394", bip32_pub_prefix_hex="043587CF", bech32_hrp="grsrt",
-    bip49_prv_prefix_hex="044a4e28", bip49_pub_prefix_hex="044a5262",
-    bip84_prv_prefix_hex="045f18bc", bip84_pub_prefix_hex="045f1cf6",
-    magic_header_hex="0B110907", default_port=18888,
-    parse_api_class=GRSParseAPI)
+    symbol="GRSRT",
+    network_name="Groestlcoin",
+    subnet_name="regtest",
+    tx=GrsTx,
+    block=GrsBlock,
+    wif_prefix_hex="ef",
+    sec_prefix="GRSRTSEC:",
+    address_prefix_hex="6f",
+    pay_to_script_prefix_hex="c4",
+    bip32_prv_prefix_hex="04358394",
+    bip32_pub_prefix_hex="043587CF",
+    bech32_hrp="grsrt",
+    bip49_prv_prefix_hex="044a4e28",
+    bip49_pub_prefix_hex="044a5262",
+    bip84_prv_prefix_hex="045f18bc",
+    bip84_pub_prefix_hex="045f1cf6",
+    magic_header_hex="0B110907",
+    default_port=18888,
+    parse_api_class=GRSParseAPI,
+)
 
 # monkey patches
 _wif_prefix = h2b("ef")

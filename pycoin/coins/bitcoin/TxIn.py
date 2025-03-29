@@ -5,7 +5,7 @@ from pycoin.satoshi.satoshi_struct import parse_struct, stream_struct
 from .ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE
 
 
-ZERO = b'\0' * 32
+ZERO = b"\0" * 32
 
 
 class TxIn(object):
@@ -13,7 +13,7 @@ class TxIn(object):
     The part of a Tx that specifies where the Bitcoin comes from.
     """
 
-    def __init__(self, previous_hash, previous_index, script=b'', sequence=4294967295):
+    def __init__(self, previous_hash, previous_index, script=b"", sequence=4294967295):
         self.previous_hash = previous_hash
         self.previous_index = previous_index
         self.script = script
@@ -26,8 +26,10 @@ class TxIn(object):
         return tx
 
     def stream(self, f, blank_solutions=False):
-        script = b'' if blank_solutions else self.script
-        stream_struct("#LSL", f, self.previous_hash, self.previous_index, script, self.sequence)
+        script = b"" if blank_solutions else self.script
+        stream_struct(
+            "#LSL", f, self.previous_hash, self.previous_index, script, self.sequence
+        )
 
     @classmethod
     def parse(self, f):
@@ -59,9 +61,12 @@ class TxIn(object):
 
     def __str__(self):
         if self.is_coinbase():
-            return 'TxIn<COINBASE: %s>' % b2h(self.script)
+            return "TxIn<COINBASE: %s>" % b2h(self.script)
         return 'TxIn<%s[%d] "%s">' % (
-            b2h_rev(self.previous_hash), self.previous_index, ScriptTools.disassemble(self.script))
+            b2h_rev(self.previous_hash),
+            self.previous_index,
+            ScriptTools.disassemble(self.script),
+        )
 
 
 """

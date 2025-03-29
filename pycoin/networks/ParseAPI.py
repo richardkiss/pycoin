@@ -1,4 +1,9 @@
-from .parseable_str import parse_b58_double_sha256, parse_bech32, parse_colon_prefix, parseable_str
+from .parseable_str import (
+    parse_b58_double_sha256,
+    parse_bech32,
+    parse_colon_prefix,
+    parseable_str,
+)
 
 from pycoin.contrib import bech32m
 from pycoin.encoding.bytes32 import from_bytes_32
@@ -23,9 +28,20 @@ def hparse(api, pub_prv, key_type, s):
 
 class ParseAPI(object):
     def __init__(
-            self, network, bip32_prv_prefix=None, bip32_pub_prefix=None, bip49_prv_prefix=None,
-            bip49_pub_prefix=None, bip84_prv_prefix=None, bip84_pub_prefix=None, address_prefix=None,
-            pay_to_script_prefix=None, bech32_hrp=None, wif_prefix=None, sec_prefix=None):
+        self,
+        network,
+        bip32_prv_prefix=None,
+        bip32_pub_prefix=None,
+        bip49_prv_prefix=None,
+        bip49_pub_prefix=None,
+        bip84_prv_prefix=None,
+        bip84_pub_prefix=None,
+        address_prefix=None,
+        pay_to_script_prefix=None,
+        bech32_hrp=None,
+        wif_prefix=None,
+        sec_prefix=None,
+    ):
         self._network = network
         self._bip32_prv_prefix = bip32_prv_prefix
         self._bip32_pub_prefix = bip32_pub_prefix
@@ -208,8 +224,9 @@ class ParseAPI(object):
         Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         data = self.parse_b58_hashed(s)
-        if (None in (data, self._pay_to_script_prefix) or
-                not data.startswith(self._pay_to_script_prefix)):
+        if None in (data, self._pay_to_script_prefix) or not data.startswith(
+            self._pay_to_script_prefix
+        ):
             return None
         size = len(self._pay_to_script_prefix)
         script = self._network.contract.for_p2sh(data[size:])
@@ -293,8 +310,8 @@ class ParseAPI(object):
         data = self.parse_b58_hashed(s)
         if data is None or not data.startswith(self._wif_prefix):
             return None
-        data = data[len(self._wif_prefix):]
-        is_compressed = (len(data) > 32)
+        data = data[len(self._wif_prefix) :]
+        is_compressed = len(data) > 32
         if is_compressed:
             data = data[:-1]
         se = from_bytes_32(data)
@@ -329,7 +346,7 @@ class ParseAPI(object):
                 v0 = self.as_number(s0)
                 if v0:
                     if s1 in ("even", "odd"):
-                        is_y_odd = (s1 == "odd")
+                        is_y_odd = s1 == "odd"
                         point = generator.points_for_x(v0)[is_y_odd]
                     v1 = self.as_number(s1)
                     if v1:
@@ -359,7 +376,10 @@ class ParseAPI(object):
         """
         s = parseable_str(s)
         return (
-            self.p2pkh(s) or self.p2sh(s) or self.p2pkh_segwit(s) or self.p2sh_segwit(s)
+            self.p2pkh(s)
+            or self.p2sh(s)
+            or self.p2pkh_segwit(s)
+            or self.p2sh_segwit(s)
             or self.p2tr(s)
         )
 
@@ -378,8 +398,15 @@ class ParseAPI(object):
         Return a subclass of :class:`Key <pycoin.key.Key>`, or None.
         """
         s = parseable_str(s)
-        for f in [self.bip32_seed, self.bip32, self.bip49, self.bip84,
-                  self.electrum_seed, self.electrum_prv, self.electrum_pub]:
+        for f in [
+            self.bip32_seed,
+            self.bip32,
+            self.bip49,
+            self.bip84,
+            self.electrum_seed,
+            self.electrum_prv,
+            self.electrum_pub,
+        ]:
             v = f(s)
             if v:
                 return v
@@ -447,7 +474,4 @@ class ParseAPI(object):
 
     def __call__(self, s):
         s = parseable_str(s)
-        return (self.payable(s) or
-                self.input(s) or
-                self.secret(s) or
-                self.tx(s))
+        return self.payable(s) or self.input(s) or self.secret(s) or self.tx(s)

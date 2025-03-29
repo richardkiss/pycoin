@@ -23,7 +23,7 @@ from .Spendable import Spendable
 MAX_MONEY = 21000000 * SATOSHI_PER_COIN
 MAX_BLOCK_SIZE = 1000000
 
-ZERO32 = b'\0' * 32
+ZERO32 = b"\0" * 32
 
 
 class Tx(BaseTx):
@@ -39,7 +39,9 @@ class Tx(BaseTx):
     ALLOW_SEGWIT = True
 
     @classmethod
-    def coinbase_tx(cls, public_key_sec, coin_value, coinbase_bytes=b'', version=1, lock_time=0):
+    def coinbase_tx(
+        cls, public_key_sec, coin_value, coinbase_bytes=b"", version=1, lock_time=0
+    ):
         """Create the special "first in block" transaction that includes the mining fees."""
         tx_in = cls.TxIn.coinbase_tx_in(script=coinbase_bytes)
         COINBASE_SCRIPT_OUT = "%s OP_CHECKSIG"
@@ -58,15 +60,15 @@ class Tx(BaseTx):
         """
         if allow_segwit is None:
             allow_segwit = class_.ALLOW_SEGWIT
-        version, = parse_struct("L", f)
+        (version,) = parse_struct("L", f)
         v1 = ord(f.read(1))
         is_segwit = allow_segwit and (v1 == 0)
         v2 = None
         if is_segwit:
             flag = f.read(1)
-            if flag == b'\0':
+            if flag == b"\0":
                 raise ValueError("bad flag in segwit")
-            if flag == b'\1':
+            if flag == b"\1":
                 v1 = None
             else:
                 is_segwit = False
@@ -87,15 +89,18 @@ class Tx(BaseTx):
                 for i in range(count):
                     stack.append(parse_satoshi_string(f))
                 tx_in.witness = stack
-        lock_time, = parse_struct("L", f)
+        (lock_time,) = parse_struct("L", f)
         return class_(version, txs_in, txs_out, lock_time)
 
     @classmethod
     def tx_from_hex(cls, hex_string):
-        warnings.simplefilter('always', DeprecationWarning)
-        warnings.warn("Call to deprecated function tx_from_hex, use from_hex instead",
-                      category=DeprecationWarning, stacklevel=2)
-        warnings.simplefilter('default', DeprecationWarning)
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "Call to deprecated function tx_from_hex, use from_hex instead",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        warnings.simplefilter("default", DeprecationWarning)
         return cls.from_hex(hex_string)
 
     def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=None):
@@ -121,7 +126,13 @@ class Tx(BaseTx):
         for tx_out in self.txs_out:
             assert type(tx_out) is self.TxOut
 
-    def stream(self, f, blank_solutions=False, include_unspents=False, include_witness_data=True):
+    def stream(
+        self,
+        f,
+        blank_solutions=False,
+        include_unspents=False,
+        include_witness_data=True,
+    ):
         """Stream a Bitcoin transaction Tx to the file-like object f.
 
         :param f: writable file-like object to stream binary data of transaction
@@ -135,7 +146,7 @@ class Tx(BaseTx):
         include_witnesses = include_witness_data and self.has_witness_data()
         stream_struct("L", f, self.version)
         if include_witnesses:
-            f.write(b'\0\1')
+            f.write(b"\0\1")
         stream_struct("I", f, len(self.txs_in))
         for t in self.txs_in:
             t.stream(f, blank_solutions=blank_solutions)
@@ -212,7 +223,8 @@ class Tx(BaseTx):
         h = self.hash()
         return [
             self.Spendable.from_tx_out(tx_out, h, tx_out_index, block_index_available)
-            for tx_out_index, tx_out in enumerate(self.txs_out)]
+            for tx_out_index, tx_out in enumerate(self.txs_out)
+        ]
 
     def is_coinbase(self):
         return len(self.txs_in) == 1 and self.txs_in[0].is_coinbase()
@@ -222,8 +234,11 @@ class Tx(BaseTx):
 
     def __repr__(self):
         return "Tx [%s] (v:%d) [%s] [%s]" % (
-            self.id(), self.version, ", ".join(str(t) for t in self.txs_in),
-            ", ".join(str(t) for t in self.txs_out))
+            self.id(),
+            self.version,
+            ", ".join(str(t) for t in self.txs_in),
+            ", ".join(str(t) for t in self.txs_out),
+        )
 
     def _check_tx_inout_count(self):
         if not self.txs_out:
@@ -250,7 +265,7 @@ class Tx(BaseTx):
         # Check for duplicate inputs
         if [x for x in self.txs_in if self.txs_in.count(x) > 1]:
             raise ValidationFailureError("duplicate inputs")
-        if (self.is_coinbase()):
+        if self.is_coinbase():
             if not (2 <= len(self.txs_in[0].script) <= 100):
                 raise ValidationFailureError("bad coinbase script size")
         else:
@@ -298,7 +313,9 @@ class Tx(BaseTx):
                 unspents.append(None)
             else:
                 raise KeyError(
-                    "can't find tx_out for %s:%d" % (b2h_rev(tx_in.previous_hash), tx_in.previous_index))
+                    "can't find tx_out for %s:%d"
+                    % (b2h_rev(tx_in.previous_hash), tx_in.previous_index)
+                )
         self.unspents = unspents
 
     def missing_unspent(self, idx):
@@ -311,18 +328,21 @@ class Tx(BaseTx):
     def missing_unspents(self):
         if self.is_coinbase():
             return False
-        return (len(self.unspents) != len(self.txs_in) or
-                any(self.missing_unspent(idx) for idx, tx_in in enumerate(self.txs_in)))
+        return len(self.unspents) != len(self.txs_in) or any(
+            self.missing_unspent(idx) for idx, tx_in in enumerate(self.txs_in)
+        )
 
     def check_unspents(self):
         if self.missing_unspents():
-            raise ValueError("wrong number of unspents. Call unspents_from_db or set_unspents.")
+            raise ValueError(
+                "wrong number of unspents. Call unspents_from_db or set_unspents."
+            )
 
     def stream_unspents(self, f):
         self.check_unspents()
         for tx_out in self.unspents:
             if tx_out is None:
-                tx_out = self.TxOut(0, b'')
+                tx_out = self.TxOut(0, b"")
             tx_out.stream(f)
 
     def parse_unspents(self, f):
@@ -369,7 +389,10 @@ class Tx(BaseTx):
             if the_tx is None:
                 raise KeyError("hash id %s not in tx_db" % b2h_rev(h))
             if the_tx.hash() != h:
-                raise KeyError("attempt to load Tx %s yielded a Tx with id %s" % (h2b_rev(h), the_tx.id()))
+                raise KeyError(
+                    "attempt to load Tx %s yielded a Tx with id %s"
+                    % (h2b_rev(h), the_tx.id())
+                )
             tx_lookup[h] = the_tx
 
         for idx, tx_in in enumerate(self.txs_in):
@@ -377,14 +400,17 @@ class Tx(BaseTx):
                 continue
             txs_out = tx_lookup[tx_in.previous_hash].txs_out
             if tx_in.previous_index > len(txs_out):
-                raise BadSpendableError("tx_out index %d is too big for Tx %s" %
-                                        (tx_in.previous_index, b2h_rev(tx_in.previous_hash)))
+                raise BadSpendableError(
+                    "tx_out index %d is too big for Tx %s"
+                    % (tx_in.previous_index, b2h_rev(tx_in.previous_hash))
+                )
             tx_out1 = txs_out[tx_in.previous_index]
             tx_out2 = self.unspents[idx]
             if tx_out1.coin_value != tx_out2.coin_value:
                 raise BadSpendableError(
-                    "unspents[%d] coin value mismatch (%d vs %d)" % (
-                        idx, tx_out1.coin_value, tx_out2.coin_value))
+                    "unspents[%d] coin value mismatch (%d vs %d)"
+                    % (idx, tx_out1.coin_value, tx_out2.coin_value)
+                )
             if tx_out1.script != tx_out2.script:
                 raise BadSpendableError("unspents[%d] script mismatch!" % idx)
 

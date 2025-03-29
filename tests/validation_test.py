@@ -6,7 +6,6 @@ from pycoin.symbols.btc import network
 
 
 class ValidationTest(unittest.TestCase):
-
     def setUp(self):
         self._key = network.keys.private(1)
 
@@ -26,14 +25,19 @@ class ValidationTest(unittest.TestCase):
             "da782100f2b7816db49d55d24df7bdffdbc1e203b424e8cd39f5651ab938e5e4a19356"
             "9e52ae404b4c00000000004751210351efb6e91a31221652105d032a2508275f374cea"
             "63939ad72f1b1e02f477da7821004f0331742bbc917ba2056a3b8a857ea47ec088dd10"
-            "475ea311302112c9d24a7152ae")
+            "475ea311302112c9d24a7152ae"
+        )
         tx = network.tx.from_hex(TX_HEX)
-        self.assertEqual(tx.id(), "70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a")
+        self.assertEqual(
+            tx.id(), "70c4e749f2b8b907875d1483ae43e8a6790b0c8397bbb33682e3602617f9a77a"
+        )
         self.assertEqual(tx.bad_solution_count(), 0)
 
     def test_validate_block_data(self):
         # block 80971
-        block_80971_id = '00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC'.lower()
+        block_80971_id = (
+            "00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC".lower()
+        )
         block_80971_data = h2b(
             "01000000950A1631FB9FAC411DFB173487B9E18018B7C6F7147E78C062584100000000"
             "00A881352F97F14BF191B54915AE124E051B8FE6C3922C5082B34EAD503000FC34D891"
@@ -60,10 +64,13 @@ class ValidationTest(unittest.TestCase):
             "00004A493046022100FB23B1E2F2FB8B96E04D220D385346290A9349F89BBBC5C225D5"
             "A56D931F8A8E022100F298EB28294B90C1BAF319DAB713E7CA721AAADD8FCC15F849DE"
             "7B0A6CF5412101FFFFFFFF0100F2052A010000001976A9146DDEA8071439951115469D"
-            "0D2E2B80ECBCDD48DB88AC00000000")
+            "0D2E2B80ECBCDD48DB88AC00000000"
+        )
 
         # block 80974
-        block_80974_id = '0000000000089F7910F6755C10EA2795EC368A29B435D80770AD78493A6FECF1'.lower()
+        block_80974_id = (
+            "0000000000089F7910F6755C10EA2795EC368A29B435D80770AD78493A6FECF1".lower()
+        )
         block_80974_data = h2b(
             "010000007480150B299A16BBCE5CCDB1D1BBC65CFC5893B01E6619107C552000000000"
             "007900A2B203D24C69710AB6A94BEB937E1B1ADD64C2327E268D8C3E5F8B41DBED8796"
@@ -85,7 +92,8 @@ class ValidationTest(unittest.TestCase):
             "A38C05FA33DD185F84C17F611E58A8658CE996D8B04395B99C7BE36529CAB7606900A0"
             "CD5A7AEBC6B233EA8E0FE60943054C63620E05E5B85F0426FFFFFFFF02404B4C000000"
             "00001976A914D4CAA8447532CA8EE4C80A1AE1D230A01E22BFDB88AC8013A0DE010000"
-            "001976A9149661A79AE1F6D487AF3420C13E649D6DF3747FC288AC00000000")
+            "001976A9149661A79AE1F6D487AF3420C13E649D6DF3747FC288AC00000000"
+        )
 
         block_80971 = network.block.from_bin(block_80971_data)
         self.assertEqual(block_80971.id(), block_80971_id)
@@ -95,9 +103,14 @@ class ValidationTest(unittest.TestCase):
         tx_db = {tx.hash(): tx for tx in block_80971.txs}
 
         tx_to_validate = block_80974.txs[2]
-        self.assertEqual("OP_DUP OP_HASH160 [d4caa8447532ca8ee4c80a1ae1d230a01e22bfdb] OP_EQUALVERIFY OP_CHECKSIG",
-                         network.script.disassemble(tx_to_validate.txs_out[0].script))
-        self.assertEqual(tx_to_validate.id(), "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b")
+        self.assertEqual(
+            "OP_DUP OP_HASH160 [d4caa8447532ca8ee4c80a1ae1d230a01e22bfdb] OP_EQUALVERIFY OP_CHECKSIG",
+            network.script.disassemble(tx_to_validate.txs_out[0].script),
+        )
+        self.assertEqual(
+            tx_to_validate.id(),
+            "7c4f5385050c18aa8df2ba50da566bbab68635999cc99b75124863da1594195b",
+        )
 
         tx_to_validate.unspents_from_db(tx_db)
         self.assertEqual(tx_to_validate.bad_solution_count(), 0)
@@ -110,8 +123,10 @@ class ValidationTest(unittest.TestCase):
 
         self.assertEqual(tx_to_validate.bad_solution_count(), 0)
 
-        disassembly = disassembly.replace("9661a79ae1f6d487af3420c13e649d6df3747fc2",
-                                          "9661a79ae1f6d487af3420c13e649d6df3747fc3")
+        disassembly = disassembly.replace(
+            "9661a79ae1f6d487af3420c13e649d6df3747fc2",
+            "9661a79ae1f6d487af3420c13e649d6df3747fc3",
+        )
 
         tx_out.script = network.script.compile(disassembly)
 
@@ -122,6 +137,7 @@ class ValidationTest(unittest.TestCase):
         def tx_from_b64(h):
             d = binascii.a2b_base64(h.encode("utf8"))
             return network.tx.from_bin(d)
+
         # tx_0 = c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d
         # This is the one we're going to validate. It has inputs from
         #  tx_1 = b52201c2741d410b70688335afebba0d58f8675fa9b6c8c54becb0d7c0a75983
@@ -135,32 +151,49 @@ class ValidationTest(unittest.TestCase):
             "0U1i9yiCEm75uCEp8uRaySqS7P4x7A+L2Vr5kS+7ANAUEEkSqVI6gw1scM0GuJWgMh4jpW"
             "KJA0yOl03uQaV/jHURn+HswOIORzvsG9qQY1/9BZgDPaMuI5U5JlyA3WkhLxgf////8Ctk"
             "SUzxAAAAAZdqkULXTu3lp2t/wMSuvqbifOSj9/kvmIrAAoa+4AAAAAGXapFF3ySpVdjz9V"
-            "8fRKvzDqXQRcmowSiKwAAAAA")
+            "8fRKvzDqXQRcmowSiKwAAAAA"
+        )
         TX_1_HEX = (
             "AQAAAAEL3YmFDcZpf4SH7uN1IBmMoBd4OhmTp4EAQ8A0ZQ3tiwAAAACKRzBEAiA4Fkl8lk"
             "JSeLtWHsp1j0h7y0KKFmqxhDR0CK0HnmZWBQIgDSTDenor3zbNqTs+FApeDl8DKCz1xGQC"
             "JQN0/sp00VABQQQzSNc33wdDXA/F9y9/hAR88q6Se6vRCHEC7dYgbIp1pgxqGzrWXQroGk"
             "QLhnAbn/fDhUoVbCgM/UHXYmjXlhdO/////wI3HGlfEQAAABl2qRRM+dhUVUjeAlb0jEsH"
-            "JrFClGGSZ4isMAYVCgAAAAAZdqkUgnSLXoYTeOKFFRdtLYxWcGZ2Ht2IrAAAAAA=")
+            "JrFClGGSZ4isMAYVCgAAAAAZdqkUgnSLXoYTeOKFFRdtLYxWcGZ2Ht2IrAAAAAA="
+        )
         TX_2_HEX = (
             "AQAAAAFDjBbw61AYUWMx+3moZ2vb9dvLKydOSFIwcfBTjG0QSgEAAACKRzBEAiA5WWKhR4"
             "8OI60ZDCXnOru/FH6NvuTGhRLggjbpJB2dhgIgKp0FFL0ClSCxxqGjYneDinvgROGSw6Dt"
             "Vtvflrhaom8BQQR50YjAg1e5qRkP4ER29ec5jKfzk3DHJhS7Si0sEbvNIJMfjjbZfZWtJi"
             "15wHZhuHh4e3G6SWMdJLHH5pgbseFh/////wLPE5deAAAAABl2qRSmRdbMvv5fEbgFD1Yk"
-            "taBU9zQTW4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA=")
+            "taBU9zQTW4iswJ7mBQAAAAAZdqkU4E5+Is4tr+8bPU6ELYHSvz/Ng0eIrAAAAAA="
+        )
         tx_0 = tx_from_b64(TX_0_HEX)
-        self.assertEqual(tx_0.id(), "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d")
+        self.assertEqual(
+            tx_0.id(),
+            "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d",
+        )
         tx_1 = tx_from_b64(TX_1_HEX)
-        self.assertEqual(tx_1.id(), "b52201c2741d410b70688335afebba0d58f8675fa9b6c8c54becb0d7c0a75983")
+        self.assertEqual(
+            tx_1.id(),
+            "b52201c2741d410b70688335afebba0d58f8675fa9b6c8c54becb0d7c0a75983",
+        )
         tx_2 = tx_from_b64(TX_2_HEX)
-        self.assertEqual(tx_2.id(), "72151f65db1d8594df90778639a4c0c17c1e303af01de0d04af8fac13854bbfd")
+        self.assertEqual(
+            tx_2.id(),
+            "72151f65db1d8594df90778639a4c0c17c1e303af01de0d04af8fac13854bbfd",
+        )
 
         TX_DB = {tx.hash(): tx for tx in [tx_0, tx_1, tx_2]}
 
         tx_to_validate = tx_0
-        self.assertEqual("OP_DUP OP_HASH160 [2d74eede5a76b7fc0c4aebea6e27ce4a3f7f92f9] OP_EQUALVERIFY OP_CHECKSIG",
-                         network.script.disassemble(tx_to_validate.txs_out[0].script))
-        self.assertEqual(tx_to_validate.id(), "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d")
+        self.assertEqual(
+            "OP_DUP OP_HASH160 [2d74eede5a76b7fc0c4aebea6e27ce4a3f7f92f9] OP_EQUALVERIFY OP_CHECKSIG",
+            network.script.disassemble(tx_to_validate.txs_out[0].script),
+        )
+        self.assertEqual(
+            tx_to_validate.id(),
+            "c9989d984c97128b03b9f118481c631c584f7aa42b578dbea6194148701b053d",
+        )
 
         tx_to_validate.unspents_from_db(TX_DB)
         self.assertEqual(tx_to_validate.bad_solution_count(), 0)
@@ -187,8 +220,10 @@ class ValidationTest(unittest.TestCase):
         tx_to_validate = tx_from_b64(TX_0_HEX)
         original_tx_hash = tx_1.hash()
         disassembly = network.script.disassemble(tx_1.txs_out[0].script)
-        disassembly = disassembly.replace("4cf9d8545548de0256f48c4b0726b14294619267",
-                                          "4cf9d8545548de1256f48c4b0726b14294619267")
+        disassembly = disassembly.replace(
+            "4cf9d8545548de0256f48c4b0726b14294619267",
+            "4cf9d8545548de1256f48c4b0726b14294619267",
+        )
         tx_1.txs_out[0].script = network.script.compile(disassembly)
         TX_DB[original_tx_hash] = tx_1
         tx_to_validate.unspents_from_db(TX_DB, ignore_missing=True)
@@ -204,8 +239,10 @@ class ValidationTest(unittest.TestCase):
         tx_to_validate = tx_from_b64(TX_0_HEX)
         original_tx_hash = tx_2.hash()
         disassembly = network.script.disassemble(tx_2.txs_out[0].script)
-        disassembly = disassembly.replace("a645d6ccbefe5f11b8050f5624b5a054f734135b",
-                                          "a665d6ccbefe5f11b8050f5624b5a054f734135b")
+        disassembly = disassembly.replace(
+            "a645d6ccbefe5f11b8050f5624b5a054f734135b",
+            "a665d6ccbefe5f11b8050f5624b5a054f734135b",
+        )
         tx_2.txs_out[0].script = network.script.compile(disassembly)
         TX_DB[original_tx_hash] = tx_2
         tx_to_validate.unspents_from_db(TX_DB, ignore_missing=True)
@@ -218,7 +255,7 @@ class ValidationTest(unittest.TestCase):
         self.assertEqual(tx_to_validate.bad_solution_count(), 0)
 
     def _make_tx(self, input_script, other_scripts=[]):
-        cv = int(50*1e8)
+        cv = int(50 * 1e8)
 
         key = self._key
         sec = key.sec()
@@ -231,7 +268,11 @@ class ValidationTest(unittest.TestCase):
         spendable = coinbase_tx.tx_outs_as_spendable()[0]
         payables = [(address, cv)]
         tx = network.tx_utils.create_signed_tx(
-            spendables=[spendable], payables=payables, wifs=[wif], p2sh_lookup=p2sh_lookup)
+            spendables=[spendable],
+            payables=payables,
+            wifs=[wif],
+            p2sh_lookup=p2sh_lookup,
+        )
         tx.unspents = [spendable]
         print(tx.as_hex(include_unspents=True))
         return tx
@@ -256,7 +297,9 @@ class ValidationTest(unittest.TestCase):
         us_1 = network.contract.for_p2pkh_wit(self._key.hash160())
         us_2 = network.contract.for_p2s(us_1)
         tx = self._make_tx(us_2, [us_1])
-        self.assertEqual(tx.id(), "1e5d967a3778bfa4e0d90f35f59530e8033a36bd7fd1d9e617c504054b89bd3a")
+        self.assertEqual(
+            tx.id(), "1e5d967a3778bfa4e0d90f35f59530e8033a36bd7fd1d9e617c504054b89bd3a"
+        )
         tx.check_solution(0)
 
     def test_validate_p2s_of_p2s_wit_of_p2pkh(self):
@@ -264,7 +307,9 @@ class ValidationTest(unittest.TestCase):
         us_2 = network.contract.for_p2s_wit(us_1)
         us_3 = network.contract.for_p2s(us_2)
         tx = self._make_tx(us_3, [us_1, us_2])
-        self.assertEqual(tx.id(), "54a518b82b464744951531270c1bcec133c515fcdbe9d70c6141e067a62ff640")
+        self.assertEqual(
+            tx.id(), "54a518b82b464744951531270c1bcec133c515fcdbe9d70c6141e067a62ff640"
+        )
         tx.check_solution(0)
 
 

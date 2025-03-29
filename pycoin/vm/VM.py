@@ -15,12 +15,20 @@ class VM(object):
     MAX_OP_COUNT = 201
     MAX_STACK_SIZE = 1000
 
-    VM_FALSE = b''
-    VM_TRUE = b'\1'
+    VM_FALSE = b""
+    VM_TRUE = b"\1"
 
     ConditionalStack = ConditionalStack
 
-    def __init__(self, script, tx_context, signature_for_hash_type_f, flags, initial_stack=None, traceback_f=None):
+    def __init__(
+        self,
+        script,
+        tx_context,
+        signature_for_hash_type_f,
+        flags,
+        initial_stack=None,
+        traceback_f=None,
+    ):
         self.pc = 0
         self.script = script
         self.tx_context = tx_context
@@ -54,7 +62,9 @@ class VM(object):
     def pop_nonnegative(self):
         v = self.pop_int()
         if v < 0:
-            raise ScriptError("unexpectedly got negative value", errno.INVALID_STACK_OPERATION)
+            raise ScriptError(
+                "unexpectedly got negative value", errno.INVALID_STACK_OPERATION
+            )
         return v
 
     def push_int(self, v):
@@ -96,7 +106,8 @@ class VM(object):
         # don't actually check for minimal data unless data will be pushed onto the stack
         verify_minimal_data = self.flags & VERIFY_MINIMALDATA and all_if_true
         opcode, data, pc, is_ok = self.ScriptStreamer.get_opcode(
-            self.script, self.pc, verify_minimal_data=verify_minimal_data)
+            self.script, self.pc, verify_minimal_data=verify_minimal_data
+        )
         if not is_ok:
             raise ScriptError("malformed data", errno.BAD_OPCODE)
         if data and len(data) > self.MAX_BLOB_LENGTH:
@@ -124,7 +135,9 @@ class VM(object):
 
     def check_stack_size(self):
         if len(self.stack) + len(self.altstack) > self.MAX_STACK_SIZE:
-            raise ScriptError("stack has > %d items" % self.MAX_STACK_SIZE, errno.STACK_SIZE)
+            raise ScriptError(
+                "stack has > %d items" % self.MAX_STACK_SIZE, errno.STACK_SIZE
+            )
 
     def post_script_check(self):
         self.conditional_stack.check_final_state()

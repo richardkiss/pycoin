@@ -9,7 +9,6 @@ Tx = network.tx
 
 
 class PayToTest(unittest.TestCase):
-
     def test_recognize_multisig(self):
         h = (
             "010000000139c92b102879eb95f14e7344e4dd7d481e1238b1bfb1fa0f735068d2927b"
@@ -24,11 +23,14 @@ class PayToTest(unittest.TestCase):
             "c3163990c47b976f3fb3f37cccdcbedb169a1dfef58bbfbfaff7d8a473e7e2e6d317b8"
             "7bafe8bde97e3cf8f065dec022b51d11fcdd0d348ac4410461cbdcc5409fb4b4d42b51"
             "d33381354d80e550078cb532a34bfa2fcfdeb7d76519aecc62770f5b0e4ef8551946d8"
-            "a540911abe3e7854a26f39f58b25c15342af53ae")
+            "a540911abe3e7854a26f39f58b25c15342af53ae"
+        )
         f = io.BytesIO(h2b(h))
         tx = Tx.parse(f)
         tx.parse_unspents(f)
-        self.assertEqual(tx.id(), "10c61e258e0a2b19b245a96a2d0a1538fe81cd4ecd547e0a3df7ed6fd3761ada")
+        self.assertEqual(
+            tx.id(), "10c61e258e0a2b19b245a96a2d0a1538fe81cd4ecd547e0a3df7ed6fd3761ada"
+        )
         script = tx.unspents[0].script
         multisig_info = network.contract.info_for_script(script)
         del multisig_info["type"]
@@ -37,7 +39,14 @@ class PayToTest(unittest.TestCase):
 
     def test_nulldata(self):
         OP_RETURN = network.script.compile("OP_RETURN")
-        for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
+        for sample in [
+            b"test",
+            b"me",
+            b"a",
+            b"39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q",
+            b"",
+            b"0" * 80,
+        ]:
             sample_script = OP_RETURN + sample
             sc = network.contract.for_nulldata(sample)
             info = network.contract.info_for_script(sc)
@@ -52,7 +61,14 @@ class PayToTest(unittest.TestCase):
 
     def test_nulldata_push(self):
         OP_RETURN = network.script.compile("OP_RETURN")
-        for sample in [b'test', b'me', b'a', b'39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q', b'', b'0'*80]:
+        for sample in [
+            b"test",
+            b"me",
+            b"a",
+            b"39qEwuwyb2cAX38MFtrNzvq3KV9hSNov3q",
+            b"",
+            b"0" * 80,
+        ]:
             sample_push = network.script.compile_push_data_list([sample])
             sample_script = OP_RETURN + sample_push
             sc = network.contract.for_nulldata_push(sample)

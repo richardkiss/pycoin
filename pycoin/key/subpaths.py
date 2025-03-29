@@ -13,19 +13,19 @@ def subpaths_for_path_range(path_range, hardening_chars="'pH"):
         #   5-6/7-8p,15/1-2 => ['5/7H/1', '5/7H/2', '5/8H/1', '5/8H/2',
         #         '5/15/1', '5/15/2', '6/7H/1', '6/7H/2', '6/8H/1', '6/8H/2', '6/15/1', '6/15/2']
     """
-    if path_range == '':
-        yield ''
+    if path_range == "":
+        yield ""
         return
 
     def range_iterator(the_range):
         for r in the_range.split(","):
             is_hardened = r[-1] in hardening_chars
-            hardened_char = hardening_chars[-1] if is_hardened else ''
+            hardened_char = hardening_chars[-1] if is_hardened else ""
             if is_hardened:
                 r = r[:-1]
-            if '-' in r:
+            if "-" in r:
                 low, high = [int(x) for x in r.split("-", 1)]
-                for t in range(low, high+1):
+                for t in range(low, high + 1):
                     yield "%d%s" % (t, hardened_char)
             else:
                 yield "%s%s" % (r, hardened_char)
@@ -33,7 +33,7 @@ def subpaths_for_path_range(path_range, hardening_chars="'pH"):
     components = path_range.split("/")
     iterators = [range_iterator(c) for c in components]
     for v in itertools.product(*iterators):
-        yield '/'.join(v)
+        yield "/".join(v)
 
 
 """

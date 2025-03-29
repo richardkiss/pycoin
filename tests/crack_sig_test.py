@@ -5,9 +5,9 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 
 
 def make_gen_k_const(K):
-
     def gen_k(*args):
         return K
+
     return gen_k
 
 

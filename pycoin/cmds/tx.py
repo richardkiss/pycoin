@@ -22,8 +22,11 @@ from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.networks.registry import network_codes, network_for_netcode
 from pycoin.networks.default import get_current_netcode
 from pycoin.services import spendables_for_address, get_tx_db
-from pycoin.services.providers import message_about_tx_cache_env, \
-    message_about_tx_for_tx_hash_env, message_about_spendables_for_address_env
+from pycoin.services.providers import (
+    message_about_tx_cache_env,
+    message_about_tx_for_tx_hash_env,
+    message_about_spendables_for_address_env,
+)
 
 
 DEFAULT_VERSION = 1
@@ -31,7 +34,6 @@ DEFAULT_LOCK_TIME = 0
 
 
 def range_int(min, max, name):
-
     def cast(v):
         v = int(v)
         if not (min <= v <= max):
@@ -45,6 +47,7 @@ def range_int(min, max, name):
 def validate_bitcoind(tx, tx_db, bitcoind_url):
     try:
         from pycoin.services.bitcoind import bitcoind_agrees_on_transaction_validity
+
         if bitcoind_agrees_on_transaction_validity(bitcoind_url, tx):
             print("interop test passed for %s" % tx.id(), file=sys.stderr)
         else:
@@ -57,22 +60,34 @@ def check_fees(tx):
     total_in, total_out = tx.total_in(), tx.total_out()
     actual_tx_fee = total_in - total_out
     recommended_tx_fee = tx_fee.recommended_fee_for_tx(tx)
-    print("warning: transaction fees recommendations casually calculated and estimates may be incorrect",
-          file=sys.stderr)
+    print(
+        "warning: transaction fees recommendations casually calculated and estimates may be incorrect",
+        file=sys.stderr,
+    )
     if actual_tx_fee > recommended_tx_fee:
-        print("warning: transaction fee of %s exceeds expected value of %s mBTC" %
-              (satoshi_to_mbtc(actual_tx_fee), satoshi_to_mbtc(recommended_tx_fee)),
-              file=sys.stderr)
+        print(
+            "warning: transaction fee of %s exceeds expected value of %s mBTC"
+            % (satoshi_to_mbtc(actual_tx_fee), satoshi_to_mbtc(recommended_tx_fee)),
+            file=sys.stderr,
+        )
     elif actual_tx_fee < 0:
-        print("not enough source coins (%s mBTC) for destination (%s mBTC)."
-              " Short %s mBTC" %
-              (satoshi_to_mbtc(total_in),
-               satoshi_to_mbtc(total_out), satoshi_to_mbtc(-actual_tx_fee)),
-              file=sys.stderr)
+        print(
+            "not enough source coins (%s mBTC) for destination (%s mBTC)."
+            " Short %s mBTC"
+            % (
+                satoshi_to_mbtc(total_in),
+                satoshi_to_mbtc(total_out),
+                satoshi_to_mbtc(-actual_tx_fee),
+            ),
+            file=sys.stderr,
+        )
     elif actual_tx_fee < recommended_tx_fee:
-        print("warning: transaction fee lower than (casually calculated)"
-              " expected value of %s mBTC, transaction might not propagate" %
-              satoshi_to_mbtc(recommended_tx_fee), file=sys.stderr)
+        print(
+            "warning: transaction fee lower than (casually calculated)"
+            " expected value of %s mBTC, transaction might not propagate"
+            % satoshi_to_mbtc(recommended_tx_fee),
+            file=sys.stderr,
+        )
     return actual_tx_fee
 
 
@@ -81,7 +96,14 @@ EARLIEST_DATE = datetime.datetime(year=2009, month=1, day=1)
 
 def parse_locktime(s):
     s = re.sub(r"[ ,:\-]+", r"-", s)
-    for fmt1 in ["%Y-%m-%dT", "%Y-%m-%d", "%b-%d-%Y", "%b-%d-%y", "%B-%d-%Y", "%B-%d-%y"]:
+    for fmt1 in [
+        "%Y-%m-%dT",
+        "%Y-%m-%d",
+        "%b-%d-%Y",
+        "%b-%d-%y",
+        "%B-%d-%Y",
+        "%B-%d-%y",
+    ]:
         for fmt2 in ["T%H-%M-%S", "T%H-%M", "-%H-%M-%S", "-%H-%M", ""]:
             fmt = fmt1 + fmt2
             try:
@@ -94,7 +116,7 @@ def parse_locktime(s):
     return int(s)
 
 
-parse_locktime.__name__ = 'locktime'
+parse_locktime.__name__ = "locktime"
 
 
 def parse_fee(fee):
@@ -111,123 +133,261 @@ def parse_script_index_hex(input):
 
 def create_parser():
     codes = network_codes()
-    EPILOG = ('Files are binary by default unless they end with the suffix ".hex". ' +
-              'Known networks codes:\n  ' +
-              ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
+    EPILOG = (
+        'Files are binary by default unless they end with the suffix ".hex". '
+        + "Known networks codes:\n  "
+        + ", ".join(
+            ["%s (%s)" % (i, network_for_netcode(i).full_name()) for i in codes]
+        )
+    )
 
     parser = argparse.ArgumentParser(
-        description="Manipulate bitcoin (or alt coin) transactions.",
-        epilog=EPILOG)
-
-    parser.add_argument('-t', "--transaction-version", type=range_int(0, 255, "version"),
-                        help='Transaction version, either 1 (default) or 3 (not yet supported).')
-
-    parser.add_argument('-l', "--lock-time", type=parse_locktime, help='Lock time; either a block'
-                        'index, or a date/time (example: "2014-01-01T15:00:00"')
-
-    parser.add_argument('-q', "--sequence", type=int, default=0xffffffff,
-                        help='Sequence for new tx_in objects. Must be non-default for lock_time to be respected. (Try 1)')
-
-    parser.add_argument('-n', "--network", default=get_current_netcode(), choices=codes,
-                        help=('Default network code (environment variable PYCOIN_DEFAULT_NETCODE '
-                              'or "BTC"=Bitcoin mainnet if unset'))
-
-    parser.add_argument('-a', "--augment", action='store_true',
-                        help='augment tx by adding any missing spendable metadata by fetching'
-                             ' inputs from cache and/or web services')
-
-    parser.add_argument('-s', "--verbose-signature", action='store_true',
-                        help='Display technical signature details.')
-
-    parser.add_argument("-i", "--fetch-spendables", metavar="address", action="append",
-                        help='Add all unspent spendables for the given bitcoin address. This information'
-                        ' is fetched from web services. With no outputs, incoming spendables will be printed.')
-
-    parser.add_argument("-I", "--dump-inputs", action='store_true', help='Dump inputs to this transaction.')
+        description="Manipulate bitcoin (or alt coin) transactions.", epilog=EPILOG
+    )
 
     parser.add_argument(
-        "-k", "--keychain", default=":memory:",
-        help="path to keychain file for hierarchical key hints (SQLite3 file created with keychain tool)")
+        "-t",
+        "--transaction-version",
+        type=range_int(0, 255, "version"),
+        help="Transaction version, either 1 (default) or 3 (not yet supported).",
+    )
 
     parser.add_argument(
-        "-K", "--key-paths", default="",
-        help="Key path hints to search hiearachical private keys (example: 0/0H/0-20)")
+        "-l",
+        "--lock-time",
+        type=parse_locktime,
+        help="Lock time; either a block"
+        'index, or a date/time (example: "2014-01-01T15:00:00"',
+    )
 
-    parser.add_argument('-f', "--private-key-file", metavar="path-to-private-keys", action="append", default=[],
-                        help='file containing WIF or BIP0032 private keys. If file name ends with .gpg, '
-                        '"gpg -d" will be invoked automatically. File is read one line at a time, and if '
-                        'the file contains only one WIF per line, it will also be scanned for a bitcoin '
-                        'address, and any addresses found will be assumed to be public keys for the given'
-                        ' private key.',
-                        type=argparse.FileType('r'))
+    parser.add_argument(
+        "-q",
+        "--sequence",
+        type=int,
+        default=0xFFFFFFFF,
+        help="Sequence for new tx_in objects. Must be non-default for lock_time to be respected. (Try 1)",
+    )
 
-    parser.add_argument('-g', "--gpg-argument", help='argument to pass to gpg (besides -d).', default='')
+    parser.add_argument(
+        "-n",
+        "--network",
+        default=get_current_netcode(),
+        choices=codes,
+        help=(
+            "Default network code (environment variable PYCOIN_DEFAULT_NETCODE "
+            'or "BTC"=Bitcoin mainnet if unset'
+        ),
+    )
 
-    parser.add_argument("--remove-tx-in", metavar="tx_in_index_to_delete", action="append", type=int,
-                        help='remove a tx_in')
+    parser.add_argument(
+        "-a",
+        "--augment",
+        action="store_true",
+        help="augment tx by adding any missing spendable metadata by fetching"
+        " inputs from cache and/or web services",
+    )
 
-    parser.add_argument("--remove-tx-out", metavar="tx_out_index_to_delete", action="append", type=int,
-                        help='remove a tx_out')
+    parser.add_argument(
+        "-s",
+        "--verbose-signature",
+        action="store_true",
+        help="Display technical signature details.",
+    )
 
-    parser.add_argument("--replace-input-script", metavar="tx_in_script_slash_hex", action="append", default=[],
-                        type=parse_script_index_hex, help='replace an input script: arg looks like "1/796a"')
+    parser.add_argument(
+        "-i",
+        "--fetch-spendables",
+        metavar="address",
+        action="append",
+        help="Add all unspent spendables for the given bitcoin address. This information"
+        " is fetched from web services. With no outputs, incoming spendables will be printed.",
+    )
 
-    parser.add_argument('-F', "--fee", help='fee, in satoshis, to pay on transaction, or '
-                        '"standard" to auto-calculate. This is only useful if the "split pool" '
-                        'is used; otherwise, the fee is automatically set to the unclaimed funds.',
-                        default="standard", metavar="transaction-fee", type=parse_fee)
+    parser.add_argument(
+        "-I",
+        "--dump-inputs",
+        action="store_true",
+        help="Dump inputs to this transaction.",
+    )
 
-    parser.add_argument('-C', "--cache", help='force the resultant transaction into the transaction cache.'
-                        ' Mostly for testing.', action='store_true'),
+    parser.add_argument(
+        "-k",
+        "--keychain",
+        default=":memory:",
+        help="path to keychain file for hierarchical key hints (SQLite3 file created with keychain tool)",
+    )
 
-    parser.add_argument("--db", help='force the transaction expressed by the given hex '
-                        'into a RAM-based transaction cache. Mostly for testing.', action="append"),
+    parser.add_argument(
+        "-K",
+        "--key-paths",
+        default="",
+        help="Key path hints to search hiearachical private keys (example: 0/0H/0-20)",
+    )
 
-    parser.add_argument('-u', "--show-unspents", action='store_true',
-                        help='show TxOut items for this transaction in Spendable form.')
+    parser.add_argument(
+        "-f",
+        "--private-key-file",
+        metavar="path-to-private-keys",
+        action="append",
+        default=[],
+        help="file containing WIF or BIP0032 private keys. If file name ends with .gpg, "
+        '"gpg -d" will be invoked automatically. File is read one line at a time, and if '
+        "the file contains only one WIF per line, it will also be scanned for a bitcoin "
+        "address, and any addresses found will be assumed to be public keys for the given"
+        " private key.",
+        type=argparse.FileType("r"),
+    )
 
-    parser.add_argument('-b', "--bitcoind-url",
-                        help='URL to bitcoind instance to validate against (http://user:pass@host:port).')
+    parser.add_argument(
+        "-g", "--gpg-argument", help="argument to pass to gpg (besides -d).", default=""
+    )
 
-    parser.add_argument('-o', "--output-file", metavar="path-to-output-file", type=argparse.FileType('wb'),
-                        help='file to write transaction to. This suppresses most other output.')
+    parser.add_argument(
+        "--remove-tx-in",
+        metavar="tx_in_index_to_delete",
+        action="append",
+        type=int,
+        help="remove a tx_in",
+    )
 
-    parser.add_argument('-d', "--disassemble", action='store_true',
-                        help='Disassemble scripts.')
+    parser.add_argument(
+        "--remove-tx-out",
+        metavar="tx_out_index_to_delete",
+        action="append",
+        type=int,
+        help="remove a tx_out",
+    )
 
-    parser.add_argument("--pdb", action="store_true", help='Enter PDB debugger on each script instruction.')
+    parser.add_argument(
+        "--replace-input-script",
+        metavar="tx_in_script_slash_hex",
+        action="append",
+        default=[],
+        type=parse_script_index_hex,
+        help='replace an input script: arg looks like "1/796a"',
+    )
 
-    parser.add_argument("--trace", action='store_true', help='Trace scripts.')
+    parser.add_argument(
+        "-F",
+        "--fee",
+        help="fee, in satoshis, to pay on transaction, or "
+        '"standard" to auto-calculate. This is only useful if the "split pool" '
+        "is used; otherwise, the fee is automatically set to the unclaimed funds.",
+        default="standard",
+        metavar="transaction-fee",
+        type=parse_fee,
+    )
 
-    parser.add_argument('-p', "--pay-to-script", metavar="pay-to-script", action="append",
-                        help='a hex version of a script required for a pay-to-script'
-                        'input (a bitcoin address that starts with 3)')
+    (
+        parser.add_argument(
+            "-C",
+            "--cache",
+            help="force the resultant transaction into the transaction cache."
+            " Mostly for testing.",
+            action="store_true",
+        ),
+    )
 
-    parser.add_argument("--signature", metavar="known-good-signature", action="append",
-                        help='a hex version of a signature that will be used if useful')
+    (
+        parser.add_argument(
+            "--db",
+            help="force the transaction expressed by the given hex "
+            "into a RAM-based transaction cache. Mostly for testing.",
+            action="append",
+        ),
+    )
 
-    parser.add_argument("--sec", metavar="known-sec", action="append",
-                        help='a hex version of an SEC that will be used if useful')
+    parser.add_argument(
+        "-u",
+        "--show-unspents",
+        action="store_true",
+        help="show TxOut items for this transaction in Spendable form.",
+    )
 
-    parser.add_argument('-P', "--pay-to-script-file", metavar="pay-to-script-file", nargs=1,
-                        type=argparse.FileType('r'), help='a file containing hex scripts '
-                        '(one per line) corresponding to pay-to-script inputs')
+    parser.add_argument(
+        "-b",
+        "--bitcoind-url",
+        help="URL to bitcoind instance to validate against (http://user:pass@host:port).",
+    )
 
-    parser.add_argument("--dump-signatures", action="store_true",
-                        help="print signatures (for use with --signature)")
+    parser.add_argument(
+        "-o",
+        "--output-file",
+        metavar="path-to-output-file",
+        type=argparse.FileType("wb"),
+        help="file to write transaction to. This suppresses most other output.",
+    )
 
-    parser.add_argument("--dump-secs", action="store_true",
-                        help="print secs (for use with --sec)")
+    parser.add_argument(
+        "-d", "--disassemble", action="store_true", help="Disassemble scripts."
+    )
 
-    parser.add_argument("--coinbase", type=str, help="add an input as a coinbase from the given address")
+    parser.add_argument(
+        "--pdb",
+        action="store_true",
+        help="Enter PDB debugger on each script instruction.",
+    )
 
-    parser.add_argument("argument", nargs="*", help='generic argument: can be a hex transaction id '
-                        '(exactly 64 characters) to be fetched from cache or a web service;'
-                        ' a transaction as a hex string; a path name to a transaction to be loaded;'
-                        ' a spendable 4-tuple of the form tx_id/tx_out_idx/script_hex/satoshi_count '
-                        'to be added to TxIn list; an address/satoshi_count to be added to the TxOut '
-                        'list; an address or script to be added to the TxOut list and placed in the '
-                        '"split pool".')
+    parser.add_argument("--trace", action="store_true", help="Trace scripts.")
+
+    parser.add_argument(
+        "-p",
+        "--pay-to-script",
+        metavar="pay-to-script",
+        action="append",
+        help="a hex version of a script required for a pay-to-script"
+        "input (a bitcoin address that starts with 3)",
+    )
+
+    parser.add_argument(
+        "--signature",
+        metavar="known-good-signature",
+        action="append",
+        help="a hex version of a signature that will be used if useful",
+    )
+
+    parser.add_argument(
+        "--sec",
+        metavar="known-sec",
+        action="append",
+        help="a hex version of an SEC that will be used if useful",
+    )
+
+    parser.add_argument(
+        "-P",
+        "--pay-to-script-file",
+        metavar="pay-to-script-file",
+        nargs=1,
+        type=argparse.FileType("r"),
+        help="a file containing hex scripts "
+        "(one per line) corresponding to pay-to-script inputs",
+    )
+
+    parser.add_argument(
+        "--dump-signatures",
+        action="store_true",
+        help="print signatures (for use with --signature)",
+    )
+
+    parser.add_argument(
+        "--dump-secs", action="store_true", help="print secs (for use with --sec)"
+    )
+
+    parser.add_argument(
+        "--coinbase", type=str, help="add an input as a coinbase from the given address"
+    )
+
+    parser.add_argument(
+        "argument",
+        nargs="*",
+        help="generic argument: can be a hex transaction id "
+        "(exactly 64 characters) to be fetched from cache or a web service;"
+        " a transaction as a hex string; a path name to a transaction to be loaded;"
+        " a spendable 4-tuple of the form tx_id/tx_out_idx/script_hex/satoshi_count "
+        "to be added to TxIn list; an address/satoshi_count to be added to the TxOut "
+        "list; an address or script to be added to the TxOut list and placed in the "
+        '"split pool".',
+    )
 
     return parser
 
@@ -381,8 +541,8 @@ def script_for_address_or_opcodes(network, text):
 
 def build_coinbase_tx(network, address_or_opcodes):
     puzzle_script = script_for_address_or_opcodes(network, address_or_opcodes)
-    txs_in = [network.tx.TxIn.coinbase_tx_in(b'fake-pycoin-coinbase')]
-    txs_out = [network.tx.TxOut(int(50*1e8), puzzle_script)]
+    txs_in = [network.tx.TxIn.coinbase_tx_in(b"fake-pycoin-coinbase")]
+    txs_out = [network.tx.TxOut(int(50 * 1e8), puzzle_script)]
     tx = network.tx(1, txs_in, txs_out)
     return tx
 
@@ -400,7 +560,6 @@ def parse_context(args, parser):
     tx_db = None
 
     if args.db:
-
         try:
             txs = [tx_class.from_hex(tx_hex) for tx_hex in args.db or []]
         except Exception:
@@ -455,7 +614,6 @@ def parse_context(args, parser):
 
 
 def merge_txs(network, txs, spendables, payables, sequence):
-
     tx_class = network.tx
     txs_in = []
     txs_out = []
@@ -482,7 +640,6 @@ def merge_txs(network, txs, spendables, payables, sequence):
 
 
 def calculate_lock_time_and_version(args, txs):
-
     # if no lock_time is explicitly set, inherit from the first tx or use default
     lock_time = args.lock_time
     if lock_time is None:
@@ -520,19 +677,27 @@ def wif_iter(iters):
                 wif = next(iter)
                 yield wif
             except StopIteration:
-                iters = iters[:idx] + iters[idx+1:]
+                iters = iters[:idx] + iters[idx + 1 :]
                 break
 
 
 def generate_tx(network, txs, spendables, payables, args):
-    txs_in, txs_out, unspents = merge_txs(network, txs, spendables, payables, args.sequence)
+    txs_in, txs_out, unspents = merge_txs(
+        network, txs, spendables, payables, args.sequence
+    )
     lock_time, version = calculate_lock_time_and_version(args, txs)
     if len(unspents) == len(txs_in):
         unspents = remove_indices(unspents, args.remove_tx_in)
     replace_input_scripts(txs_in, args.replace_input_script)
     txs_in = remove_indices(txs_in, args.remove_tx_in)
     txs_out = remove_indices(txs_out, args.remove_tx_out)
-    tx = network.tx(txs_in=txs_in, txs_out=txs_out, lock_time=lock_time, version=version, unspents=unspents)
+    tx = network.tx(
+        txs_in=txs_in,
+        txs_out=txs_out,
+        lock_time=lock_time,
+        version=version,
+        unspents=unspents,
+    )
     fee = args.fee
     try:
         if len(payables) > 0:
@@ -542,8 +707,17 @@ def generate_tx(network, txs, spendables, payables, args):
     return tx
 
 
-def print_output(tx, include_unspents, output_file, show_unspents,
-                 network, verbose_signature, disassembly_level, trace, pdb):
+def print_output(
+    tx,
+    include_unspents,
+    output_file,
+    show_unspents,
+    network,
+    verbose_signature,
+    disassembly_level,
+    trace,
+    pdb,
+):
     if len(tx.txs_in) == 0:
         print("warning: transaction has no inputs", file=sys.stderr)
 
@@ -583,11 +757,19 @@ def do_signing(tx, keychain, p2sh_lookup, sec_hints, signature_hints, network):
     if unsigned_before > 0 and (keychain.has_secrets() or sec_hints or signature_hints):
         print("signing...", file=sys.stderr)
         solver = tx.Solver(tx)
-        solver.sign(keychain, p2sh_lookup=p2sh_lookup, sec_hints=sec_hints, signature_hints=signature_hints)
+        solver.sign(
+            keychain,
+            p2sh_lookup=p2sh_lookup,
+            sec_hints=sec_hints,
+            signature_hints=signature_hints,
+        )
 
         unsigned_after = tx.bad_solution_count()
         if unsigned_after > 0:
-            print("warning: %d TxIn items still unsigned" % unsigned_after, file=sys.stderr)
+            print(
+                "warning: %d TxIn items still unsigned" % unsigned_after,
+                file=sys.stderr,
+            )
     return unsigned_after == 0
 
 
@@ -603,18 +785,27 @@ def validate_tx(tx, tx_db, network):
     if not tx.txs_out:
         return
     if tx.missing_unspents():
-        print("\n** can't validate transaction as source transactions missing", file=sys.stderr)
+        print(
+            "\n** can't validate transaction as source transactions missing",
+            file=sys.stderr,
+        )
     else:
         try:
             if tx_db is None:
                 tx_db = create_tx_db(network)
             tx.validate_unspents(tx_db)
-            print('all incoming transaction values validated')
+            print("all incoming transaction values validated")
         except BadSpendableError as ex:
-            print("\n**** ERROR: FEES INCORRECTLY STATED: %s" % ex.args[0], file=sys.stderr)
+            print(
+                "\n**** ERROR: FEES INCORRECTLY STATED: %s" % ex.args[0],
+                file=sys.stderr,
+            )
         except Exception as ex:
-            print("\n*** can't validate source transactions as untampered: %s" %
-                  ex.args[0], file=sys.stderr)
+            print(
+                "\n*** can't validate source transactions as untampered: %s"
+                % ex.args[0],
+                file=sys.stderr,
+            )
 
 
 def validate_against_bitcoind(tx, tx_db, network, bitcoind_url):
@@ -648,13 +839,18 @@ def dump_secs_hex(tx, network):
 def dump_inputs(tx, network):
     for _, tx_out in enumerate(tx.unspents):
         if tx_out:
-            print("%d: %s %s" % (_, tx_out.coin_value, network.script.disassemble(tx_out.script)))
+            print(
+                "%d: %s %s"
+                % (_, tx_out.coin_value, network.script.disassemble(tx_out.script))
+            )
         else:
             print("%d: (missing spendable)" % _)
 
 
 def tx(args, parser):
-    (network, txs, spendables, payables, keychain, tx_db, warning_spendables) = parse_context(args, parser)
+    (network, txs, spendables, payables, keychain, tx_db, warning_spendables) = (
+        parse_context(args, parser)
+    )
 
     for tx in txs:
         if tx.missing_unspents() and (args.augment or tx_db):
@@ -670,9 +866,13 @@ def tx(args, parser):
     tx = generate_tx(network, txs, spendables, payables, args)
 
     signature_hints = [h2b(sig) for sig in (args.signature or [])]
-    sec_hints = network.tx.solve.build_sec_lookup([h2b(sec) for sec in (args.sec or [])])
+    sec_hints = network.tx.solve.build_sec_lookup(
+        [h2b(sec) for sec in (args.sec or [])]
+    )
 
-    is_fully_signed = do_signing(tx, keychain, keychain, sec_hints, signature_hints, network)
+    is_fully_signed = do_signing(
+        tx, keychain, keychain, sec_hints, signature_hints, network
+    )
 
     include_unspents = not is_fully_signed
 
@@ -685,8 +885,17 @@ def tx(args, parser):
 
         return
 
-    print_output(tx, include_unspents, args.output_file, args.show_unspents, network,
-                 args.verbose_signature, args.disassemble, args.trace, args.pdb)
+    print_output(
+        tx,
+        include_unspents,
+        args.output_file,
+        args.show_unspents,
+        network,
+        args.verbose_signature,
+        args.disassemble,
+        args.trace,
+        args.pdb,
+    )
 
     tx_db = cache_result(tx, tx_db, args.cache, network)
 
@@ -713,5 +922,5 @@ def main():
     tx(args, parser)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

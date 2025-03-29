@@ -8,16 +8,20 @@ class BitcoindProvider(object):
             from bitcoinrpc.authproxy import AuthServiceProxy
         except ImportError:
             print("This script depends upon python-bitcoinrpc.")
-            print("pip install -e git+https://github.com/jgarzik/"
-                  "python-bitcoinrpc#egg=python_bitcoinrpc-master")
+            print(
+                "pip install -e git+https://github.com/jgarzik/"
+                "python-bitcoinrpc#egg=python_bitcoinrpc-master"
+            )
             raise
         self.bitcoind_url = bitcoind_url
         self.connection = AuthServiceProxy(bitcoind_url)
 
     def bitcoind_agrees_on_transaction_validity(self, tx):
         tx.check_unspents()
-        unknown_tx_outs = [unspent_to_bitcoind_dict(tx_in, tx_out)
-                           for tx_in, tx_out in zip(tx.txs_in, tx.unspents)]
+        unknown_tx_outs = [
+            unspent_to_bitcoind_dict(tx_in, tx_out)
+            for tx_in, tx_out in zip(tx.txs_in, tx.unspents)
+        ]
         signed = self.connection.signrawtransaction(tx.as_hex(), unknown_tx_outs, [])
         is_ok = [tx.is_solution_ok(idx) for idx in range(len(tx.txs_in))]
         return all(is_ok) == signed.get("complete")
@@ -32,7 +36,7 @@ def unspent_to_bitcoind_dict(tx_in, tx_out):
     return dict(
         txid=b2h_rev(tx_in.previous_hash),
         vout=tx_in.previous_index,
-        scriptPubKey=b2h(tx_out.script)
+        scriptPubKey=b2h(tx_out.script),
     )
 
 

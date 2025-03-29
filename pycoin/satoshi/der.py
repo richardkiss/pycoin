@@ -12,13 +12,13 @@ def encode_integer(r):
     if len(h) % 2:
         h = "0" + h
     s = binascii.unhexlify(h.encode("utf8"))
-    if ord(s[:1]) <= 0x7f:
+    if ord(s[:1]) <= 0x7F:
         return b"\x02" + int2byte(len(s)) + s
     else:
         # DER integers are two's complement, so if the first byte is
         # 0x80-0xff then we need an extra 0x00 byte to prevent it from
         # looking negative.
-        return b"\x02" + int2byte(len(s)+1) + b"\x00" + s
+        return b"\x02" + int2byte(len(s) + 1) + b"\x00" + s
 
 
 def encode_sequence(*encoded_pieces):
@@ -29,11 +29,12 @@ def encode_sequence(*encoded_pieces):
 def remove_sequence(string):
     if not string.startswith(b"\x30"):
         raise UnexpectedDER(
-            "wanted sequence (0x30), got string length %d %s" % (
-                len(string), binascii.hexlify(string[:10])))
+            "wanted sequence (0x30), got string length %d %s"
+            % (len(string), binascii.hexlify(string[:10]))
+        )
     length, lengthlength = read_length(string[1:])
-    endseq = 1+lengthlength+length
-    return string[1+lengthlength:endseq], string[endseq:]
+    endseq = 1 + lengthlength + length
+    return string[1 + lengthlength : endseq], string[endseq:]
 
 
 def remove_integer(string, use_broken_open_ssl_mechanism=False):
@@ -42,14 +43,14 @@ def remove_integer(string, use_broken_open_ssl_mechanism=False):
     if not string.startswith(b"\x02"):
         raise UnexpectedDER("did not get expected integer 0x02")
     length, llen = read_length(string[1:])
-    if len(string) < 1+llen+length:
+    if len(string) < 1 + llen + length:
         raise UnexpectedDER("ran out of integer bytes")
-    numberbytes = string[1+llen:1+llen+length]
-    rest = string[1+llen+length:]
+    numberbytes = string[1 + llen : 1 + llen + length]
+    rest = string[1 + llen + length :]
     v = int(binascii.hexlify(numberbytes), 16)
     if ord(numberbytes[:1]) >= 0x80:
         if not use_broken_open_ssl_mechanism:
-            v -= (1 << (8 * length))
+            v -= 1 << (8 * length)
     return v, rest
 
 
@@ -59,7 +60,7 @@ def encode_length(length):
         return int2byte(length)
     s = "%x" % length
     if len(s) % 2:
-        s = "0"+s
+        s = "0" + s
     s = binascii.unhexlify(s)
     llen = len(s)
     return int2byte(0x80 | llen) + s
@@ -69,13 +70,13 @@ def read_length(string):
     s0 = ord(string[:1])
     if not (s0 & 0x80):
         # short form
-        return (s0 & 0x7f), 1
+        return (s0 & 0x7F), 1
     # else long-form: b0&0x7f is number of additional base256 length bytes,
     # big-endian
-    llen = s0 & 0x7f
-    if llen > len(string)-1:
+    llen = s0 & 0x7F
+    if llen > len(string) - 1:
         raise UnexpectedDER("ran out of length bytes")
-    return int(binascii.hexlify(string[1:1+llen]), 16), 1+llen
+    return int(binascii.hexlify(string[1 : 1 + llen]), 16), 1 + llen
 
 
 def sigencode_der(r, s):
@@ -85,8 +86,12 @@ def sigencode_der(r, s):
 def sigdecode_der(sig_der, use_broken_open_ssl_mechanism=True):
     # if use_broken_open_ssl_mechanism is true, this is a non-standard implementation
     rs_strings, empty = remove_sequence(sig_der)
-    r, rest = remove_integer(rs_strings, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
-    s, empty = remove_integer(rest, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
+    r, rest = remove_integer(
+        rs_strings, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism
+    )
+    s, empty = remove_integer(
+        rest, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism
+    )
     return r, s
 
 

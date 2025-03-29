@@ -9,7 +9,7 @@ ITEM_TYPE_MERKLEBLOCK = 3
 INV_CMPCT_BLOCK = 4
 
 INV_WITNESS_FLAG = 1 << 30
-INV_TYPE_MASK = 0xffffffff >> 2
+INV_TYPE_MASK = 0xFFFFFFFF >> 2
 
 
 @functools.total_ordering

@@ -227,10 +227,13 @@ class Secp256k1Test(unittest.TestCase):
 
 
 def inject():
-
     for triplets in VECTORS.strip().split("\n\n"):
         k_line, x_line, y_line = triplets.split("\n")
-        if k_line.startswith("k = ") and x_line.startswith("x = ") and y_line.startswith("y = "):
+        if (
+            k_line.startswith("k = ")
+            and x_line.startswith("x = ")
+            and y_line.startswith("y = ")
+        ):
             if k_line[4:].startswith("0x"):
                 k = int(k_line[4:], 16)
             else:
@@ -242,6 +245,7 @@ def inject():
             def make_test(k, x, y):
                 def the_test(self):
                     self.assertEqual(k * secp256k1_generator, (x, y))
+
                 return the_test
 
             setattr(Secp256k1Test, name_of_f, make_test(k, x, y))

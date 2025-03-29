@@ -46,7 +46,9 @@ def spendables_for_address(address, netcode, format=None):
     """
     if format:
         method = "as_%s" % format
-    for m in service_provider_methods("spendables_for_address", get_default_providers_for_netcode(netcode)):
+    for m in service_provider_methods(
+        "spendables_for_address", get_default_providers_for_netcode(netcode)
+    ):
         try:
             spendables = m(address)
             if format:
@@ -58,23 +60,37 @@ def spendables_for_address(address, netcode, format=None):
 
 
 def get_tx_db(netcode=None):
-    lookup_methods = service_provider_methods("tx_for_tx_hash", get_default_providers_for_netcode(netcode))
+    lookup_methods = service_provider_methods(
+        "tx_for_tx_hash", get_default_providers_for_netcode(netcode)
+    )
     read_cache_dirs = tx_read_cache_dirs()
     writable_cache_dir = tx_writable_cache_dir()
-    return TxDb(lookup_methods=lookup_methods, read_only_paths=read_cache_dirs,
-                writable_cache_path=writable_cache_dir)
+    return TxDb(
+        lookup_methods=lookup_methods,
+        read_only_paths=read_cache_dirs,
+        writable_cache_path=writable_cache_dir,
+    )
 
 
 def message_about_tx_cache_env():
     if main_cache_dir() is None:
-        return "consider setting environment variable PYCOIN_CACHE_DIR=~/.pycoin_cache to"\
-               " cache transactions fetched via web services"
+        return (
+            "consider setting environment variable PYCOIN_CACHE_DIR=~/.pycoin_cache to"
+            " cache transactions fetched via web services"
+        )
 
 
 def all_providers_message(method, netcode):
-    if len(service_provider_methods(method, get_default_providers_for_netcode(netcode))) == 0:
-        return "no service providers found for %s; consider setting environment variable "\
+    if (
+        len(
+            service_provider_methods(method, get_default_providers_for_netcode(netcode))
+        )
+        == 0
+    ):
+        return (
+            "no service providers found for %s; consider setting environment variable "
             "PYCOIN_%s_PROVIDERS" % (method, netcode)
+        )
 
 
 def message_about_spendables_for_address_env(netcode):
@@ -86,7 +102,9 @@ def message_about_tx_for_tx_hash_env(netcode):
 
 
 def bitcoin_rpc_init(match, netcode):
-    username, password, hostname, port = match.group("user", "password", "hostname", "port")
+    username, password, hostname, port = match.group(
+        "user", "password", "hostname", "port"
+    )
     return BitcoindProvider("http://%s:%s@%s:%s" % (username, password, hostname, port))
 
 
@@ -95,12 +113,24 @@ def insight_init(match, netcode):
 
 
 DESCRIPTOR_CRE_INIT_TUPLES = [
-    (re.compile(
-        r"^bitcoinrpc://(?P<user>\S*):(?P<password>\S*)\@(?P<hostname>\S*)(:(?P<port>\d*))"),
-        bitcoin_rpc_init),
-    (re.compile(r"^blockchain\.info$"), lambda m, netcode: BlockchainInfoProvider(netcode)),
-    (re.compile(r"^blockcypher\.com$"), lambda m, netcode: BlockcypherProvider(netcode)),
-    (re.compile(r"^blockexplorer\.com$"), lambda m, netcode: BlockExplorerProvider(netcode)),
+    (
+        re.compile(
+            r"^bitcoinrpc://(?P<user>\S*):(?P<password>\S*)\@(?P<hostname>\S*)(:(?P<port>\d*))"
+        ),
+        bitcoin_rpc_init,
+    ),
+    (
+        re.compile(r"^blockchain\.info$"),
+        lambda m, netcode: BlockchainInfoProvider(netcode),
+    ),
+    (
+        re.compile(r"^blockcypher\.com$"),
+        lambda m, netcode: BlockcypherProvider(netcode),
+    ),
+    (
+        re.compile(r"^blockexplorer\.com$"),
+        lambda m, netcode: BlockExplorerProvider(netcode),
+    ),
     (re.compile(r"^chain\.so$"), lambda m, netcode: ChainSoProvider(netcode)),
     (re.compile(r"^insight:(?P<url>\S*)$"), insight_init),
     (re.compile(r"^btgexp.com"), lambda m, netcode: BTGExpProvider()),
@@ -129,7 +159,9 @@ def providers_for_config_string(config_string, netcode):
 
 
 def providers_for_netcode_from_env(netcode):
-    return providers_for_config_string(config_string_for_netcode_from_env(netcode), netcode)
+    return providers_for_config_string(
+        config_string_for_netcode_from_env(netcode), netcode
+    )
 
 
 def get_default_providers_for_netcode(netcode=None):

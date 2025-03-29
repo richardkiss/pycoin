@@ -36,9 +36,9 @@ class Curve(object):
         group (the point at infinity). Although this is optional, it's required
         for some operations.
     """
+
     def __init__(self, p, a, b, order=None):
-        """
-        """
+        """ """
         self._p = p
         self._a = a
         self._b = b
@@ -119,10 +119,10 @@ class Curve(object):
         result = p
         while i > 1:
             result += result
-            if (e3 & i):
-                v = [result, result+p]
+            if e3 & i:
+                v = [result, result + p]
             else:
-                v = [result-p, result]
+                v = [result - p, result]
             result = v[0 if (e & i) else 1]
             i >>= 1
 
@@ -144,7 +144,7 @@ class Curve(object):
         uc, vc, ud, vd = 1, 0, 0, 1
         while c != 0:
             q, c, d = divmod(d, c) + (c,)
-            uc, vc, ud, vd = ud - q*uc, vd - q*vc, uc, vc
+            uc, vc, ud, vd = ud - q * uc, vd - q * vc, uc, vc
 
         # At this point, d is the GCD, and ud*a+vd*m = d.
         # If d == 1, this means that ud is a inverse.
@@ -162,7 +162,9 @@ class Curve(object):
         return Point(x, y, self)
 
     def __repr__(self):
-        return '{}({!r},{!r},{!r})'.format(self.__class__.__name__, self._p, self._a, self._b)
+        return "{}({!r},{!r},{!r})".format(
+            self.__class__.__name__, self._p, self._a, self._b
+        )
 
     def __str__(self):
-        return 'y^2 = x^3 + {}*x + {} (mod {})'.format(self._a, self._b, self._p)
+        return "y^2 = x^3 + {}*x + {} (mod {})".format(self._a, self._b, self._p)

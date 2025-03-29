@@ -1,4 +1,3 @@
-
 class ChainFinder(object):
     def __init__(self):
         self.parent_lookup = {}
@@ -6,7 +5,10 @@ class ChainFinder(object):
         self.trees_from_bottom = {}
 
     def __repr__(self):
-        return "<ChainFinder: trees_fb:%s d_b_tops:%s>" % (self.trees_from_bottom, self.descendents_by_top)
+        return "<ChainFinder: trees_fb:%s d_b_tops:%s>" % (
+            self.trees_from_bottom,
+            self.descendents_by_top,
+        )
 
     def load_nodes(self, nodes):
         # register everything
@@ -34,7 +36,9 @@ class ChainFinder(object):
                     del self.trees_from_bottom[h]
                     path.extend(preceding_path)
                     # we extended an existing path. Fix up descendents_by_top
-                    self.descendents_by_top[preceding_path[-1]].remove(preceding_path[0])
+                    self.descendents_by_top[preceding_path[-1]].remove(
+                        preceding_path[0]
+                    )
                     break
                 path.append(h)
             self.trees_from_bottom[path[0]] = path
@@ -93,6 +97,6 @@ class ChainFinder(object):
         i2 = len(p2) - shorter_len
         while 1:
             if p1[i1] == p2[i2]:
-                return p1[:i1+1], p2[:i2+1]
+                return p1[: i1 + 1], p2[: i2 + 1]
             i1 += 1
             i2 += 1

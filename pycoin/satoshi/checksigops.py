@@ -5,9 +5,15 @@ from . import der
 from . import errno
 
 from .flags import (
-    SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY,
-    VERIFY_NULLDUMMY, VERIFY_NULLFAIL, VERIFY_STRICTENC,
-    VERIFY_DERSIG, VERIFY_LOW_S, VERIFY_WITNESS_PUBKEYTYPE
+    SIGHASH_ALL,
+    SIGHASH_SINGLE,
+    SIGHASH_ANYONECANPAY,
+    VERIFY_NULLDUMMY,
+    VERIFY_NULLFAIL,
+    VERIFY_STRICTENC,
+    VERIFY_DERSIG,
+    VERIFY_LOW_S,
+    VERIFY_WITNESS_PUBKEYTYPE,
 )
 
 from pycoin.coins.SolutionChecker import ScriptError
@@ -40,7 +46,9 @@ def _check_valid_signature_2(sig):
         raise ScriptError("sig R value not allowed to be negative", errno.SIG_DER)
     if r_len > 1 and sig[4] == 0 and not (sig[5] & 0x80):
         raise ScriptError(
-            "R value can't have leading 0 byte unless doing so would make it negative", errno.SIG_DER)
+            "R value can't have leading 0 byte unless doing so would make it negative",
+            errno.SIG_DER,
+        )
     if sig[r_len + 4] != 2:
         raise ScriptError("S value region does not start with 0x02", errno.SIG_DER)
     if s_len == 0:
@@ -49,7 +57,9 @@ def _check_valid_signature_2(sig):
         raise ScriptError("negative S values not allowed", errno.SIG_DER)
     if s_len > 1 and sig[r_len + 6] == 0 and not (sig[r_len + 7] & 0x80):
         raise ScriptError(
-            "S value can't have leading 0 byte unless doing so would make it negative", errno.SIG_DER)
+            "S value can't have leading 0 byte unless doing so would make it negative",
+            errno.SIG_DER,
+        )
 
 
 def check_valid_signature(sig):
@@ -111,8 +121,16 @@ def check_public_key_encoding(blob):
     raise ScriptError("invalid public key blob", errno.PUBKEYTYPE)
 
 
-def checksig(vm, sig_pair, signature_type, pair_blob, blobs_to_delete,
-             sighash_cache, verify_witness_pubkeytype, verify_strict):
+def checksig(
+    vm,
+    sig_pair,
+    signature_type,
+    pair_blob,
+    blobs_to_delete,
+    sighash_cache,
+    verify_witness_pubkeytype,
+    verify_strict,
+):
     generator = vm.generator_for_signature_type(signature_type)
     if verify_strict:
         check_public_key_encoding(pair_blob)
@@ -125,7 +143,9 @@ def checksig(vm, sig_pair, signature_type, pair_blob, blobs_to_delete,
         return False
 
     if signature_type not in sighash_cache:
-        sighash_cache[signature_type] = vm.signature_for_hash_type_f(signature_type, blobs_to_delete, vm)
+        sighash_cache[signature_type] = vm.signature_for_hash_type_f(
+            signature_type, blobs_to_delete, vm
+        )
 
     try:
         if generator.verify(public_pair, sighash_cache[signature_type], sig_pair):
@@ -146,13 +166,23 @@ def checksigs(vm, sig_blobs, public_pair_blobs):
     while len(sig_blobs_remaining) > 0:
         sig_blob = sig_blobs_remaining.pop()
         try:
-            sig_pair, signature_type = parse_and_check_signature_blob(sig_blob, flags, vm)
+            sig_pair, signature_type = parse_and_check_signature_blob(
+                sig_blob, flags, vm
+            )
         except (der.UnexpectedDER, ValueError):
             public_pair_blobs = []
         while len(sig_blobs_remaining) < len(public_pair_blobs):
             pair_blob = public_pair_blobs.pop()
-            if checksig(vm, sig_pair, signature_type, pair_blob, sig_blobs,
-                        sighash_cache, verify_witness_pubkeytype, verify_strict):
+            if checksig(
+                vm,
+                sig_pair,
+                signature_type,
+                pair_blob,
+                sig_blobs,
+                sighash_cache,
+                verify_witness_pubkeytype,
+                verify_strict,
+            ):
                 break
         else:
             if any_nonblank:
@@ -178,13 +208,16 @@ def do_OP_CHECKMULTISIG(vm):
     signature_count = vm.pop_int()
     if signature_count < 0 or signature_count > key_count:
         raise ScriptError(
-            "invalid number of signatures: %d for %d keys" % (signature_count, key_count), errno.SIG_COUNT)
+            "invalid number of signatures: %d for %d keys"
+            % (signature_count, key_count),
+            errno.SIG_COUNT,
+        )
     sig_blobs = [vm.pop() for _ in range(signature_count)]
     sig_blobs.reverse()
 
     # check that we have the required hack 00 byte
     hack_byte = vm.pop()
-    if vm.flags & VERIFY_NULLDUMMY and hack_byte != b'':
+    if vm.flags & VERIFY_NULLDUMMY and hack_byte != b"":
         raise ScriptError("bad dummy byte in checkmultisig", errno.SIG_NULLDUMMY)
 
     checksigs(vm, sig_blobs, public_pair_blobs)

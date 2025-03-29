@@ -8,14 +8,20 @@ from pycoin.intbytes import iterbytes
 
 
 def make_address_api(
-        contracts,
-        bip32_prv_prefix=None, bip32_pub_prefix=None, bip49_prv_prefix=None,
-        bip49_pub_prefix=None, bip84_prv_prefix=None, bip84_pub_prefix=None,
-        wif_prefix=None, sec_prefix=None, address_prefix=None, pay_to_script_prefix=None,
-        bech32_hrp=None):
-
+    contracts,
+    bip32_prv_prefix=None,
+    bip32_pub_prefix=None,
+    bip49_prv_prefix=None,
+    bip49_pub_prefix=None,
+    bip84_prv_prefix=None,
+    bip84_pub_prefix=None,
+    wif_prefix=None,
+    sec_prefix=None,
+    address_prefix=None,
+    pay_to_script_prefix=None,
+    bech32_hrp=None,
+):
     class AddressAPI(object):
-
         def for_script(self, script):
             info = contracts.info_for_script(script)
             return self.for_script_info(info)
@@ -53,36 +59,42 @@ def make_address_api(
             return "???"
 
         if address_prefix:
+
             def for_p2pkh(self, h160):
                 return self.b2a(address_prefix + h160)
 
         if pay_to_script_prefix:
+
             def for_p2sh(self, h160):
                 return self.b2a(pay_to_script_prefix + h160)
 
         if bech32_hrp:
+
             def for_p2pkh_wit(self, h160):
                 assert len(h160) == 20
                 return bech32m.encode(bech32_hrp, 0, iterbytes(h160))
 
         if bech32_hrp:
+
             def for_p2sh_wit(self, hash256):
                 assert len(hash256) == 32
                 return bech32m.encode(bech32_hrp, 0, iterbytes(hash256))
 
         if bech32_hrp:
+
             def for_p2tr(self, synthetic_key):
                 return bech32m.encode(bech32_hrp, 1, iterbytes(synthetic_key))
 
         # p2s and p2s_wit helpers
 
         if pay_to_script_prefix:
+
             def for_p2s(self, script):
                 return self.for_p2sh(hash160(script))
 
         if bech32_hrp:
+
             def for_p2s_wit(self, script):
-                return self.for_p2sh_wit(hashlib.sha256(
-                    script).digest())
+                return self.for_p2sh_wit(hashlib.sha256(script).digest())
 
     return AddressAPI()

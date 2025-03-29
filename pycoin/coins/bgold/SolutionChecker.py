@@ -6,7 +6,6 @@ from ..bitcoin.SolutionChecker import BitcoinSolutionChecker
 
 
 class BgoldSolutionChecker(BitcoinSolutionChecker):
-
     FORKID_BTG = 79  # atomic number for Au (gold)
 
     def _signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
@@ -24,8 +23,12 @@ class BgoldSolutionChecker(BitcoinSolutionChecker):
         if hash_type & SIGHASH_FORKID != SIGHASH_FORKID:
             raise self.ScriptError()
 
-        return self._signature_for_hash_type_segwit(tx_out_script, unsigned_txs_out_idx, hash_type)
+        return self._signature_for_hash_type_segwit(
+            tx_out_script, unsigned_txs_out_idx, hash_type
+        )
 
     def _signature_for_hash_type_segwit(self, script, tx_in_idx, hash_type):
         hash_type |= self.FORKID_BTG << 8
-        return from_bytes_32(double_sha256(self._segwit_signature_preimage(script, tx_in_idx, hash_type)))
+        return from_bytes_32(
+            double_sha256(self._segwit_signature_preimage(script, tx_in_idx, hash_type))
+        )

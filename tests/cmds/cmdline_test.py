@@ -17,7 +17,7 @@ def get_test_cases():
     paths = []
     for dirpath, dirnames, filenames in os.walk(TESTS_PATH):
         for fn in filenames:
-            if fn.endswith(".txt") and fn[0] != '.':
+            if fn.endswith(".txt") and fn[0] != ".":
                 paths.append(os.path.join(dirpath, fn))
     paths.sort()
     test_cases = []
@@ -27,12 +27,13 @@ def get_test_cases():
             comments = []
             while 1:
                 cmd = f.readline()
-                if cmd[0] != '#':
+                if cmd[0] != "#":
                     break
                 comments.append(cmd)
             expected_output = f.read()
-            test_name = os.path.relpath(
-                p, TESTS_PATH).replace(".", "_").replace("/", "_")
+            test_name = (
+                os.path.relpath(p, TESTS_PATH).replace(".", "_").replace("/", "_")
+            )
             test_cases.append((test_name, cmd, expected_output, comments, p))
     return test_cases
 
@@ -42,7 +43,6 @@ class CmdlineTest(ToolTest):
 
 
 def make_f(cmd, expected_output, comments, path):
-
     def f(self):
         CACHE_DIR = tempfile.mkdtemp()
         old_environ = dict(os.environ)
@@ -59,12 +59,13 @@ def make_f(cmd, expected_output, comments, path):
             print(expected_output)
             if REPAIR_FAILURES:
                 f = open(path, "w")
-                f.write(''.join(comments))
+                f.write("".join(comments))
                 f.write(cmd)
                 f.write(actual_output)
                 f.close()
         os.environ = old_environ
         self.assertEqual(expected_output, actual_output)
+
     return f
 
 

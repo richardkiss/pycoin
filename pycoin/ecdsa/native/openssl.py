@@ -26,11 +26,11 @@ def load_library():
 
     if PYCOIN_LIBCRYPTO_PATH:
         library_path = PYCOIN_LIBCRYPTO_PATH
-    elif system == 'Windows':
-        if platform.architecture()[0] == '64bit':
-            library_path = ctypes.util.find_library('libeay64')
+    elif system == "Windows":
+        if platform.architecture()[0] == "64bit":
+            library_path = ctypes.util.find_library("libeay64")
         else:
-            library_path = ctypes.util.find_library('libeay32')
+            library_path = ctypes.util.find_library("libeay32")
 
     else:
         # on Mac OS 10.15.1 trying to load "libcrypto" crashes
@@ -63,14 +63,27 @@ def load_library():
 
     ECC_API = [
         ("EC_GROUP_new_by_curve_name", [ctypes.c_int], ctypes.c_void_p),
-        ("EC_POINT_new", [ctypes.c_void_p], ctypes.c_void_p),  # TODO: make this a EC_POINT type
+        (
+            "EC_POINT_new",
+            [ctypes.c_void_p],
+            ctypes.c_void_p,
+        ),  # TODO: make this a EC_POINT type
         ("EC_POINT_free", [ctypes.c_void_p], None),
-        ("EC_POINT_set_affine_coordinates_GFp",
-            [ctypes.c_void_p, ctypes.c_void_p, BN_P, BN_P, BN_CTX], ctypes.c_int),
-        ("EC_POINT_get_affine_coordinates_GFp",
-            [ctypes.c_void_p, ctypes.c_void_p, BN_P, BN_P, BN_CTX], ctypes.c_int),
-        ("EC_POINT_mul",
-            [ctypes.c_void_p, ctypes.c_void_p, BN_P, ctypes.c_void_p, BN_P, BN_CTX], ctypes.c_int),
+        (
+            "EC_POINT_set_affine_coordinates_GFp",
+            [ctypes.c_void_p, ctypes.c_void_p, BN_P, BN_P, BN_CTX],
+            ctypes.c_int,
+        ),
+        (
+            "EC_POINT_get_affine_coordinates_GFp",
+            [ctypes.c_void_p, ctypes.c_void_p, BN_P, BN_P, BN_CTX],
+            ctypes.c_int,
+        ),
+        (
+            "EC_POINT_mul",
+            [ctypes.c_void_p, ctypes.c_void_p, BN_P, ctypes.c_void_p, BN_P, BN_CTX],
+            ctypes.c_int,
+        ),
     ]
     set_api(library, BIGNUM_API)
     set_api(library, ECC_API)
@@ -81,7 +94,6 @@ OpenSSL = load_library()
 
 
 def create_OpenSSLOptimizations(curve_id):
-
     class noop:
         pass
 
@@ -93,7 +105,6 @@ def create_OpenSSLOptimizations(curve_id):
         return noop
 
     class Optimizations:
-
         if OpenSSL:
             openssl_group = OpenSSL.EC_GROUP_new_by_curve_name(curve_id)
 
@@ -112,11 +123,17 @@ def create_OpenSSLOptimizations(curve_id):
             ec_result = OpenSSL.EC_POINT_new(self.openssl_group)
             ec_point = OpenSSL.EC_POINT_new(self.openssl_group)
 
-            OpenSSL.EC_POINT_set_affine_coordinates_GFp(self.openssl_group, ec_point, bn_x, bn_y, ctx)
+            OpenSSL.EC_POINT_set_affine_coordinates_GFp(
+                self.openssl_group, ec_point, bn_x, bn_y, ctx
+            )
 
-            OpenSSL.EC_POINT_mul(self.openssl_group, ec_result, None, ec_point, bn_n, ctx)
+            OpenSSL.EC_POINT_mul(
+                self.openssl_group, ec_result, None, ec_point, bn_n, ctx
+            )
 
-            OpenSSL.EC_POINT_get_affine_coordinates_GFp(self.openssl_group, ec_result, bn_x, bn_y, ctx)
+            OpenSSL.EC_POINT_get_affine_coordinates_GFp(
+                self.openssl_group, ec_result, bn_x, bn_y, ctx
+            )
             OpenSSL.EC_POINT_free(ec_point)
             OpenSSL.EC_POINT_free(ec_result)
             OpenSSL.BN_CTX_free(ctx)

@@ -10,6 +10,7 @@ class parseable_str(str):
     data (or really anything) to eliminate the need to repeatedly run slow parsing
     code when checking validity for multiple types.
     """
+
     def __new__(self, s):
         if isinstance(s, parseable_str):
             return s
@@ -59,7 +60,7 @@ def parse_bech32_or_32m(s):
     spec = triple[2]
     version = data[0]
     decoded = bech32m.convertbits(data[1:], 5, 8, False)
-    decoded_data = b''.join(int2byte(d) for d in decoded)
+    decoded_data = b"".join(int2byte(d) for d in decoded)
     rv = (hr_prefix, version, decoded_data, spec)
     return rv
 
