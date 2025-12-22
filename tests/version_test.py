@@ -7,15 +7,15 @@ class VersionTest(unittest.TestCase):
         """Test that __version__ attribute is defined."""
         self.assertTrue(hasattr(pycoin, '__version__'))
         self.assertIsNotNone(pycoin.__version__)
-        
+
     def test_version_is_string(self):
         """Test that __version__ is a string."""
         self.assertIsInstance(pycoin.__version__, str)
-        
+
     def test_version_not_empty(self):
         """Test that __version__ is not empty."""
         self.assertNotEqual(pycoin.__version__, "")
-        
+
     def test_version_value(self):
         """Test that __version__ has a valid version format."""
         # Version should be either "unknown" or start with a digit (semantic version)
