@@ -1,14 +1,14 @@
 version = "unknown"
 
 try:
-    from pkg_resources import get_distribution
+    from importlib import metadata
 
-    version = get_distribution(__name__).version
+    version = metadata.version("pycoin")
 except ImportError:
     try:
-        from importlib import metadata
+        from pkg_resources import get_distribution
 
-        version = metadata.version("pycoin")
+        version = get_distribution(__name__).version
     except Exception:
         pass
 except Exception:
