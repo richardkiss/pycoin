@@ -13,7 +13,7 @@ except ImportError:
         from pkg_resources import get_distribution, DistributionNotFound
 
         try:
-            version = get_distribution(__name__).version
+            version = get_distribution("pycoin").version
         except DistributionNotFound:
             pass
     except ImportError:

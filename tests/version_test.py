@@ -22,7 +22,11 @@ class VersionTest(unittest.TestCase):
         # setuptools_scm can generate formats like: "1.0.0", "0.1.dev2", "1.0+dirty", 
         # "1.0.dev2+gabcd1234", so we use a permissive check
         if pycoin.__version__ != "unknown":
-            # Valid versions start with a digit
+            # Valid versions should be non-empty and start with a digit
+            self.assertGreater(
+                len(pycoin.__version__), 0,
+                "Version should not be empty"
+            )
             self.assertTrue(
                 pycoin.__version__[0].isdigit(),
                 f"Version should start with a digit, got: {pycoin.__version__}"
