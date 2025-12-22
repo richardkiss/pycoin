@@ -33,3 +33,4 @@ Bitcoin address uncompressed : 1MwkRkogzBRMehBntgcq2aJhXCXStJTXHT
 Bitcoin segwit address       : bc1qt56n5tkdkf3ywutjs5k40gl3rhsvry5xk3m9g3
 p2sh segwit                  : 37fVADSztbVGWoHYYw4ViPAcGqZ85QDmVi
  corresponding p2sh script   : 00145d353a2ecdb262477172852d57a3f11de0c19286
+Bitcoin taproot address      : bc1pknjenhayg426fmfchnllqpcattm8d2r2hufrck6tf68x0g9skyls4r5tln
