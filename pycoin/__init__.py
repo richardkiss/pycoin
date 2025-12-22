@@ -8,7 +8,7 @@ try:
     except PackageNotFoundError:
         pass
 except ImportError:
-    # importlib.metadata not available (Python < 3.8)
+    # importlib.metadata not available (Python < 3.8 or missing backport)
     try:
         from pkg_resources import get_distribution, DistributionNotFound
 

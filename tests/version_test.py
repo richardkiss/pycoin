@@ -18,9 +18,9 @@ class VersionTest(unittest.TestCase):
 
     def test_version_value(self):
         """Test that __version__ has a valid version format."""
-        # Version should be either "unknown" or start with a digit (semantic version)
-        # setuptools_scm can generate formats like: "1.0.0", "0.1.dev2", "1.0+dirty", 
-        # "1.0.dev2+gabcd1234", so we use a permissive check
+        # Version should be either "unknown" or start with a digit (semantic version).
+        # setuptools_scm can generate formats like:
+        # "1.0.0", "0.1.dev2", "1.0+dirty", "1.0.dev2+gabcd1234"
         if pycoin.__version__ != "unknown":
             # Valid versions should start with a digit
             self.assertTrue(
