@@ -271,3 +271,14 @@ class Key(object):
 
                 p2sh_script_hex = b2h(p2sh_script)
                 yield ("p2sh_segwit_script", p2sh_script_hex, " corresponding p2sh script")
+
+        # generate P2TR (taproot) address if the network supports it
+        if hash160_c and hasattr(self._network.address, "for_p2tr"):
+            # P2TR uses the x-only public key (32 bytes)
+            public_pair = self.public_pair()
+            if public_pair:
+                x_only = to_bytes_32(public_pair[0])
+                address_taproot = self._network.address.for_p2tr(x_only)
+                if address_taproot:
+                    yield ("address_taproot", address_taproot, "%s taproot address" % self._network.network_name)
+                    yield ("%s_address_taproot" % self._network.symbol, address_taproot, "legacy")
