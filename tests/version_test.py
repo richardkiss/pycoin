@@ -23,9 +23,8 @@ class VersionTest(unittest.TestCase):
         # "1.0.dev2+gabcd1234", so we use a permissive check
         if pycoin.__version__ != "unknown":
             # Valid versions should start with a digit
-            # Length check is defensive (test_version_not_empty already checks this)
             self.assertTrue(
-                len(pycoin.__version__) > 0 and pycoin.__version__[0].isdigit(),
+                pycoin.__version__[0].isdigit(),
                 f"Version should start with a digit, got: {pycoin.__version__}"
             )
 
