@@ -18,10 +18,11 @@ class VersionTest(unittest.TestCase):
         
     def test_version_value(self):
         """Test that __version__ has a reasonable value."""
-        # Version should be either a version string or "unknown"
+        # Version should be either a valid version string or "unknown"
+        # Valid version strings contain digits (e.g., "0.1.0", "1.2.3", "0.1.dev2")
         self.assertTrue(
             pycoin.__version__ == "unknown" or 
-            len(pycoin.__version__) > 0
+            any(char.isdigit() for char in pycoin.__version__)
         )
 
 
