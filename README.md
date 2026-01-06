@@ -15,6 +15,19 @@ Documentation at [readthedocs](http://pycoin.readthedocs.io/en/latest/)
 Discussion at [zulipchat](https://pycoin.zulipchat.com/)
 
 
+Type Checking
+-------------
+
+Pycoin includes type hints and supports static type checking with mypy. To type check the library:
+
+```bash
+pip install mypy
+mypy --config-file=mypy.ini pycoin
+```
+
+The library is gradually being typed, starting with the `pycoin.encoding` and `pycoin.intbytes` modules.
+
+
 Networks
 --------
 

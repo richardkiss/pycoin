@@ -28,8 +28,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Test core code with pytest
+    - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install coverage pytest
+        pip install coverage pytest mypy
+
+    - name: Run mypy type checker
+      run: |
+        mypy --config-file=mypy.ini pycoin
+
+    - name: Test core code with pytest
+      run: |
         coverage run -m pytest tests
