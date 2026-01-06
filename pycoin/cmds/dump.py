@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import datetime
 
 from pycoin.convention import satoshi_to_mbtc

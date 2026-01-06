@@ -3,11 +3,10 @@ import binascii
 
 def h2b(h):
     """
-    A version of binascii.unhexlify that accepts unicode. This is
-    no longer necessary as of Python 3.3. But it doesn't hurt.
+    A version of binascii.unhexlify that accepts unicode strings.
 
     Raises a ValueError on failure (unlike binascii.unhexlify, which
-    raises a TypeError in Python 2 and a binascii.Error in Python 3).
+    raises a TypeError or binascii.Error in some cases).
     """
     try:
         return binascii.unhexlify(h.encode("ascii"))
