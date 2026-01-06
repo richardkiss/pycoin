@@ -39,31 +39,23 @@ def from_long(
     v: int,
     prefix: int,
     base: int,
-    charset: Callable[[int], Union[int, bytes]]
+    charset: Callable[[int], int]
 ) -> bytes:
     """The inverse of to_long. Convert an integer to an arbitrary base.
 
     v: the integer value to convert
     prefix: the number of prefixed 0s to include
     base: the new base
-    charset: an array indicating what printable character to use for each value.
+    charset: a function that maps an int (0 to base-1) to a byte value (0-255).
     """
     ba = bytearray()
     while v > 0:
         try:
             v, mod = divmod(v, base)
-            result = charset(mod)
-            if isinstance(result, bytes):
-                ba.append(result[0])
-            else:
-                ba.append(result)
+            ba.append(charset(mod))
         except Exception:
             raise EncodingError("can't convert to character corresponding to %d" % mod)
-    charset_zero = charset(0)
-    if isinstance(charset_zero, bytes):
-        ba.extend([charset_zero[0]] * prefix)
-    else:
-        ba.extend([charset_zero] * prefix)
+    ba.extend([charset(0)] * prefix)
     ba.reverse()
     return bytes(ba)
 

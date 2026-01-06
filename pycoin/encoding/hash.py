@@ -17,6 +17,13 @@ def ripemd160_native(data: bytes) -> HashObject:
 
 
 def get_best_ripemd160() -> Callable[[bytes], HashObject]:
+    """
+    Return the best available RIPEMD-160 implementation.
+    
+    Returns a callable that takes bytes and returns a HashObject.
+    Different implementations may have different internal types, but all
+    satisfy the HashObject protocol.
+    """
     # ubuntu 22 features an openssl without ripemd160, where python gets its
     # implementation from. To top it off, `"ripemd160" in hashlib.algorithms_available`
     # still evaluates to true, so we actually have to try it to see if we'll fail.
@@ -28,7 +35,8 @@ def get_best_ripemd160() -> Callable[[bytes], HashObject]:
     if USE_NATIVE:
         try:
             ripemd160_native(b"").digest()
-            return ripemd160_native  # type: ignore
+            # Return native hashlib implementation
+            return ripemd160_native  # type: ignore[return-value]
         except Exception:
             pass
 
@@ -38,19 +46,22 @@ def get_best_ripemd160() -> Callable[[bytes], HashObject]:
     #   version: "latest"
     # to the "libraries" section of your app.yaml
     try:
-        from Crypto.Hash.RIPEMD import RIPEMD160Hash  # type: ignore
-        return RIPEMD160Hash  # type: ignore
+        from Crypto.Hash.RIPEMD import RIPEMD160Hash  # type: ignore[import-not-found]
+        # Return PyCrypto implementation
+        return RIPEMD160Hash  # type: ignore[return-value]
     except Exception:
         pass
 
     class RIPEMD160HashFallback:
+        """Pure Python fallback implementation."""
         def __init__(self, data: bytes) -> None:
             self._digest = pycoin.contrib.ripemd160.ripemd160(data)
 
         def digest(self) -> bytes:
             return self._digest
 
-    return RIPEMD160HashFallback  # type: ignore
+    # Return pure Python implementation
+    return RIPEMD160HashFallback  # type: ignore[return-value]
 
 
 ripemd160 = get_best_ripemd160()
