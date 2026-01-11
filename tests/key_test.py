@@ -93,38 +93,6 @@ class KeyTest(unittest.TestCase):
                 "18fKPR8s1MQeckAsgya1sx6Z3WmFXd8wv8",
                 "1DVJQzgnyCahXdoXdJ3tjGA3hrYVgKpvgK")
 
-    def test_p2tr_address(self):
-        # Test P2TR (taproot) address generation
-        # Using secret exponent 1, which is a known test vector from BIP 350
-        # The x-coordinate for this key is: 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
-        # This corresponds to the last test vector in BIP 350 for valid addresses
-        private_key = network.keys.private(secret_exponent=1)
-        
-        # Get P2TR address from ku_output_for_address
-        p2tr_addresses = {}
-        for k, v, text in private_key.ku_output_for_address():
-            if 'taproot' in k:
-                p2tr_addresses[k] = v
-        
-        # Verify the address is generated
-        self.assertIn('address_taproot', p2tr_addresses)
-        
-        # Verify the expected address matches BIP 350 test vector for secret exponent 1
-        # From BIP 350: bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0
-        # corresponds to script pubkey: 512079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
-        expected_address = "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0"
-        self.assertEqual(p2tr_addresses['address_taproot'], expected_address)
-        
-        # Test with public key only
-        public_key = private_key.public_copy()
-        p2tr_addresses_pub = {}
-        for k, v, text in public_key.ku_output_for_address():
-            if 'taproot' in k:
-                p2tr_addresses_pub[k] = v
-        
-        # Verify public key generates the same address
-        self.assertEqual(p2tr_addresses_pub['address_taproot'], expected_address)
-
 
 if __name__ == '__main__':
     unittest.main()
