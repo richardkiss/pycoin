@@ -280,4 +280,3 @@ class Key(object):
             address_taproot = self._network.address.for_p2tr(x_only)
             if address_taproot:
                 yield ("address_taproot", address_taproot, "%s taproot address" % self._network.network_name)
-                yield ("%s_address_taproot" % self._network.symbol, address_taproot, "legacy")
