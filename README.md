@@ -6,13 +6,26 @@ pycoin -- Python Cryptocoin Utilities
 =====================================
 
 The pycoin library implements many utilities useful when dealing with bitcoin and some bitcoin-like
-alt-coins. It has been tested with Python 2.7, 3.7-3.13.
+alt-coins. It requires Python 3.10 or later.
 
 See also [pycoinnet](http://github.com/richardkiss/pycoinnet/) for a library that speaks the bitcoin protocol.
 
 Documentation at [readthedocs](http://pycoin.readthedocs.io/en/latest/)
 
 Discussion at [zulipchat](https://pycoin.zulipchat.com/)
+
+
+Type Checking
+-------------
+
+Pycoin includes type hints and supports static type checking with mypy. To type check the library:
+
+```bash
+pip install mypy
+mypy --config-file=mypy.ini pycoin
+```
+
+The library is gradually being typed, starting with the `pycoin.encoding` and `pycoin.intbytes` modules.
 
 
 Networks

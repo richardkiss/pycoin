@@ -1,7 +1,16 @@
+from typing import Callable, Iterable, Tuple, TypeVar, Union
+
 from .exceptions import EncodingError
 
 
-def to_long(base, lookup_f, s):
+T = TypeVar('T')
+
+
+def to_long(
+    base: int,
+    lookup_f: Callable[[T], int],
+    s: Iterable[T]
+) -> Tuple[int, int]:
     """
     Convert an array to a (possibly bignum) integer, along with a prefix value
     of how many prefixed zeros there are.
@@ -26,13 +35,18 @@ def to_long(base, lookup_f, s):
     return v, prefix
 
 
-def from_long(v, prefix, base, charset):
+def from_long(
+    v: int,
+    prefix: int,
+    base: int,
+    charset: Callable[[int], int]
+) -> bytes:
     """The inverse of to_long. Convert an integer to an arbitrary base.
 
     v: the integer value to convert
     prefix: the number of prefixed 0s to include
     base: the new base
-    charset: an array indicating what printable character to use for each value.
+    charset: a function that maps an int (0 to base-1) to a byte value (0-255).
     """
     ba = bytearray()
     while v > 0:
