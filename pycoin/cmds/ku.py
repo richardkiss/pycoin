@@ -13,7 +13,6 @@ from pycoin.key.BIP32Node import BIP32Node
 from pycoin.networks.default import get_current_netcode
 from pycoin.networks.registry import network_codes, network_for_netcode
 
-
 HASH160_RE = re.compile(r"^([0-9a-fA-F]{40})$")
 
 
@@ -66,6 +65,21 @@ def create_output(item, key, output_key_set, subkey_path=None):
 
     if subkey_path:
         add_output("subkey_path", subkey_path)
+
+    if isinstance(key, BIP32Node):
+        if(key._network.parse._bip49_pub_prefix and key._network.parse._bip49_prv_prefix):
+            if key._secret_exponent:
+                add_output("p2sh_segwit wallet key",
+                    key._network.bip49_as_string(key.serialize(as_private=True), as_private=True))
+            add_output("p2sh_segwit public version",
+                key._network.bip49_as_string(key.serialize(as_private=False), as_private=False))
+
+        if(key._network.parse._bip84_pub_prefix and key._network.parse._bip84_prv_prefix):
+            if key._secret_exponent:
+                add_output("segwit wallet key",
+                    key._network.bip84_as_string(key.serialize(as_private=True), as_private=True))
+            add_output("segwit public version",
+                key._network.bip84_as_string(key.serialize(as_private=False), as_private=False))
 
     for k, v, text in key.ku_output():
         add_output(k, v, text)
