@@ -10,7 +10,7 @@ def bit_length(v: int) -> int:
     return v.bit_length()
 
 
-def deterministic_generate_k(generator_order: int, secret_exponent: int, val: int, hash_f: Callable[[], Any] = hashlib.sha256) -> int:
+def deterministic_generate_k(generator_order: int, secret_exponent: int, val: int, hash_f: Callable[..., Any] = hashlib.sha256) -> int:
     """
     :param generator_order: result from `pycoin.ecdsa.Generator.Generator.order`,
         necessary to ensure the k value is within bound
