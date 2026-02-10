@@ -7,3 +7,8 @@ files.txt
 *egg-info
 .DS_STORE
 .tox
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/

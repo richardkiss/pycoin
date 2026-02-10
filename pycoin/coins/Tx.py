@@ -17,7 +17,7 @@ class Tx(object):
     @classmethod
     def parse(class_, f):
         """Parse a transaction Tx from the file-like object f."""
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @classmethod
     def from_bin(class_, blob):
@@ -53,11 +53,11 @@ class Tx(object):
         return class_.from_bin(h2b(hex_string))
 
     def __init__(self, *args, **kwargs):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def stream(self, f, *args, **kwargs):
         """Stream a transaction Tx to the file-like object f."""
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def as_bin(self, *args, **kwargs):
         """Returns a binary blob containing the streamed transaction.
@@ -81,7 +81,7 @@ class Tx(object):
 
     def hash(self, hash_type=None):
         """Return the hash for this Tx object."""
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def id(self):
         """Return the human-readable hash for this Tx object."""
@@ -97,16 +97,16 @@ class Tx(object):
             for tx_out_index, tx_out in enumerate(self.txs_out)]
 
     def __str__(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def __repr__(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def check(self):
         """
         Basic checks that don't depend on network or block context.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     """
     The functions below here deal with an optional additional parameter: "unspents".

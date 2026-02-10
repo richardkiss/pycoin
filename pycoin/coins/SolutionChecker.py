@@ -18,4 +18,4 @@ class SolutionChecker(object):
         tx_context: information about the transaction that the VM may need
         traceback_f: a function invoked on occasion to check intermediate state
         """
-        raise NotImplemented()
+        raise NotImplementedError()
