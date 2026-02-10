@@ -2,9 +2,9 @@
 
 def to_bytes(v: int, length: int, byteorder: str = "big") -> bytes:
     """This is the same functionality as ``int.to_bytes`` in python 3"""
-    return v.to_bytes(length, byteorder=byteorder)
+    return v.to_bytes(length, byteorder=byteorder)  # type: ignore[arg-type]
 
 
 def from_bytes(bytes: bytes, byteorder: str = "big", signed: bool = False) -> int:
     """This is the same functionality as ``int.from_bytes`` in python 3"""
-    return int.from_bytes(bytes, byteorder=byteorder, signed=signed)
+    return int.from_bytes(bytes, byteorder=byteorder, signed=signed)  # type: ignore[arg-type]

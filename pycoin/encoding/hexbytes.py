@@ -1,7 +1,7 @@
 import binascii
 
 
-def h2b(h):
+def h2b(h: str) -> bytes:
     """
     A version of binascii.unhexlify that accepts unicode. This is
     no longer necessary as of Python 3.3. But it doesn't hurt.
@@ -15,15 +15,15 @@ def h2b(h):
         raise ValueError("h2b failed on %s" % h)
 
 
-def h2b_rev(h):
+def h2b_rev(h: str) -> bytes:
     return h2b(h)[::-1]
 
 
-def b2h(the_bytes):
+def b2h(the_bytes: bytes) -> str:
     return binascii.hexlify(the_bytes).decode("utf8")
 
 
-def b2h_rev(the_bytes):
+def b2h_rev(the_bytes: bytes) -> str:
     return b2h(bytearray(reversed(the_bytes)))
 
 
