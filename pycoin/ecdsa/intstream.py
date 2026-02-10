@@ -6,6 +6,6 @@ def to_bytes(v: int, length: int, byteorder: Literal["big", "little"] = "big") -
     return v.to_bytes(length, byteorder=byteorder)
 
 
-def from_bytes(bytes: bytes, byteorder: Literal["big", "little"] = "big", signed: bool = False) -> int:
+def from_bytes(data: bytes, byteorder: Literal["big", "little"] = "big", signed: bool = False) -> int:
     """This is the same functionality as ``int.from_bytes`` in python 3"""
-    return int.from_bytes(bytes, byteorder=byteorder, signed=signed)
+    return int.from_bytes(data, byteorder=byteorder, signed=signed)
