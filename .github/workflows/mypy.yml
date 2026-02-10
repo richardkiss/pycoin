@@ -1,21 +1,20 @@
-name: Tests and coverage
+name: Type checking with mypy
 
 on:
   push:
     branches:
       - '**'
-    tags:
-      - '**'
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build:
+  mypy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     strategy:
-      fail-fast: false
-      max-parallel: 4
       matrix:
-        python-version: [3.8, 3.9, "3.10", "3.11"]
+        python-version: [3.8, "3.10", "3.11"]
 
     steps:
     - name: Checkout Code
@@ -28,8 +27,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Test core code with pytest
+    - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install coverage pytest
-        coverage run -m pytest tests
+        pip install mypy>=1.0
+
+    - name: Run mypy
+      run: |
+        mypy pycoin

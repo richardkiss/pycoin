@@ -4,18 +4,9 @@ import hmac
 from . import intstream
 
 
-if hasattr(1, "bit_length"):
-    def bit_length(v):
-        "the ``int.bit_length`` in `python 3 <https://docs.python.org/3/library/stdtypes.html#int.bit_length>`_"
-        return v.bit_length()
-else:
-    def bit_length(self):
-        "the ``int.bit_length`` in `python 3 <https://docs.python.org/3/library/stdtypes.html#int.bit_length>`_"
-        # compared to "while n>0: bl +=1 ; n >>= 1", this is much faster in both python2 and pypy
-        # code taken from the link above
-        s = bin(self)  # binary representation:  bin(-37) --> '-0b100101'
-        s = s.lstrip('-0b')  # remove leading zeros and minus sign
-        return len(s)  # len('100101') --> 6
+def bit_length(v):
+    "the ``int.bit_length`` in `python 3 <https://docs.python.org/3/library/stdtypes.html#int.bit_length>`_"
+    return v.bit_length()
 
 
 def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashlib.sha256):

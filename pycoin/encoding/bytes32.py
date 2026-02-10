@@ -1,24 +1,10 @@
 
-if hasattr(int, "to_bytes"):
-    def to_bytes_32(v):
-        return v.to_bytes(32, byteorder="big")
+def to_bytes_32(v):
+    return v.to_bytes(32, byteorder="big")
 
-    def from_bytes_32(v):
-        return int.from_bytes(v, byteorder="big")
-else:
-    from .base_conversion import from_long, to_long
-    from ..intbytes import byte2int
 
-    def to_bytes_32(v):
-        v = from_long(v, 0, 256, lambda x: x)
-        if len(v) > 32:
-            raise ValueError("input to to_bytes_32 is too large")
-        return ((b'\0' * 32) + v)[-32:]
-
-    def from_bytes_32(v):
-        if len(v) > 32:
-            raise OverflowError("int too big to convert")
-        return to_long(256, byte2int, v)[0]
+def from_bytes_32(v):
+    return int.from_bytes(v, byteorder="big")
 
 
 """
