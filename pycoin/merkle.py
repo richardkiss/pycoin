@@ -1,15 +1,17 @@
+from typing import List, Callable
+
 from .encoding.hash import double_sha256
 from .encoding.hexbytes import h2b_rev
 
 
-def merkle(hashes, hash_f=double_sha256):
+def merkle(hashes: List[bytes], hash_f: Callable[[bytes], bytes] = double_sha256) -> bytes:
     """Take a list of hashes, and return the root merkle hash."""
     while len(hashes) > 1:
         hashes = merkle_pair(hashes, hash_f)
     return hashes[0]
 
 
-def merkle_pair(hashes, hash_f):
+def merkle_pair(hashes: List[bytes], hash_f: Callable[[bytes], bytes]) -> List[bytes]:
     """Take a list of hashes, and return the parent row in the tree of merkle hashes."""
     if len(hashes) % 2 == 1:
         hashes = list(hashes)
@@ -20,7 +22,7 @@ def merkle_pair(hashes, hash_f):
     return items
 
 
-def test_merkle():
+def test_merkle() -> None:
     s1 = h2b_rev("56dee62283a06e85e182e2d0b421aceb0eadec3d5f86cdadf9688fc095b72510")
     assert merkle([s1], double_sha256) == s1
     # from block 71043
