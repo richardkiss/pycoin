@@ -14,11 +14,12 @@ byte2int(bs):
     turn bs[0] into an int (0-255)
 """
 
+from typing import Iterator, Callable
 import operator
 import struct
 
 # Python 3 implementations
-iterbytes = iter
-indexbytes = operator.getitem
-int2byte = struct.Struct(">B").pack
-byte2int = operator.itemgetter(0)
+iterbytes: Callable[[bytes], Iterator[int]] = iter
+indexbytes: Callable[[bytes, int], int] = operator.getitem
+int2byte: Callable[[int], bytes] = struct.Struct(">B").pack
+byte2int: Callable[[bytes], int] = operator.itemgetter(0)

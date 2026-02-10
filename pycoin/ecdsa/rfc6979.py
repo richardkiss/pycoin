@@ -1,15 +1,16 @@
 import hashlib
 import hmac
+from typing import Callable, Any
 
 from . import intstream
 
 
-def bit_length(v):
+def bit_length(v: int) -> int:
     "the ``int.bit_length`` in `python 3 <https://docs.python.org/3/library/stdtypes.html#int.bit_length>`_"
     return v.bit_length()
 
 
-def deterministic_generate_k(generator_order, secret_exponent, val, hash_f=hashlib.sha256):
+def deterministic_generate_k(generator_order: int, secret_exponent: int, val: int, hash_f: Callable[[], Any] = hashlib.sha256) -> int:
     """
     :param generator_order: result from `pycoin.ecdsa.Generator.Generator.order`,
         necessary to ensure the k value is within bound
