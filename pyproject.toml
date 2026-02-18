@@ -1,9 +1,16 @@
+[tool.poetry]
+name = "pycoin"
+version = "0.1.0"
+description = "A cryptocurrency library."
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.0"
+dev-1 = "dev-package-1"
+dev-2 = "dev-package-2"
+
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.5.0"]
-build-backend = "setuptools.build_meta"
-
-[project]
-requires-python = ">=3.10"
-
-[tool.setuptools_scm]
-local_scheme = "no-local-version"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
