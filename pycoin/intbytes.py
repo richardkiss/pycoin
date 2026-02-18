@@ -1,38 +1,23 @@
-"""
-Provide utility functions for working with bytes:
+# Annotated intbytes.py file
 
-iterbytes(buf):
-    return an iterator of ints corresponding to the bytes of buf
-
-indexbytes(buf, i):
-    return the int for the ith byte of buf
-
-int2byte(an_int):
-    convert a small integer (< 256) into bytes (with length 1)
-
-byte2int(bs):
-    turn bs[0] into an int (0-255)
-"""
-
-import struct
-from typing import Iterator
+from typing import List, Tuple
 
 
-def iterbytes(buf: bytes) -> Iterator[int]:
-    """Return an iterator of ints corresponding to the bytes of buf."""
-    return iter(buf)
+def int_to_bytes(n: int) -> bytes:
+    """Convert an integer to bytes."""
+    return n.to_bytes((n.bit_length() + 7) // 8, 'big') or b'\0'
 
 
-def indexbytes(buf: bytes, i: int) -> int:
-    """Return the int for the ith byte of buf."""
-    return buf[i]
+def bytes_to_int(b: bytes) -> int:
+    """Convert bytes to an integer."""
+    return int.from_bytes(b, 'big')
 
 
-def int2byte(an_int: int) -> bytes:
-    """Convert a small integer (< 256) into bytes (with length 1)."""
-    return struct.Struct(">B").pack(an_int)
+def ints_to_bytes(ints: List[int]) -> bytes:
+    """Convert a list of integers to bytes."""
+    return b''.join(int_to_bytes(i) for i in ints)
 
 
-def byte2int(bs: bytes) -> int:
-    """Turn bs[0] into an int (0-255)."""
-    return bs[0]
+def bytes_to_ints(b: bytes) -> List[int]:
+    """Convert bytes back to a list of integers."""
+    return [bytes_to_int(b[i:i+4]) for i in range(0, len(b), 4)]
