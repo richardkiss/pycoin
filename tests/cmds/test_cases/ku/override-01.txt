@@ -23,3 +23,4 @@ Litecoin address uncompressed : LYWKqJhtPeGyBAw7WC8R3F7ovxtzAiubdM
 Litecoin segwit address       : ltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kgmn4n9
 p2sh segwit                   : MR8UQSBr5ULwWheBHznrHk2jxyxkHQu8vB
  corresponding p2sh script    : 0014751e76e8199196d454941c45d1b3a323f1433bd6
+Litecoin taproot address      : ltc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpj6zg2
