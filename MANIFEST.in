@@ -1,1 +1,2 @@
 include CHANGES CREDITS LICENSE *.md *.txt
+include pycoin/py.typed
