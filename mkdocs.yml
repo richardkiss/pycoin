@@ -24,13 +24,23 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Installation: install.md
-  - API Reference: api.md
-  - Command-line Tools: cmdtools.md
-  - Bitcoin Primer: bitcoin.md
-  - Recipes: source/recipes.md
-  - Contract: source/contract.md
-  - ECDSA: source/pycoin.ecdsa.md
-  - Services: source/pycoin.services.md
+  - Tutorials:
+    - Getting Started: tutorials/getting-started.md
+    - Your First Transaction: tutorials/first-transaction.md
+  - How-to Guides:
+    - BIP32 Keys: how-to/bip32-keys.md
+    - Sign a Transaction: how-to/sign-a-transaction.md
+    - Multisig: how-to/multisig.md
+  - Reference:
+    - API Reference: api.md
+    - Command-line Tools: cmdtools.md
+    - ECDSA: source/pycoin.ecdsa.md
+    - Services: source/pycoin.services.md
+    - Contract: source/contract.md
+    - Recipes: source/recipes.md
+    - Installation: install.md
+  - Explanation:
+    - Design Philosophy: explanation/design-philosophy.md
+    - Bitcoin Primer: bitcoin.md
 
 docs_dir: docs
