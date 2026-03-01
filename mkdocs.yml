@@ -1,0 +1,46 @@
+site_name: pycoin
+site_url: https://pycoin.readthedocs.io/
+repo_url: https://github.com/richardkiss/pycoin
+repo_name: richardkiss/pycoin
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - admonition
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Tutorials:
+    - Getting Started: tutorials/getting-started.md
+    - Your First Transaction: tutorials/first-transaction.md
+  - How-to Guides:
+    - BIP32 Keys: how-to/bip32-keys.md
+    - Sign a Transaction: how-to/sign-a-transaction.md
+    - Multisig: how-to/multisig.md
+  - Reference:
+    - API Reference: api.md
+    - Command-line Tools: cmdtools.md
+    - ECDSA: source/pycoin.ecdsa.md
+    - Services: source/pycoin.services.md
+    - Contract: source/contract.md
+    - Recipes: source/recipes.md
+    - Installation: install.md
+  - Explanation:
+    - Design Philosophy: explanation/design-philosophy.md
+    - Bitcoin Primer: bitcoin.md
+
+docs_dir: docs
