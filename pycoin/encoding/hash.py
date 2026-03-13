@@ -1,16 +1,29 @@
 import hashlib
 import os
+from typing import Callable, Protocol
 
 import pycoin.contrib.ripemd160
 
 from .hexbytes import bytes_as_revhex
 
 
-def ripemd160_native(data):
-    return hashlib.new("ripemd160", data)
+class HashObject(Protocol):
+    """Protocol for hash objects."""
+    def digest(self) -> bytes: ...
 
 
-def get_best_ripemd160():
+def ripemd160_native(data: bytes) -> HashObject:
+    return hashlib.new("ripemd160", data)  # type: ignore
+
+
+def get_best_ripemd160() -> Callable[[bytes], HashObject]:
+    """
+    Return the best available RIPEMD-160 implementation.
+    
+    Returns a callable that takes bytes and returns a HashObject.
+    Different implementations may have different internal types, but all
+    satisfy the HashObject protocol.
+    """
     # ubuntu 22 features an openssl without ripemd160, where python gets its
     # implementation from. To top it off, `"ripemd160" in hashlib.algorithms_available`
     # still evaluates to true, so we actually have to try it to see if we'll fail.
@@ -22,7 +35,8 @@ def get_best_ripemd160():
     if USE_NATIVE:
         try:
             ripemd160_native(b"").digest()
-            return ripemd160_native
+            # Return native hashlib implementation
+            return ripemd160_native  # type: ignore[return-value]
         except Exception:
             pass
 
@@ -32,28 +46,33 @@ def get_best_ripemd160():
     #   version: "latest"
     # to the "libraries" section of your app.yaml
     try:
-        from Crypto.Hash.RIPEMD import RIPEMD160Hash
+        from Crypto.Hash.RIPEMD import RIPEMD160Hash  # type: ignore[import-not-found]
+        # Return PyCrypto implementation
+        return RIPEMD160Hash  # type: ignore[return-value]
     except Exception:
+        pass
 
-        class RIPEMD160Hash:
-            def __init__(self, data):
-                self._digest = pycoin.contrib.ripemd160.ripemd160(data)
+    class RIPEMD160HashFallback:
+        """Pure Python fallback implementation."""
+        def __init__(self, data: bytes) -> None:
+            self._digest = pycoin.contrib.ripemd160.ripemd160(data)
 
-            def digest(self):
-                return self._digest
+        def digest(self) -> bytes:
+            return self._digest
 
-    return RIPEMD160Hash
+    # Return pure Python implementation
+    return RIPEMD160HashFallback  # type: ignore[return-value]
 
 
 ripemd160 = get_best_ripemd160()
 
 
-def double_sha256(data):
+def double_sha256(data: bytes) -> bytes_as_revhex:
     """A standard compound hash."""
     return bytes_as_revhex(hashlib.sha256(hashlib.sha256(data).digest()).digest())
 
 
-def hash160(data):
+def hash160(data: bytes) -> bytes:
     """A standard compound hash."""
     return ripemd160(hashlib.sha256(data).digest()).digest()
 

@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
     - name: Checkout Code
@@ -28,8 +28,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Test core code with pytest
+    - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install coverage pytest
+        pip install coverage pytest mypy
+
+    - name: Run mypy type checker
+      run: |
+        mypy --config-file=mypy.ini pycoin
+
+    - name: Test core code with pytest
+      run: |
         coverage run -m pytest tests
