@@ -1,0 +1,27 @@
+# BIP49 (P2WPKH-P2SH) Litecoin key derived from P:foo, encoded as Mtpv/Mtub
+ku -n LTC -j Mtpv7L6Q8tPadPv8jH1NeZv5L1EkPHHbpMrfN3ErK82R3fq2CzwEgeg5mWZ7YJBBxMrurqLX8LY77M38apSEtEBCLdErZTg7R8LS28CaC5J77UQ
+{
+   "address": "MDsdU6rxqiLhKJZSep3qY2R1bY9ZzJ1VKU",
+   "chain_code": "5eeb1023fd6dd1ae52a005ce0e73420821e1d90e08be980a85e9111fd7646bbc",
+   "child_index": "0",
+   "fingerprint": "5d353a2e",
+   "input": "Mtpv7L6Q8tPadPv8jH1NeZv5L1EkPHHbpMrfN3ErK82R3fq2CzwEgeg5mWZ7YJBBxMrurqLX8LY77M38apSEtEBCLdErZTg7R8LS28CaC5J77UQ",
+   "key_pair_as_sec": "02b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f",
+   "key_pair_as_sec_uncompressed": "04b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f826d8b4d3010aea16ff4c1c1d3ae68541d9a04df54a2c48cc241c2983544de52",
+   "network": "Litecoin mainnet",
+   "parent_fingerprint": "00000000",
+   "private_key": "yes",
+   "public_pair_x": "81821982719381104061777349269130419024493616650993589394553404347774393168191",
+   "public_pair_x_hex": "b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f",
+   "public_pair_y": "58994218069605424278320703250689780154785099509277691723126325051200459038290",
+   "public_pair_y_hex": "826d8b4d3010aea16ff4c1c1d3ae68541d9a04df54a2c48cc241c2983544de52",
+   "public_version": "Mtub2mGjjfp7sYT6M9iCuBQTQb4xpqyntcRKSZLsz6nhyrccoN8K1ZiWn7fNnfTYYkYiFn4NNXNW8HXA1DoRS4mBGsCGtbchk3H3fNSu9cYsare",
+   "secret_exponent": "65825730547097305716057160437970790220123864299761908948746835886007793998275",
+   "secret_exponent_hex": "91880b0e3017ba586b735fe7d04f1790f3c46b818a2151fb2def5f14dd2fd9c3",
+   "symbol": "LTC",
+   "tree_depth": "0",
+   "wallet_key": "Mtpv7L6Q8tPadPv8jH1NeZv5L1EkPHHbpMrfN3ErK82R3fq2CzwEgeg5mWZ7YJBBxMrurqLX8LY77M38apSEtEBCLdErZTg7R8LS28CaC5J77UQ",
+   "wif": "T7vsV2PudmU3c1UtTWUM2WPGMAaQSNh4e2zbisRAYp53SWQ5W3co",
+   "wif_uncompressed": "6vE7THdTReGC1gXneGju7gjev45PyxDFRFVuj7SQuyRw2KpEPE8",
+   "y_parity": "even"
+}
