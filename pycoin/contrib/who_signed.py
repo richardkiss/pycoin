@@ -1,5 +1,4 @@
 from ..encoding.sec import (
-    is_sec,
     public_pair_to_hash160_sec,
     sec_to_public_pair,
     EncodingError,

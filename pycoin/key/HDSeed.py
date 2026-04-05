@@ -1,10 +1,8 @@
 import hashlib
-import hmac
 import struct
 
 from ..encoding.bytes32 import from_bytes_32
 from ..encoding.sec import sec_to_public_pair
-from .Key import Key
 
 
 class HDSeed:

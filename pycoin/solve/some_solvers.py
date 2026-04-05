@@ -1,6 +1,5 @@
 # generic solver
 
-import pdb
 
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi.checksigops import parse_signature_blob

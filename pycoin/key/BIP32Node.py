@@ -27,7 +27,6 @@ from .bip32 import (
     subkey_public_pair_chain_code_pair,
     subkey_secret_exponent_chain_code_pair,
 )
-from .subpaths import subpaths_for_path_range
 
 
 class PublicPrivateMismatchError(Exception):

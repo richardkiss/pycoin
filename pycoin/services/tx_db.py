@@ -54,7 +54,7 @@ class TxDb(object):
         return None
 
     def __getitem__(self, key):
-        raise NotImplemented
+        raise NotImplementedError
 
     def __setitem__(self, key, val):
         if val.hash() != key:

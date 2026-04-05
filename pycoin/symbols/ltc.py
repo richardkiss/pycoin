@@ -1,8 +1,6 @@
-import struct
 
 from pycoin.coins.litecoin import LTCTx, LTCBlock
 from pycoin.networks.bitcoinish import create_bitcoinish_network
-from pycoin.satoshi.satoshi_struct import parse_struct
 
 
 network = create_bitcoinish_network(

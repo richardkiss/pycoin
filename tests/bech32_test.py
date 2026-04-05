@@ -4,7 +4,6 @@ from pycoin.contrib.bech32m import (
     bech32_decode,
     bech32_encode,
     decode,
-    encode,
     Encoding,
 )
 from pycoin.encoding.hexbytes import b2h
