@@ -1,10 +1,15 @@
-# x, even where x is decimal
-ku 55066263022277343669578718895168534326250603453777594175500187360389116729240,even
+# P2TR (taproot) address generation test
+# Using secret exponent 1, which is a known test vector from BIP 350
+# The x-coordinate for this key is: 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+ku 1
 
-input                        : 550662630222773436695787188951685343262506034537775941755001873603\
-                                 89116729240,even
+input                        : 1
 network                      : Bitcoin mainnet
 symbol                       : BTC
+secret exponent              : 1
+ hex                         : 1
+wif                          : KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+ uncompressed                : 5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAnchuDf
 public pair x                : 55066263022277343669578718895168534326250603453777594175500187360389116729240
 public pair y                : 32670510020758816978083085130507043184471273380659243275938904335757337482424
  x as hex                    : 79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
