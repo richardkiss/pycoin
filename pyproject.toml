@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 local_scheme = "no-local-version"
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py310"
 
 [tool.ruff.format]
 # Formatted with: ruff format . (ruff 0.15.8)
