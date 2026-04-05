@@ -2,8 +2,50 @@
 requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.5.0"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "pycoin"
+dynamic = ["version"]
+description = "Utilities for Bitcoin and altcoin addresses and transaction manipulation."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Richard Kiss", email = "him@richardkiss.com" }]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Internet",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/richardkiss/pycoin"
+
+[project.scripts]
+block = "pycoin.cmds.block:main"
+ku = "pycoin.cmds.ku:main"
+tx = "pycoin.cmds.tx:main"
+msg = "pycoin.cmds.msg:main"
+keychain = "pycoin.cmds.keychain:main"
+b58 = "pycoin.cmds.b58:main"
+coinc = "pycoin.cmds.coinc:main"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
+
+[tool.setuptools.packages.find]
+include = ["pycoin*"]
+
+[dependency-groups]
+dev = ["pytest"]
 
 [tool.ruff]
 target-version = "py310"
