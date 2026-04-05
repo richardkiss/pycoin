@@ -1,3 +1,22 @@
+0.92718.20260405
+----------------
+
+* this is the final release to support Python 2.7.18
+* format entire codebase with ruff 0.15.8 (whitespace/style only)
+* add CI check to enforce ruff formatting on future PRs
+* fix OpenSSL library loading on macOS to prevent SIGABRT crash on Python 3 (RTLD_NOLOAD fix)
+* fix DER signature trailing-byte check: respect strict vs. lenient mode correctly (fixes #317)
+* fix segwit transaction flag parsing to check bit 0 and guard against truncated input
+* implement SLIP-0010 derivation retry for invalid child keys per spec
+* add BIP49/BIP84 extended key prefixes for Litecoin (Mtpv/Mtub, zpub/zprv) (fixes #416)
+* fix Dash BIP32 prefixes to use Dash-native values (drkp/drkv)
+* add BLS12-381 G1 curve parameters (used by Chia)
+* add STRAKS network support (#431)
+* add Zcash testnet (tZEC) network symbol (#430)
+* add Chaincoin network support (#427)
+* add sendaddrv2 message type support
+* warn when locktime is set but all TxIn sequences are final
+
 0.92.20241201
 -------------
 
