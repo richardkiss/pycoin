@@ -1,16 +1,32 @@
 import hashlib
 import os
+from typing import Callable, Protocol, cast
 
 import pycoin.contrib.ripemd160
 
 from .hexbytes import bytes_as_revhex
 
 
-def ripemd160_native(data):
+class _HashObj(Protocol):
+    def digest(self) -> bytes: ...
+
+
+HashFactory = Callable[[bytes], _HashObj]
+
+
+def ripemd160_native(data: bytes) -> _HashObj:
     return hashlib.new("ripemd160", data)
 
 
-def get_best_ripemd160():
+class _PurePythonRIPEMD160:
+    def __init__(self, data: bytes) -> None:
+        self._digest: bytes = pycoin.contrib.ripemd160.ripemd160(data)
+
+    def digest(self) -> bytes:
+        return self._digest
+
+
+def get_best_ripemd160() -> HashFactory:
     # ubuntu 22 features an openssl without ripemd160, where python gets its
     # implementation from. To top it off, `"ripemd160" in hashlib.algorithms_available`
     # still evaluates to true, so we actually have to try it to see if we'll fail.
@@ -33,27 +49,21 @@ def get_best_ripemd160():
     # to the "libraries" section of your app.yaml
     try:
         from Crypto.Hash.RIPEMD import RIPEMD160Hash
+
+        return cast(HashFactory, RIPEMD160Hash)
     except Exception:
-
-        class RIPEMD160Hash:
-            def __init__(self, data):
-                self._digest = pycoin.contrib.ripemd160.ripemd160(data)
-
-            def digest(self):
-                return self._digest
-
-    return RIPEMD160Hash
+        return _PurePythonRIPEMD160
 
 
-ripemd160 = get_best_ripemd160()
+ripemd160: HashFactory = get_best_ripemd160()
 
 
-def double_sha256(data):
+def double_sha256(data: bytes) -> bytes_as_revhex:
     """A standard compound hash."""
     return bytes_as_revhex(hashlib.sha256(hashlib.sha256(data).digest()).digest())
 
 
-def hash160(data):
+def hash160(data: bytes) -> bytes:
     """A standard compound hash."""
     return ripemd160(hashlib.sha256(data).digest()).digest()
 

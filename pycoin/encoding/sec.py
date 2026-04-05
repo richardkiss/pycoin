@@ -1,9 +1,11 @@
+from typing import Any, Optional, cast
+
 from .base_conversion import EncodingError
 from .bytes32 import from_bytes_32, to_bytes_32
 from .hash import hash160
 
 
-def public_pair_to_sec(public_pair, compressed=True):
+def public_pair_to_sec(public_pair: tuple[int, int], compressed: bool = True) -> bytes:
     """Convert a public pair (a pair of bignums corresponding to a public key) to the
     gross internal sec binary format used by OpenSSL."""
     x_str = to_bytes_32(public_pair[0])
@@ -13,7 +15,9 @@ def public_pair_to_sec(public_pair, compressed=True):
     return b"\4" + x_str + y_str
 
 
-def sec_to_public_pair(sec, generator=None, strict=True):
+def sec_to_public_pair(
+    sec: bytes, generator: Optional[Any] = None, strict: bool = True
+) -> tuple[int, int]:
     """Convert a public key in sec binary format to a public pair."""
     byte_count = (generator.p().bit_length() + 7) >> 3 if generator else (len(sec) - 1)
     x = from_bytes_32(sec[1 : 1 + byte_count])
@@ -28,11 +32,12 @@ def sec_to_public_pair(sec, generator=None, strict=True):
     elif len(sec) == 1 + byte_count:
         if not strict or (sec0 in (b"\2", b"\3")):
             is_y_odd = sec0 != b"\2"
-            return generator.points_for_x(x)[is_y_odd]
+            assert generator is not None
+            return cast(tuple[int, int], generator.points_for_x(x)[is_y_odd])
     raise EncodingError("bad sec encoding for public key")
 
 
-def is_sec(sec):
+def is_sec(sec: bytes) -> bool:
     c = sec[:1]
     size = len(sec)
     if c in (b"\2", b"\3") and size == 33:
@@ -40,12 +45,14 @@ def is_sec(sec):
     return c == b"\4" and size == 65
 
 
-def is_sec_compressed(sec):
+def is_sec_compressed(sec: bytes) -> bool:
     """Return a boolean indicating if the sec represents a compressed public key."""
     return sec[:1] in (b"\2", b"\3")
 
 
-def public_pair_to_hash160_sec(public_pair, compressed=True):
+def public_pair_to_hash160_sec(
+    public_pair: tuple[int, int], compressed: bool = True
+) -> bytes:
     """Convert a public_pair (corresponding to a public key) to hash160_sec format.
     This is a hash of the sec representation of a public key, and is used to generate
     the corresponding Bitcoin address."""
