@@ -196,7 +196,7 @@ class Key(object):
         try:
             val = from_bytes_32(h)
             pubkey = self.public_pair()
-            return self._generator.verify(pubkey, val, sigdecode_der(sig))
+            return self._generator.verify(pubkey, val, sigdecode_der(sig, use_broken_open_ssl_mechanism=False))
         except (UnexpectedDER, ValueError):
             return False
 

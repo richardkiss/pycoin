@@ -85,11 +85,11 @@ def sigencode_der(r, s):
 def sigdecode_der(sig_der, use_broken_open_ssl_mechanism=True):
     # if use_broken_open_ssl_mechanism is true, this is a non-standard implementation
     rs_strings, remainder = remove_sequence(sig_der)
-    if remainder:
+    if remainder and not use_broken_open_ssl_mechanism:
         raise UnexpectedDER("trailing bytes after DER signature")
     r, rest = remove_integer(rs_strings, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
     s, remainder = remove_integer(rest, use_broken_open_ssl_mechanism=use_broken_open_ssl_mechanism)
-    if remainder:
+    if remainder and not use_broken_open_ssl_mechanism:
         raise UnexpectedDER("trailing bytes after integers in DER signature")
     return r, s
 
