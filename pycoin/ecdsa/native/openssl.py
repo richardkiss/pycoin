@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import ctypes
 import ctypes.util
 import os
 import platform
 import sys
+from typing import Any
 
 from .bignum import bignum_type_for_library
 
@@ -15,16 +17,17 @@ class BignumContext(ctypes.Structure):
     pass
 
 
-def set_api(library, api_info):
+def set_api(library: Any, api_info: list[tuple[str, list[Any], Any]]) -> None:
     for f_name, argtypes, restype in api_info:
         f = getattr(library, f_name)
         f.argtypes = argtypes
         f.restype = restype
 
 
-def load_library():
+def load_library() -> Any:
     system = platform.system()
     PYCOIN_LIBCRYPTO_PATH = os.getenv("PYCOIN_LIBCRYPTO_PATH")
+    library_path: str | None
 
     if PYCOIN_LIBCRYPTO_PATH:
         library_path = PYCOIN_LIBCRYPTO_PATH
@@ -82,12 +85,12 @@ def load_library():
         except OSError:
             library = ctypes.CDLL(library_path)
 
-    library.BignumType = bignum_type_for_library(library)
+    library.BignumType = bignum_type_for_library(library)  # type: ignore[attr-defined]
 
     BN_P = ctypes.POINTER(library.BignumType)
     BN_CTX = ctypes.POINTER(BignumContext)
 
-    BIGNUM_API = [
+    BIGNUM_API: list[tuple[str, list[Any], Any]] = [
         ("BN_new", [], BN_P),
         ("BN_set_word", [BN_P, ctypes.c_ulong], ctypes.c_int),
         ("BN_clear_free", [BN_P], None),
@@ -98,7 +101,7 @@ def load_library():
         ("BN_mpi2bn", [ctypes.c_char_p, ctypes.c_int, BN_P], BN_P),
     ]
 
-    ECC_API = [
+    ECC_API: list[tuple[str, list[Any], Any]] = [
         ("EC_GROUP_new_by_curve_name", [ctypes.c_int], ctypes.c_void_p),
         (
             "EC_POINT_new",
@@ -130,7 +133,7 @@ def load_library():
 OpenSSL = load_library()
 
 
-def create_OpenSSLOptimizations(curve_id):
+def create_OpenSSLOptimizations(curve_id: int) -> type[Any]:
 
     class noop:
         pass
@@ -146,12 +149,12 @@ def create_OpenSSLOptimizations(curve_id):
         if OpenSSL:
             openssl_group = OpenSSL.EC_GROUP_new_by_curve_name(curve_id)
 
-        def multiply(self, p, e):
+        def multiply(self, p: Any, e: int) -> Any:
             "Use OpenSSL to perform point multiplication."
-            if self._order:
-                e %= self._order
-            if e == 0 or p == self._infinity:
-                return self._infinity
+            if self._order:  # type: ignore[attr-defined]
+                e %= self._order  # type: ignore[attr-defined]
+            if e == 0 or p == self._infinity:  # type: ignore[attr-defined]
+                return self._infinity  # type: ignore[attr-defined]
 
             bn_x = OpenSSL.BignumType(p[0])
             bn_y = OpenSSL.BignumType(p[1])
@@ -175,17 +178,17 @@ def create_OpenSSLOptimizations(curve_id):
             OpenSSL.EC_POINT_free(ec_point)
             OpenSSL.EC_POINT_free(ec_result)
             OpenSSL.BN_CTX_free(ctx)
-            return self.Point(bn_x.to_int(), bn_y.to_int())
+            return self.Point(bn_x.to_int(), bn_y.to_int())  # type: ignore[attr-defined]
 
-        def raw_mul(self, e):
+        def raw_mul(self, e: int) -> Any:
             """Multiply the generator by an integer."""
             return self.multiply(self, e)
 
-        def inverse_mod(self, a, p):
+        def inverse_mod(self, a: int, p: int) -> int:
             ctx = OpenSSL.BN_CTX_new()
             a1 = OpenSSL.BignumType(a)
             OpenSSL.BN_mod_inverse(a1, a1, OpenSSL.BignumType(p), ctx)
             OpenSSL.BN_CTX_free(ctx)
-            return a1.to_int()
+            return int(a1.to_int())
 
     return Optimizations

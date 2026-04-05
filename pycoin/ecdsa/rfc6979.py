@@ -1,28 +1,16 @@
 import hashlib
 import hmac
+from typing import Any
 
 from . import intstream
 
 
-if hasattr(1, "bit_length"):
-
-    def bit_length(v):
-        "the ``int.bit_length`` in `python 3 <https://docs.python.org/3/library/stdtypes.html#int.bit_length>`_"
-        return v.bit_length()
-else:
-
-    def bit_length(self):
-        "the ``int.bit_length`` in `python 3 <https://docs.python.org/3/library/stdtypes.html#int.bit_length>`_"
-        # compared to "while n>0: bl +=1 ; n >>= 1", this is much faster in both python2 and pypy
-        # code taken from the link above
-        s = bin(self)  # binary representation:  bin(-37) --> '-0b100101'
-        s = s.lstrip("-0b")  # remove leading zeros and minus sign
-        return len(s)  # len('100101') --> 6
-
-
 def deterministic_generate_k(
-    generator_order, secret_exponent, val, hash_f=hashlib.sha256
-):
+    generator_order: int,
+    secret_exponent: int,
+    val: int,
+    hash_f: Any = hashlib.sha256,
+) -> int:
     """
     :param generator_order: result from `pycoin.ecdsa.Generator.Generator.order`,
         necessary to ensure the k value is within bound
@@ -32,7 +20,7 @@ def deterministic_generate_k(
         <https://tools.ietf.org/html/rfc6979>
     """
     n = generator_order
-    bln = bit_length(n)
+    bln = n.bit_length()
     order_size = (bln + 7) // 8
     hash_size = hash_f().digest_size
     v = b"\x01" * hash_size

@@ -11,7 +11,7 @@ _r = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
 
 
 class GeneratorWithOptimizations(
-    create_OpenSSLOptimizations(NID_X9_62_prime256v1), Generator
+    create_OpenSSLOptimizations(NID_X9_62_prime256v1), Generator  # type: ignore[misc]
 ):
     pass
 

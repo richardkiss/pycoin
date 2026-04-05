@@ -1,10 +1,11 @@
 # Adapted from code written in 2005 by Peter Pearson and placed in the public domain.
 
+from __future__ import annotations
 
 from .Point import Point
 
 
-def _leftmost_bit(x):
+def _leftmost_bit(x: int) -> int:
     # this is closer to constant time than bit-twiddling hacks like those in
     # https://graphics.stanford.edu/~seander/bithacks.html
     assert x > 0
@@ -37,7 +38,7 @@ class Curve(object):
         for some operations.
     """
 
-    def __init__(self, p, a, b, order=None):
+    def __init__(self, p: int, a: int, b: int, order: int | None = None) -> None:
         """ """
         self._p = p
         self._a = a
@@ -45,23 +46,23 @@ class Curve(object):
         self._order = order
         self._infinity = Point(None, None, self)
 
-    def p(self):
+    def p(self) -> int:
         """
         :returns: the prime modulus of the curve.
         """
         return self._p
 
-    def order(self):
+    def order(self) -> int | None:
         """
         :returns: the order of the curve.
         """
         return self._order
 
-    def infinity(self):
+    def infinity(self) -> Point:
         """:returns: the "point at infinity" (also known as 0, or the identity)."""
         return self._infinity
 
-    def contains_point(self, x, y):
+    def contains_point(self, x: int | None, y: int | None) -> bool:
         """
         :param x: x coordinate of a point
         :param y: y coordinate of a point
@@ -69,9 +70,10 @@ class Curve(object):
         """
         if x is None and y is None:
             return True
+        assert x is not None and y is not None
         return (y * y - (x * x * x + self._a * x + self._b)) % self._p == 0
 
-    def add(self, p0, p1):
+    def add(self, p0: Point, p1: Point) -> Point:
         """
         :param p0: a point
         :param p1: a point
@@ -87,6 +89,8 @@ class Curve(object):
 
         x0, y0 = p0
         x1, y1 = p1
+        assert x0 is not None and y0 is not None
+        assert x1 is not None and y1 is not None
         if (x0 - x1) % p == 0:
             if (y0 + y1) % p == 0:
                 return infinity
@@ -100,7 +104,7 @@ class Curve(object):
 
         return self.Point(x3, y3)
 
-    def multiply(self, p, e):
+    def multiply(self, p: Point, e: int) -> Point:
         """
         multiply a point by an integer.
 
@@ -128,7 +132,7 @@ class Curve(object):
 
         return result
 
-    def inverse_mod(self, a, m):
+    def inverse_mod(self, a: int, m: int) -> int:
         """
         :param a: an integer
         :param m: another integer
@@ -155,16 +159,16 @@ class Curve(object):
         else:
             return ud + m
 
-    def Point(self, x, y):
+    def Point(self, x: int, y: int) -> Point:  # type: ignore[override]
         """
         :returns: a :class:`Point <.Point>` object with coordinates ``(x, y)``
         """
         return Point(x, y, self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}({!r},{!r},{!r})".format(
             self.__class__.__name__, self._p, self._a, self._b
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "y^2 = x^3 + {}*x + {} (mod {})".format(self._a, self._b, self._p)

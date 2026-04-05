@@ -2,13 +2,15 @@
 Arrange to access a shared-object version of the bignum library using Python ctypes.
 """
 
+import ctypes
 import ctypes.util
 import struct
+from typing import Any, Generator, Iterator
 
 from ..intstream import to_bytes
 
 
-def bignum_type_for_library(library):
+def bignum_type_for_library(library: Any) -> type[Any]:
     ULONG_FACTOR = 1 << (8 * ctypes.sizeof(ctypes.c_ulong))
 
     class BignumType(ctypes.Structure):
@@ -32,7 +34,7 @@ def bignum_type_for_library(library):
             ("flags", ctypes.c_int),
         ]
 
-        def __init__(self, n=0):
+        def __init__(self, n: int = 0) -> None:
             "Create a BignumType from an int"
             negative = n < 0
             if negative:
@@ -44,15 +46,15 @@ def bignum_type_for_library(library):
             )
             library.BN_mpi2bn(the_bytes, the_len + 5, self)
 
-        def __del__(self):
+        def __del__(self) -> None:
             "Release memory used by native library"
             library.BN_clear_free(self)
 
-        def __int__(self):
+        def __int__(self) -> int:
             "cast to int"
-            return self.as_int()
+            return self.to_int()
 
-        def to_int(self):
+        def to_int(self) -> int:
             "Return this bignum's value as a Python integer."
             value, factor = 0, 1
             for w in self.datawords():
@@ -62,11 +64,11 @@ def bignum_type_for_library(library):
                 value = -value
             return value
 
-        def datawords(self):
+        def datawords(self) -> Generator[Any, None, None]:
             "Yield the words in the little-endian data array."
-            return (self.d[k] for k in range(self.top))
+            return (int(self.d[k]) for k in range(self.top))
 
-        def __repr__(self):
+        def __repr__(self) -> str:
             return "BignumType(%d)" % self.to_int()
 
     return BignumType

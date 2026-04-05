@@ -16,7 +16,7 @@ _r = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
 
 
 class GeneratorWithOptimizations(
-    LibSECP256K1Optimizations, create_OpenSSLOptimizations(NID_secp256k1), Generator
+    LibSECP256K1Optimizations, create_OpenSSLOptimizations(NID_secp256k1), Generator  # type: ignore[misc]
 ):
     pass
 

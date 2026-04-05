@@ -65,11 +65,12 @@ warn_return_any = true
 strict_optional = true
 
 # [[tool.mypy.overrides]]
-# module = "pycoin.ecdsa.*"
-# disallow_untyped_defs = true
-# disallow_any_generics = true
-# warn_return_any = true
-# strict_optional = true
+[[tool.mypy.overrides]]
+module = "pycoin.ecdsa.*"
+disallow_untyped_defs = true
+disallow_any_generics = true
+warn_return_any = true
+strict_optional = true
 
 # [[tool.mypy.overrides]]
 # module = "pycoin.satoshi.*"

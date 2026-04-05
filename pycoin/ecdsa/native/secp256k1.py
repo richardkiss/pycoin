@@ -1,6 +1,8 @@
 import ctypes
+import ctypes.util
 import os
 import warnings
+from typing import Any, Callable
 
 from ctypes import (
     byref,
@@ -40,14 +42,14 @@ SECP256K1_EC_COMPRESSED = (
 SECP256K1_EC_UNCOMPRESSED = SECP256K1_FLAGS_TYPE_COMPRESSION
 
 
-def load_library():
+def load_library() -> Any:
     try:
         PYCOIN_LIBSECP256K1_PATH = os.getenv("PYCOIN_LIBSECP256K1_PATH")
         library_path = PYCOIN_LIBSECP256K1_PATH or ctypes.util.find_library(
             "libsecp256k1"
         )
 
-        secp256k1 = ctypes.cdll.LoadLibrary(library_path)
+        secp256k1 = ctypes.cdll.LoadLibrary(library_path)  # type: ignore[arg-type]
 
         secp256k1.secp256k1_context_create.argtypes = [c_uint]
         secp256k1.secp256k1_context_create.restype = c_void_p
@@ -114,7 +116,7 @@ def load_library():
         ]
         secp256k1.secp256k1_ec_pubkey_tweak_mul.restype = c_int
 
-        secp256k1.ctx = secp256k1.secp256k1_context_create(
+        secp256k1.ctx = secp256k1.secp256k1_context_create(  # type: ignore[attr-defined]
             SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY
         )
         r = secp256k1.secp256k1_context_randomize(secp256k1.ctx, os.urandom(32))
@@ -132,10 +134,10 @@ libsecp256k1 = load_library()
 
 
 class Optimizations:
-    def __mul__(self, e):
-        e %= self.order()
+    def __mul__(self, e: int) -> Any:
+        e %= self.order()  # type: ignore[attr-defined]
         if e == 0:
-            return self._infinity
+            return self._infinity  # type: ignore[attr-defined]
         pubkey = create_string_buffer(65)
         libsecp256k1.secp256k1_ec_pubkey_create(
             libsecp256k1.ctx, pubkey, c_char_p(to_bytes_32(e))
@@ -149,16 +151,28 @@ class Optimizations:
             pubkey,
             SECP256K1_EC_UNCOMPRESSED,
         )
-        x = from_bytes_32(pubkey_serialized[1:33])
-        y = from_bytes_32(pubkey_serialized[33:])
-        return self.Point(x, y)
+        x = from_bytes_32(pubkey_serialized[1:33])  # type: ignore[arg-type]
+        y = from_bytes_32(pubkey_serialized[33:])  # type: ignore[arg-type]
+        return self.Point(x, y)  # type: ignore[attr-defined]
 
-    def sign(self, secret_exponent, val, gen_k=None):
+    def sign(
+        self,
+        secret_exponent: int,
+        val: int,
+        gen_k: Callable[[int, int, int], int] | None = None,
+    ) -> tuple[int, int]:
         nonce_function = None
         if gen_k is not None:
-            k_as_bytes = to_bytes_32(gen_k(self.order(), secret_exponent, val))
+            k_as_bytes = to_bytes_32(gen_k(self.order(), secret_exponent, val))  # type: ignore[attr-defined]
 
-            def adaptor(nonce32_p, msg32_p, key32_p, algo16_p, data, attempt):
+            def adaptor(
+                nonce32_p: Any,
+                msg32_p: Any,
+                key32_p: Any,
+                algo16_p: Any,
+                data: Any,
+                attempt: Any,
+            ) -> int:
                 nonce32_p.contents[:] = list(k_as_bytes)
                 return 1
 
@@ -181,11 +195,16 @@ class Optimizations:
         libsecp256k1.secp256k1_ecdsa_signature_serialize_compact(
             libsecp256k1.ctx, compact_signature, sig
         )
-        r = from_bytes_32(compact_signature[:32])
-        s = from_bytes_32(compact_signature[32:])
+        r = from_bytes_32(compact_signature[:32])  # type: ignore[arg-type]
+        s = from_bytes_32(compact_signature[32:])  # type: ignore[arg-type]
         return (r, s)
 
-    def verify(self, public_pair, val, signature_pair):
+    def verify(
+        self,
+        public_pair: tuple[int, int],
+        val: int,
+        signature_pair: tuple[int, int],
+    ) -> bool:
         sig = create_string_buffer(64)
         input64 = to_bytes_32(signature_pair[0]) + to_bytes_32(signature_pair[1])
         r = libsecp256k1.secp256k1_ecdsa_signature_parse_compact(
@@ -205,15 +224,17 @@ class Optimizations:
         if not r:
             return False
 
-        return 1 == libsecp256k1.secp256k1_ecdsa_verify(
-            libsecp256k1.ctx, sig, to_bytes_32(val), pubkey
+        return bool(
+            1 == libsecp256k1.secp256k1_ecdsa_verify(
+                libsecp256k1.ctx, sig, to_bytes_32(val), pubkey
+            )
         )
 
-    def multiply(self, p, e):
+    def multiply(self, p: Any, e: int) -> Any:
         """Multiply a point by an integer."""
-        e %= self.order()
-        if p == self._infinity or e == 0:
-            return self._infinity
+        e %= self.order()  # type: ignore[attr-defined]
+        if p == self._infinity or e == 0:  # type: ignore[attr-defined]
+            return self._infinity  # type: ignore[attr-defined]
         pubkey = create_string_buffer(64)
         public_pair_bytes = b"\4" + to_bytes_32(p[0]) + to_bytes_32(p[1])
         r = libsecp256k1.secp256k1_ec_pubkey_parse(
@@ -225,7 +246,7 @@ class Optimizations:
             libsecp256k1.ctx, pubkey, to_bytes_32(e)
         )
         if not r:
-            return self._infinity
+            return self._infinity  # type: ignore[attr-defined]
 
         pubkey_serialized = create_string_buffer(65)
         pubkey_size = c_size_t(65)
@@ -236,12 +257,12 @@ class Optimizations:
             pubkey,
             SECP256K1_EC_UNCOMPRESSED,
         )
-        x = from_bytes_32(pubkey_serialized[1:33])
-        y = from_bytes_32(pubkey_serialized[33:])
-        return self.Point(x, y)
+        x = from_bytes_32(pubkey_serialized[1:33])  # type: ignore[arg-type]
+        y = from_bytes_32(pubkey_serialized[33:])  # type: ignore[arg-type]
+        return self.Point(x, y)  # type: ignore[attr-defined]
 
 
-def create_LibSECP256K1Optimizations():
+def create_LibSECP256K1Optimizations() -> type[Any]:
     class noop:
         pass
 
