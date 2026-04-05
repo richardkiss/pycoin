@@ -7,7 +7,7 @@ from pycoin.encoding.exceptions import EncodingError
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
 from pycoin.encoding.sec import public_pair_to_sec, sec_to_public_pair
-from pycoin.intbytes import indexbytes, int2byte
+
 from pycoin.satoshi import der
 
 from .constraints import Atom
@@ -140,7 +140,7 @@ def signing_solver(m):
                 for sig in all_signature_hints(
                     public_pair, signature_for_hash_type_f, **kwargs
                 ):
-                    sig_hash = signature_for_hash_type_f(indexbytes(sig, -1))
+                    sig_hash = signature_for_hash_type_f(sig[-1])
                     sig_pair = der.sigdecode_der(sig[:-1])
                     if generator.verify(public_pair, sig_hash, sig_pair):
                         r, s = sig_pair
@@ -150,7 +150,7 @@ def signing_solver(m):
             order = generator.order()
             if s + s > order:
                 s = order - s
-            binary_signature = der.sigencode_der(r, s) + int2byte(signature_type)
+            binary_signature = der.sigencode_der(r, s) + bytes([signature_type])
             existing_signatures.append((signature_order, binary_signature))
 
         # pad with placeholder signatures

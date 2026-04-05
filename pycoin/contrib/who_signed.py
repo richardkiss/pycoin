@@ -5,7 +5,7 @@ from ..encoding.sec import (
 )
 
 from pycoin.coins.SolutionChecker import ScriptError
-from pycoin.intbytes import byte2int
+
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
 
@@ -16,9 +16,7 @@ class WhoSigned(object):
         self._address = address_api
         self._generator = generator
         for _ in "CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():
-            setattr(
-                self, "OP_%s" % _, byte2int(self._script_tools.compile("OP_%s" % _))
-            )
+            setattr(self, "OP_%s" % _, self._script_tools.compile("OP_%s" % _)[0])
 
     def solution_blobs(self, tx, tx_in_idx):
         """

@@ -1,5 +1,4 @@
 from ..encoding.sec import sec_to_public_pair, EncodingError
-from ..intbytes import byte2int, indexbytes, iterbytes
 
 from . import der
 from . import errno
@@ -64,7 +63,7 @@ def _check_valid_signature_2(sig):
 
 def check_valid_signature(sig):
     # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
-    sig = [s for s in iterbytes(sig)]
+    sig = [s for s in sig]
     _check_valid_signature_1(sig)
     _check_valid_signature_2(sig)
 
@@ -81,7 +80,7 @@ def check_defined_hashtype_signature(sig):
     # IsDefinedHashtypeSignature
     if len(sig) == 0:
         raise ScriptError("signature is length 0")
-    hash_type = indexbytes(sig, -1) & (~SIGHASH_ANYONECANPAY)
+    hash_type = sig[-1] & (~SIGHASH_ANYONECANPAY)
     if hash_type < SIGHASH_ALL or hash_type > SIGHASH_SINGLE:
         raise ScriptError("bad hash type after signature", errno.SIG_HASHTYPE)
 
@@ -111,7 +110,7 @@ def parse_and_check_signature_blob(sig_blob, flags, vm):
 def check_public_key_encoding(blob):
     lb = len(blob)
     if lb >= 33:
-        fb = byte2int(blob)
+        fb = blob[0]
         if fb == 4:
             if lb == 65:
                 return
@@ -135,7 +134,7 @@ def checksig(
     if verify_strict:
         check_public_key_encoding(pair_blob)
     if verify_witness_pubkeytype:
-        if byte2int(pair_blob) not in (2, 3) or len(pair_blob) != 33:
+        if pair_blob[0] not in (2, 3) or len(pair_blob) != 33:
             raise ScriptError("uncompressed key in witness", errno.WITNESS_PUBKEYTYPE)
     try:
         public_pair = sec_to_public_pair(pair_blob, generator, strict=verify_strict)

@@ -16,7 +16,6 @@ from ctypes import (
 )
 
 from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
-from pycoin.intbytes import iterbytes
 
 
 SECP256K1_FLAGS_TYPE_MASK = (1 << 8) - 1
@@ -160,7 +159,7 @@ class Optimizations:
             k_as_bytes = to_bytes_32(gen_k(self.order(), secret_exponent, val))
 
             def adaptor(nonce32_p, msg32_p, key32_p, algo16_p, data, attempt):
-                nonce32_p.contents[:] = list(iterbytes(k_as_bytes))
+                nonce32_p.contents[:] = list(k_as_bytes)
                 return 1
 
             p_b32 = POINTER(c_byte * 32)

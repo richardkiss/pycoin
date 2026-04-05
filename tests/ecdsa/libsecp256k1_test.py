@@ -6,7 +6,7 @@ from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.ecdsa.native.secp256k1 import libsecp256k1, SECP256K1_EC_UNCOMPRESSED
 from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
 from pycoin.encoding.hexbytes import b2h
-from pycoin.intbytes import int2byte, byte2int
+
 
 from pycoin.ecdsa.secp256k1 import Generator, _p, _a, _b, _Gx, _Gy, _r
 
@@ -63,7 +63,7 @@ class ECDSATestCase(unittest.TestCase):
         r = libsecp256k1.secp256k1_ecdsa_verify(ctx, signature, sighash, public_key)
         self.assertEqual(r, 1)
 
-        signature1 = signature[:-1] + int2byte(byte2int(signature[-1]) ^ 1)
+        signature1 = signature[:-1] + bytes([signature[-1] ^ 1])
         r = libsecp256k1.secp256k1_ecdsa_verify(ctx, signature1, sighash, public_key)
         self.assertEqual(r, 0)
 

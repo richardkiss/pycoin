@@ -2,7 +2,7 @@ import math
 import struct
 
 from pycoin.encoding.b58 import a2b_hashed_base58
-from pycoin.intbytes import indexbytes
+
 
 LOG_2 = math.log(2)
 
@@ -80,10 +80,10 @@ def murmur3(data, seed=0):
     for i in range(0, roundedEnd, 4):
         # little endian load order
         k1 = (
-            (indexbytes(data, i) & 0xFF)
-            | ((indexbytes(data, i + 1) & 0xFF) << 8)
-            | ((indexbytes(data, i + 2) & 0xFF) << 16)
-            | (indexbytes(data, i + 3) << 24)
+            (data[i] & 0xFF)
+            | ((data[i + 1] & 0xFF) << 8)
+            | ((data[i + 2] & 0xFF) << 16)
+            | (data[i + 3] << 24)
         )
         k1 *= c1
         k1 = (k1 << 15) | ((k1 & 0xFFFFFFFF) >> 17)  # ROTL32(k1,15)
@@ -98,13 +98,13 @@ def murmur3(data, seed=0):
 
     val = length & 0x03
     if val == 3:
-        k1 = (indexbytes(data, roundedEnd + 2) & 0xFF) << 16
+        k1 = (data[roundedEnd + 2] & 0xFF) << 16
     # fallthrough
     if val in [2, 3]:
-        k1 |= (indexbytes(data, roundedEnd + 1) & 0xFF) << 8
+        k1 |= (data[roundedEnd + 1] & 0xFF) << 8
     # fallthrough
     if val in [1, 2, 3]:
-        k1 |= indexbytes(data, roundedEnd) & 0xFF
+        k1 |= data[roundedEnd] & 0xFF
         k1 *= c1
         k1 = (k1 << 15) | ((k1 & 0xFFFFFFFF) >> 17)  # ROTL32(k1,15)
         k1 *= c2

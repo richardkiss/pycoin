@@ -4,7 +4,6 @@ from hashlib import sha256
 
 from ...encoding.hash import double_sha256
 from ...encoding.bytes32 import from_bytes_32
-from ...intbytes import byte2int, indexbytes
 
 from ..SolutionChecker import SolutionChecker, ScriptError
 from pycoin.satoshi import errno
@@ -85,8 +84,8 @@ class SegwitChecker(SolutionChecker):
         size = len(script)
         if size < 4 or size > 42:
             return None
-        first_opcode = byte2int(script)
-        if indexbytes(script, 1) + 2 != size:
+        first_opcode = script[0]
+        if script[1] + 2 != size:
             return None
         if first_opcode == self.OP_0:
             return 0

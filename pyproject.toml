@@ -58,14 +58,7 @@ ignore_missing_imports = true
 # Uncomment each section as it gets typed and cleaned up.
 
 [[tool.mypy.overrides]]
-module = "pycoin.intbytes"
-disallow_untyped_defs = true
-disallow_any_generics = true
-warn_return_any = true
-strict_optional = true
-
-# [[tool.mypy.overrides]]
-# module = "pycoin.encoding.*"
+module = "pycoin.encoding.*"
 # disallow_untyped_defs = true
 # disallow_any_generics = true
 # warn_return_any = true

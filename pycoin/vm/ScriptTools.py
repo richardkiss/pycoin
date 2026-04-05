@@ -1,7 +1,6 @@
 import binascii
 import io
 
-from ..intbytes import int2byte
 
 from pycoin.coins.SolutionChecker import ScriptError
 
@@ -42,9 +41,9 @@ class ScriptTools(object):
         for t in s.split():
             t_up = t.upper()
             if t_up in self.opcode_to_int:
-                f.write(int2byte(self.opcode_to_int[t]))
+                f.write(bytes([self.opcode_to_int[t]]))
             elif ("OP_%s" % t_up) in self.opcode_to_int:
-                f.write(int2byte(self.opcode_to_int["OP_%s" % t]))
+                f.write(bytes([self.opcode_to_int["OP_%s" % t]]))
             elif t_up.startswith("0X"):
                 d = binascii.unhexlify(t[2:])
                 f.write(d)

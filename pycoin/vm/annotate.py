@@ -4,7 +4,7 @@ import itertools
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec
-from pycoin.intbytes import byte2int
+
 from pycoin.satoshi.flags import (
     SIGHASH_ALL,
     SIGHASH_NONE,
@@ -31,9 +31,7 @@ class Annotate(object):
         self._script_tools = script_tools
         self._address = address_api
         for _ in "EQUAL HASH160 CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():
-            setattr(
-                self, "OP_%s" % _, byte2int(self._script_tools.compile("OP_%s" % _))
-            )
+            setattr(self, "OP_%s" % _, self._script_tools.compile("OP_%s" % _)[0])
 
     def sighash_type_to_string(self, sighash_type):
         v = sighash_type
@@ -50,7 +48,7 @@ class Annotate(object):
             return self._script_tools.disassemble_for_opcode_data(opcode, data)
         b2h_data = b2h(data)
         if len(data) == 1:
-            return "OP_%d" % byte2int(data)
+            return "OP_%d" % data[0]
         return "[PUSH_%s] %s" % (opcode, b2h_data)
 
     def annotate_pubkey(self, blob, da):

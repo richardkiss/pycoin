@@ -1,5 +1,3 @@
-from ..intbytes import int2byte
-
 from .base_conversion import EncodingError
 from .bytes32 import from_bytes_32, to_bytes_32
 from .hash import hash160
@@ -10,7 +8,7 @@ def public_pair_to_sec(public_pair, compressed=True):
     gross internal sec binary format used by OpenSSL."""
     x_str = to_bytes_32(public_pair[0])
     if compressed:
-        return int2byte((2 + (public_pair[1] & 1))) + x_str
+        return bytes([2 + (public_pair[1] & 1)]) + x_str
     y_str = to_bytes_32(public_pair[1])
     return b"\4" + x_str + y_str
 

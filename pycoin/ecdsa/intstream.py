@@ -1,6 +1,3 @@
-from pycoin.intbytes import iterbytes, byte2int
-
-
 def _to_bytes(v, length, byteorder="big"):
     """This is the same functionality as ``int.to_bytes`` in python 3"""
     return v.to_bytes(length, byteorder=byteorder)
@@ -32,9 +29,9 @@ else:
         if byteorder != "big":
             bytes = reversed(bytes)
         v = 0
-        for c in iterbytes(bytes):
+        for c in bytes:
             v <<= 8
             v += c
-        if signed and byte2int(bytes) & 0x80:
+        if signed and bytes[0] & 0x80:
             v = v - (1 << (8 * len(bytes)))
         return v

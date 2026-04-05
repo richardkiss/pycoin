@@ -3,7 +3,7 @@ import re
 
 from binascii import b2a_base64, a2b_base64
 
-from pycoin.intbytes import byte2int, int2byte
+
 from pycoin.satoshi.satoshi_string import stream_satoshi_string
 
 from ..encoding.bytes32 import to_bytes_32, from_bytes_32
@@ -110,7 +110,7 @@ class MessageSigner(object):
         # for discussion of the proprietary format used for the signature
 
         first = 27 + recid + (4 if is_compressed else 0)
-        sig = b2a_base64(int2byte(first) + to_bytes_32(r) + to_bytes_32(s)).strip()
+        sig = b2a_base64(bytes([first]) + to_bytes_32(r) + to_bytes_32(s)).strip()
         sig = sig.decode("utf8")
         return sig
 
@@ -214,7 +214,7 @@ class MessageSigner(object):
             raise EncodingError("Wrong length, expected 65")
 
         # split into the parts.
-        first = byte2int(sig)
+        first = sig[0]
         r = from_bytes_32(sig[1:33])
         s = from_bytes_32(sig[33 : 33 + 32])
 

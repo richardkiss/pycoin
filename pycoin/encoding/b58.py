@@ -4,7 +4,6 @@ Utilities to convert to and from base58.
 
 from .base_conversion import from_long, to_long, EncodingError
 from .hash import double_sha256
-from ..intbytes import iterbytes
 
 
 BASE58_ALPHABET = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
@@ -14,7 +13,7 @@ BASE58_LOOKUP = dict((c, i) for i, c in enumerate(BASE58_ALPHABET))
 
 def b2a_base58(s):
     """Convert binary to base58 using BASE58_ALPHABET. Like Bitcoin addresses."""
-    v, prefix = to_long(256, lambda x: x, iterbytes(s))
+    v, prefix = to_long(256, lambda x: x, s)
     s = from_long(v, prefix, BASE58_BASE, lambda v: BASE58_ALPHABET[v])
     return s.decode("utf8")
 

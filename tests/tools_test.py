@@ -3,7 +3,7 @@ import unittest
 from pycoin.coins.bitcoin.SolutionChecker import TxContext
 from pycoin.coins.bitcoin.VM import BitcoinVM
 from pycoin.encoding.hexbytes import h2b
-from pycoin.intbytes import int2byte
+
 from pycoin.satoshi.opcodes import OPCODE_LIST
 from pycoin.satoshi.IntStreamer import IntStreamer
 from pycoin.symbols.btc import network
@@ -56,10 +56,10 @@ class ToolsTest(unittest.TestCase):
             0x10005,
         ):
             for v in (1, 2, 3, 4, 15, 16, 17, 18):
-                b = int2byte(v) * length
+                b = bytes([v]) * length
                 test_bytes(b)
 
-        b = int2byte(30) * (0x1000000 + 1)
+        b = bytes([30]) * (0x1000000 + 1)
         for length in (0x1000000 - 1, 0x1000000, 0x1000000 + 1):
             test_bytes(b[:length])
 

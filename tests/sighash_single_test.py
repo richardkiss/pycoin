@@ -2,7 +2,7 @@ import unittest
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.encoding.hexbytes import b2h, b2h_rev
-from pycoin.intbytes import int2byte
+
 from pycoin.networks.registry import network_for_netcode
 from pycoin.satoshi.der import sigdecode_der, sigencode_der
 
@@ -38,7 +38,7 @@ def sigmake(a_key, a_hash_for_sig, a_sig_type):
     if s + s > order:
         s = order - s
 
-    return sigencode_der(r, s) + int2byte(a_sig_type)
+    return sigencode_der(r, s) + bytes([a_sig_type])
 
 
 class SighashSingleTest(unittest.TestCase):

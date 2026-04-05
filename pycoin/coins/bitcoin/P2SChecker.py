@@ -1,5 +1,3 @@
-from ...intbytes import byte2int, indexbytes
-
 from ..SolutionChecker import SolutionChecker
 
 from pycoin.satoshi.flags import VERIFY_P2SH
@@ -16,8 +14,8 @@ class P2SChecker(SolutionChecker):
     def is_pay_to_script_hash(class_, script_public_key):
         return (
             len(script_public_key) == 23
-            and byte2int(script_public_key) == OP_HASH160
-            and indexbytes(script_public_key, -1) == OP_EQUAL
+            and script_public_key[0] == OP_HASH160
+            and script_public_key[-1] == OP_EQUAL
         )
 
     @classmethod

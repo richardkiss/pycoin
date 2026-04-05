@@ -18,16 +18,14 @@ from pycoin.encoding.sec import (
     sec_to_public_pair,
 )
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.intbytes import iterbytes
+
 from pycoin.symbols.btc import network
 
 
 class EncodingTestCase(unittest.TestCase):
     def test_to_from_long(self):
         def do_test(as_int, prefix, as_rep, base):
-            self.assertEqual(
-                (as_int, prefix), to_long(base, lambda v: v, iterbytes(as_rep))
-            )
+            self.assertEqual((as_int, prefix), to_long(base, lambda v: v, as_rep))
             self.assertEqual(as_rep, from_long(as_int, prefix, base, lambda v: v))
 
         do_test(10000101, 2, h2b("00009896e5"), 256)

@@ -1,5 +1,4 @@
 from ..encoding.hexbytes import bytes_as_hex
-from ..intbytes import indexbytes, int2byte
 
 
 def make_const_handler(data):
@@ -57,7 +56,7 @@ def make_sized_encoder(opcode_value):
     Create an encoder that encodes the given opcode value as binary data
     and appends the given data.
     """
-    opcode_bin = int2byte(opcode_value)
+    opcode_bin = bytes([opcode_value])
 
     def f(data):
         return opcode_bin + data
@@ -112,7 +111,7 @@ class ScriptStreamer(object):
         const_pairs = [
             (opcode_lookup.get(opcode), val) for opcode, val in opcode_const_list
         ]
-        self.const_encoder = {v: int2byte(k) for k, v in const_pairs}
+        self.const_encoder = {v: bytes([k]) for k, v in const_pairs}
 
         sized_pairs = [
             (opcode_lookup.get(opcode), size) for opcode, size in opcode_sized_list
@@ -160,7 +159,7 @@ class ScriptStreamer(object):
         piece of data (if the opcode represents data), the new PC, and a boolean indicated
         valid parsing.
         """
-        opcode = indexbytes(script, pc)
+        opcode = script[pc]
         decoder = self.decoder.get(opcode)
         # lambda s, p, verify_minimal_data: (p+1, None))
         if decoder:
@@ -182,4 +181,4 @@ class ScriptStreamer(object):
         for max_size, opcode, enc_f in self.variable_encoder:
             if size <= max_size:
                 break
-        return int2byte(opcode) + enc_f(len(data)) + data
+        return bytes([opcode]) + enc_f(len(data)) + data
