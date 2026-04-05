@@ -1,0 +1,12 @@
+# Development dependencies for pycoin
+
+# Testing
+pytest>=7.0
+pytest-cov>=3.0
+coverage>=5.0
+
+# Type checking
+mypy>=1.0
+
+# Optional: for testing altcoin support
+groestlcoin_hash

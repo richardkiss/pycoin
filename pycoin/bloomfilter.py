@@ -1,5 +1,6 @@
 import math
 import struct
+from typing import Tuple
 
 from pycoin.encoding.b58 import a2b_hashed_base58
 from pycoin.intbytes import indexbytes
@@ -7,7 +8,7 @@ from pycoin.intbytes import indexbytes
 LOG_2 = math.log(2)
 
 
-def filter_size_required(element_count, false_positive_probability):
+def filter_size_required(element_count: int, false_positive_probability: float) -> int:
     # The size S of the filter in bytes is given by
     # (-1 / pow(log(2), 2) * N * log(P)) / 8
     # Of course you must ensure it does not go over the maximum size
@@ -17,7 +18,7 @@ def filter_size_required(element_count, false_positive_probability):
     return min(36000, int(((-1 / pow(LOG_2, 2) * element_count * lfpp)+7) // 8))
 
 
-def hash_function_count_required(filter_size, element_count):
+def hash_function_count_required(filter_size: int, element_count: int) -> int:
     # The number of hash functions required is given by S * 8 / N * log(2).
     return int(filter_size * 8.0 / element_count * LOG_2 + 0.5)
 
@@ -25,7 +26,7 @@ def hash_function_count_required(filter_size, element_count):
 class BloomFilter(object):
     MASK_ARRAY = [1 << _ for _ in range(8)]
 
-    def __init__(self, size_in_bytes, hash_function_count, tweak):
+    def __init__(self, size_in_bytes: int, hash_function_count: int, tweak: int) -> None:
         if size_in_bytes > 36000:
             raise ValueError("too large")
         self.filter_bytes = bytearray(size_in_bytes)
@@ -33,7 +34,7 @@ class BloomFilter(object):
         self.hash_function_count = hash_function_count
         self.tweak = tweak
 
-    def add_item(self, item_bytes):
+    def add_item(self, item_bytes: bytes) -> None:
         for hash_index in range(self.hash_function_count):
             seed = hash_index * 0xFBA4C795 + self.tweak
             self.set_bit(murmur3(item_bytes, seed=seed) % self.bit_count)
@@ -63,13 +64,13 @@ class BloomFilter(object):
         byte_index, mask = self._index_for_bit(v)
         return (self.filter_bytes[byte_index] & mask) == mask
 
-    def filter_load_params(self):
+    def filter_load_params(self) -> Tuple[bytearray, int, int]:
         return self.filter_bytes, self.hash_function_count, self.tweak
 
 
 # http://stackoverflow.com/questions/13305290/is-there-a-pure-python-implementation-of-murmurhash
 
-def murmur3(data, seed=0):
+def murmur3(data: bytes, seed: int = 0) -> int:
     c1 = 0xcc9e2d51
     c2 = 0x1b873593
 

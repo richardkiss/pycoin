@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
 import argparse
 
 from pycoin.encoding.b58 import a2b_base58, b2a_base58, a2b_hashed_base58, b2a_hashed_base58
