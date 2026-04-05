@@ -7,7 +7,6 @@ import ctypes.util
 import struct
 from typing import Any, Generator, Iterator
 
-from ..intstream import to_bytes
 
 
 def bignum_type_for_library(library: Any) -> type[Any]:
@@ -42,7 +41,7 @@ def bignum_type_for_library(library: Any) -> type[Any]:
             the_len = (n.bit_length() + 7) // 8
             sign = b"\x80" if negative else b"\0"
             the_bytes = (
-                struct.pack(">L", the_len + 1) + sign + to_bytes(n, the_len, "big")
+                struct.pack(">L", the_len + 1) + sign + n.to_bytes(the_len, "big")
             )
             library.BN_mpi2bn(the_bytes, the_len + 5, self)
 

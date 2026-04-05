@@ -1,7 +1,6 @@
 import unittest
 
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
-from pycoin.ecdsa.intstream import to_bytes, from_bytes
 
 
 class ECDSATestCase(unittest.TestCase):
@@ -149,9 +148,9 @@ class ECDSATestCase(unittest.TestCase):
 
     def test_endian(self):
         for e in ("big", "little"):
-            assert from_bytes(to_bytes(768, 2, e), e) == 768
-            assert from_bytes(to_bytes(3, 1, e), e) == 3
-            assert from_bytes(to_bytes(66051, 3, e), e) == 66051
+            assert int.from_bytes((768).to_bytes(2, e), e) == 768
+            assert int.from_bytes((3).to_bytes(1, e), e) == 3
+            assert int.from_bytes((66051).to_bytes(3, e), e) == 66051
 
 
 if __name__ == "__main__":

@@ -2,8 +2,6 @@ import hashlib
 import hmac
 from typing import Any
 
-from . import intstream
-
 
 def deterministic_generate_k(
     generator_order: int,
@@ -25,13 +23,13 @@ def deterministic_generate_k(
     hash_size = hash_f().digest_size
     v = b"\x01" * hash_size
     k = b"\x00" * hash_size
-    priv = intstream.to_bytes(secret_exponent, length=order_size)
+    priv = secret_exponent.to_bytes(order_size, "big")
     shift = 8 * hash_size - bln
     if shift > 0:
         val >>= shift
     if val >= n:
         val -= n
-    h1 = intstream.to_bytes(val, length=order_size)
+    h1 = val.to_bytes(order_size, "big")
     k = hmac.new(k, v + b"\x00" + priv + h1, hash_f).digest()
     v = hmac.new(k, v, hash_f).digest()
     k = hmac.new(k, v + b"\x01" + priv + h1, hash_f).digest()
@@ -44,7 +42,7 @@ def deterministic_generate_k(
             v = hmac.new(k, v, hash_f).digest()
             t.extend(v)
 
-        k1 = intstream.from_bytes(bytes(t))
+        k1 = int.from_bytes(bytes(t), "big")
 
         k1 >>= len(t) * 8 - bln
         if k1 >= 1 and k1 < n:

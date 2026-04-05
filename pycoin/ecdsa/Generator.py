@@ -1,8 +1,6 @@
 import os
 from typing import Callable
 
-from .intstream import from_bytes
-
 from .Curve import Curve
 from .Point import Point
 
@@ -53,7 +51,7 @@ class Generator(Curve, Point):
             Gp += Gp
         assert p % 4 == 3, "p % 4 must be 3 due to modular_sqrt optimization"
         self._mod_sqrt_power = (p + 1) // 4
-        self._blinding_factor = from_bytes(entropy_f(32)) % order
+        self._blinding_factor = int.from_bytes(entropy_f(32), "big") % order
         self._minus_blinding_factor_g = self.raw_mul(-self._blinding_factor)
 
     def modular_sqrt(self, a: int) -> int:
