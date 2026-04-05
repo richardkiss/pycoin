@@ -25,7 +25,7 @@ class VersionTest(unittest.TestCase):
             # Valid versions should start with a digit
             self.assertTrue(
                 pycoin.__version__[0].isdigit(),
-                f"Version should start with a digit, got: {pycoin.__version__}",
+                "Version should start with a digit, got: %s" % pycoin.__version__,
             )
 
 

@@ -143,7 +143,7 @@ def create_signed_tx(
     fee="standard",
     lock_time=0,
     version=1,
-    **kwargs,
+    **kwargs
 ):
     """
     This convenience function calls :func:`create_tx` and :func:`sign_tx` in turn. Read the documentation

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import ctypes.util
 import os
 import platform
