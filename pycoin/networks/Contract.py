@@ -5,6 +5,7 @@ class Contract(object):
     """
     A script that encumbers coins.
     """
+
     def __init__(self, script_info, network):
         self._script_info = script_info
         self._network = network

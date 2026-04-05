@@ -1,4 +1,3 @@
-
 # a wallet is a DB of Spendable objects, and a way to query and manage them
 
 # The wallet accepts pycoinnet bitcoin events (_blockchain_update and _mempool_tx)

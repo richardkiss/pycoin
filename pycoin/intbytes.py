@@ -25,6 +25,7 @@ if bytes == str:
 
     def indexbytes(buf, i):
         return ord(buf[i])
+
     int2byte = chr
 
     def byte2int(bs):

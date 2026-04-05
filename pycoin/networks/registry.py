@@ -32,7 +32,9 @@ def iterate_symbols():
     """
     for prefix in search_prefixes():
         package = importlib.import_module(prefix)
-        for importer, modname, ispkg in pkgutil.walk_packages(path=package.__path__, onerror=lambda x: None):
+        for importer, modname, ispkg in pkgutil.walk_packages(
+            path=package.__path__, onerror=lambda x: None
+        ):
             network = network_for_netcode(modname)
             if network:
                 yield network.symbol.upper()

@@ -1,4 +1,3 @@
-
 class ScriptError(Exception):
     def error_code(self):
         if len(self.args) > 1:
@@ -7,7 +6,6 @@ class ScriptError(Exception):
 
 
 class SolutionChecker(object):
-
     ScriptError = ScriptError
 
     def __init__(self, *args, **kwargs):

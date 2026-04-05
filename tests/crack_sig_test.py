@@ -8,6 +8,7 @@ def make_gen_k_const(K):
 
     def gen_k(*args):
         return K
+
     return gen_k
 
 

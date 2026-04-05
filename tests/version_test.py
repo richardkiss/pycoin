@@ -5,7 +5,7 @@ import pycoin
 class VersionTest(unittest.TestCase):
     def test_version_is_defined(self):
         """Test that __version__ attribute is defined."""
-        self.assertTrue(hasattr(pycoin, '__version__'))
+        self.assertTrue(hasattr(pycoin, "__version__"))
         self.assertIsNotNone(pycoin.__version__)
 
     def test_version_is_string(self):
@@ -25,7 +25,7 @@ class VersionTest(unittest.TestCase):
             # Valid versions should start with a digit
             self.assertTrue(
                 pycoin.__version__[0].isdigit(),
-                f"Version should start with a digit, got: {pycoin.__version__}"
+                f"Version should start with a digit, got: {pycoin.__version__}",
             )
 
 

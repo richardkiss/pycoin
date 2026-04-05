@@ -1,4 +1,3 @@
-
 import io
 
 TX_FEE_PER_THOUSAND_BYTES = 10000
@@ -16,5 +15,5 @@ def recommended_fee_for_tx(tx):
     s = io.BytesIO()
     tx.stream(s)
     tx_byte_count = len(s.getvalue())
-    tx_fee = TX_FEE_PER_THOUSAND_BYTES * ((999+tx_byte_count)//1000)
+    tx_fee = TX_FEE_PER_THOUSAND_BYTES * ((999 + tx_byte_count) // 1000)
     return tx_fee

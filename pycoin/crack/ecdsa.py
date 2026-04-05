@@ -1,4 +1,3 @@
-
 def crack_secret_exponent_from_k(generator, signed_value, sig, k):
     """
     Given a signature of a signed_value and a known k, return the secret exponent.

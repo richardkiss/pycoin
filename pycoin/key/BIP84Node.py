@@ -6,6 +6,7 @@ from ..encoding.hexbytes import h2b
 from ..encoding.sec import sec_to_public_pair
 from .BIP32Node import BIP32Node
 
+
 class PublicPrivateMismatchError(Exception):
     pass
 

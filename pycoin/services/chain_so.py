@@ -29,14 +29,18 @@ class ChainSoProvider(object):
         given bitcoin address.
         """
         spendables = []
-        r = json.loads(urlopen(self.base_url('get_tx_unspent', address)).read().decode("utf8"))
+        r = json.loads(
+            urlopen(self.base_url("get_tx_unspent", address)).read().decode("utf8")
+        )
 
-        for u in r['data']['txs']:
-            coin_value = int(float(u['value']) * 100000000)
+        for u in r["data"]["txs"]:
+            coin_value = int(float(u["value"]) * 100000000)
             script = h2b(u["script_hex"])
             previous_hash = h2b_rev(u["txid"])
             previous_index = u["output_no"]
-            spendables.append(Tx.Spendable(coin_value, script, previous_hash, previous_index))
+            spendables.append(
+                Tx.Spendable(coin_value, script, previous_hash, previous_index)
+            )
 
         return spendables
 

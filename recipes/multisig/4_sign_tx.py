@@ -35,9 +35,9 @@ def main():
     bad_solution_count = tx.bad_solution_count()
     print("tx %s now has %d bad solution(s)" % (tx.id(), bad_solution_count))
 
-    include_unspents = (bad_solution_count > 0)
+    include_unspents = bad_solution_count > 0
     print("Here is the tx as hex:\n%s" % tx.as_hex(include_unspents=include_unspents))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

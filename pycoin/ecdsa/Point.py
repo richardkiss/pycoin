@@ -1,4 +1,3 @@
-
 class NoSuchPointError(ValueError):
     pass
 
@@ -17,6 +16,7 @@ class Point(tuple):
     The constructor raises :class:`NoSuchPointError` if the point is invalid.
     The point at infinity is ``(x, y) == (None, None)``.
     """
+
     def __new__(self, x, y, curve):
         """
         Subclasses of tuple require __new__ to be overridden.
@@ -31,7 +31,9 @@ class Point(tuple):
     def check_on_curve(self):
         """raise :class:`NoSuchPointError` if the point is not actually on the curve."""
         if not self._curve.contains_point(*self):
-            raise NoSuchPointError('({},{}) is not on the curve {}'.format(self[0], self[1], self._curve))
+            raise NoSuchPointError(
+                "({},{}) is not on the curve {}".format(self[0], self[1], self._curve)
+            )
 
     def __add__(self, other):
         """Add one point to another point."""
@@ -51,7 +53,7 @@ class Point(tuple):
 
     def __neg__(self):
         """Unary negation"""
-        return self.__class__(self[0], self._curve.p()-self[1], self._curve)
+        return self.__class__(self[0], self._curve.p() - self[1], self._curve)
 
     def curve(self):
         """:return: the :class:`Curve <pycoin.ecdsa.Curve>` this point is on"""

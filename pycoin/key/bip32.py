@@ -32,7 +32,8 @@ class DerivationError(ValueError):
 
 
 def subkey_secret_exponent_chain_code_pair(
-        generator, secret_exponent, chain_code_bytes, i, is_hardened, public_pair=None):
+    generator, secret_exponent, chain_code_bytes, i, is_hardened, public_pair=None
+):
     """
     Yield info for a child node for this node.
 
@@ -56,7 +57,7 @@ def subkey_secret_exponent_chain_code_pair(
     i_as_bytes = struct.pack(">L", i)
 
     if is_hardened:
-        data = b'\0' + to_bytes_32(secret_exponent) + i_as_bytes
+        data = b"\0" + to_bytes_32(secret_exponent) + i_as_bytes
     else:
         if public_pair is None:
             public_pair = secret_exponent * generator
@@ -64,12 +65,14 @@ def subkey_secret_exponent_chain_code_pair(
         data = sec + i_as_bytes
 
     while True:
-        I64 = hmac.HMAC(key=chain_code_bytes, msg=data, digestmod=hashlib.sha512).digest()
+        I64 = hmac.HMAC(
+            key=chain_code_bytes, msg=data, digestmod=hashlib.sha512
+        ).digest()
         I_left = from_bytes_32(I64[:32])
         new_secret_exponent = (I_left + secret_exponent) % ORDER
         if I_left < ORDER and new_secret_exponent != 0:
             break
-        data = b'\x01' + I64[32:] + i_as_bytes
+        data = b"\x01" + I64[32:] + i_as_bytes
 
     new_chain_code = I64[32:]
     return new_secret_exponent, new_chain_code
@@ -101,7 +104,7 @@ def subkey_public_pair_chain_code_pair(generator, public_pair, chain_code_bytes,
     the_point = I_left_as_exponent * generator + generator.Point(*public_pair)
     if the_point == INFINITY:
         logger.critical(_SUBKEY_VALIDATION_LOG_ERR_FMT)
-        raise DerivationError('K_{} == {}'.format(i, the_point))
+        raise DerivationError("K_{} == {}".format(i, the_point))
 
     new_chain_code = I64[32:]
     return the_point, new_chain_code

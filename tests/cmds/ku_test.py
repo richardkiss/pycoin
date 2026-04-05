@@ -11,7 +11,6 @@ def make_tests_for_netcode(netcode):
     network = network_for_netcode(netcode)
 
     class KuTest(ToolTest):
-
         @classmethod
         def setUpClass(cls):
             cls.parser = ku.create_parser()

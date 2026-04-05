@@ -16,7 +16,7 @@ def merkle_pair(hashes, hash_f):
         hashes.append(hashes[-1])
     items = []
     for i in range(0, len(hashes), 2):
-        items.append(hash_f(hashes[i] + hashes[i+1]))
+        items.append(hash_f(hashes[i] + hashes[i + 1]))
     return items
 
 

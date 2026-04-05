@@ -1,4 +1,3 @@
-
 from pycoin.intbytes import iterbytes, byte2int
 
 
@@ -16,11 +15,12 @@ if hasattr(int, "to_bytes"):
     to_bytes = _to_bytes
     from_bytes = _from_bytes
 else:
+
     def to_bytes(v, length, byteorder="big"):
         """This is the same functionality as ``int.to_bytes`` in python 3"""
         ba = bytearray()
         for i in range(length):
-            mod = v & 0xff
+            mod = v & 0xFF
             v >>= 8
             ba.append(mod)
         if byteorder == "big":
@@ -36,5 +36,5 @@ else:
             v <<= 8
             v += c
         if signed and byte2int(bytes) & 0x80:
-            v = v - (1 << (8*len(bytes)))
+            v = v - (1 << (8 * len(bytes)))
         return v

@@ -17,8 +17,8 @@ def stream_satoshi_int(f, v):
     if v < 253:
         f.write(struct.pack("<B", v))
     elif v <= 65535:
-        f.write(b'\xfd' + struct.pack("<H", v))
-    elif v <= 0xffffffff:
-        f.write(b'\xfe' + struct.pack("<L", v))
+        f.write(b"\xfd" + struct.pack("<H", v))
+    elif v <= 0xFFFFFFFF:
+        f.write(b"\xfe" + struct.pack("<L", v))
     else:
-        f.write(b'\xff' + struct.pack("<Q", v))
+        f.write(b"\xff" + struct.pack("<Q", v))

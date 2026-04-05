@@ -12,8 +12,8 @@ ValidationFailureError = network.validator.ValidationFailureError
 DEBUG_TX_ID_LIST = []
 
 
-TX_VALID_JSON = os.path.dirname(__file__) + '/data/tx_valid.json'
-TX_INVALID_JSON = os.path.dirname(__file__) + '/data/tx_invalid.json'
+TX_VALID_JSON = os.path.dirname(__file__) + "/data/tx_valid.json"
+TX_INVALID_JSON = os.path.dirname(__file__) + "/data/tx_invalid.json"
 
 
 def parse_flags(flag_string):
@@ -35,7 +35,7 @@ def txs_from_json(path):
     verifyFlags is a comma separated list of script verification flags to apply, or "NONE"
     """
     comments = None
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         for tvec in json.load(f):
             if len(tvec) == 1:
                 comments = tvec[0]
@@ -55,17 +55,24 @@ def txs_from_json(path):
                 raise
 
             spendable_db = {}
-            blank_spendable = network.tx.Spendable(0, b'', b'\0' * 32, 0)
+            blank_spendable = network.tx.Spendable(0, b"", b"\0" * 32, 0)
             for prevout in prevouts:
                 coin_value = 1000000
                 if len(prevout) == 4:
                     coin_value = prevout[3]
                 spendable = network.tx.Spendable(
-                    coin_value=coin_value, script=network.script.compile(prevout[2]),
-                    tx_hash=h2b_rev(prevout[0]), tx_out_index=prevout[1])
+                    coin_value=coin_value,
+                    script=network.script.compile(prevout[2]),
+                    tx_hash=h2b_rev(prevout[0]),
+                    tx_out_index=prevout[1],
+                )
                 spendable_db[(spendable.tx_hash, spendable.tx_out_index)] = spendable
             unspents = [
-                spendable_db.get((tx_in.previous_hash, tx_in.previous_index), blank_spendable) for tx_in in tx.txs_in]
+                spendable_db.get(
+                    (tx_in.previous_hash, tx_in.previous_index), blank_spendable
+                )
+                for tx_in in tx.txs_in
+            ]
             tx.set_unspents(unspents)
             yield (tx, flag_mask, comments)
 
@@ -88,6 +95,7 @@ def make_f(tx, flag_mask, comments, expect_ok=True):
             try:
                 if DEBUG_TX_ID_LIST:
                     import pdb
+
                     pdb.set_trace()
                 tx.check_solution(tx_in_idx=tx_in_idx, flags=flag_mask)
             except tx.SolutionChecker.ScriptError as se:
@@ -96,10 +104,18 @@ def make_f(tx, flag_mask, comments, expect_ok=True):
             why = "bad sig count = %d" % bs
         if (why is not None) == expect_ok:
             why = why or "tx unexpectedly validated"
-            f = open("tx-%s-%x-%s.hex" % (tx.w_id(), flag_mask, "valid" if expect_ok else "invalid"), "w")
+            f = open(
+                "tx-%s-%x-%s.hex"
+                % (tx.w_id(), flag_mask, "valid" if expect_ok else "invalid"),
+                "w",
+            )
             f.write(tx_hex)
             f.close()
-            self.fail("fail on %s because of %s with hex %s: %s" % (tx.w_id(), why, tx_hex, comments))
+            self.fail(
+                "fail on %s because of %s with hex %s: %s"
+                % (tx.w_id(), why, tx_hex, comments)
+            )
+
     if DEBUG_TX_ID_LIST and tx.w_id() not in DEBUG_TX_ID_LIST:
         return lambda self: 0
     return test_f
@@ -120,7 +136,7 @@ def inject():
 inject()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
 
 

@@ -8,18 +8,28 @@ from pycoin.networks.default import get_current_netcode
 
 def create_parser():
     codes = network_codes()
-    EPILOG = ('Known networks codes:\n  ' +
-              ', '.join(['%s (%s)' % (i, network_for_netcode(i).full_name()) for i in codes]))
+    EPILOG = "Known networks codes:\n  " + ", ".join(
+        ["%s (%s)" % (i, network_for_netcode(i).full_name()) for i in codes]
+    )
 
     parser = argparse.ArgumentParser(
-        description="Compile or disassemble scripts.",
-        epilog=EPILOG)
+        description="Compile or disassemble scripts.", epilog=EPILOG
+    )
 
-    parser.add_argument('-n', "--network", default=get_current_netcode(), choices=codes,
-                        help=('Network code (environment variable PYCOIN_DEFAULT_NETCODE '
-                              'or "BTC"=Bitcoin mainnet if unset)'))
+    parser.add_argument(
+        "-n",
+        "--network",
+        default=get_current_netcode(),
+        choices=codes,
+        help=(
+            "Network code (environment variable PYCOIN_DEFAULT_NETCODE "
+            'or "BTC"=Bitcoin mainnet if unset)'
+        ),
+    )
 
-    parser.add_argument("argument", nargs="+", help='script to compile. To dump hex, prefix with 0x')
+    parser.add_argument(
+        "argument", nargs="+", help="script to compile. To dump hex, prefix with 0x"
+    )
 
     return parser
 
@@ -29,8 +39,10 @@ def coinc(args, parser):
 
     for arg in args.argument:
         info = info_for_arg(arg, network)
-        for k in ("compiled_script_hex address_p2s preimage_p2s_hex "
-                  "address_p2s_wit underlying_script disassembled_script").split():
+        for k in (
+            "compiled_script_hex address_p2s preimage_p2s_hex "
+            "address_p2s_wit underlying_script disassembled_script"
+        ).split():
             print(info[k])
 
 
@@ -57,5 +69,5 @@ def main():
     coinc(args, parser)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -14,7 +14,9 @@ from pycoin.symbols.btc import network
 
 def main():
     if len(sys.argv) != 4:
-        print("usage: %s incoming_tx_hex_filename tx_out_index new_address" % sys.argv[0])
+        print(
+            "usage: %s incoming_tx_hex_filename tx_out_index new_address" % sys.argv[0]
+        )
         sys.exit(-1)
 
     with open(sys.argv[1], "r") as f:
@@ -35,5 +37,5 @@ def main():
     print("here is the transaction: %s" % tx.as_hex(include_unspents=True))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

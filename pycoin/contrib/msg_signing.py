@@ -13,11 +13,12 @@ from ..encoding.sec import public_pair_to_hash160_sec
 
 
 class MessageSigner(object):
-
     # According to brainwallet, this is "inputs.io" format, but it seems practical
     # and is deployed in the wild. Core bitcoin doesn't offer a message wrapper like this.
-    signature_template = ('-----BEGIN {net_name} SIGNED MESSAGE-----\n{msg}\n-----BEGIN '
-                          'SIGNATURE-----\n{addr}\n{sig}\n-----END {net_name} SIGNED MESSAGE-----')
+    signature_template = (
+        "-----BEGIN {net_name} SIGNED MESSAGE-----\n{msg}\n-----BEGIN "
+        "SIGNATURE-----\n{addr}\n{sig}\n-----END {net_name} SIGNED MESSAGE-----"
+    )
 
     def __init__(self, network, generator):
         self._network = network
@@ -30,25 +31,25 @@ class MessageSigner(object):
         # restore to same at the end. The RFC implies we should be using
         # DOS \r\n in the message, but that does not always happen in today's
         # world of MacOS and Linux devs. A mix of types will not work here.
-        dos_nl = ('\r\n' in msg_in)
+        dos_nl = "\r\n" in msg_in
         if dos_nl:
-            msg_in = msg_in.replace('\r\n', '\n')
+            msg_in = msg_in.replace("\r\n", "\n")
 
         try:
             # trim any junk in front
-            _, body = msg_in.split('SIGNED MESSAGE-----\n', 1)
+            _, body = msg_in.split("SIGNED MESSAGE-----\n", 1)
         except ValueError:
             raise EncodingError("expecting text SIGNED MESSAGE somewhere")
 
         # - sometimes middle sep is BEGIN BITCOIN SIGNATURE, other times just BEGIN SIGNATURE
         # - choose the last instance, in case someone signs a signed message
-        parts = re.split('\n-----BEGIN [A-Z ]*SIGNATURE-----\n', body)
+        parts = re.split("\n-----BEGIN [A-Z ]*SIGNATURE-----\n", body)
         if len(parts) < 2:
             raise EncodingError("expected BEGIN SIGNATURE line", body)
-        msg, hdr = ''.join(parts[:-1]), parts[-1]
+        msg, hdr = "".join(parts[:-1]), parts[-1]
 
         if dos_nl:
-            msg = msg.replace('\n', '\r\n')
+            msg = msg.replace("\n", "\r\n")
 
         return msg, hdr
 
@@ -67,9 +68,9 @@ class MessageSigner(object):
         msg, hdr = class_.parse_sections(msg_in)
 
         # after message, expect something like an email/http headers, so split into lines
-        hdr = list(filter(None, [i.strip() for i in hdr.split('\n')]))
+        hdr = list(filter(None, [i.strip() for i in hdr.split("\n")]))
 
-        if '-----END' not in hdr[-1]:
+        if "-----END" not in hdr[-1]:
             raise EncodingError("expecting END on last line")
 
         sig = hdr[-2]
@@ -79,14 +80,14 @@ class MessageSigner(object):
             if not line:
                 continue
 
-            if line.startswith('-----END'):
+            if line.startswith("-----END"):
                 break
 
-            if ':' in line:
-                label, value = [i.strip() for i in line.split(':', 1)]
+            if ":" in line:
+                label, value = [i.strip() for i in line.split(":", 1)]
 
-                if label.lower() == 'address':
-                    addr = line.split(':')[1].strip()
+                if label.lower() == "address":
+                    addr = line.split(":")[1].strip()
                     break
 
                 continue
@@ -133,8 +134,8 @@ class MessageSigner(object):
             return sig
 
         return self.signature_template.format(
-            msg=message, sig=sig, addr=addr,
-            net_name=self._network_name.upper())
+            msg=message, sig=sig, addr=addr, net_name=self._network_name.upper()
+        )
 
     def pair_for_message_hash(self, signature, msg_hash):
         """
@@ -147,7 +148,9 @@ class MessageSigner(object):
 
         # Calculate the specific public key used to sign this message.
         y_parity = recid & 1
-        q = self._generator.possible_public_pairs_for_signature(msg_hash, (r, s), y_parity=y_parity)[0]
+        q = self._generator.possible_public_pairs_for_signature(
+            msg_hash, (r, s), y_parity=y_parity
+        )[0]
         if recid > 1:
             order = self._generator.order()
             q = self._generator.Point(q[0] + order, q[1])
@@ -181,7 +184,9 @@ class MessageSigner(object):
             key = key_or_address
 
         try:
-            msg_hash = self.hash_for_signing(message) if message is not None else msg_hash
+            msg_hash = (
+                self.hash_for_signing(message) if message is not None else msg_hash
+            )
             pair, is_compressed = self.pair_for_message_hash(signature, msg_hash)
         except EncodingError:
             return False
@@ -197,11 +202,11 @@ class MessageSigner(object):
 
         Each altcoin finds and changes this string... But just simple substitution.
         """
-        return '%s Signed Message:\n' % self._network_name
+        return "%s Signed Message:\n" % self._network_name
 
     def _decode_signature(self, signature):
         """
-            Decode the internal fields of the base64-encoded signature.
+        Decode the internal fields of the base64-encoded signature.
         """
 
         sig = a2b_base64(signature)
@@ -211,7 +216,7 @@ class MessageSigner(object):
         # split into the parts.
         first = byte2int(sig)
         r = from_bytes_32(sig[1:33])
-        s = from_bytes_32(sig[33:33+32])
+        s = from_bytes_32(sig[33 : 33 + 32])
 
         # first byte encodes a bits we need to know about the point used in signature
         if not (27 <= first < 35):
@@ -233,8 +238,8 @@ class MessageSigner(object):
         magic = self.msg_magic_for_netcode()
 
         fd = io.BytesIO()
-        stream_satoshi_string(fd, magic.encode('utf8'))
-        stream_satoshi_string(fd, msg.encode('utf8'))
+        stream_satoshi_string(fd, magic.encode("utf8"))
+        stream_satoshi_string(fd, msg.encode("utf8"))
 
         # return as a number, since it's an input to signing algos like that anyway
         return from_bytes_32(double_sha256(fd.getvalue()))

@@ -5,20 +5,35 @@ from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
 from pycoin.encoding.sec import is_sec_compressed, public_pair_to_hash160_sec
 from pycoin.intbytes import byte2int
-from pycoin.satoshi.flags import SIGHASH_ALL, SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY, SIGHASH_FORKID
+from pycoin.satoshi.flags import (
+    SIGHASH_ALL,
+    SIGHASH_NONE,
+    SIGHASH_SINGLE,
+    SIGHASH_ANYONECANPAY,
+    SIGHASH_FORKID,
+)
 from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.coins.SolutionChecker import ScriptError
 
 
 class Annotate(object):
-    BIT_LIST = [(SIGHASH_ANYONECANPAY, "SIGHASH_ANYONECANPAY"), (SIGHASH_FORKID, "SIGHASH_FORKID")]
-    BASE_LOOKUP = {SIGHASH_ALL: "SIGHASH_ALL", SIGHASH_SINGLE: "SIGHASH_SINGLE", SIGHASH_NONE: "SIGHASH_NONE"}
+    BIT_LIST = [
+        (SIGHASH_ANYONECANPAY, "SIGHASH_ANYONECANPAY"),
+        (SIGHASH_FORKID, "SIGHASH_FORKID"),
+    ]
+    BASE_LOOKUP = {
+        SIGHASH_ALL: "SIGHASH_ALL",
+        SIGHASH_SINGLE: "SIGHASH_SINGLE",
+        SIGHASH_NONE: "SIGHASH_NONE",
+    }
 
     def __init__(self, script_tools, address_api):
         self._script_tools = script_tools
         self._address = address_api
         for _ in "EQUAL HASH160 CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():
-            setattr(self, "OP_%s" % _, byte2int(self._script_tools.compile('OP_%s' % _)))
+            setattr(
+                self, "OP_%s" % _, byte2int(self._script_tools.compile("OP_%s" % _))
+            )
 
     def sighash_type_to_string(self, sighash_type):
         v = sighash_type
@@ -41,7 +56,9 @@ class Annotate(object):
     def annotate_pubkey(self, blob, da):
         is_compressed = is_sec_compressed(blob)
         address = self._address.for_p2pkh(hash160(blob))
-        da[blob].append("SEC for %scompressed %s" % ("" if is_compressed else "un", address))
+        da[blob].append(
+            "SEC for %scompressed %s" % ("" if is_compressed else "un", address)
+        )
 
     def annotate_signature(self, blob, da, vmc):
         lst = da[blob]
@@ -116,7 +133,15 @@ class Annotate(object):
                     a0.append("--- SIGNATURE SCRIPT START")
                 else:
                     a0.append("--- PUBLIC KEY SCRIPT START")
-            r.append((a0, vmc.pc, opcode, self.instruction_for_opcode(opcode, data), data_annotations[data]))
+            r.append(
+                (
+                    a0,
+                    vmc.pc,
+                    opcode,
+                    self.instruction_for_opcode(opcode, data),
+                    data_annotations[data],
+                )
+            )
 
         try:
             tx.check_solution(tx_in_idx, traceback_f=traceback_f)
@@ -125,18 +150,23 @@ class Annotate(object):
 
         # the script may have ended early, so let's just double-check
         try:
-            for idx, (opcode, data, pc, new_pc) in enumerate(itertools.chain(
-                self._script_tools.get_opcodes(tx.unspents[tx_in_idx].script),
-                    self._script_tools.get_opcodes(tx.txs_in[tx_in_idx].script))):
+            for idx, (opcode, data, pc, new_pc) in enumerate(
+                itertools.chain(
+                    self._script_tools.get_opcodes(tx.unspents[tx_in_idx].script),
+                    self._script_tools.get_opcodes(tx.txs_in[tx_in_idx].script),
+                )
+            ):
                 if idx >= len(r):
-                    r.append(([], pc, opcode, self.instruction_for_opcode(opcode, data), []))
+                    r.append(
+                        ([], pc, opcode, self.instruction_for_opcode(opcode, data), [])
+                    )
         except IndexError:
             pass
 
         return r
 
     def annotate_spendable(self, tx_class, spendable):
-        txs_in = [tx_class.TxIn(b'1' * 32, 0)]
+        txs_in = [tx_class.TxIn(b"1" * 32, 0)]
         fake_spend_tx = tx_class(1, txs_in, [])
         fake_spend_tx.set_unspents([spendable])
         return self.annotate_scripts(fake_spend_tx, 0)

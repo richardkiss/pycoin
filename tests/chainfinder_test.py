@@ -7,7 +7,7 @@ class BHO(object):
     def __init__(self, h, previous_block_hash=None, difficulty=10):
         self.h = h
         if previous_block_hash is None:
-            previous_block_hash = h-1
+            previous_block_hash = h - 1
         self.previous_block_hash = previous_block_hash
         self.difficulty = difficulty
 
@@ -15,12 +15,16 @@ class BHO(object):
         return self.h
 
     def __repr__(self):
-        return "<BHO: id:%s parent:%s difficulty:%s>" % \
-            (self.h, self.previous_block_hash, self.difficulty)
+        return "<BHO: id:%s parent:%s difficulty:%s>" % (
+            self.h,
+            self.previous_block_hash,
+            self.difficulty,
+        )
 
 
 def do_scramble(items, tfb, dbt):
     import itertools
+
     for c in itertools.permutations(items):
         cf = ChainFinder()
         load_items(cf, c)
@@ -38,7 +42,6 @@ def load_items(cf, bhos):
 
 
 class ChainFinderTestCase(unittest.TestCase):
-
     def test_basics(self):
         cf = ChainFinder()
         assert cf.trees_from_bottom == {}
@@ -98,14 +101,14 @@ class ChainFinderTestCase(unittest.TestCase):
         load_items(cf, ITEMS)
         assert cf.trees_from_bottom == {
             6: [6, 5, 4, 3, 2, 1, 0, -1],
-            304: [304, 303, 302, 301]
+            304: [304, 303, 302, 301],
         }
         assert cf.descendents_by_top == {-1: {6}, 301: {304}}
 
         load_items(cf, [B301])
         assert cf.trees_from_bottom == {
             6: [6, 5, 4, 3, 2, 1, 0, -1],
-            304: [304, 303, 302, 301, 3, 2, 1, 0, -1]
+            304: [304, 303, 302, 301, 3, 2, 1, 0, -1],
         }
         assert cf.descendents_by_top == {-1: {6, 304}}
 
@@ -129,13 +132,8 @@ class ChainFinderTestCase(unittest.TestCase):
         assert cf.descendents_by_top == {0: {3}}
 
     def test_scramble(self):
-        ITEMS = [BHO(i, (i-1)//2, 10) for i in range(7)]
-        tfb = {
-            3: [3, 1, 0, -1],
-            4: [4, 1, 0, -1],
-            5: [5, 2, 0, -1],
-            6: [6, 2, 0, -1]
-        }
+        ITEMS = [BHO(i, (i - 1) // 2, 10) for i in range(7)]
+        tfb = {3: [3, 1, 0, -1], 4: [4, 1, 0, -1], 5: [5, 2, 0, -1], 6: [6, 2, 0, -1]}
         dbt = {-1: {3, 4, 5, 6}}
         do_scramble(ITEMS, tfb, dbt)
 
@@ -189,7 +187,9 @@ class ChainFinderTestCase(unittest.TestCase):
 
         old_chain_endpoint, new_chain_endpoint = 4, 204
 
-        old_subpath, new_subpath = cf.find_ancestral_path(old_chain_endpoint, new_chain_endpoint)
+        old_subpath, new_subpath = cf.find_ancestral_path(
+            old_chain_endpoint, new_chain_endpoint
+        )
         assert old_subpath == [4, 3, 2]
         assert new_subpath == [204, 203, 202, 201, 2]
 

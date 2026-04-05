@@ -1,11 +1,10 @@
-
 import decimal
 
 SATOSHI_PER_COIN = decimal.Decimal(int(1e8))
-COIN_PER_SATOSHI = decimal.Decimal(1)/SATOSHI_PER_COIN
+COIN_PER_SATOSHI = decimal.Decimal(1) / SATOSHI_PER_COIN
 
 SATOSHI_TO_MBTC = decimal.Decimal(int(1e5))
-MBTC_PER_SATOSHI = 1/SATOSHI_TO_MBTC
+MBTC_PER_SATOSHI = 1 / SATOSHI_TO_MBTC
 
 
 def satoshi_to_btc(satoshi_count):

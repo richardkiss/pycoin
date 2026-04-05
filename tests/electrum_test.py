@@ -10,12 +10,12 @@ class ElectrumTest(unittest.TestCase):
             "12mENAcc8ZhZbR6hv7LGm3jV7PwbYeF8Xk",
             "1A3NpABFd6YHvwr1ti1r8brU3BzQuV2Nr4",
             "1Gn6nWAoZrpmtV9zuNbyivWvRBpcygWaQX",
-            "1M5i5P3DhtDbnvSTfmnUbcrTVgF8GDWQW9"
+            "1M5i5P3DhtDbnvSTfmnUbcrTVgF8GDWQW9",
         ]
         CHANGE_ADDRESSES = [
             "1iiAbyBTh1J69UzD1JcrfW8JSVJ9ve9gT",
             "146wnqmsQNYCZ6AXRCqLkzZyGM1ZU6nr3F",
-            "1Mwexajvia3s8AcaGUkyEg9ZZJPJeTbKTZ"
+            "1Mwexajvia3s8AcaGUkyEg9ZZJPJeTbKTZ",
         ]
         wallet = network.keys.electrum_seed(seed="00000000000000000000000000000001")
         for idx, address in enumerate(RECEIVING_ADDRESSES):
@@ -49,7 +49,7 @@ class ElectrumTest(unittest.TestCase):
             "15wrXvrAnyv3usGeQRohnnZ8tz9XAekbag",
             "1MnWCEjE5YiZpZrkP8HcXEeDqwg43RxLwu",
             "1Fgyp3PUx9AAg8yJe1zGXHP5dVC6i1tXbs",
-            "12XTLd4u9jeqw4egLAUhoKLxHARCdKWkty"
+            "12XTLd4u9jeqw4egLAUhoKLxHARCdKWkty",
         ]
         k = network.keys.private(secret_exponent=1)
         master_public_key = k.sec(is_compressed=False)[1:]

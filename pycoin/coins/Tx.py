@@ -94,7 +94,8 @@ class Tx(object):
         h = self.hash()
         return [
             self.Spendable.from_tx_out(tx_out, h, tx_out_index, block_index_available)
-            for tx_out_index, tx_out in enumerate(self.txs_out)]
+            for tx_out_index, tx_out in enumerate(self.txs_out)
+        ]
 
     def __str__(self):
         raise NotImplemented()
@@ -150,7 +151,10 @@ class Tx(object):
 
     def bad_solution_count(self, *args, **kwargs):
         "Return a count of how many :class:`TxIn` objects are not correctly solved."
-        return sum(0 if self.is_solution_ok(idx, *args, **kwargs) else 1 for idx in range(len(self.txs_in)))
+        return sum(
+            0 if self.is_solution_ok(idx, *args, **kwargs) else 1
+            for idx in range(len(self.txs_in))
+        )
 
 
 """

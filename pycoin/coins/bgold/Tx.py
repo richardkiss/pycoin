@@ -1,4 +1,3 @@
-
 from .SolutionChecker import BgoldSolutionChecker
 from .Solver import BgoldSolver
 

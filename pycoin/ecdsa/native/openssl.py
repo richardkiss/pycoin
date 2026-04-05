@@ -27,17 +27,17 @@ def load_library():
 
     if PYCOIN_LIBCRYPTO_PATH:
         library_path = PYCOIN_LIBCRYPTO_PATH
-    elif system == 'Windows':
-        if platform.architecture()[0] == '64bit':
-            library_path = ctypes.util.find_library('libeay64')
+    elif system == "Windows":
+        if platform.architecture()[0] == "64bit":
+            library_path = ctypes.util.find_library("libeay64")
         else:
-            library_path = ctypes.util.find_library('libeay32')
+            library_path = ctypes.util.find_library("libeay32")
 
-    elif system == 'Darwin':
-        library_path = ctypes.util.find_library('crypto')
+    elif system == "Darwin":
+        library_path = ctypes.util.find_library("crypto")
 
     else:
-        library_path = ctypes.util.find_library('crypto')
+        library_path = ctypes.util.find_library("crypto")
 
     if library_path is None:
         return None
@@ -48,21 +48,23 @@ def load_library():
     # RTLD_NOLOAD to reuse the existing handle without a fresh dlopen.
     #
     # IMPORTANT: RTLD_NOLOAD is 0x4 on Linux but 0x10 on macOS — they differ.
-    RTLD_NOLOAD = 0x10 if sys.platform == 'darwin' else 0x4
+    RTLD_NOLOAD = 0x10 if sys.platform == "darwin" else 0x4
 
-    if sys.platform == 'darwin':
+    if sys.platform == "darwin":
         # On macOS, try RTLD_NOLOAD against multiple candidate paths because
         # find_library may return the system stub (/usr/lib/libcrypto.dylib)
         # while Python was built against a Homebrew copy with a different install
         # name. Only if we find the already-loaded handle do we proceed; a fresh
         # load of the wrong copy would trigger an OpenSSL 3 unsafe-load abort.
         _candidates = [library_path] + [
-            p for p in [
-                '/opt/homebrew/opt/openssl@3/lib/libcrypto.dylib',
-                '/usr/local/opt/openssl@3/lib/libcrypto.dylib',
-                '/opt/homebrew/opt/openssl@1.1/lib/libcrypto.dylib',
-                '/usr/local/opt/openssl@1.1/lib/libcrypto.dylib',
-            ] if os.path.exists(p)
+            p
+            for p in [
+                "/opt/homebrew/opt/openssl@3/lib/libcrypto.dylib",
+                "/usr/local/opt/openssl@3/lib/libcrypto.dylib",
+                "/opt/homebrew/opt/openssl@1.1/lib/libcrypto.dylib",
+                "/usr/local/opt/openssl@1.1/lib/libcrypto.dylib",
+            ]
+            if os.path.exists(p)
         ]
         library = None
         for _p in _candidates:
@@ -97,14 +99,27 @@ def load_library():
 
     ECC_API = [
         ("EC_GROUP_new_by_curve_name", [ctypes.c_int], ctypes.c_void_p),
-        ("EC_POINT_new", [ctypes.c_void_p], ctypes.c_void_p),  # TODO: make this a EC_POINT type
+        (
+            "EC_POINT_new",
+            [ctypes.c_void_p],
+            ctypes.c_void_p,
+        ),  # TODO: make this a EC_POINT type
         ("EC_POINT_free", [ctypes.c_void_p], None),
-        ("EC_POINT_set_affine_coordinates_GFp",
-            [ctypes.c_void_p, ctypes.c_void_p, BN_P, BN_P, BN_CTX], ctypes.c_int),
-        ("EC_POINT_get_affine_coordinates_GFp",
-            [ctypes.c_void_p, ctypes.c_void_p, BN_P, BN_P, BN_CTX], ctypes.c_int),
-        ("EC_POINT_mul",
-            [ctypes.c_void_p, ctypes.c_void_p, BN_P, ctypes.c_void_p, BN_P, BN_CTX], ctypes.c_int),
+        (
+            "EC_POINT_set_affine_coordinates_GFp",
+            [ctypes.c_void_p, ctypes.c_void_p, BN_P, BN_P, BN_CTX],
+            ctypes.c_int,
+        ),
+        (
+            "EC_POINT_get_affine_coordinates_GFp",
+            [ctypes.c_void_p, ctypes.c_void_p, BN_P, BN_P, BN_CTX],
+            ctypes.c_int,
+        ),
+        (
+            "EC_POINT_mul",
+            [ctypes.c_void_p, ctypes.c_void_p, BN_P, ctypes.c_void_p, BN_P, BN_CTX],
+            ctypes.c_int,
+        ),
     ]
     set_api(library, BIGNUM_API)
     set_api(library, ECC_API)
@@ -127,7 +142,6 @@ def create_OpenSSLOptimizations(curve_id):
         return noop
 
     class Optimizations:
-
         if OpenSSL:
             openssl_group = OpenSSL.EC_GROUP_new_by_curve_name(curve_id)
 
@@ -146,11 +160,17 @@ def create_OpenSSLOptimizations(curve_id):
             ec_result = OpenSSL.EC_POINT_new(self.openssl_group)
             ec_point = OpenSSL.EC_POINT_new(self.openssl_group)
 
-            OpenSSL.EC_POINT_set_affine_coordinates_GFp(self.openssl_group, ec_point, bn_x, bn_y, ctx)
+            OpenSSL.EC_POINT_set_affine_coordinates_GFp(
+                self.openssl_group, ec_point, bn_x, bn_y, ctx
+            )
 
-            OpenSSL.EC_POINT_mul(self.openssl_group, ec_result, None, ec_point, bn_n, ctx)
+            OpenSSL.EC_POINT_mul(
+                self.openssl_group, ec_result, None, ec_point, bn_n, ctx
+            )
 
-            OpenSSL.EC_POINT_get_affine_coordinates_GFp(self.openssl_group, ec_result, bn_x, bn_y, ctx)
+            OpenSSL.EC_POINT_get_affine_coordinates_GFp(
+                self.openssl_group, ec_result, bn_x, bn_y, ctx
+            )
             OpenSSL.EC_POINT_free(ec_point)
             OpenSSL.EC_POINT_free(ec_result)
             OpenSSL.BN_CTX_free(ctx)

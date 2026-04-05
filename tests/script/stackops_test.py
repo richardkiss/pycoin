@@ -1,4 +1,3 @@
-
 import binascii
 import unittest
 
@@ -86,37 +85,43 @@ class StackOpsTest(unittest.TestCase):
     def test_do_OP_CAT(self):
         s = ["foo", "bar"]
         stackops.do_OP_CAT(s)
-        self.assertEqual(s, ['foobar'])
+        self.assertEqual(s, ["foobar"])
 
     def test_do_OP_RIPEMD160(self):
-        s = [b'foo']
+        s = [b"foo"]
         stackops.do_OP_RIPEMD160(s)
         self.assertEqual(len(s), 1)
         self.assertEqual(b2h(s[0]), "42cfa211018ea492fdee45ac637b7972a0ad6873")
 
     def test_do_OP_SHA1(self):
-        s = [b'foo']
+        s = [b"foo"]
         stackops.do_OP_SHA1(s)
         self.assertEqual(len(s), 1)
         self.assertEqual(b2h(s[0]), "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
 
     def test_do_OP_SHA256(self):
-        s = [b'foo']
+        s = [b"foo"]
         stackops.do_OP_SHA256(s)
         self.assertEqual(len(s), 1)
-        self.assertEqual(b2h(s[0]), "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae")
+        self.assertEqual(
+            b2h(s[0]),
+            "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+        )
 
     def test_do_OP_HASH160(self):
-        s = [b'foo']
+        s = [b"foo"]
         stackops.do_OP_HASH160(s)
         self.assertEqual(len(s), 1)
         self.assertEqual(b2h(s[0]), "e1cf7c8103476b6d7fe9e4979aa10e7c531fcf42")
 
     def test_do_OP_HASH256(self):
-        s = [b'foo']
+        s = [b"foo"]
         stackops.do_OP_HASH256(s)
         self.assertEqual(len(s), 1)
-        self.assertEqual(b2h(s[0]), "c7ade88fc7a21498a6a5e5c385e1f68bed822b72aa63c4a9a48a02c2466ee29e")
+        self.assertEqual(
+            b2h(s[0]),
+            "c7ade88fc7a21498a6a5e5c385e1f68bed822b72aa63c4a9a48a02c2466ee29e",
+        )
 
 
 if __name__ == "__main__":

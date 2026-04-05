@@ -14,7 +14,7 @@ from pycoin.cmds import block, ku, msg, tx, coinc
 
 DEFAULT_ENV = {
     "PYCOIN_BTC_PROVIDERS": "blockchain.info blockexplorer.com",
-    "PATH": os.environ.get("PATH")
+    "PATH": os.environ.get("PATH"),
 }
 
 
@@ -28,7 +28,6 @@ TOOL_LOOKUP = {
 
 
 class ToolTest(unittest.TestCase):
-
     def invoke_tool(self, args):
         tool_name = args[0]
         parser, main = TOOL_LOOKUP[tool_name]

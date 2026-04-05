@@ -33,7 +33,6 @@ parent_for_0 = "motherless"
 
 
 class BlockchainTestCase(unittest.TestCase):
-
     def test_basic(self):
         BC = BlockChain(parent_for_0)
         ITEMS = [FakeBlock(i) for i in range(100)]
@@ -127,7 +126,7 @@ class BlockchainTestCase(unittest.TestCase):
         assert BC.index_for_hash(-1) is None
 
     def test_fork(self):
-        parent_for_0 = b'\0' * 32
+        parent_for_0 = b"\0" * 32
         # 0 <= 1 <= ... <= 5 <= 6
         # 3 <= 301 <= 302 <= 303 <= 304 <= 305
 
@@ -154,7 +153,7 @@ class BlockchainTestCase(unittest.TestCase):
 
         # we should see a change
         expected = [("remove", ITEMS[i], i) for i in range(6, 3, -1)]
-        expected += [("add", ITEMS[i], i+4-301) for i in range(301, 306)]
+        expected += [("add", ITEMS[i], i + 4 - 301) for i in range(301, 306)]
         assert ops == expected
         assert set(BC.chain_finder.missing_parents()) == set([parent_for_0])
 
@@ -164,7 +163,7 @@ class BlockchainTestCase(unittest.TestCase):
         def the_callback(blockchain, ops):
             R.extend(ops)
 
-        parent_for_0 = b'\0' * 32
+        parent_for_0 = b"\0" * 32
         # same as test_fork, above
 
         BC = BlockChain(parent_for_0)
@@ -184,7 +183,7 @@ class BlockchainTestCase(unittest.TestCase):
 
         expected = [("add", ITEMS[i], i) for i in range(7)]
         expected += [("remove", ITEMS[i], i) for i in range(6, 3, -1)]
-        expected += [("add", ITEMS[i], i+4-301) for i in range(301, 306)]
+        expected += [("add", ITEMS[i], i + 4 - 301) for i in range(301, 306)]
 
         assert R == expected
 
@@ -214,7 +213,7 @@ class BlockchainTestCase(unittest.TestCase):
     def test_chain_locking(self):
         SIZE = 2000
         COUNT = 200
-        ITEMS = [FakeBlock(i, i-1) for i in range(SIZE*COUNT)]
+        ITEMS = [FakeBlock(i, i - 1) for i in range(SIZE * COUNT)]
         ITEMS[0] = FakeBlock(0, parent_for_0)
         BC = BlockChain(parent_for_0)
         assert longest_block_chain(BC) == []
@@ -223,9 +222,9 @@ class BlockchainTestCase(unittest.TestCase):
         assert set(BC.chain_finder.missing_parents()) == set()
 
         for i in range(COUNT):
-            start, end = i*SIZE, (i+1)*SIZE
-            lock_start = max(0, start-10)
-            expected_parent = lock_start-1 if lock_start else parent_for_0
+            start, end = i * SIZE, (i + 1) * SIZE
+            lock_start = max(0, start - 10)
+            expected_parent = lock_start - 1 if lock_start else parent_for_0
             assert BC.length() == start
             assert BC.locked_length() == lock_start
             ops = BC.add_headers(ITEMS[start:end])
@@ -241,5 +240,5 @@ class BlockchainTestCase(unittest.TestCase):
                 assert v[1] == parent_for_0 if i == 0 else i
             assert BC.index_for_hash(-1) is None
             assert BC.locked_length() == max(0, lock_start)
-            BC.lock_to_index(end-10)
-            assert BC.locked_length() == end-10
+            BC.lock_to_index(end - 10)
+            assert BC.locked_length() == end - 10

@@ -71,7 +71,7 @@ def split_with_remainder(total_amount, split_count):
     value_each, extra_count = divmod(total_amount, split_count)
     for _ in range(extra_count):
         yield value_each + 1
-    for _ in range(split_count-extra_count):
+    for _ in range(split_count - extra_count):
         yield value_each
 
 
@@ -89,7 +89,7 @@ def distribute_from_split_pool(tx, fee):
     """
 
     # calculate fees
-    if fee == 'standard':
+    if fee == "standard":
         # TODO: improve this
         # 1: the tx is not fully built out, so it will actually be larger than implied at this point
         # 2: recommended_fee_for_tx gives estimates that are too high
@@ -104,8 +104,12 @@ def distribute_from_split_pool(tx, fee):
         if remaining_coins < 0:
             raise ValueError("insufficient inputs for outputs")
         if remaining_coins < zero_count:
-            raise ValueError("not enough to pay nonzero amounts to at least one of the unspecified outputs")
-        for value, tx_out in zip(split_with_remainder(remaining_coins, zero_count), zero_txs_out):
+            raise ValueError(
+                "not enough to pay nonzero amounts to at least one of the unspecified outputs"
+            )
+        for value, tx_out in zip(
+            split_with_remainder(remaining_coins, zero_count), zero_txs_out
+        ):
             tx_out.coin_value = value
     return zero_count
 
@@ -131,8 +135,16 @@ def sign_tx(network, tx, wifs=[], **kwargs):
     solver.sign(keychain, **kwargs)
 
 
-def create_signed_tx(network, spendables, payables, wifs=[], fee="standard",
-                     lock_time=0, version=1, **kwargs):
+def create_signed_tx(
+    network,
+    spendables,
+    payables,
+    wifs=[],
+    fee="standard",
+    lock_time=0,
+    version=1,
+    **kwargs,
+):
     """
     This convenience function calls :func:`create_tx` and :func:`sign_tx` in turn. Read the documentation
     for those functions for information on the parameters.
@@ -149,10 +161,13 @@ def create_signed_tx(network, spendables, payables, wifs=[], fee="standard",
     take a while to confirm, possibly never).
     """
 
-    tx = create_tx(network, spendables, payables, fee=fee, lock_time=lock_time, version=version)
+    tx = create_tx(
+        network, spendables, payables, fee=fee, lock_time=lock_time, version=version
+    )
     sign_tx(network, tx, wifs=wifs, **kwargs)
     for idx, tx_out in enumerate(tx.txs_in):
         if not tx.is_solution_ok(idx):
-            raise SecretExponentMissing("failed to sign spendable for %s" %
-                                        tx.unspents[idx])
+            raise SecretExponentMissing(
+                "failed to sign spendable for %s" % tx.unspents[idx]
+            )
     return tx

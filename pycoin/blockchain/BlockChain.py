@@ -6,14 +6,14 @@ from pycoin.encoding.hexbytes import b2h_rev
 from .ChainFinder import ChainFinder
 
 logger = logging.getLogger(__name__)
-ZERO_HASH = b'\0' * 32
+ZERO_HASH = b"\0" * 32
 
 
 def _update_q(q, ops):
     # first, we meld out complimentary adds and removes
     while len(ops) > 0:
         op = ops[0]
-        if op[0] != 'remove':
+        if op[0] != "remove":
             break
         last = q.pop()
         if op[1:] != last[1:]:
@@ -25,7 +25,9 @@ def _update_q(q, ops):
 
 
 class BlockChain(object):
-    def __init__(self, parent_hash=ZERO_HASH, unlocked_block_storage={}, did_lock_to_index_f=None):
+    def __init__(
+        self, parent_hash=ZERO_HASH, unlocked_block_storage={}, did_lock_to_index_f=None
+    ):
         self.parent_hash = parent_hash
         self.hash_to_index_lookup = {}
         self.weight_lookup = {}
@@ -67,8 +69,10 @@ class BlockChain(object):
         index -= size
 
         longest_chain = self._longest_local_block_chain()
-        the_hash = longest_chain[-index-1]
-        parent_hash = self.parent_hash if index <= 0 else self._longest_chain_cache[-index]
+        the_hash = longest_chain[-index - 1]
+        parent_hash = (
+            self.parent_hash if index <= 0 else self._longest_chain_cache[-index]
+        )
         weight = self.weight_lookup.get(the_hash)
         return (the_hash, parent_hash, weight)
 
@@ -94,14 +98,18 @@ class BlockChain(object):
             return
         excluded = set()
         for idx in range(index):
-            the_hash = longest_chain[-idx-1]
-            parent_hash = self.parent_hash if idx <= 0 else self._longest_chain_cache[-idx]
+            the_hash = longest_chain[-idx - 1]
+            parent_hash = (
+                self.parent_hash if idx <= 0 else self._longest_chain_cache[-idx]
+            )
             weight = self.weight_lookup.get(the_hash)
             item = (the_hash, parent_hash, weight)
             self._locked_chain.append(item)
             excluded.add(the_hash)
         if self.did_lock_to_index_f:
-            self.did_lock_to_index_f(self._locked_chain[old_length:old_length+index], old_length)
+            self.did_lock_to_index_f(
+                self._locked_chain[old_length : old_length + index], old_length
+            )
         old_chain_finder = self.chain_finder
         self.chain_finder = ChainFinder()
         self._longest_chain_cache = None
@@ -114,6 +122,7 @@ class BlockChain(object):
                     excluded.add(c)
                     if c in old_chain_finder.parent_lookup:
                         yield (c, old_chain_finder.parent_lookup[c])
+
         self.chain_finder.load_nodes(iterate())
         self.parent_hash = the_hash
 
@@ -149,8 +158,7 @@ class BlockChain(object):
 
         if old_longest_chain and new_longest_chain:
             old_path, new_path = self.chain_finder.find_ancestral_path(
-                old_longest_chain[0],
-                new_longest_chain[0]
+                old_longest_chain[0], new_longest_chain[0]
             )
             old_path = old_path[:-1]
             new_path = new_path[:-1]
@@ -168,14 +176,14 @@ class BlockChain(object):
         ops = []
         size = len(old_longest_chain) + len(self._locked_chain)
         for idx, h in enumerate(old_path):
-            op = ("remove", self.block_for_hash(h), size-idx-1)
+            op = ("remove", self.block_for_hash(h), size - idx - 1)
             ops.append(op)
             del self.hash_to_index_lookup[h]
         size = len(new_longest_chain) + len(self._locked_chain)
         for idx, h in reversed(list(enumerate(new_path))):
-            op = ("add", self.block_for_hash(h), size-idx-1)
+            op = ("add", self.block_for_hash(h), size - idx - 1)
             ops.append(op)
-            self.hash_to_index_lookup[h] = size-idx-1
+            self.hash_to_index_lookup[h] = size - idx - 1
         for callback in self.change_callbacks:
             callback(self, ops)
 
@@ -186,7 +194,14 @@ class BlockChain(object):
         if local_block_chain:
             finish = b2h_rev(local_block_chain[0])
             start = b2h_rev(local_block_chain[-1])
-            longest_chain = "longest chain %s to %s of size %d" % (start, finish, self.unlocked_length())
+            longest_chain = "longest chain %s to %s of size %d" % (
+                start,
+                finish,
+                self.unlocked_length(),
+            )
         else:
             longest_chain = "no unlocked elements"
-        return "<BlockChain with %d locked elements and %s>" % (self.locked_length(), longest_chain)
+        return "<BlockChain with %d locked elements and %s>" % (
+            self.locked_length(),
+            longest_chain,
+        )

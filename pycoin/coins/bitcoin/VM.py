@@ -1,4 +1,3 @@
-
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.satoshi import errno, opcodes
@@ -23,12 +22,16 @@ class BitcoinVM(VM):
     ScriptStreamer = BitcoinScriptStreamer
 
     def pop_int(self):
-        return self.IntStreamer.int_from_script_bytes(self.pop(), require_minimal=self.flags & VERIFY_MINIMALDATA)
+        return self.IntStreamer.int_from_script_bytes(
+            self.pop(), require_minimal=self.flags & VERIFY_MINIMALDATA
+        )
 
     def pop_nonnegative(self):
         v = self.pop_int()
         if v < 0:
-            raise ScriptError("unexpectedly got negative value", errno.INVALID_STACK_OPERATION)
+            raise ScriptError(
+                "unexpectedly got negative value", errno.INVALID_STACK_OPERATION
+            )
         return v
 
     def push_int(self, v):

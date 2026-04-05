@@ -17,7 +17,6 @@ SIGHASH_ANYONECANPAY = network.validator.flags.SIGHASH_ANYONECANPAY
 
 
 class SegwitTest(unittest.TestCase):
-
     def check_unsigned(self, tx):
         for idx, txs_in in enumerate(tx.txs_in):
             self.assertFalse(tx.is_solution_ok(idx))
@@ -29,7 +28,7 @@ class SegwitTest(unittest.TestCase):
     def unsigned_copy(self, tx):
         tx = Tx.from_hex(tx.as_hex())
         for tx_in in tx.txs_in:
-            tx_in.script = b''
+            tx_in.script = b""
             tx_in.witness = []
         return tx
 
@@ -46,7 +45,7 @@ class SegwitTest(unittest.TestCase):
 
     def test_segwit_ui(self):
         # p2wpkh
-        address = 'bc1qqyykvamqq62n64t8gw09uw0cdgxjwwlw7mypam'
+        address = "bc1qqyykvamqq62n64t8gw09uw0cdgxjwwlw7mypam"
         s = network.contract.for_address(address)
         afs_address = network.address.for_script(s)
         self.assertEqual(address, afs_address)
@@ -55,7 +54,7 @@ class SegwitTest(unittest.TestCase):
         key1 = network.keys.private(1)
         coin_value = 5000000
         script = network.contract.for_p2pkh_wit(key1.hash160())
-        tx_hash = b'\xee' * 32
+        tx_hash = b"\xee" * 32
         tx_out_index = 0
         spendable = Tx.Spendable(coin_value, script, tx_hash, tx_out_index)
         key2 = network.keys.private(2)
@@ -70,7 +69,9 @@ class SegwitTest(unittest.TestCase):
         spendable.script = network.contract.for_address(address)
         tx = network.tx_utils.create_tx([spendable], [(key2.address(), coin_value)])
         self.check_unsigned(tx)
-        network.tx_utils.sign_tx(tx, [key1.wif()], p2sh_lookup=network.tx.solve.build_p2sh_lookup([s1]))
+        network.tx_utils.sign_tx(
+            tx, [key1.wif()], p2sh_lookup=network.tx.solve.build_p2sh_lookup([s1])
+        )
         self.check_signed(tx)
 
     def test_issue_224(self):
@@ -82,11 +83,20 @@ class SegwitTest(unittest.TestCase):
         Tx.from_hex(RAWTX)
 
     def check_bip143_tx(
-            self, tx_u_hex, tx_s_hex, txs_out_value_scripthex_pair, tx_in_count, tx_out_count, version, lock_time):
+        self,
+        tx_u_hex,
+        tx_s_hex,
+        txs_out_value_scripthex_pair,
+        tx_in_count,
+        tx_out_count,
+        version,
+        lock_time,
+    ):
         tx_u = Tx.from_hex(tx_u_hex)
         tx_s = Tx.from_hex(tx_s_hex)
         txs_out = [
-            TxOut(int(coin_value * 1e8), h2b(script_hex)) for coin_value, script_hex in txs_out_value_scripthex_pair
+            TxOut(int(coin_value * 1e8), h2b(script_hex))
+            for coin_value, script_hex in txs_out_value_scripthex_pair
         ]
         for tx in (tx_u, tx_s):
             self.assertEqual(len(tx.txs_in), tx_in_count)
@@ -129,39 +139,59 @@ class SegwitTest(unittest.TestCase):
             "61406f90300e8f3358f51928d43c212a8caed02de67eebee0121025476c2e83188368d"
             "a1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee635711000000",
             [
-                (6.25, "2103c9f4836b9a4f77fc0d81f7bcb01b7f1b35916864b9476c241ce9fc198bd25432ac"),
-                (6, "00141d0f172a0ecb48aee1be1f2687d2963ae33f71a1")
+                (
+                    6.25,
+                    "2103c9f4836b9a4f77fc0d81f7bcb01b7f1b35916864b9476c241ce9fc198bd25432ac",
+                ),
+                (6, "00141d0f172a0ecb48aee1be1f2687d2963ae33f71a1"),
             ],
             2,
             2,
             1,
-            17
+            17,
         )
 
         sc = tx_s1.SolutionChecker(tx_s1)
-        self.assertEqual(b2h(sc._hash_prevouts(SIGHASH_ALL)),
-                         "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
-        self.assertEqual(b2h(sc._hash_sequence(SIGHASH_ALL)),
-                         "52b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3b")
-        self.assertEqual(b2h(sc._hash_outputs(SIGHASH_ALL, 0)),
-                         "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
+        self.assertEqual(
+            b2h(sc._hash_prevouts(SIGHASH_ALL)),
+            "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37",
+        )
+        self.assertEqual(
+            b2h(sc._hash_sequence(SIGHASH_ALL)),
+            "52b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3b",
+        )
+        self.assertEqual(
+            b2h(sc._hash_outputs(SIGHASH_ALL, 0)),
+            "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5",
+        )
 
         script = network.contract.for_p2pkh(tx_s1.unspents[1].script[2:])
         self.assertEqual(
-            b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=1, hash_type=SIGHASH_ALL)),
+            b2h(
+                sc._segwit_signature_preimage(
+                    script=script, tx_in_idx=1, hash_type=SIGHASH_ALL
+                )
+            ),
             "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd"
             "3752b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3bef51"
             "e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000019"
             "76a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac0046c32300000000ffff"
             "ffff863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e511"
-            "00000001000000")
+            "00000001000000",
+        )
 
-        self.assertEqual(b2h(to_bytes_32(sc._signature_for_hash_type_segwit(script, 1, 1))),
-                         "c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670")
-        self.check_tx_can_be_signed(tx_u1, tx_s1, [
-            0xbbc27228ddcb9209d7fd6f36b02f7dfa6252af40bb2f1cbc7a557da8027ff866,
-            0x619c335025c7f4012e556c2a58b2506e30b8511b53ade95ea316fd8c3286feb9
-        ])
+        self.assertEqual(
+            b2h(to_bytes_32(sc._signature_for_hash_type_segwit(script, 1, 1))),
+            "c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670",
+        )
+        self.check_tx_can_be_signed(
+            tx_u1,
+            tx_s1,
+            [
+                0xBBC27228DDCB9209D7FD6F36B02F7DFA6252AF40BB2F1CBC7A557DA8027FF866,
+                0x619C335025C7F4012E556C2A58B2506E30B8511B53ADE95EA316FD8C3286FEB9,
+            ],
+        )
 
     def test_bip143_tx_2(self):
         tx_u2, tx_s2 = self.check_bip143_tx(
@@ -181,11 +211,14 @@ class SegwitTest(unittest.TestCase):
             1,
             2,
             1,
-            1170
+            1170,
         )
         self.check_tx_can_be_signed(
-            tx_u2, tx_s2, [0xeb696a065ef48a2192da5b28b694f87544b30fae8327c4510137a922f32c6dcf],
-            ["001479091972186c449eb1ded22b78e40d009bdf0089"])
+            tx_u2,
+            tx_s2,
+            [0xEB696A065EF48A2192DA5B28B694F87544B30FAE8327C4510137A922F32C6DCF],
+            ["001479091972186c449eb1ded22b78e40d009bdf0089"],
+        )
 
     def test_bip143_tx_3(self):
         tx_u3, tx_s3 = self.check_bip143_tx(
@@ -206,13 +239,19 @@ class SegwitTest(unittest.TestCase):
             "c2a9d0d89497ac511f760f45c47dc5ed9cf352a58ac706453880aeadab210255a9626a"
             "ebf5e29c0e6538428ba0d1dcf6ca98ffdf086aa8ced5e0d0215ea465ac00000000",
             [
-                (1.5625, "21036d5c20fa14fb2f635474c1dc4ef5909d4568e5569b79fc94d3448486e14685f8ac"),
-                (49, "00205d1b56b63d714eebe542309525f484b7e9d6f686b3781b6f61ef925d66d6f6a0")
+                (
+                    1.5625,
+                    "21036d5c20fa14fb2f635474c1dc4ef5909d4568e5569b79fc94d3448486e14685f8ac",
+                ),
+                (
+                    49,
+                    "00205d1b56b63d714eebe542309525f484b7e9d6f686b3781b6f61ef925d66d6f6a0",
+                ),
             ],
             2,
             1,
             1,
-            0
+            0,
         )
 
     def test_bip143_tx_4(self):
@@ -235,13 +274,19 @@ class SegwitTest(unittest.TestCase):
             "210392972e2eb617b2388771abe27235fd5ac44af8e61693261550447a4c3e39da98ac"
             "00000000",
             [
-                (0.16777215, "0020ba468eea561b26301e4cf69fa34bde4ad60c81e70f059f045ca9a79931004a4d"),
-                (0.16777215, "0020d9bbfbe56af7c4b7f960a70d7ea107156913d9e5a26b0a71429df5e097ca6537"),
+                (
+                    0.16777215,
+                    "0020ba468eea561b26301e4cf69fa34bde4ad60c81e70f059f045ca9a79931004a4d",
+                ),
+                (
+                    0.16777215,
+                    "0020d9bbfbe56af7c4b7f960a70d7ea107156913d9e5a26b0a71429df5e097ca6537",
+                ),
             ],
             2,
             2,
             1,
-            0
+            0,
         )
 
     def test_bip143_tx_5(self):
@@ -277,48 +322,83 @@ class SegwitTest(unittest.TestCase):
             1,
             2,
             1,
-            0
+            0,
         )
 
         tx_u5prime = self.unsigned_copy(tx_s5)
         tx_s_hex = tx_s5.as_hex()
         tx_u5prime.set_unspents(tx_s5.unspents)
 
-        ss = ["56210307b8ae49ac90a048e9b53357a2354b3334e9c8bee813ecb98e99a7e07e8c3ba3"
-              "2103b28f0c28bfab54554ae8c658ac5c3e0ce6e79ad336331f78c428dd43eea8449b21"
-              "034b8113d703413d57761b8b9781957b8c0ac1dfe69f492580ca4195f50376ba4a2103"
-              "3400f6afecb833092a9a21cfdf1ed1376e58c5d1f47de74683123987e967a8f42103a6"
-              "d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b6"
-              "61b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56ae",
-              "0020a16b5755f7f6f96dbd65f5f0d6ab9418b89af4b1f14a1bb8a09062c35f0dcb54"]
+        ss = [
+            "56210307b8ae49ac90a048e9b53357a2354b3334e9c8bee813ecb98e99a7e07e8c3ba3"
+            "2103b28f0c28bfab54554ae8c658ac5c3e0ce6e79ad336331f78c428dd43eea8449b21"
+            "034b8113d703413d57761b8b9781957b8c0ac1dfe69f492580ca4195f50376ba4a2103"
+            "3400f6afecb833092a9a21cfdf1ed1376e58c5d1f47de74683123987e967a8f42103a6"
+            "d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b6"
+            "61b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56ae",
+            "0020a16b5755f7f6f96dbd65f5f0d6ab9418b89af4b1f14a1bb8a09062c35f0dcb54",
+        ]
         p2sh_lookup = network.tx.solve.build_p2sh_lookup([h2b(x) for x in ss])
         for se, sighash_type in [
-            (0x730fff80e1413068a05b57d6a58261f07551163369787f349438ea38ca80fac6, SIGHASH_ALL),
-            (0x11fa3d25a17cbc22b29c44a484ba552b5a53149d106d3d853e22fdd05a2d8bb3, SIGHASH_NONE),
-            (0x77bf4141a87d55bdd7f3cd0bdccf6e9e642935fec45f2f30047be7b799120661, SIGHASH_SINGLE),
-            (0x14af36970f5025ea3e8b5542c0f8ebe7763e674838d08808896b63c3351ffe49, SIGHASH_ANYONECANPAY | SIGHASH_ALL),
-            (0xfe9a95c19eef81dde2b95c1284ef39be497d128e2aa46916fb02d552485e0323, SIGHASH_ANYONECANPAY | SIGHASH_NONE),
-            (0x428a7aee9f0c2af0cd19af3cf1c78149951ea528726989b2e83e4778d2c3f890, SIGHASH_ANYONECANPAY | SIGHASH_SINGLE),
+            (
+                0x730FFF80E1413068A05B57D6A58261F07551163369787F349438EA38CA80FAC6,
+                SIGHASH_ALL,
+            ),
+            (
+                0x11FA3D25A17CBC22B29C44A484BA552B5A53149D106D3D853E22FDD05A2D8BB3,
+                SIGHASH_NONE,
+            ),
+            (
+                0x77BF4141A87D55BDD7F3CD0BDCCF6E9E642935FEC45F2F30047BE7B799120661,
+                SIGHASH_SINGLE,
+            ),
+            (
+                0x14AF36970F5025EA3E8B5542C0F8EBE7763E674838D08808896B63C3351FFE49,
+                SIGHASH_ANYONECANPAY | SIGHASH_ALL,
+            ),
+            (
+                0xFE9A95C19EEF81DDE2B95C1284EF39BE497D128E2AA46916FB02D552485E0323,
+                SIGHASH_ANYONECANPAY | SIGHASH_NONE,
+            ),
+            (
+                0x428A7AEE9F0C2AF0CD19AF3CF1C78149951EA528726989B2E83E4778D2C3F890,
+                SIGHASH_ANYONECANPAY | SIGHASH_SINGLE,
+            ),
         ]:
-            tx_u5prime.sign(hash_type=sighash_type, hash160_lookup=network.tx.solve.build_hash160_lookup(
-                [se]), p2sh_lookup=p2sh_lookup)
+            tx_u5prime.sign(
+                hash_type=sighash_type,
+                hash160_lookup=network.tx.solve.build_hash160_lookup([se]),
+                p2sh_lookup=p2sh_lookup,
+            )
 
         self.check_signed(tx_u5prime)
         tx_hex = tx_u5prime.as_hex()
         self.assertEqual(tx_hex, tx_s_hex)
 
         sc = tx_s5.SolutionChecker(tx_s5)
-        self.assertEqual(b2h(sc._hash_prevouts(SIGHASH_ALL)),
-                         "74afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aaa0")
-        self.assertEqual(b2h(sc._hash_sequence(SIGHASH_ALL)),
-                         "3bb13029ce7b1f559ef5e747fcac439f1455a2ec7c5f09b72290795e70665044")
-        self.assertEqual(b2h(sc._hash_outputs(SIGHASH_ALL, 0)),
-                         "bc4d309071414bed932f98832b27b4d76dad7e6c1346f487a8fdbb8eb90307cc")
-        self.assertEqual(b2h(sc._hash_outputs(SIGHASH_SINGLE, 0)),
-                         "9efe0c13a6b16c14a41b04ebe6a63f419bdacb2f8705b494a43063ca3cd4f708")
+        self.assertEqual(
+            b2h(sc._hash_prevouts(SIGHASH_ALL)),
+            "74afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aaa0",
+        )
+        self.assertEqual(
+            b2h(sc._hash_sequence(SIGHASH_ALL)),
+            "3bb13029ce7b1f559ef5e747fcac439f1455a2ec7c5f09b72290795e70665044",
+        )
+        self.assertEqual(
+            b2h(sc._hash_outputs(SIGHASH_ALL, 0)),
+            "bc4d309071414bed932f98832b27b4d76dad7e6c1346f487a8fdbb8eb90307cc",
+        )
+        self.assertEqual(
+            b2h(sc._hash_outputs(SIGHASH_SINGLE, 0)),
+            "9efe0c13a6b16c14a41b04ebe6a63f419bdacb2f8705b494a43063ca3cd4f708",
+        )
         script = tx_s5.txs_in[0].witness[-1]
         self.assertEqual(
-            b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_ALL)),
+            b2h(
+                sc._segwit_signature_preimage(
+                    script=script, tx_in_idx=0, hash_type=SIGHASH_ALL
+                )
+            ),
             "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aa"
             "a03bb13029ce7b1f559ef5e747fcac439f1455a2ec7c5f09b72290795e706650443664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -329,10 +409,15 @@ class SegwitTest(unittest.TestCase):
             "d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b6"
             "61b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de"
             "3a00000000ffffffffbc4d309071414bed932f98832b27b4d76dad7e6c1346f487a8fd"
-            "bb8eb90307cc0000000001000000")
+            "bb8eb90307cc0000000001000000",
+        )
 
         self.assertEqual(
-            b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_NONE)),
+            b2h(
+                sc._segwit_signature_preimage(
+                    script=script, tx_in_idx=0, hash_type=SIGHASH_NONE
+                )
+            ),
             "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aa"
             "a000000000000000000000000000000000000000000000000000000000000000003664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -343,10 +428,15 @@ class SegwitTest(unittest.TestCase):
             "d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b6"
             "61b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de"
             "3a00000000ffffffff0000000000000000000000000000000000000000000000000000"
-            "0000000000000000000002000000")
+            "0000000000000000000002000000",
+        )
 
         self.assertEqual(
-            b2h(sc._segwit_signature_preimage(script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE)),
+            b2h(
+                sc._segwit_signature_preimage(
+                    script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE
+                )
+            ),
             "0100000074afdc312af5183c4198a40ca3c1a275b485496dd3929bca388c4b5e31f7aa"
             "a000000000000000000000000000000000000000000000000000000000000000003664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -357,11 +447,17 @@ class SegwitTest(unittest.TestCase):
             "d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b6"
             "61b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de"
             "3a00000000ffffffff9efe0c13a6b16c14a41b04ebe6a63f419bdacb2f8705b494a430"
-            "63ca3cd4f7080000000003000000")
+            "63ca3cd4f7080000000003000000",
+        )
 
         self.assertEqual(
-            b2h(sc._segwit_signature_preimage(
-                script=script, tx_in_idx=0, hash_type=SIGHASH_ALL | SIGHASH_ANYONECANPAY)),
+            b2h(
+                sc._segwit_signature_preimage(
+                    script=script,
+                    tx_in_idx=0,
+                    hash_type=SIGHASH_ALL | SIGHASH_ANYONECANPAY,
+                )
+            ),
             "0100000000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000003664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -372,11 +468,17 @@ class SegwitTest(unittest.TestCase):
             "d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b6"
             "61b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de"
             "3a00000000ffffffffbc4d309071414bed932f98832b27b4d76dad7e6c1346f487a8fd"
-            "bb8eb90307cc0000000081000000")
+            "bb8eb90307cc0000000081000000",
+        )
 
         self.assertEqual(
-            b2h(sc._segwit_signature_preimage(
-                script=script, tx_in_idx=0, hash_type=SIGHASH_NONE | SIGHASH_ANYONECANPAY)),
+            b2h(
+                sc._segwit_signature_preimage(
+                    script=script,
+                    tx_in_idx=0,
+                    hash_type=SIGHASH_NONE | SIGHASH_ANYONECANPAY,
+                )
+            ),
             "0100000000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000003664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -387,11 +489,17 @@ class SegwitTest(unittest.TestCase):
             "d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b6"
             "61b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de"
             "3a00000000ffffffff0000000000000000000000000000000000000000000000000000"
-            "0000000000000000000082000000")
+            "0000000000000000000082000000",
+        )
 
         self.assertEqual(
-            b2h(sc._segwit_signature_preimage(
-                script=script, tx_in_idx=0, hash_type=SIGHASH_SINGLE | SIGHASH_ANYONECANPAY)),
+            b2h(
+                sc._segwit_signature_preimage(
+                    script=script,
+                    tx_in_idx=0,
+                    hash_type=SIGHASH_SINGLE | SIGHASH_ANYONECANPAY,
+                )
+            ),
             "0100000000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000003664"
             "1869ca081e70f394c6948e8af409e18b619df2ed74aa106c1ca29787b96e01000000cf"
@@ -402,19 +510,28 @@ class SegwitTest(unittest.TestCase):
             "d48b1131e94ba04d9737d61acdaa1322008af9602b3b14862c07a1789aac162102d8b6"
             "61b0b3302ee2f162b09e07a55ad5dfbe673a9f01d9f0c19617681024306b56aeb168de"
             "3a00000000ffffffff9efe0c13a6b16c14a41b04ebe6a63f419bdacb2f8705b494a430"
-            "63ca3cd4f7080000000083000000")
+            "63ca3cd4f7080000000083000000",
+        )
 
-        tx = Tx.from_hex("010000000169c12106097dc2e0526493ef67f21269fe888ef05c7a3a5dacab38e1ac83"
-                         "87f14c1d000000ffffffff0101000000000000000000000000")
-        tx.set_witness(0, [h2b(x) for x in [
-            "30450220487fb382c4974de3f7d834c1b617fe15860828c7f96454490edd6d891556dc"
-            "c9022100baf95feb48f845d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae626c5"
-            "3e01",
-            "02a9781d66b61fb5a7ef00ac5ad5bc6ffc78be7b44a566e3c87870e1079368df4c",
-            "ad4830450220487fb382c4974de3f7d834c1b617fe15860828c7f96454490edd6d8915"
-            "56dcc9022100baf95feb48f845d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae6"
-            "26c53e01"
-        ]])
+        tx = Tx.from_hex(
+            "010000000169c12106097dc2e0526493ef67f21269fe888ef05c7a3a5dacab38e1ac83"
+            "87f14c1d000000ffffffff0101000000000000000000000000"
+        )
+        tx.set_witness(
+            0,
+            [
+                h2b(x)
+                for x in [
+                    "30450220487fb382c4974de3f7d834c1b617fe15860828c7f96454490edd6d891556dc"
+                    "c9022100baf95feb48f845d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae626c5"
+                    "3e01",
+                    "02a9781d66b61fb5a7ef00ac5ad5bc6ffc78be7b44a566e3c87870e1079368df4c",
+                    "ad4830450220487fb382c4974de3f7d834c1b617fe15860828c7f96454490edd6d8915"
+                    "56dcc9022100baf95feb48f845d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae6"
+                    "26c53e01",
+                ]
+            ],
+        )
         tx = Tx.from_hex(
             "0100000000010169c12106097dc2e0526493ef67f21269fe888ef05c7a3a5dacab38e1"
             "ac8387f14c1d000000ffffffff01010000000000000000034830450220487fb382c497"
@@ -422,13 +539,15 @@ class SegwitTest(unittest.TestCase):
             "45d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae626c53e012102a9781d66b61f"
             "b5a7ef00ac5ad5bc6ffc78be7b44a566e3c87870e1079368df4c4aad4830450220487f"
             "b382c4974de3f7d834c1b617fe15860828c7f96454490edd6d891556dcc9022100baf9"
-            "5feb48f845d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae626c53e0100000000")
+            "5feb48f845d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae626c53e0100000000"
+        )
         tx_hex = tx.as_hex()
         print(tx)
         print(tx_hex)
         tx = Tx.from_hex(
             "010000000169c12106097dc2e0526493ef67f21269fe888ef05c7a3a5dacab38e1ac83"
-            "87f14c1d000000ffffffff0101000000000000000000000000")
+            "87f14c1d000000ffffffff0101000000000000000000000000"
+        )
         self.assertEqual(
             tx_hex,
             "0100000000010169c12106097dc2e0526493ef67f21269fe888ef05c7a3a5dacab38e1"
@@ -437,7 +556,8 @@ class SegwitTest(unittest.TestCase):
             "45d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae626c53e012102a9781d66b61f"
             "b5a7ef00ac5ad5bc6ffc78be7b44a566e3c87870e1079368df4c4aad4830450220487f"
             "b382c4974de3f7d834c1b617fe15860828c7f96454490edd6d891556dcc9022100baf9"
-            "5feb48f845d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae626c53e0100000000")
+            "5feb48f845d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae626c53e0100000000",
+        )
 
     def test_bip143_tx_6(self):
         tx_u6, tx_s6 = self.check_bip143_tx(
@@ -450,11 +570,16 @@ class SegwitTest(unittest.TestCase):
             "b5a7ef00ac5ad5bc6ffc78be7b44a566e3c87870e1079368df4c4aad4830450220487f"
             "b382c4974de3f7d834c1b617fe15860828c7f96454490edd6d891556dcc9022100baf9"
             "5feb48f845d5bfc9882eb6aeefa1bc3790e39f59eaa46ff7f15ae626c53e0100000000",
-            [(0.002, "00209e1be07558ea5cc8e02ed1d80c0911048afad949affa36d5c3951e3159dbea19")],
+            [
+                (
+                    0.002,
+                    "00209e1be07558ea5cc8e02ed1d80c0911048afad949affa36d5c3951e3159dbea19",
+                )
+            ],
             1,
             1,
             1,
-            0
+            0,
         )
 
     def test_bip143_tx_7(self):
@@ -474,10 +599,15 @@ class SegwitTest(unittest.TestCase):
             "3e0148304502205286f726690b2e9b0207f0345711e63fa7012045b9eb0f19c2458ce1"
             "db90cf43022100e89f17f86abc5b149eba4115d4f128bcf45d77fb3ecdd34f59409134"
             "0c039596017500000000",
-            [(0.002, "00209b66c15b4e0b4eb49fa877982cafded24859fe5b0e2dbfbe4f0df1de7743fd52")],
+            [
+                (
+                    0.002,
+                    "00209b66c15b4e0b4eb49fa877982cafded24859fe5b0e2dbfbe4f0df1de7743fd52",
+                )
+            ],
             1,
             1,
             1,
-            0
+            0,
         )
         print(tx_s7.txs_in[0])

@@ -19,4 +19,6 @@ class BcashSolutionChecker(BitcoinSolutionChecker):
         if hash_type & SIGHASH_FORKID != SIGHASH_FORKID:
             raise self.ScriptError()
 
-        return self._signature_for_hash_type_segwit(tx_out_script, unsigned_txs_out_idx, hash_type)
+        return self._signature_for_hash_type_segwit(
+            tx_out_script, unsigned_txs_out_idx, hash_type
+        )

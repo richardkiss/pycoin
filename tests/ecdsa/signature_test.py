@@ -21,7 +21,9 @@ class SigningTest(unittest.TestCase):
             v = secp256k1_generator.verify(public_pair, VAL, sig1)
             self.assertFalse(v)
 
-            public_pairs = secp256k1_generator.possible_public_pairs_for_signature(VAL, sig)
+            public_pairs = secp256k1_generator.possible_public_pairs_for_signature(
+                VAL, sig
+            )
             self.assertIn(public_pair, public_pairs)
 
 

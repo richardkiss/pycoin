@@ -14,7 +14,7 @@ def filter_size_required(element_count, false_positive_probability):
     # (36,000: selected as it represents a filter of 20,000 items with false
     # positive rate of < 0.1% or 10,000 items and a false positive rate of < 0.0001%).
     lfpp = math.log(false_positive_probability)
-    return min(36000, int(((-1 / pow(LOG_2, 2) * element_count * lfpp)+7) // 8))
+    return min(36000, int(((-1 / pow(LOG_2, 2) * element_count * lfpp) + 7) // 8))
 
 
 def hash_function_count_required(filter_size, element_count):
@@ -69,39 +69,44 @@ class BloomFilter(object):
 
 # http://stackoverflow.com/questions/13305290/is-there-a-pure-python-implementation-of-murmurhash
 
+
 def murmur3(data, seed=0):
-    c1 = 0xcc9e2d51
-    c2 = 0x1b873593
+    c1 = 0xCC9E2D51
+    c2 = 0x1B873593
 
     length = len(data)
     h1 = seed
-    roundedEnd = (length & 0xfffffffc)  # round down to 4 byte block
+    roundedEnd = length & 0xFFFFFFFC  # round down to 4 byte block
     for i in range(0, roundedEnd, 4):
         # little endian load order
-        k1 = (indexbytes(data, i) & 0xff) | ((indexbytes(data, i + 1) & 0xff) << 8) | \
-            ((indexbytes(data, i + 2) & 0xff) << 16) | (indexbytes(data, i + 3) << 24)
+        k1 = (
+            (indexbytes(data, i) & 0xFF)
+            | ((indexbytes(data, i + 1) & 0xFF) << 8)
+            | ((indexbytes(data, i + 2) & 0xFF) << 16)
+            | (indexbytes(data, i + 3) << 24)
+        )
         k1 *= c1
-        k1 = (k1 << 15) | ((k1 & 0xffffffff) >> 17)  # ROTL32(k1,15)
+        k1 = (k1 << 15) | ((k1 & 0xFFFFFFFF) >> 17)  # ROTL32(k1,15)
         k1 *= c2
 
         h1 ^= k1
-        h1 = (h1 << 13) | ((h1 & 0xffffffff) >> 19)  # ROTL32(h1,13)
-        h1 = h1 * 5 + 0xe6546b64
+        h1 = (h1 << 13) | ((h1 & 0xFFFFFFFF) >> 19)  # ROTL32(h1,13)
+        h1 = h1 * 5 + 0xE6546B64
 
     # tail
     k1 = 0
 
     val = length & 0x03
     if val == 3:
-        k1 = (indexbytes(data, roundedEnd + 2) & 0xff) << 16
+        k1 = (indexbytes(data, roundedEnd + 2) & 0xFF) << 16
     # fallthrough
     if val in [2, 3]:
-        k1 |= (indexbytes(data, roundedEnd + 1) & 0xff) << 8
+        k1 |= (indexbytes(data, roundedEnd + 1) & 0xFF) << 8
     # fallthrough
     if val in [1, 2, 3]:
-        k1 |= indexbytes(data, roundedEnd) & 0xff
+        k1 |= indexbytes(data, roundedEnd) & 0xFF
         k1 *= c1
-        k1 = (k1 << 15) | ((k1 & 0xffffffff) >> 17)  # ROTL32(k1,15)
+        k1 = (k1 << 15) | ((k1 & 0xFFFFFFFF) >> 17)  # ROTL32(k1,15)
         k1 *= c2
         h1 ^= k1
 
@@ -109,10 +114,10 @@ def murmur3(data, seed=0):
     h1 ^= length
 
     # fmix(h1)
-    h1 ^= ((h1 & 0xffffffff) >> 16)
-    h1 *= 0x85ebca6b
-    h1 ^= ((h1 & 0xffffffff) >> 13)
-    h1 *= 0xc2b2ae35
-    h1 ^= ((h1 & 0xffffffff) >> 16)
+    h1 ^= (h1 & 0xFFFFFFFF) >> 16
+    h1 *= 0x85EBCA6B
+    h1 ^= (h1 & 0xFFFFFFFF) >> 13
+    h1 *= 0xC2B2AE35
+    h1 ^= (h1 & 0xFFFFFFFF) >> 16
 
-    return h1 & 0xffffffff
+    return h1 & 0xFFFFFFFF

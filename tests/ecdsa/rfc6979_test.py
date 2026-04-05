@@ -6,14 +6,15 @@ from pycoin.ecdsa.rfc6979 import deterministic_generate_k
 
 
 class RFC6979TestCase(unittest.TestCase):
-
     def test_deterministic_generate_k_A_1(self):
         """
         The example in http://tools.ietf.org/html/rfc6979#appendix-A.1
         """
-        h = hashlib.sha256(b'sample').digest()
+        h = hashlib.sha256(b"sample").digest()
         val = from_bytes(h)
-        self.assertEqual(val, 0xAF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF)
+        self.assertEqual(
+            val, 0xAF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF
+        )
         q = 0x4000000000000000000020108A2E0CC0D99F8A5EF
         x = 0x09A4D6792295A7F730FC3F2B49CBC0F62E862272F
         k = deterministic_generate_k(q, x, val)
@@ -29,11 +30,11 @@ class RFC6979TestCase(unittest.TestCase):
             (hashlib.sha256, 0x32B1B6D7D42A05CB449065727A84804FB1A3E34D8F261496),
             (hashlib.sha384, 0x4730005C4FCB01834C063A7B6760096DBE284B8252EF4311),
             (hashlib.sha512, 0xA2AC7AB055E4F20692D49209544C203A7D1F2C0BFBC75DB1),
-            )
+        )
         q = 0xFFFFFFFFFFFFFFFFFFFFFFFF99DEF836146BC9B1B4D22831
         x = 0x6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4
         for h, v in hashes_values:
-            v_sample = from_bytes(h(b'sample').digest())
+            v_sample = from_bytes(h(b"sample").digest())
             k = deterministic_generate_k(q, x, v_sample, h)
             self.assertEqual(k, v)
 
@@ -43,9 +44,9 @@ class RFC6979TestCase(unittest.TestCase):
             (hashlib.sha256, 0x5C4CE89CF56D9E7C77C8585339B006B97B5F0680B4306C6C),
             (hashlib.sha384, 0x5AFEFB5D3393261B828DB6C91FBC68C230727B030C975693),
             (hashlib.sha512, 0x0758753A5254759C7CFBAD2E2D9B0792EEE44136C9480527),
-            )
+        )
         for h, v in hashes_values:
-            v_sample = from_bytes(h(b'test').digest())
+            v_sample = from_bytes(h(b"test").digest())
             k = deterministic_generate_k(q, x, v_sample, h)
             self.assertEqual(k, v)
 
@@ -53,14 +54,16 @@ class RFC6979TestCase(unittest.TestCase):
         """
         The example in https://tools.ietf.org/html/rfc6979#appendix-A.2.5
         """
-        h = hashlib.sha256(b'sample').digest()
+        h = hashlib.sha256(b"sample").digest()
         val = from_bytes(h)
-        self.assertEqual(val, 0xAF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF)
+        self.assertEqual(
+            val, 0xAF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF
+        )
         generator_order = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF16A2E0B8F03E13DD29455C5C2A3D
         secret_exponent = 0xF220266E1105BFE3083E03EC7A3A654651F45E37167E88600BF257C1
         k = deterministic_generate_k(generator_order, secret_exponent, val)
         self.assertEqual(k, 0xAD3029E0278F80643DE33917CE6908C70A8FF50A411F06E41DEDFCDC)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

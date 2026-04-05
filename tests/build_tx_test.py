@@ -10,7 +10,7 @@ Tx = network.tx
 flags = network.validator.flags
 
 # block 80971
-block_80971_cs = h2b('00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC')
+block_80971_cs = h2b("00000000001126456C67A1F5F0FF0268F53B4F22E0531DC70C7B69746AF69DAC")
 block_80971_data = h2b(
     "01000000950A1631FB9FAC411DFB173487B9E18018B7C6F7147E78C062584100000000"
     "00A881352F97F14BF191B54915AE124E051B8FE6C3922C5082B34EAD503000FC34D891"
@@ -37,13 +37,15 @@ block_80971_data = h2b(
     "00004A493046022100FB23B1E2F2FB8B96E04D220D385346290A9349F89BBBC5C225D5"
     "A56D931F8A8E022100F298EB28294B90C1BAF319DAB713E7CA721AAADD8FCC15F849DE"
     "7B0A6CF5412101FFFFFFFF0100F2052A010000001976A9146DDEA8071439951115469D"
-    "0D2E2B80ECBCDD48DB88AC00000000")
+    "0D2E2B80ECBCDD48DB88AC00000000"
+)
 
 block_80971 = Block.parse(io.BytesIO(block_80971_data))
 
 COINBASE_PUB_KEY_FROM_80971 = h2b(
     "04cb6b6b4eadc96c7d08b21b29d0ada5f29f9378978cabdb602b8b65da08c8a93caab46"
-    "f5abd59889bac704925942dd77a2116d10e0274cad944c71d3d1a670570")
+    "f5abd59889bac704925942dd77a2116d10e0274cad944c71d3d1a670570"
+)
 COINBASE_BYTES_FROM_80971 = h2b("04ed66471b02c301")
 
 
@@ -65,17 +67,20 @@ def standard_tx(coins_from, coins_to):
 
 
 class BuildTxTest(unittest.TestCase):
-
     def test_signature_hash(self):
         compressed = False
-        exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
+        exponent_2 = int(
+            "137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16
+        )
         address_2 = network.keys.private(exponent_2, is_compressed=compressed).address()
         key = network.parse.wif("5JMys7YfK72cRVTrbwkq5paxU7vgkMypB55KyXEtN5uSnjV7K8Y")
         exponent = key.secret_exponent()
 
         public_key_sec = network.keys.private(exponent, is_compressed=compressed).sec()
 
-        the_coinbase_tx = Tx.coinbase_tx(public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
+        the_coinbase_tx = Tx.coinbase_tx(
+            public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971
+        )
         coins_from = [(the_coinbase_tx.hash(), 0, the_coinbase_tx.txs_out[0])]
         coins_to = [(int(50 * 1e8), address_2)]
         unsigned_coinbase_spend_tx = standard_tx(coins_from, coins_to)
@@ -83,21 +88,29 @@ class BuildTxTest(unittest.TestCase):
         tx_out_script_to_check = the_coinbase_tx.txs_out[0].script
         idx = 0
         solution_checker = Tx.SolutionChecker(unsigned_coinbase_spend_tx)
-        actual_hash = solution_checker._signature_hash(tx_out_script_to_check, idx, hash_type=flags.SIGHASH_ALL)
-        self.assertEqual(actual_hash, 29819170155392455064899446505816569230970401928540834591675173488544269166940)
+        actual_hash = solution_checker._signature_hash(
+            tx_out_script_to_check, idx, hash_type=flags.SIGHASH_ALL
+        )
+        self.assertEqual(
+            actual_hash,
+            29819170155392455064899446505816569230970401928540834591675173488544269166940,
+        )
 
     def test_standard_tx_out(self):
         coin_value = 10
-        recipient_address = '1BcJRKjiwYQ3f37FQSpTYM7AfnXurMjezu'
+        recipient_address = "1BcJRKjiwYQ3f37FQSpTYM7AfnXurMjezu"
         tx_out = standard_tx([], [(coin_value, recipient_address)]).txs_out[0]
         s = str(tx_out)
         self.assertEqual(
             s,
             'TxOut<0.00010 mbtc "OP_DUP OP_HASH160 [745e5b81fd30ca1e90311b012badabaa4411ae1a]'
-            ' OP_EQUALVERIFY OP_CHECKSIG">')
+            ' OP_EQUALVERIFY OP_CHECKSIG">',
+        )
 
     def test_coinbase_tx(self):
-        tx = Tx.coinbase_tx(COINBASE_PUB_KEY_FROM_80971, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
+        tx = Tx.coinbase_tx(
+            COINBASE_PUB_KEY_FROM_80971, int(50 * 1e8), COINBASE_BYTES_FROM_80971
+        )
         s = io.BytesIO()
         tx.stream(s)
         tx1 = s.getvalue()
@@ -107,9 +120,11 @@ class BuildTxTest(unittest.TestCase):
         self.assertEqual(tx1, tx2)
 
     def test_tx_out_address(self):
-        tx = Tx.coinbase_tx(COINBASE_PUB_KEY_FROM_80971, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
+        tx = Tx.coinbase_tx(
+            COINBASE_PUB_KEY_FROM_80971, int(50 * 1e8), COINBASE_BYTES_FROM_80971
+        )
         address = network.address.for_script(tx.txs_out[0].puzzle_script())
-        self.assertEqual(address, '1DmapcnrJNGeJB13fv9ngRFX1iRvR4zamn')
+        self.assertEqual(address, "1DmapcnrJNGeJB13fv9ngRFX1iRvR4zamn")
 
     def test_build_spends(self):
         # first, here is the tx database
@@ -123,14 +138,18 @@ class BuildTxTest(unittest.TestCase):
 
         public_key_sec = network.keys.private(exponent, is_compressed=compressed).sec()
 
-        the_coinbase_tx = Tx.coinbase_tx(public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971)
+        the_coinbase_tx = Tx.coinbase_tx(
+            public_key_sec, int(50 * 1e8), COINBASE_BYTES_FROM_80971
+        )
         TX_DB[the_coinbase_tx.hash()] = the_coinbase_tx
 
         # now create a Tx that spends the coinbase
 
         compressed = False
 
-        exponent_2 = int("137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16)
+        exponent_2 = int(
+            "137f3276686959c82b454eea6eefc9ab1b9e45bd4636fb9320262e114e321da1", 16
+        )
         address_2 = network.keys.private(exponent_2, is_compressed=compressed).address()
 
         self.assertEqual("12WivmEn8AUth6x6U8HuJuXHaJzDw3gHNZ", address_2)
@@ -148,7 +167,9 @@ class BuildTxTest(unittest.TestCase):
 
         compressed = True
 
-        exponent_3 = int("f8d39b8ecd0e1b6fee5a340519f239097569d7a403a50bb14fb2f04eff8db0ff", 16)
+        exponent_3 = int(
+            "f8d39b8ecd0e1b6fee5a340519f239097569d7a403a50bb14fb2f04eff8db0ff", 16
+        )
         address_3 = network.keys.private(exponent_3, is_compressed=compressed).address()
 
         self.assertEqual("13zzEHPCH2WUZJzANymow3ZrxcZ8iFBrY5", address_3)
@@ -162,5 +183,5 @@ class BuildTxTest(unittest.TestCase):
         self.assertEqual(spend_tx.bad_solution_count(), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

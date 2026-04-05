@@ -28,7 +28,7 @@ def do_OP_PICK(vm):
     [b'a', b'b', b'c', b'd', b'b']
     """
     v = vm.pop_nonnegative()
-    vm.append(vm[-v-1])
+    vm.append(vm[-v - 1])
 
 
 def do_OP_ROLL(vm):
@@ -39,7 +39,7 @@ def do_OP_ROLL(vm):
     [b'a', b'c', b'd', b'b']
     """
     v = vm.pop_nonnegative()
-    vm.append(vm.pop(-v-1))
+    vm.append(vm.pop(-v - 1))
 
 
 def do_OP_SUBSTR(vm):
@@ -51,7 +51,7 @@ def do_OP_SUBSTR(vm):
     """
     pos = vm.pop_nonnegative()
     length = vm.pop_nonnegative()
-    vm.append(vm.pop()[length:length+pos])
+    vm.append(vm.pop()[length : length + pos])
 
 
 def do_OP_LEFT(vm):
@@ -85,7 +85,7 @@ def do_OP_RIGHT(vm):
         vm.append(vm.pop()[-pos:])
     else:
         vm.pop()
-        vm.append(b'')
+        vm.append(b"")
 
 
 def do_OP_SIZE(vm):
@@ -135,6 +135,7 @@ def make_bin_op(binop):
     def f(vm):
         v1, v2 = [pop_check_bounds(vm) for i in range(2)]
         vm.push_int(binop(v2, v1))
+
     return f
 
 
@@ -142,6 +143,7 @@ def make_bool_bin_op(binop):
     def f(vm):
         v1, v2 = [pop_check_bounds(vm) for i in range(2)]
         vm.append(vm.bool_to_script_bytes(binop(v2, v1)))
+
     return f
 
 
@@ -181,13 +183,14 @@ def do_OP_WITHIN(vm):
     True
     """
     v3, v2, v1 = [vm.pop_int() for i in range(3)]
-    ok = (v2 <= v1 < v3)
+    ok = v2 <= v1 < v3
     vm.append(vm.bool_to_script_bytes(ok))
 
 
 def make_unary_num_op(unary_f):
     def f(vm):
         vm.push_int(unary_f(pop_check_bounds(vm)))
+
     return f
 
 
@@ -206,7 +209,9 @@ def do_OP_NOT(vm):
 def do_OP_0NOTEQUAL(vm):
     return vm.push_int(
         vm.bool_from_script_bytes(
-            vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA))
+            vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA
+        )
+    )
 
 
 """
