@@ -18,3 +18,6 @@ jobs:
       - name: Check formatting
         # To reformat locally: uvx ruff@0.15.8 format .
         run: uvx ruff@0.15.8 format --check .
+
+      - name: Check linting
+        run: uvx ruff@0.15.8 check .

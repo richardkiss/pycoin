@@ -217,8 +217,8 @@ class Solver(object):
 BitcoinConstraintSolver = ConstraintSolver()
 register_all(BitcoinConstraintSolver)
 
-from .ScriptTools import BitcoinScriptTools
-from .SolutionChecker import BitcoinSolutionChecker
+from .ScriptTools import BitcoinScriptTools  # noqa: E402
+from .SolutionChecker import BitcoinSolutionChecker  # noqa: E402
 
 
 class BitcoinSolver(Solver):

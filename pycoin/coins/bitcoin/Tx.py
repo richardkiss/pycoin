@@ -121,9 +121,9 @@ class Tx(BaseTx):
         self.lock_time = lock_time
         self.unspents = unspents or []
         for tx_in in self.txs_in:
-            assert type(tx_in) == self.TxIn
+            assert type(tx_in) is self.TxIn
         for tx_out in self.txs_out:
-            assert type(tx_out) == self.TxOut
+            assert type(tx_out) is self.TxOut
 
     def stream(
         self,

@@ -136,8 +136,7 @@ class SolverTest(unittest.TestCase):
         )
 
     def test_if(self):
-        script = network.script.compile("IF 1 ELSE 0 ENDIF")
-        # self.do_test_tx(script)
+        pass  # self.do_test_tx(network.script.compile("IF 1 ELSE 0 ENDIF"))
 
     def test_p2multisig_incremental(self):
         keys = [network.keys.private(i) for i in (1, 2, 3)]

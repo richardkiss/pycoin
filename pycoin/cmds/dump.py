@@ -107,16 +107,15 @@ def dump_disassembly(output, tx, tx_in_idx, annotate):
         instruction,
         post_annotations,
     ) in annotate.annotate_scripts(tx, tx_in_idx):
-        for l in pre_annotations:
-            output.append("           %s" % l)
+        for line in pre_annotations:
+            output.append("           %s" % line)
         if 1:
             output.append("    %4x: %02x  %s" % (pc, opcode, instruction))
-        for l in post_annotations:
-            output.append("           %s" % l)
+        for line in post_annotations:
+            output.append("           %s" % line)
 
 
 def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
-    sc = tx.SolutionChecker(tx)
     signatures = [
         parse_signature_blob(blob) + (sig_hash,)
         for blob, sig_hash in network.who_signed.extract_signatures(tx, idx)
@@ -188,11 +187,11 @@ def dump_tx(
                 instruction,
                 post_annotations,
             ) in network.annotate.annotate_spendable(tx.__class__, tx_out):
-                for l in pre_annotations:
-                    output.append("           %s" % l)
+                for line in pre_annotations:
+                    output.append("           %s" % line)
                 if 1:
                     output.append("    %4x: %02x  %s" % (pc, opcode, instruction))
-                for l in post_annotations:
-                    output.append("           %s" % l)
+                for line in post_annotations:
+                    output.append("           %s" % line)
 
     dump_footer(network, output, tx, missing_unspents)

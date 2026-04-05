@@ -1,4 +1,3 @@
-
 from .BIP32Node import BIP32Node
 
 

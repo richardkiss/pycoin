@@ -1,4 +1,3 @@
-
 from pycoin.coins.litecoin import LTCTx, LTCBlock
 from pycoin.networks.bitcoinish import create_bitcoinish_network
 

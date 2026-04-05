@@ -11,3 +11,6 @@ target-version = "py310"
 [tool.ruff.format]
 # Formatted with: ruff format . (ruff 0.15.8)
 # To verify no semantic changes: ruff format --check .
+
+[tool.ruff.lint.per-file-ignores]
+"docs/conf.py" = ["E402"]

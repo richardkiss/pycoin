@@ -39,7 +39,7 @@ class ToolsTest(unittest.TestCase):
         for i in range(0xFFFFF0, 0x1000005):
             test_val(i)
 
-        for l in (
+        for length in (
             1,
             2,
             3,
@@ -56,12 +56,12 @@ class ToolsTest(unittest.TestCase):
             0x10005,
         ):
             for v in (1, 2, 3, 4, 15, 16, 17, 18):
-                b = int2byte(v) * l
+                b = int2byte(v) * length
                 test_bytes(b)
 
         b = int2byte(30) * (0x1000000 + 1)
-        for l in (0x1000000 - 1, 0x1000000, 0x1000000 + 1):
-            test_bytes(b[:l])
+        for length in (0x1000000 - 1, 0x1000000, 0x1000000 + 1):
+            test_bytes(b[:length])
 
     def test_compile_decompile(self):
         def check(s):
