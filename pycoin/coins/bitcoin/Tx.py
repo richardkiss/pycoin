@@ -64,13 +64,12 @@ class Tx(BaseTx):
         v2 = None
         if is_segwit:
             flag = f.read(1)
-            if flag == b'\0':
+            if flag == b'\0' or len(flag) == 0:
                 raise ValueError("bad flag in segwit")
-            if flag == b'\1':
-                v1 = None
-            else:
-                is_segwit = False
-                v2 = ord(flag)
+            v2 = ord(flag)
+            is_segwit = v2 & 1
+            if is_segwit:
+                v1 = v2 = None
         count = parse_satoshi_int(f, v=v1)
         txs_in = []
         for i in range(count):
