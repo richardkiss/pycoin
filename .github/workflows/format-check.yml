@@ -20,3 +20,6 @@ jobs:
 
       - name: Check linting
         run: uvx ruff check .
+
+      - name: Check types
+        run: uv run mypy pycoin

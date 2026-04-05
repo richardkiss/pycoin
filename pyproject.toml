@@ -45,7 +45,136 @@ local_scheme = "no-local-version"
 include = ["pycoin*"]
 
 [dependency-groups]
-dev = ["pytest"]
+dev = [
+    "mypy>=1.19.1",
+    "pytest",
+]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+
+# Modules are listed in dependency order.
+# Uncomment each section as it gets typed and cleaned up.
+
+[[tool.mypy.overrides]]
+module = "pycoin.intbytes"
+disallow_untyped_defs = true
+disallow_any_generics = true
+warn_return_any = true
+strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.encoding.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.ecdsa.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.satoshi.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.serialize.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = ["pycoin.merkle", "pycoin.block", "pycoin.bloomfilter"]
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.key.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.coins.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.vm.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.solve.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = ["pycoin.contrib.*", "pycoin.convention.*"]
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.networks.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.symbols.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.message.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.services.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = ["pycoin.crack.*", "pycoin.tools.*", "pycoin.wallet.*"]
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
+
+# [[tool.mypy.overrides]]
+# module = "pycoin.cmds.*"
+# disallow_untyped_defs = true
+# disallow_any_generics = true
+# warn_return_any = true
+# strict_optional = true
 
 [tool.ruff]
 target-version = "py310"
