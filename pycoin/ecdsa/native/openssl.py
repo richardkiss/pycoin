@@ -1,6 +1,7 @@
 import ctypes.util
 import os
 import platform
+import sys
 
 from .bignum import bignum_type_for_library
 
@@ -32,18 +33,51 @@ def load_library():
         else:
             library_path = ctypes.util.find_library('libeay32')
 
+    elif system == 'Darwin':
+        library_path = ctypes.util.find_library('crypto')
+
     else:
-        # on Mac OS 10.15.1 trying to load "libcrypto" crashes
-        # but crypto.0.9.8 works, so try to load that one first
-        for p in ["crypto.0.9.8", "crypto"]:
-            library_path = ctypes.util.find_library(p)
-            if library_path:
-                break
+        library_path = ctypes.util.find_library('crypto')
 
     if library_path is None:
         return None
 
-    library = ctypes.CDLL(library_path)
+    # On macOS (and Linux), OpenSSL 3 aborts if libcrypto is loaded a second
+    # time into the same process. Python's own internals (hashlib, ssl, or the
+    # interpreter's bundled libcrypto) may have already loaded it. Use
+    # RTLD_NOLOAD to reuse the existing handle without a fresh dlopen.
+    #
+    # IMPORTANT: RTLD_NOLOAD is 0x4 on Linux but 0x10 on macOS — they differ.
+    RTLD_NOLOAD = 0x10 if sys.platform == 'darwin' else 0x4
+
+    if sys.platform == 'darwin':
+        # On macOS, try RTLD_NOLOAD against multiple candidate paths because
+        # find_library may return the system stub (/usr/lib/libcrypto.dylib)
+        # while Python was built against a Homebrew copy with a different install
+        # name. Only if we find the already-loaded handle do we proceed; a fresh
+        # load of the wrong copy would trigger an OpenSSL 3 unsafe-load abort.
+        _candidates = [library_path] + [
+            p for p in [
+                '/opt/homebrew/opt/openssl@3/lib/libcrypto.dylib',
+                '/usr/local/opt/openssl@3/lib/libcrypto.dylib',
+                '/opt/homebrew/opt/openssl@1.1/lib/libcrypto.dylib',
+                '/usr/local/opt/openssl@1.1/lib/libcrypto.dylib',
+            ] if os.path.exists(p)
+        ]
+        library = None
+        for _p in _candidates:
+            try:
+                library = ctypes.CDLL(_p, mode=RTLD_NOLOAD)
+                break
+            except OSError:
+                continue
+        if library is None:
+            return None
+    else:
+        try:
+            library = ctypes.CDLL(library_path, mode=RTLD_NOLOAD)
+        except OSError:
+            library = ctypes.CDLL(library_path)
 
     library.BignumType = bignum_type_for_library(library)
 
