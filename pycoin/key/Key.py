@@ -4,7 +4,7 @@ from pycoin.encoding.hexbytes import b2h
 from pycoin.encoding.sec import (
     is_sec_compressed, public_pair_to_sec, sec_to_public_pair
 )
-from pycoin.satoshi.der import sigencode_der, sigdecode_der
+from pycoin.satoshi.der import sigencode_der, sigdecode_der, UnexpectedDER
 
 
 class InvalidPublicPairError(ValueError):
@@ -193,9 +193,12 @@ class Key(object):
         """
         Return whether a signature is valid for hash h using this key.
         """
-        val = from_bytes_32(h)
-        pubkey = self.public_pair()
-        return self._generator.verify(pubkey, val, sigdecode_der(sig))
+        try:
+            val = from_bytes_32(h)
+            pubkey = self.public_pair()
+            return self._generator.verify(pubkey, val, sigdecode_der(sig))
+        except (UnexpectedDER, ValueError):
+            return False
 
     def is_compressed(self):
         """
