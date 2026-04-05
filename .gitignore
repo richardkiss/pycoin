@@ -7,3 +7,15 @@ files.txt
 *egg-info
 .DS_STORE
 .tox
+.venv
+venv
+activate
+uv.lock
+*.hex
+*.md~
+docs/z
+test.yml1
+bitcoin.rst-CHAT-GPT
+override-03.txt
+session-ses_*.md
+t.py
