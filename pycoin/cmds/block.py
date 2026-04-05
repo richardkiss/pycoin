@@ -17,7 +17,8 @@ def dump_block(output, block, network):
     output.append("prior block hash %s" % b2h_rev(block.previous_block_hash))
     output.append("merkle root %s" % b2h(block.merkle_root))
     output.append(
-        "timestamp %s" % datetime.datetime.utcfromtimestamp(block.timestamp).isoformat()
+        "timestamp %s"
+        % datetime.datetime.fromtimestamp(block.timestamp, datetime.UTC).isoformat()
     )
     output.append("difficulty %d" % block.difficulty)
     output.append("nonce %s" % block.nonce)
@@ -53,7 +54,6 @@ def create_parser():
     parser.add_argument(
         "block_file",
         nargs="+",
-        type=argparse.FileType("rb"),
         help="The file containing the binary block.",
     )
     return parser
@@ -61,8 +61,9 @@ def create_parser():
 
 def block(args, parser):
     network = args.network
-    for f in args.block_file:
-        block = network.block.parse(f)
+    for path in args.block_file:
+        with open(path, "rb") as f:
+            block = network.block.parse(f)
         output = []
         dump_block(output, block, network)
 

@@ -28,7 +28,7 @@ class BlockTest(ToolTest):
 version 1
 prior block hash 000000006a625f06636b8bb6ac7b960a8d03705d1ace08b1a19da3fdcc99ddbd
 merkle root 44f672226090d85db9a9f2fbfe5f0f9609b387af7be5b7fbb7a1767c831c9e99
-timestamp 2009-01-09T03:02:53
+timestamp 2009-01-09T03:02:53+00:00
 difficulty 486604799
 nonce 1844305925
 1 transaction

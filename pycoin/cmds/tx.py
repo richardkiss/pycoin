@@ -236,7 +236,6 @@ def create_parser():
         "the file contains only one WIF per line, it will also be scanned for a bitcoin "
         "address, and any addresses found will be assumed to be public keys for the given"
         " private key.",
-        type=argparse.FileType("r"),
     )
 
     parser.add_argument(
@@ -315,7 +314,6 @@ def create_parser():
         "-o",
         "--output-file",
         metavar="path-to-output-file",
-        type=argparse.FileType("wb"),
         help="file to write transaction to. This suppresses most other output.",
     )
 
@@ -359,7 +357,6 @@ def create_parser():
         "--pay-to-script-file",
         metavar="pay-to-script-file",
         nargs=1,
-        type=argparse.FileType("r"),
         help="a file containing hex scripts "
         "(one per line) corresponding to pay-to-script inputs",
     )
@@ -393,11 +390,11 @@ def create_parser():
     return parser
 
 
-def replace_with_gpg_pipe(args, f):
+def replace_with_gpg_pipe(args, path):
     gpg_args = ["gpg", "-d"]
     if args.gpg_argument:
         gpg_args.extend(args.gpg_argument.split())
-    gpg_args.append(f.name)
+    gpg_args.append(path)
     popen = subprocess.Popen(gpg_args, stdout=subprocess.PIPE)
     return popen.stdout
 
@@ -405,9 +402,11 @@ def replace_with_gpg_pipe(args, f):
 def parse_private_key_file(args, keychain, network):
     wif_re = re.compile(r"[1-9a-km-zA-LMNP-Z]{51,111}")
     # address_re = re.compile(r"[1-9a-kmnp-zA-KMNP-Z]{27-31}")
-    for f in args.private_key_file:
-        if f.name.endswith(".gpg"):
-            f = replace_with_gpg_pipe(args, f)
+    for path in args.private_key_file:
+        if path.endswith(".gpg"):
+            f = replace_with_gpg_pipe(args, path)
+        else:
+            f = open(path)
         for line in f.readlines():
             # decode
             if isinstance(line, bytes):
@@ -472,17 +471,20 @@ def parse_scripts(args, keychain):
             warnings.append("warning: error parsing pay-to-script value %s" % p2s)
 
     hex_re = re.compile(r"[0-9a-fA-F]+")
-    for f in args.pay_to_script_file or []:
+    for path in args.pay_to_script_file or []:
         count = 0
-        for line in f:
-            try:
-                m = hex_re.search(line)
-                if m:
-                    p2s = m.group(0)
-                    keychain.add_p2s_script(h2b(p2s))
-                    count += 1
-            except Exception:
-                warnings.append("warning: error parsing pay-to-script file %s" % f.name)
+        with open(path) as f:
+            for line in f:
+                try:
+                    m = hex_re.search(line)
+                    if m:
+                        p2s = m.group(0)
+                        keychain.add_p2s_script(h2b(p2s))
+                        count += 1
+                except Exception:
+                    warnings.append(
+                        "warning: error parsing pay-to-script file %s" % path
+                    )
         if count == 0:
             warnings.append("warning: no scripts found in %s" % f.name)
     keychain.commit()
@@ -730,11 +732,11 @@ def print_output(
     tx_as_hex = tx.as_hex(include_unspents=include_unspents)
 
     if output_file:
-        f = output_file
-        if f.name.endswith(".hex"):
-            f.write(tx_as_hex.encode("utf8"))
-        else:
-            tx.stream(f, include_unspents=include_unspents)
+        with open(output_file, "wb") as f:
+            if output_file.endswith(".hex"):
+                f.write(tx_as_hex.encode("utf8"))
+            else:
+                tx.stream(f, include_unspents=include_unspents)
         f.close()
     elif show_unspents:
         for spendable in tx.tx_outs_as_spendable():

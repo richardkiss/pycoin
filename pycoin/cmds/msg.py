@@ -17,8 +17,7 @@ def add_read_msg_arguments(parser, operation):
     group.add_argument(
         "-i",
         "--input",
-        type=argparse.FileType("r"),
-        default=sys.stdin,
+        default=None,
         help="file containing the message to be %s, instead of stdin" % operation,
     )
     group.add_argument("-m", "--message", help="the message to be %s" % operation)
@@ -60,7 +59,8 @@ def create_parser():
 def get_message_hash(args, message_signer):
     message = args.message
     if message is None:
-        message = args.input.read()
+        f = open(args.input) if args.input else sys.stdin
+        message = f.read()
     return message_signer.hash_for_signing(message)
 
 

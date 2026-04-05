@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import datetime
 
 from pycoin.convention import satoshi_to_mbtc
@@ -24,7 +22,7 @@ def dump_header(output, tx):
     elif tx.lock_time < LOCKTIME_THRESHOLD:
         meaning = "valid after block index %d" % tx.lock_time
     else:
-        when = datetime.datetime.utcfromtimestamp(tx.lock_time)
+        when = datetime.datetime.fromtimestamp(tx.lock_time, datetime.UTC)
         meaning = "valid on or after %s utc" % when.isoformat()
     if tx.lock_time != 0:
         if all(tx_in.sequence == 0xFFFFFFFF for tx_in in tx.txs_in):
