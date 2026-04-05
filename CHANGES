@@ -1,3 +1,11 @@
+0.92.20241201
+-------------
+
+* add support for parsing Litecoin blocks with MWEB transactions (mempool MWEB not yet supported)
+* fix OpenSSL point multiplication when exponent exceeds curve order
+* fall back to importlib.metadata for version detection when pkg_resources is unavailable (Python 3.12+)
+* fix typos in tx.py, msg_signing.py, and libsecp256k1_test.py
+
 0.92.20230326
 -------------
 
