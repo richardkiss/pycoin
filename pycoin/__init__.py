@@ -1,24 +1,9 @@
-version = "unknown"
+from importlib.metadata import version as get_version, PackageNotFoundError
 
 try:
-    from importlib.metadata import version as get_version, PackageNotFoundError
-
-    try:
-        version = get_version("pycoin")
-    except PackageNotFoundError:
-        pass
-except ImportError:
-    # importlib.metadata not available (Python < 3.8 or missing backport)
-    try:
-        from pkg_resources import get_distribution, DistributionNotFound
-
-        try:
-            version = get_distribution("pycoin").version
-        except DistributionNotFound:
-            pass
-    except ImportError:
-        # pkg_resources not available
-        pass
+    version = get_version("pycoin")
+except PackageNotFoundError:
+    version = "unknown"
 
 __title__ = "pycoin"
 __author__ = "Richard Kiss"
