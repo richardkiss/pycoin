@@ -93,6 +93,39 @@ disallow_any_generics = true
 warn_return_any = true
 strict_optional = true
 
+[[tool.mypy.overrides]]
+module = ["pycoin.convention", "pycoin.convention.*"]
+disallow_untyped_defs = true
+disallow_any_generics = true
+warn_return_any = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = [
+    "pycoin.key.subpaths",
+    "pycoin.key.bip32",
+    "pycoin.key.HDSeed",
+    "pycoin.key.HierarchicalKey",
+    "pycoin.key.BIP49Node",
+    "pycoin.key.BIP84Node",
+    "pycoin.solve.utils",
+    "pycoin.coins.SolutionChecker",
+    "pycoin.coins.TxIn",
+    "pycoin.coins.TxOut",
+    "pycoin.vm.ConditionalStack",
+    "pycoin.coins.groestlcoin.hash",
+    "pycoin.coins.groestlcoin.Block",
+    "pycoin.coins.bgold.SolutionChecker",
+    "pycoin.coins.bgold.Solver",
+    "pycoin.coins.bcash.Solver",
+    "pycoin.coins.bcash.SolutionChecker",
+    "pycoin.coins.litecoin",
+]
+disallow_untyped_defs = true
+disallow_any_generics = true
+warn_return_any = true
+strict_optional = true
+
 # [[tool.mypy.overrides]]
 # module = "pycoin.key.*"
 # disallow_untyped_defs = true

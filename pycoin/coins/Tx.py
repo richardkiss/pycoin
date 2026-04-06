@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import io
+from typing import Any, ClassVar
 
 from .SolutionChecker import SolutionChecker, ScriptError
 from .TxIn import TxIn
@@ -8,11 +11,11 @@ from pycoin.encoding.hexbytes import b2h, b2h_rev, h2b
 
 
 class Tx(object):
-    TxIn = TxIn
-    TxOut = TxOut
-    Spendable = None
-    Solver = None
-    SolutionChecker = SolutionChecker
+    TxIn: ClassVar[Any] = TxIn
+    TxOut: ClassVar[Any] = TxOut
+    Spendable: ClassVar[Any] = None
+    Solver: ClassVar[Any] = None
+    SolutionChecker: ClassVar[Any] = SolutionChecker
 
     @classmethod
     def parse(class_, f):

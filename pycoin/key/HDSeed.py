@@ -1,18 +1,21 @@
+from __future__ import annotations
+
 import hashlib
 import struct
+from typing import Any
 
 from ..encoding.bytes32 import from_bytes_32
 from ..encoding.sec import sec_to_public_pair
 
 
 class HDSeed:
-    def __init__(self, data):
+    def __init__(self, data: bytes, **kwargs: Any) -> None:
         self.data = data
 
     @classmethod
-    def deserialize(class_, data):
+    def deserialize(class_: type[HDSeed], data: bytes) -> HDSeed:
         parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
-        d = dict(
+        d: dict[str, Any] = dict(
             chain_code=data[13:45],
             depth=ord(data[4:5]),
             parent_fingerprint=parent_fingerprint,
@@ -23,9 +26,9 @@ class HDSeed:
             d["secret_exponent"] = from_bytes_32(data[46:])
         else:
             d["public_pair"] = sec_to_public_pair(
-                data[45:], generator=class_._generator
+                data[45:], generator=class_._generator  # type: ignore[attr-defined]
             )
         return class_(**d)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<HDSeed with hash %s>" % hashlib.sha256(self.data).hexdigest()[:8]

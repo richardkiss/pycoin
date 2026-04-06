@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Iterator
+
 from .BIP32Node import BIP32Node
 
 
@@ -11,19 +15,19 @@ class BIP84Node(BIP32Node):
     [https://github.com/bitcoin/bips/blob/master/bip-0084.mediawiki]
     """
 
-    def address(self, is_compressed=True):
+    def address(self, is_compressed: bool = True) -> str:
         pk_hash = self.hash160(is_compressed=is_compressed)
-        return self._network.address.for_p2pkh_wit(pk_hash)
+        return self._network.address.for_p2pkh_wit(pk_hash)  # type: ignore[attr-defined,no-any-return]
 
-    def hwif(self, as_private=False):
+    def hwif(self, as_private: bool = False) -> str:
         """Yield a 111-byte string corresponding to this node."""
-        return self._network.bip84_as_string(
+        return self._network.bip84_as_string(  # type: ignore[attr-defined,no-any-return]
             self.serialize(as_private=as_private), as_private=as_private
         )
 
     as_text = hwif
 
-    def ku_output_for_address(self):
+    def ku_output_for_address(self) -> Iterator[tuple[str, Any, Any]]:
         yield ("address", self.address(), None)
 
 

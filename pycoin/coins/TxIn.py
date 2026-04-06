@@ -1,19 +1,24 @@
+from __future__ import annotations
+
+from typing import Any, IO
+
+
 class TxIn(object):
     """
     The input part of a Tx that specifies where funds come from.
     """
 
     @classmethod
-    def parse(class_, f):
+    def parse(class_: type[TxIn], f: IO[bytes]) -> TxIn:
         raise NotImplementedError()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         raise NotImplementedError()
 
-    def stream(self, f):
+    def stream(self, f: IO[bytes]) -> None:
         raise NotImplementedError()
 
-    def __str__(self):
+    def __str__(self) -> str:
         raise NotImplementedError()
 
 

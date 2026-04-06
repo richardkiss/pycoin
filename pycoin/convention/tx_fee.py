@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import io
+from typing import Any
 
 TX_FEE_PER_THOUSAND_BYTES = 10000
 
 
-def recommended_fee_for_tx(tx):
+def recommended_fee_for_tx(tx: Any) -> int:
     """
     Return the recommended transaction fee in satoshis.
     This is a grossly simplified version of this function.

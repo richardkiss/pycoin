@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import itertools
+from typing import Iterator
 
 
-def subpaths_for_path_range(path_range, hardening_chars="'pH"):
+def subpaths_for_path_range(
+    path_range: str, hardening_chars: str = "'pH"
+) -> Iterator[str]:
     """
     Return an iterator of paths
 
@@ -17,7 +22,7 @@ def subpaths_for_path_range(path_range, hardening_chars="'pH"):
         yield ""
         return
 
-    def range_iterator(the_range):
+    def range_iterator(the_range: str) -> Iterator[str]:
         for r in the_range.split(","):
             is_hardened = r[-1] in hardening_chars
             hardened_char = hardening_chars[-1] if is_hardened else ""

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import IO
+
 from pycoin.block import Block
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.satoshi.satoshi_int import parse_satoshi_int
@@ -7,12 +11,12 @@ from pycoin.satoshi.satoshi_struct import parse_struct
 
 class LTCTx(Tx):
     @classmethod
-    def parse(class_, f):
+    def parse(class_, f: IO[bytes]) -> LTCTx:  # type: ignore[override]
         """Parse a Bitcoin transaction Tx.
         :param f: a file-like object that contains a binary streamed transaction
         """
         (version,) = parse_struct("L", f)
-        v1 = ord(f.read(1))
+        v1: int | None = ord(f.read(1))
         is_segwit = v1 == 0
         has_mweb = False
         if is_segwit:

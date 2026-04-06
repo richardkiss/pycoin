@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.encoding.hash import double_sha256
 from pycoin.satoshi.flags import SIGHASH_FORKID
@@ -8,7 +10,7 @@ from ..bitcoin.SolutionChecker import BitcoinSolutionChecker
 class BgoldSolutionChecker(BitcoinSolutionChecker):
     FORKID_BTG = 79  # atomic number for Au (gold)
 
-    def _signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
+    def _signature_hash(self, tx_out_script: bytes, unsigned_txs_out_idx: int, hash_type: int) -> int:  # type: ignore[override]
         """
         Return the canonical hash for a transaction. We need to
         remove references to the signature, since it's a signature
@@ -27,7 +29,7 @@ class BgoldSolutionChecker(BitcoinSolutionChecker):
             tx_out_script, unsigned_txs_out_idx, hash_type
         )
 
-    def _signature_for_hash_type_segwit(self, script, tx_in_idx, hash_type):
+    def _signature_for_hash_type_segwit(self, script: bytes, tx_in_idx: int, hash_type: int) -> int:  # type: ignore[override]
         hash_type |= self.FORKID_BTG << 8
         return from_bytes_32(
             double_sha256(self._segwit_signature_preimage(script, tx_in_idx, hash_type))

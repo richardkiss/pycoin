@@ -67,7 +67,7 @@ def hash_lookup_solver(m):
     return (f, [m["1"]], ())
 
 
-hash_lookup_solver.pattern = ("EQUAL", CONSTANT("the_hash"), ("HASH160", VAR("1")))
+setattr(hash_lookup_solver, "pattern", ("EQUAL", CONSTANT("the_hash"), ("HASH160", VAR("1"))))
 
 
 def constant_equality_solver(m):
@@ -78,7 +78,7 @@ def constant_equality_solver(m):
     return (f, [m["var"]], ())
 
 
-constant_equality_solver.pattern = ("EQUAL", VAR("var"), CONSTANT("const"))
+setattr(constant_equality_solver, "pattern", ("EQUAL", VAR("var"), CONSTANT("const")))
 
 
 def all_signature_hints(public_pair, signature_for_hash_type_f, **kwargs):
@@ -163,12 +163,12 @@ def signing_solver(m):
     return (f, m["sig_list"], [a for a in m["sec_list"] if isinstance(a, Atom)])
 
 
-signing_solver.pattern = (
+setattr(signing_solver, "pattern", (
     "SIGNATURES_CORRECT",
     LIST("sec_list"),
     LIST("sig_list"),
     CONSTANT("signature_for_hash_type_f"),
-)
+))
 
 
 def register_all(solver):

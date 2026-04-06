@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 
 from pycoin.block import Block as BaseBlock
@@ -9,7 +11,7 @@ from .Tx import Tx
 class Block(BaseBlock):
     Tx = Tx
 
-    def _calculate_hash(self):
+    def _calculate_hash(self) -> bytes:
         s = io.BytesIO()
         self.stream_header(s)
         return groestlHash(s.getvalue())

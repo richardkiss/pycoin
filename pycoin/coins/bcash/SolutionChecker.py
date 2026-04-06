@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from pycoin.satoshi.flags import SIGHASH_FORKID
 
 from ..bitcoin.SolutionChecker import BitcoinSolutionChecker
 
 
 class BcashSolutionChecker(BitcoinSolutionChecker):
-    def _signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
+    def _signature_hash(self, tx_out_script: bytes, unsigned_txs_out_idx: int, hash_type: int) -> int:  # type: ignore[override]
         """
         Return the canonical hash for a transaction. We need to
         remove references to the signature, since it's a signature
@@ -19,6 +21,6 @@ class BcashSolutionChecker(BitcoinSolutionChecker):
         if hash_type & SIGHASH_FORKID != SIGHASH_FORKID:
             raise self.ScriptError()
 
-        return self._signature_for_hash_type_segwit(
+        return self._signature_for_hash_type_segwit(  # type: ignore[no-any-return]
             tx_out_script, unsigned_txs_out_idx, hash_type
         )

@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import hashlib
 import hmac
 import logging
 import struct
+from typing import Any
 
 from ..encoding.bytes32 import from_bytes_32, to_bytes_32
 from ..encoding.sec import public_pair_to_sec
@@ -32,8 +35,13 @@ class DerivationError(ValueError):
 
 
 def subkey_secret_exponent_chain_code_pair(
-    generator, secret_exponent, chain_code_bytes, i, is_hardened, public_pair=None
-):
+    generator: Any,
+    secret_exponent: int,
+    chain_code_bytes: bytes,
+    i: int,
+    is_hardened: bool,
+    public_pair: Any = None,
+) -> tuple[int, bytes]:
     """
     Yield info for a child node for this node.
 
@@ -78,7 +86,9 @@ def subkey_secret_exponent_chain_code_pair(
     return new_secret_exponent, new_chain_code
 
 
-def subkey_public_pair_chain_code_pair(generator, public_pair, chain_code_bytes, i):
+def subkey_public_pair_chain_code_pair(
+    generator: Any, public_pair: Any, chain_code_bytes: bytes, i: int
+) -> tuple[Any, bytes]:
     """
     Yield info for a child node for this node.
 

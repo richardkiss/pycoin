@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from ..SolutionChecker import ScriptError
 
 from pycoin.encoding.hexbytes import b2h, h2b
@@ -38,8 +42,8 @@ class DynamicStack(list):
 
 
 class Solver(object):
-    SolutionChecker = None
-    ScriptTools = None
+    SolutionChecker: Any = None
+    ScriptTools: Any = None
 
     def __init__(self, tx):
         self.tx = tx
