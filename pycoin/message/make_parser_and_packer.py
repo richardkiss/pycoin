@@ -1,5 +1,9 @@
+from __future__ import annotations
+
 import io
 import struct
+from collections.abc import Callable
+from typing import Any, IO
 
 from pycoin.encoding.hash import double_sha256
 from pycoin.encoding.hexbytes import b2h_rev
@@ -61,11 +65,19 @@ STANDARD_P2P_MESSAGES = {
 }
 
 
-def standard_messages():
+def standard_messages() -> dict[str, str]:
     return dict(STANDARD_P2P_MESSAGES)
 
 
-def _recurse(level_widths, level_index, node_index, hashes, flags, flag_index, tx_acc):
+def _recurse(
+    level_widths: list[int],
+    level_index: int,
+    node_index: int,
+    hashes: list[bytes],
+    flags: list[int],
+    flag_index: int,
+    tx_acc: list[bytes],
+) -> tuple[bytes, int]:
     idx, r = divmod(flag_index, 8)
     mask = 1 << r
     flag_index += 1
@@ -105,7 +117,7 @@ def _recurse(level_widths, level_index, node_index, hashes, flags, flag_index, t
     return double_sha256(left_hash + right_hash), flag_index
 
 
-def post_unpack_merkleblock(d, f):
+def post_unpack_merkleblock(d: dict[str, Any], f: IO[bytes]) -> dict[str, Any]:
     """
     A post-processing "post_unpack" to merkleblock messages.
 
@@ -123,7 +135,7 @@ def post_unpack_merkleblock(d, f):
     level_widths.append(1)
     level_widths.reverse()
 
-    tx_acc = []
+    tx_acc: list[bytes] = []
     flags = d["flags"]
     hashes = list(reversed(d["hashes"]))
     left_hash, flag_index = _recurse(level_widths, 0, 0, hashes, flags, 0, tx_acc)
@@ -148,19 +160,21 @@ def post_unpack_merkleblock(d, f):
     return d
 
 
-def _make_parser(streamer, the_struct):
+def _make_parser(
+    streamer: Streamer, the_struct: str
+) -> Callable[[IO[bytes]], dict[str, Any]]:
     "Return a function that parses the given structure into a dict"
     struct_items = [s.split(":") for s in the_struct.split()]
     names = [s[0] for s in struct_items]
     types = "".join(s[1] for s in struct_items)
 
-    def f(message_stream):
-        return streamer.parse_as_dict(names, types, message_stream)
+    def f(message_stream: IO[bytes]) -> dict[str, Any]:
+        return streamer.parse_as_dict(names, types, message_stream)  # type: ignore[no-any-return]
 
     return f
 
 
-def make_post_unpack_alert(streamer):
+def make_post_unpack_alert(streamer: Streamer) -> Callable[..., Any]:
     """
     Post-processor to "alert" message, to add an "alert_info" dictionary of parsed
     alert information.
@@ -172,7 +186,7 @@ def make_post_unpack_alert(streamer):
 
     alert_submessage_parser = _make_parser(streamer, the_struct)
 
-    def post_unpack_alert(d, f):
+    def post_unpack_alert(d: dict[str, Any], f: IO[bytes]) -> dict[str, Any]:
         d1 = alert_submessage_parser(io.BytesIO(d["payload"]))
         d["alert_info"] = d1
         return d
@@ -180,30 +194,30 @@ def make_post_unpack_alert(streamer):
     return post_unpack_alert
 
 
-def standard_parsing_functions(Block, Tx):
+def standard_parsing_functions(Block: Any, Tx: Any) -> list[Any]:
     """
     Return the standard parsing functions for a given Block and Tx class.
     The return value is expected to be used with the standard_streamer function.
     """
 
-    def stream_block(f, block):
+    def stream_block(f: IO[bytes], block: Any) -> None:
         assert isinstance(block, Block)
         block.stream(f)
 
-    def stream_blockheader(f, blockheader):
+    def stream_blockheader(f: IO[bytes], blockheader: Any) -> None:
         assert isinstance(blockheader, Block)
         blockheader.stream_header(f)
 
-    def stream_tx(f, tx):
+    def stream_tx(f: IO[bytes], tx: Any) -> None:
         assert isinstance(tx, Tx)
         tx.stream(f)
 
-    def parse_int_6(f):
+    def parse_int_6(f: IO[bytes]) -> int:
         b = f.read(6) + b"\0\0"
-        return struct.unpack(b, "<L")[0]
+        return struct.unpack(b, "<L")[0]  # type: ignore[arg-type,no-any-return]
 
-    def stream_int_6(f, v):
-        f.write(struct.pack(v, "<L")[:6])
+    def stream_int_6(f: IO[bytes], v: int) -> None:
+        f.write(struct.pack(v, "<L")[:6])  # type: ignore[arg-type]
 
     more_parsing = [
         ("A", (PeerAddress.parse, lambda f, peer_addr: peer_addr.stream(f))),
@@ -232,7 +246,10 @@ def standard_parsing_functions(Block, Tx):
     return all_items
 
 
-def standard_streamer(parsing_functions, parse_satoshi_int=parse_satoshi_int):
+def standard_streamer(
+    parsing_functions: list[Any],
+    parse_satoshi_int: Callable[..., Any] = parse_satoshi_int,
+) -> Streamer:
     """
     Create a satoshi_streamer, which parses and packs using the bitcoin protocol
     (mostly the custom way arrays and integers are parsed and packed).
@@ -243,7 +260,9 @@ def standard_streamer(parsing_functions, parse_satoshi_int=parse_satoshi_int):
     return streamer
 
 
-def standard_message_post_unpacks(streamer):
+def standard_message_post_unpacks(
+    streamer: Streamer,
+) -> dict[str, Callable[..., Any]]:
     """
     The standard message post-processors: one for the version message,
     one for the alert message, and one for the merkleblock message.
@@ -253,7 +272,11 @@ def standard_message_post_unpacks(streamer):
     )
 
 
-def make_parser_and_packer(streamer, message_dict, message_post_unpacks):
+def make_parser_and_packer(
+    streamer: Streamer,
+    message_dict: dict[str, str],
+    message_post_unpacks: dict[str, Callable[..., Any]],
+) -> tuple[Callable[..., Any], Callable[..., Any]]:
     """
     Create a parser and a packer for a peer's network messages.
 
@@ -271,7 +294,7 @@ def make_parser_and_packer(streamer, message_dict, message_post_unpacks):
         (k, _make_parser(streamer, v)) for k, v in message_dict.items()
     )
 
-    def parse_from_data(message_name, data):
+    def parse_from_data(message_name: str, data: bytes) -> dict[str, Any]:
         message_stream = io.BytesIO(data)
         parser = message_parsers.get(message_name)
         if parser is None:
@@ -282,7 +305,7 @@ def make_parser_and_packer(streamer, message_dict, message_post_unpacks):
             d = post_unpack(d, message_stream)
         return d
 
-    def pack_from_data(message_name, **kwargs):
+    def pack_from_data(message_name: str, **kwargs: Any) -> bytes:
         the_struct = message_dict[message_name]
         if not the_struct:
             return b""

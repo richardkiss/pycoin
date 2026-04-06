@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import hashlib
+from collections.abc import Generator
+from typing import Any
 
 from .subpaths import subpaths_for_path_range
 
@@ -8,7 +12,7 @@ from pycoin.encoding.hexbytes import b2h
 from pycoin.key.Key import Key
 
 
-def initial_key_to_master_key(initial_key):
+def initial_key_to_master_key(initial_key: str) -> int:
     """
     initial_key:
         a hex string of length 32
@@ -23,11 +27,11 @@ def initial_key_to_master_key(initial_key):
 class ElectrumWallet(Key):
     def __init__(
         self,
-        initial_key=None,
-        master_private_key=None,
-        public_pair=None,
-        master_public_key=None,
-    ):
+        initial_key: str | None = None,
+        master_private_key: int | None = None,
+        public_pair: Any = None,
+        master_public_key: bytes | None = None,
+    ) -> None:
         if [initial_key, public_pair, master_private_key, master_public_key].count(
             None
         ) != 3:
@@ -49,43 +53,46 @@ class ElectrumWallet(Key):
         )
 
     @classmethod
-    def deserialize(class_, blob):
+    def deserialize(cls, blob: bytes) -> ElectrumWallet | None:
         if len(blob) == 32:
-            return class_(master_private_key=from_bytes_32(blob))
+            return cls(master_private_key=from_bytes_32(blob))
         if len(blob) == 64:
-            return class_(master_public_key=blob)
+            return cls(master_public_key=blob)
+        return None
 
-    def serialize(self):
+    def serialize(self) -> bytes:
         if self._secret_exponent:
             return to_bytes_32(self._secret_exponent)
         return self.master_public_key()
 
-    def secret_exponent(self):
+    def secret_exponent(self) -> int | None:
         if self._secret_exponent is None and self._initial_key:
-            self._secret_exponent = initial_key_to_master_key(b2h(self._initial_key))
-        return self._secret_exponent
+            self._secret_exponent = initial_key_to_master_key(b2h(self._initial_key))  # type: ignore[arg-type]
+        return self._secret_exponent  # type: ignore[return-value]
 
-    def master_private_key(self):
+    def master_private_key(self) -> int | None:
         return self.secret_exponent()
 
-    def master_public_key(self):
-        return self.sec()[1:]
+    def master_public_key(self) -> bytes:
+        sec = self.sec()
+        return sec[1:] if sec is not None else b""  # type: ignore[index]
 
-    def public_copy(self):
+    def public_copy(self) -> ElectrumWallet:
         if self.secret_exponent() is None:
             return self
         return self.__class__(public_pair=self.public_pair())
 
-    def subkey_for_path(self, path):
+    def subkey_for_path(self, path: str) -> ElectrumWallet:  # type: ignore[override]
         return self.subkey(path)
 
-    def subkey(self, path):
+    def subkey(self, path: str) -> ElectrumWallet:  # type: ignore[override]
         """
         path:
             of the form "K" where K is an integer index, or "K/N" where N is usually
             a 0 (deposit address) or 1 (change address)
         """
         t = path.split("/")
+        for_change: str | int
         if len(t) == 2:
             n, for_change = t
         else:
@@ -98,7 +105,7 @@ class ElectrumWallet(Key):
         if self.secret_exponent():
             return self.__class__(
                 master_private_key=(
-                    (self.master_private_key() + offset) % self._generator.order()
+                    (self.master_private_key() + offset) % self._generator.order()  # type: ignore[operator]
                 )
             )
         p1 = offset * self._generator
@@ -107,12 +114,12 @@ class ElectrumWallet(Key):
         p = p1 + p2
         return self.__class__(public_pair=p)
 
-    def subkeys(self, path):
+    def subkeys(self, path: str) -> Generator[ElectrumWallet, None, None]:  # type: ignore[override]
         """
         A generalized form that can return multiple subkeys.
         """
         for _ in subpaths_for_path_range(path, hardening_chars="'pH"):
             yield self.subkey(_)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Electrum<E:%s>" % b2h(self.master_public_key())

@@ -1,18 +1,24 @@
-class ChainFinder(object):
-    def __init__(self):
-        self.parent_lookup = {}
-        self.descendents_by_top = {}
-        self.trees_from_bottom = {}
+from __future__ import annotations
 
-    def __repr__(self):
+from collections.abc import Generator, Iterable
+from typing import Any
+
+
+class ChainFinder(object):
+    def __init__(self) -> None:
+        self.parent_lookup: dict[Any, Any] = {}
+        self.descendents_by_top: dict[Any, set[Any]] = {}
+        self.trees_from_bottom: dict[Any, list[Any]] = {}
+
+    def __repr__(self) -> str:
         return "<ChainFinder: trees_fb:%s d_b_tops:%s>" % (
             self.trees_from_bottom,
             self.descendents_by_top,
         )
 
-    def load_nodes(self, nodes):
+    def load_nodes(self, nodes: Iterable[tuple[Any, Any]]) -> None:
         # register everything
-        new_hashes = set()
+        new_hashes: set[Any] = set()
         for h, parent in nodes:
             if h in self.parent_lookup:
                 continue
@@ -21,7 +27,7 @@ class ChainFinder(object):
         if new_hashes:
             self.meld_new_hashes(new_hashes)
 
-    def meld_new_hashes(self, new_hashes):
+    def meld_new_hashes(self, new_hashes: set[Any]) -> None:
         # make a list
         while len(new_hashes) > 0:
             h = new_hashes.pop()
@@ -66,14 +72,14 @@ class ChainFinder(object):
             else:
                 top_descendents.add(bottom_h)
 
-    def all_chains_ending_at(self, h):
+    def all_chains_ending_at(self, h: Any) -> Generator[list[Any], None, None]:
         for bottom_h in self.descendents_by_top.get(h, []):
             yield self.trees_from_bottom[bottom_h]
 
-    def missing_parents(self):
+    def missing_parents(self) -> Any:
         return self.descendents_by_top.keys()
 
-    def maximum_path(self, h, cache={}):
+    def maximum_path(self, h: Any, cache: dict[Any, Any] = {}) -> list[Any]:
         v = self.trees_from_bottom.get(h)
         if v:
             return v
@@ -86,7 +92,9 @@ class ChainFinder(object):
             cache[h1] = v[i:]
         return v
 
-    def find_ancestral_path(self, h1, h2, path_cache={}):
+    def find_ancestral_path(
+        self, h1: Any, h2: Any, path_cache: dict[Any, Any] = {}
+    ) -> tuple[list[Any], list[Any]]:
         p1 = self.maximum_path(h1, path_cache)
         p2 = self.maximum_path(h2, path_cache)
         if p1[-1] != p2[-1]:

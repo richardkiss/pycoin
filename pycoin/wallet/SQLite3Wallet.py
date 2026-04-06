@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from threading import RLock
+from typing import Any
 
 from pycoin.coins.tx_utils import create_tx
 from pycoin.convention.tx_fee import TX_FEE_PER_THOUSAND_BYTES
@@ -7,30 +10,35 @@ from pycoin.convention.tx_fee import TX_FEE_PER_THOUSAND_BYTES
 class SQLite3Wallet(object):
     def __init__(
         self,
-        keychain,
-        persistence,
-        desired_spendable_count=None,
-        min_extra_spendable_amount=1000000,
-    ):
+        keychain: Any,
+        persistence: Any,
+        desired_spendable_count: int | None = None,
+        min_extra_spendable_amount: int = 1000000,
+    ) -> None:
         self.keychain = keychain
         self.persistence = persistence
         self._desired_spendable_count = desired_spendable_count
         self._min_extra_spendable_amount = min_extra_spendable_amount
         self._lock = RLock()
 
-    def last_block_index(self):
+    def last_block_index(self) -> int:
         v = self.persistence.get_global("block_index")
         if v is None:
             v = -1
         return int(v)
 
-    def set_last_block_index(self, index):
+    def set_last_block_index(self, index: int) -> None:
         self.persistence.set_global("block_index", index)
 
     def create_payables(
-        self, address, amount, spendables, total_input_value, estimated_fee
-    ):
-        payables = [(address, amount)]
+        self,
+        address: Any,
+        amount: int,
+        spendables: list[Any],
+        total_input_value: int,
+        estimated_fee: int,
+    ) -> list[Any]:
+        payables: list[Any] = [(address, amount)]
         change_amount = total_input_value - estimated_fee - amount
         if change_amount > 0:
             change_address = self.keychain.get_change_address()
@@ -52,7 +60,7 @@ class SQLite3Wallet(object):
                         payables.append(change_address)
         return payables
 
-    def create_unsigned_send_tx(self, address, amount):
+    def create_unsigned_send_tx(self, address: Any, amount: int) -> Any:
         total_input_value = 0
         estimated_fee = TX_FEE_PER_THOUSAND_BYTES
         lbi = self.last_block_index()
@@ -65,7 +73,7 @@ class SQLite3Wallet(object):
             ):
                 confirmations -= 1
 
-            spendables = []
+            spendables: list[Any] = []
             for spendable in self.persistence.unspent_spendables(lbi, confirmations=1):
                 spendables.append(spendable)
                 total_input_value += spendable.coin_value
@@ -76,8 +84,8 @@ class SQLite3Wallet(object):
                     "insufficient funds: only %d available" % total_input_value
                 )
 
-            payables = self.create_payables(address, amount)
-            tx = create_tx(spendables, payables, fee=estimated_fee)
+            payables = self.create_payables(address, amount, spendables, total_input_value, estimated_fee)
+            tx = create_tx(spendables, payables, fee=estimated_fee)  # type: ignore[call-arg]
             # mark the given spendables as "unconfirmed_spent"
             for spendable in spendables:
                 spendable.does_seem_spent = True
@@ -86,7 +94,7 @@ class SQLite3Wallet(object):
         return tx
 
     # for collecting spendables
-    def got_mempool_tx_callback(self, tx):
+    def got_mempool_tx_callback(self, tx: Any) -> None:
         with self._lock:
             for tx_in in tx.txs_in:
                 s = self.persistence.spendable_for_hash_index(
@@ -102,7 +110,7 @@ class SQLite3Wallet(object):
                     )
                     self.persistence.save_spendable(spendable)
 
-    def _process_confirmed_tx(self, tx, blockheader, block_index):
+    def _process_confirmed_tx(self, tx: Any, blockheader: Any, block_index: int) -> None:
         for tx_in in tx.txs_in:
             spendable = self.persistence.spendable_for_hash_index(
                 tx_in.previous_hash, tx_in.previous_index, tx.Spendable
@@ -115,23 +123,23 @@ class SQLite3Wallet(object):
                 spendable.block_index_available = block_index
                 self.persistence.save_spendable(spendable)
 
-    def _add_block(self, blockheader, block_index, txs):
+    def _add_block(self, blockheader: Any, block_index: int, txs: list[Any]) -> None:
         with self._lock:
             self.set_last_block_index(block_index)
             for tx in txs:
                 self._process_confirmed_tx(tx, blockheader, block_index)
 
-    def _rollback_block(self, blockheader, block_index):
+    def _rollback_block(self, blockheader: Any, block_index: int) -> None:
         with self._lock:
             self.set_last_block_index(block_index - 1)
             self.persistence.rewind_spendables(block_index)
 
-    def rewind(self, block_index):
+    def rewind(self, block_index: int) -> None:
         with self._lock:
             self.set_last_block_index(block_index - 1)
             self.persistence.rewind_spendables(block_index)
 
-    def get_balance(self, confirmations=1):
+    def get_balance(self, confirmations: int = 1) -> int:
         lbi = self.last_block_index()
         with self._lock:
             balance = 0
@@ -151,7 +159,7 @@ class SQLite3Wallet(object):
                 balance += s.coin_value
             return balance
 
-    def got_ops_callback(self, ops):
+    def got_ops_callback(self, ops: list[Any]) -> None:
         for op, blockheader, block_index, txs in ops:
             if op == "add":
                 self._add_block(blockheader, block_index, txs)

@@ -1,5 +1,9 @@
+from __future__ import annotations
+
 import logging
 import weakref
+from collections.abc import Callable, Generator, Iterable
+from typing import Any
 
 from pycoin.encoding.hexbytes import b2h_rev
 
@@ -9,7 +13,7 @@ logger = logging.getLogger(__name__)
 ZERO_HASH = b"\0" * 32
 
 
-def _update_q(q, ops):
+def _update_q(q: Any, ops: list[Any]) -> None:
     # first, we meld out complimentary adds and removes
     while len(ops) > 0:
         op = ops[0]
@@ -26,20 +30,23 @@ def _update_q(q, ops):
 
 class BlockChain(object):
     def __init__(
-        self, parent_hash=ZERO_HASH, unlocked_block_storage={}, did_lock_to_index_f=None
-    ):
+        self,
+        parent_hash: bytes = ZERO_HASH,
+        unlocked_block_storage: dict[bytes, Any] = {},
+        did_lock_to_index_f: Callable[..., Any] | None = None,
+    ) -> None:
         self.parent_hash = parent_hash
-        self.hash_to_index_lookup = {}
-        self.weight_lookup = {}
+        self.hash_to_index_lookup: dict[bytes, int] = {}
+        self.weight_lookup: dict[bytes, Any] = {}
         self.chain_finder = ChainFinder()
-        self.change_callbacks = weakref.WeakSet()
-        self._longest_chain_cache = None
+        self.change_callbacks: weakref.WeakSet[Any] = weakref.WeakSet()
+        self._longest_chain_cache: list[Any] | None = None
         self.did_lock_to_index_f = did_lock_to_index_f
         self.unlocked_block_storage = unlocked_block_storage
 
-        self._locked_chain = []
+        self._locked_chain: list[Any] = []
 
-    def preload_locked_blocks(self, headers_iter):
+    def preload_locked_blocks(self, headers_iter: Iterable[Any]) -> None:
         self._locked_chain = []
         the_hash = self.parent_hash
         for idx, h in enumerate(headers_iter):
@@ -48,19 +55,19 @@ class BlockChain(object):
             self.hash_to_index_lookup[the_hash] = idx
         self.parent_hash = the_hash
 
-    def is_hash_known(self, the_hash):
+    def is_hash_known(self, the_hash: bytes) -> bool:
         return the_hash in self.hash_to_index_lookup
 
-    def length(self):
+    def length(self) -> int:
         return len(self._longest_local_block_chain()) + len(self._locked_chain)
 
-    def locked_length(self):
+    def locked_length(self) -> int:
         return len(self._locked_chain)
 
-    def unlocked_length(self):
+    def unlocked_length(self) -> int:
         return len(self._longest_local_block_chain())
 
-    def tuple_for_index(self, index):
+    def tuple_for_index(self, index: int) -> Any:
         if index < 0:
             index = self.length() + index
         size = len(self._locked_chain)
@@ -71,36 +78,37 @@ class BlockChain(object):
         longest_chain = self._longest_local_block_chain()
         the_hash = longest_chain[-index - 1]
         parent_hash = (
-            self.parent_hash if index <= 0 else self._longest_chain_cache[-index]
+            self.parent_hash if index <= 0 else self._longest_chain_cache[-index]  # type: ignore[index]
         )
         weight = self.weight_lookup.get(the_hash)
         return (the_hash, parent_hash, weight)
 
-    def last_block_hash(self):
+    def last_block_hash(self) -> bytes:
         if self.length() == 0:
             return self.parent_hash
         return self.hash_for_index(-1)
 
-    def hash_for_index(self, index):
-        return self.tuple_for_index(index)[0]
+    def hash_for_index(self, index: int) -> bytes:
+        return self.tuple_for_index(index)[0]  # type: ignore[no-any-return]
 
-    def index_for_hash(self, the_hash):
+    def index_for_hash(self, the_hash: bytes) -> int | None:
         return self.hash_to_index_lookup.get(the_hash)
 
-    def add_change_callback(self, callback):
+    def add_change_callback(self, callback: Callable[..., Any]) -> None:
         self.change_callbacks.add(callback)
 
-    def lock_to_index(self, index):
+    def lock_to_index(self, index: int) -> None:
         old_length = len(self._locked_chain)
         index -= old_length
         longest_chain = self._longest_local_block_chain()
         if index < 1:
             return
-        excluded = set()
+        excluded: set[Any] = set()
+        the_hash: Any = None
         for idx in range(index):
             the_hash = longest_chain[-idx - 1]
             parent_hash = (
-                self.parent_hash if idx <= 0 else self._longest_chain_cache[-idx]
+                self.parent_hash if idx <= 0 else self._longest_chain_cache[-idx]  # type: ignore[index]
             )
             weight = self.weight_lookup.get(the_hash)
             item = (the_hash, parent_hash, weight)
@@ -114,7 +122,7 @@ class BlockChain(object):
         self.chain_finder = ChainFinder()
         self._longest_chain_cache = None
 
-        def iterate():
+        def iterate() -> Generator[tuple[Any, Any], None, None]:
             for tree in old_chain_finder.trees_from_bottom.values():
                 for c in tree:
                     if c in excluded:
@@ -126,10 +134,10 @@ class BlockChain(object):
         self.chain_finder.load_nodes(iterate())
         self.parent_hash = the_hash
 
-    def _longest_local_block_chain(self):
+    def _longest_local_block_chain(self) -> list[Any]:
         if self._longest_chain_cache is None:
             max_weight = 0
-            longest = []
+            longest: list[Any] = []
             for chain in self.chain_finder.all_chains_ending_at(self.parent_hash):
                 weight = sum(self.weight_lookup.get(h, 0) for h in chain)
                 if weight > max_weight:
@@ -138,11 +146,11 @@ class BlockChain(object):
             self._longest_chain_cache = longest[:-1]
         return self._longest_chain_cache
 
-    def block_for_hash(self, h):
+    def block_for_hash(self, h: bytes) -> Any:
         return self.unlocked_block_storage.get(h)
 
-    def add_headers(self, header_iter):
-        def iterate():
+    def add_headers(self, header_iter: Iterable[Any]) -> list[Any]:
+        def iterate() -> Generator[tuple[Any, Any], None, None]:
             for header in header_iter:
                 h = header.hash()
                 self.weight_lookup[h] = header.difficulty
@@ -173,7 +181,7 @@ class BlockChain(object):
 
         # return a list of operations:
         # ("add"/"remove", the_hash, the_index)
-        ops = []
+        ops: list[Any] = []
         size = len(old_longest_chain) + len(self._locked_chain)
         for idx, h in enumerate(old_path):
             op = ("remove", self.block_for_hash(h), size - idx - 1)
@@ -189,7 +197,7 @@ class BlockChain(object):
 
         return ops
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         local_block_chain = self._longest_local_block_chain()
         if local_block_chain:
             finish = b2h_rev(local_block_chain[0])

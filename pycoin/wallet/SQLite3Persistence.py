@@ -1,34 +1,40 @@
+from __future__ import annotations
+
+import sqlite3
+from collections.abc import Generator, Iterator
+from typing import Any
+
 from pycoin.encoding.hexbytes import b2h, h2b, b2h_rev, h2b_rev
 from pycoin.key.BIP32Node import BIP32Node
 
 
 class SQLite3Persistence(object):
-    def __init__(self, sqlite3_db):
+    def __init__(self, sqlite3_db: sqlite3.Connection) -> None:
         self.db = sqlite3_db
         self._init_tables()
 
-    def _exec_sql(self, sql, *args):
+    def _exec_sql(self, sql: str, *args: Any) -> sqlite3.Cursor:
         c = self.db.cursor()
         c.execute(sql, args)
         return c
 
-    def commit(self):
+    def commit(self) -> None:
         self.db.commit()
 
-    def rollback(self):
+    def rollback(self) -> None:
         self.db.rollback()
 
-    def _init_tables(self):
+    def _init_tables(self) -> None:
         self._init_table_bip32key()
         self._init_table_bip32node()
         self._init_table_spendable()
         self._init_table_globals()
         self._init_other_tables()
 
-    def _init_other_tables(self):
+    def _init_other_tables(self) -> None:
         pass
 
-    def _init_table_bip32key(self):
+    def _init_table_bip32key(self) -> None:
         SQL = """create table if not exists BIP32Key (
 id integer primary key,
 slug text not null unique,
@@ -37,16 +43,16 @@ as_text text not null
         self._exec_sql(SQL)
         self.db.commit()
 
-    def bip32node_for_slug(self, slug):
+    def bip32node_for_slug(self, slug: str) -> Any:
         c = self._exec_sql("select id, as_text from BIP32Key where slug=?", slug)
         r = c.fetchone()
         if r is None:
             return None
-        bip32_node = BIP32Node.from_hwif(r[1])
-        bip32_node.id = r[0]
+        bip32_node = BIP32Node.from_hwif(r[1])  # type: ignore[attr-defined]
+        bip32_node.id = r[0]  # type: ignore[attr-defined]
         return bip32_node
 
-    def create_bip32node(self, slug, random_bytes):
+    def create_bip32node(self, slug: str, random_bytes: bytes) -> Any:
         bip32_node = BIP32Node.from_master_secret(random_bytes)
         bip32_text = bip32_node.as_text(as_private=True)
         self._exec_sql(
@@ -54,7 +60,7 @@ as_text text not null
         )
         return self.bip32node_for_slug(slug)
 
-    def _init_table_bip32node(self):
+    def _init_table_bip32node(self) -> None:
         SQL = """create table if not exists BIP32Node (
 path text not null,
 key_id integer,
@@ -64,20 +70,20 @@ unique(path, key_id)
         self._exec_sql(SQL)
         self.db.commit()
 
-    def add_bip32_path(self, bip32_node, path):
+    def add_bip32_path(self, bip32_node: Any, path: str) -> str:
         address = bip32_node.subkey_for_path(path).address()
         key_id = bip32_node.id
         self._exec_sql(
             "insert or ignore into BIP32Node values (?, ?, ?)", path, key_id, address
         )
         self.db.commit()
-        return address
+        return address  # type: ignore[no-any-return]
 
-    def interesting_addresses(self):
+    def interesting_addresses(self) -> Iterator[str]:
         c = self._exec_sql("select address from BIP32Node")
         return (r[0] for r in c)
 
-    def secret_exponent_for_address(self, bip32_node, address):
+    def secret_exponent_for_address(self, bip32_node: Any, address: str) -> Any:
         c = self._exec_sql(
             "select path from BIP32Node where key_id = ? and address = ?",
             bip32_node.id,
@@ -85,11 +91,11 @@ unique(path, key_id)
         )
         r = c.fetchone()
         if r is None:
-            return r
+            return None
         path = r[0]
         return bip32_node.subkey_for_path(path).secret_exponent()
 
-    def _init_table_globals(self):
+    def _init_table_globals(self) -> None:
         SQL = """create table if not exists Global (
 slug text primary key,
 data text
@@ -97,21 +103,21 @@ data text
         self._exec_sql(SQL)
         self.db.commit()
 
-    def set_global(self, slug, value):
+    def set_global(self, slug: str, value: Any) -> None:
         self._exec_sql("insert or replace into Global values (?, ?)", slug, value)
 
-    def get_global(self, slug):
+    def get_global(self, slug: str) -> Any:
         c = self._exec_sql("select data from Global where slug = ?", slug)
         r = c.fetchone()
         if r is None:
-            return r
+            return None
         return r[0]
 
-    def slugs(self):
+    def slugs(self) -> Generator[str, None, None]:
         for r in self._exec_sql("select slug from Global"):
             yield r[0]
 
-    def _init_table_spendable(self):
+    def _init_table_spendable(self) -> None:
         SQL = [
             """create table if not exists Spendable (
 tx_hash text,
@@ -132,7 +138,7 @@ unique(tx_hash, tx_out_index)
             self._exec_sql(sql)
         self.db.commit()
 
-    def save_spendable(self, spendable):
+    def save_spendable(self, spendable: Any) -> None:
         tx_hash = b2h_rev(spendable.tx_hash)
         script = b2h(spendable.script)
         self._exec_sql(
@@ -146,14 +152,16 @@ unique(tx_hash, tx_out_index)
             spendable.block_index_spent,
         )
 
-    def delete_spendable(self, tx_hash, tx_out_index):
+    def delete_spendable(self, tx_hash: bytes, tx_out_index: int) -> None:
         self._exec_sql(
             "delete from Spendable where tx_hash = ? and tx_out_index = ?",
             b2h_rev(tx_hash),
             tx_out_index,
         )
 
-    def spendable_for_hash_index(self, tx_hash, tx_out_index, spendable_class):
+    def spendable_for_hash_index(
+        self, tx_hash: bytes, tx_out_index: int, spendable_class: Any
+    ) -> Any:
         tx_hash_hex = b2h_rev(tx_hash)
         SQL = (
             "select coin_value, script, block_index_available, "
@@ -163,7 +171,7 @@ unique(tx_hash, tx_out_index)
         c = self._exec_sql(SQL, tx_hash_hex, tx_out_index)
         r = c.fetchone()
         if r is None:
-            return r
+            return None
         return spendable_class(
             coin_value=r[0],
             script=h2b(r[1]),
@@ -175,7 +183,7 @@ unique(tx_hash, tx_out_index)
         )
 
     @staticmethod
-    def spendable_for_row(r, spendable_class):
+    def spendable_for_row(r: Any, spendable_class: Any) -> Any:
         return spendable_class(
             coin_value=r[2],
             script=h2b(r[3]),
@@ -186,7 +194,9 @@ unique(tx_hash, tx_out_index)
             block_index_spent=r[6],
         )
 
-    def all_spendables(self, spendable_class, qualifier_sql=""):
+    def all_spendables(
+        self, spendable_class: Any, qualifier_sql: str = ""
+    ) -> Generator[Any, None, None]:
         SQL = (
             "select tx_hash, tx_out_index, coin_value, script, block_index_available, "
             "does_seem_spent, block_index_spent from Spendable " + qualifier_sql
@@ -196,7 +206,9 @@ unique(tx_hash, tx_out_index)
             r = next(c1)
             yield self.spendable_for_row(r, spendable_class)
 
-    def unspent_spendables(self, last_block, spendable_class, confirmations=0):
+    def unspent_spendables(
+        self, last_block: int, spendable_class: Any, confirmations: int = 0
+    ) -> Generator[Any, None, None]:
         # we fetch spendables "old enough"
         # we alternate between "biggest" and "smallest" spendables
         SQL = (
@@ -230,16 +242,16 @@ unique(tx_hash, tx_out_index)
                 yield s
             seen.add(name)
 
-    def unspent_spendable_count(self):
+    def unspent_spendable_count(self) -> int:
         SQL = (
             "select count(*) from Spendable where does_seem_spent = 0"
             " and block_index_available > 0 and block_index_spent = 0"
         )
         c = self._exec_sql(SQL)
         r = c.fetchone()
-        return r[0]
+        return r[0]  # type: ignore[no-any-return]
 
-    def rewind_spendables(self, block_index):
+    def rewind_spendables(self, block_index: int) -> None:
         SQL1 = "update Spendable set block_index_available = 0 where block_index_available > ?"
         self._exec_sql(SQL1, block_index)
 

@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import logging
 import platform
 import struct
 import os
+from collections.abc import Generator
+from typing import Any, IO
 
 from pycoin.block import Block
 from pycoin.blockchain.BlockChain import BlockChain
@@ -19,15 +23,21 @@ logger = logging.getLogger(__file__)
 
 
 class Blockfiles(object):
-    def __init__(self, base_dir=None, start_info=(0, 0), MAGIC=h2b("f9beb4d9")):
+    def __init__(
+        self,
+        base_dir: str | None = None,
+        start_info: tuple[int, int] = (0, 0),
+        MAGIC: bytes = h2b("f9beb4d9"),
+    ) -> None:
         if base_dir is None:
             base_dir = self.default_base()
         self.base_dir = base_dir
-        self._file_index = None
+        self._file_index: int | None = None
         self._magic = MAGIC
+        self.f: IO[bytes]
         self.jump_to(start_info)
 
-    def jump_to(self, start_info):
+    def jump_to(self, start_info: tuple[int, int]) -> None:
         file_index, offset = start_info
         if self._file_index != file_index:
             self._file_index = file_index
@@ -35,10 +45,10 @@ class Blockfiles(object):
             self.f = open(full_path, "rb")
         self.f.seek(offset)
 
-    def close(self):
+    def close(self) -> None:
         self.f.close()
 
-    def default_base(self):
+    def default_base(self) -> str:
         LOOKUP = dict(
             Darwin="~/Library/Application Support/Bitcoin/", Linux="~/.bitcoin/"
         )
@@ -50,7 +60,7 @@ class Blockfiles(object):
             )
         return os.path.expanduser(path)
 
-    def read(self, N):
+    def read(self, N: int) -> bytes:
         d = self.f.read(N)
         if len(d) >= N:
             return d
@@ -59,7 +69,7 @@ class Blockfiles(object):
             return d1
         return b""
 
-    def skip(self, offset):
+    def skip(self, offset: int) -> None:
         while 1:
             cur_pos = self.f.tell()
             self.f.seek(offset, 1)
@@ -67,14 +77,14 @@ class Blockfiles(object):
             offset += cur_pos - new_pos
             if offset <= 0:
                 break
-            if not self.next_file():
+            if not self.next_file():  # type: ignore[attr-defined]
                 break
 
-    def _path_for_file_index(self):
-        return os.path.join(self.base_dir, "blocks", "blk%05d.dat" % self._file_index)
+    def _path_for_file_index(self) -> str:
+        return os.path.join(self.base_dir, "blocks", "blk%05d.dat" % self._file_index)  # type: ignore[str-format]
 
-    def _next_file(self):
-        self._file_index += 1
+    def _next_file(self) -> bool:
+        self._file_index = (self._file_index or 0) + 1
         full_path = self._path_for_file_index()
         if not os.path.exists(full_path):
             return False
@@ -82,7 +92,9 @@ class Blockfiles(object):
         self.f = open(full_path, "r+b")
         return True
 
-    def next_offset(self, current_offset):
+    def next_offset(
+        self, current_offset: tuple[int, int]
+    ) -> tuple[tuple[int, int], tuple[int, int]] | None:
         self.jump_to(current_offset)
         magic = self.read(4)
         if magic == b"\0\0\0\0":
@@ -101,20 +113,23 @@ class Blockfiles(object):
         next_offset = self.offset_info()
         return block_offset, next_offset
 
-    def offset_info(self):
-        return self._file_index, self.f.tell()
+    def offset_info(self) -> tuple[int, int]:
+        return self._file_index, self.f.tell()  # type: ignore[return-value]
 
 
 def locked_blocks_iterator(
-    blockfile, start_info=(0, 0), cached_headers=50, batch_size=50
-):
+    blockfile: Blockfiles,
+    start_info: tuple[int, int] = (0, 0),
+    cached_headers: int = 50,
+    batch_size: int = 50,
+) -> Generator[Any, None, None]:
     """
     This method loads blocks from disk, skipping any orphan blocks.
     """
     f = blockfile
-    current_state = []
+    current_state: list[Any] = []
 
-    def change_state(bc, ops):
+    def change_state(bc: Any, ops: list[Any]) -> None:
         for op, bh, work in ops:
             if op == "add":
                 current_state.append(bh)
@@ -133,8 +148,8 @@ def locked_blocks_iterator(
             break
         block_offset, info_offset = v
         f.jump_to(block_offset)
-        bh = Block.parse_as_header(f)
-        bh.info = block_offset
+        bh = Block.parse_as_header(f)  # type: ignore[arg-type]
+        bh.info = block_offset  # type: ignore[attr-defined]
 
         bhs.append(bh)
         if len(bhs) > batch_size:
