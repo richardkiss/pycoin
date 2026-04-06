@@ -1,36 +1,40 @@
+from __future__ import annotations
+
+from typing import IO
+
 from .ScriptTools import BitcoinScriptTools  # BRAIN DAMAGE
 from ...convention import satoshi_to_mbtc
 
 from pycoin.satoshi.satoshi_struct import parse_struct, stream_struct
 
 
-class TxOut(object):
+class TxOut:
     COIN_VALUE_CAST_F = int
 
     """
     The part of a Tx that specifies where the Bitcoin goes to.
     """
 
-    def __init__(self, coin_value, script):
+    def __init__(self, coin_value: int, script: bytes) -> None:
         assert isinstance(script, bytes)
         self.coin_value = self.COIN_VALUE_CAST_F(coin_value)
         self.script = script
 
-    def stream(self, f):
+    def stream(self, f: IO[bytes]) -> None:
         stream_struct("QS", f, self.coin_value, self.script)
 
     @classmethod
-    def parse(cls, f):
+    def parse(cls, f: IO[bytes]) -> TxOut:
         return cls(*parse_struct("QS", f))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '%s<%s mbtc "%s">' % (
             self.__class__.__name__,
             satoshi_to_mbtc(self.coin_value),
             BitcoinScriptTools.disassemble(self.script),
         )
 
-    def puzzle_script(self):
+    def puzzle_script(self) -> bytes:
         return self.script
 
 

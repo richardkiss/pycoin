@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import json
+from typing import Any
+
 from .agent import urlopen
 
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.encoding.hexbytes import b2h_rev
 
 
-class BlockExplorerProvider(object):
-    def __init__(self, netcode):
+class BlockExplorerProvider:
+    def __init__(self, netcode: str) -> None:
         url_stub = {
             "BTC": "blockexplorer.com",
             "XTN": "testnet.blockexplorer.com",
@@ -16,7 +20,7 @@ class BlockExplorerProvider(object):
             raise ValueError("unsupported netcode %s" % netcode)
         self.url = "https://%s/api" % url_stub
 
-    def tx_for_tx_hash(self, tx_hash):
+    def tx_for_tx_hash(self, tx_hash: bytes) -> Any:
         """
         Get a Tx by its hash.
         """

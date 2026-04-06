@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import json
 import io
+from typing import Any
 
 from .agent import urlopen
 
@@ -8,8 +11,8 @@ from pycoin.encoding.hexbytes import b2h_rev, h2b, h2b_rev
 from pycoin.networks.default import get_current_netcode
 
 
-class BlockcypherProvider(object):
-    def __init__(self, api_key="", netcode=None):
+class BlockcypherProvider:
+    def __init__(self, api_key: str = "", netcode: str | None = None) -> None:
         NETWORK_PATHS = {
             "BTC": "btc/main",
             "XTN": "btc/test3",
@@ -22,10 +25,10 @@ class BlockcypherProvider(object):
         self.network_path = NETWORK_PATHS.get(netcode)
         self.api_key = api_key
 
-    def base_url(self, args):
+    def base_url(self, args: str) -> str:
         return "https://api.blockcypher.com/v1/%s/%s" % (self.network_path, args)
 
-    def spendables_for_address(self, address):
+    def spendables_for_address(self, address: str) -> list[Any]:
         """
         Return a list of Spendable objects for the
         given bitcoin address.
@@ -44,7 +47,7 @@ class BlockcypherProvider(object):
             )
         return spendables
 
-    def tx_for_tx_hash(self, tx_hash):
+    def tx_for_tx_hash(self, tx_hash: bytes) -> Any:
         """
         returns the pycoin.tx object for tx_hash
         """
@@ -57,22 +60,22 @@ class BlockcypherProvider(object):
         except Exception:
             raise Exception
 
-    def get_balance(self, address):
+    def get_balance(self, address: str) -> dict[str, Any]:
         """
         returns the balance object from blockcypher for address
         """
         url_append = "/balance?token=%s" % self.api_key
         url = self.base_url("addrs/%s" % (address + url_append))
-        result = json.loads(urlopen(url).read().decode("utf8"))
+        result: dict[str, Any] = json.loads(urlopen(url).read().decode("utf8"))
         return result
 
-    def broadcast_tx(self, tx):
+    def broadcast_tx(self, tx: Any) -> dict[str, Any]:
         """
         broadcast a transaction to the network
         """
         url = self.base_url("txs/push")
         data = {"tx": tx.as_hex()}
-        result = json.loads(
+        result: dict[str, Any] = json.loads(
             urlopen(url, data=json.dumps(data).encode("utf8")).read().decode("utf8")
         )
         return result

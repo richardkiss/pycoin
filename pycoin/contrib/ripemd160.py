@@ -6,6 +6,8 @@
 # source: https://raw.githubusercontent.com/bitcoin/bitcoin/master/test/functional/test_framework/ripemd160.py
 # Grudgingly ported to python2 compatibility by Richard Kiss
 
+from __future__ import annotations
+
 import binascii
 import struct
 import unittest
@@ -358,7 +360,7 @@ KL = [0, 0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xA953FD4E]
 KR = [0x50A28BE6, 0x5C4DD124, 0x6D703EF3, 0x7A6D76E9, 0]
 
 
-def fi(x, y, z, i):
+def fi(x: int, y: int, z: int, i: int) -> int:
     """The f1, f2, f3, f4, and f5 functions from the specification."""
     if i == 0:
         return x ^ y ^ z
@@ -374,12 +376,12 @@ def fi(x, y, z, i):
         assert False
 
 
-def rol(x, i):
+def rol(x: int, i: int) -> int:
     """Rotate the bottom 32 bits of x left by i bits."""
     return ((x << i) | ((x & 0xFFFFFFFF) >> (32 - i))) & 0xFFFFFFFF
 
 
-def compress(h0, h1, h2, h3, h4, block):
+def compress(h0: int, h1: int, h2: int, h3: int, h4: int, block: bytes) -> tuple[int, int, int, int, int]:
     """Compress state (h0, h1, h2, h3, h4) with block."""
     # Left path variables.
     al, bl, cl, dl, el = h0, h1, h2, h3, h4
@@ -402,27 +404,25 @@ def compress(h0, h1, h2, h3, h4, block):
     return h1 + cl + dr, h2 + dl + er, h3 + el + ar, h4 + al + br, h0 + bl + cr
 
 
-def ripemd160(data):
+def ripemd160(data: bytes) -> bytes:
     """Compute the RIPEMD-160 hash of data."""
     # Initialize state.
     state = (0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0)
     # Process full 64-byte blocks in the input.
     for b in range(len(data) >> 6):
-        args = list(state) + [data[64 * b : 64 * (b + 1)]]
-        state = compress(*args)
+        state = compress(*state, data[64 * b : 64 * (b + 1)])
     # Construct final blocks (with padding and size).
     pad = b"\x80" + b"\x00" * ((119 - len(data)) & 63)
     fin = data[len(data) & ~63 :] + pad + struct.pack("<Q", 8 * len(data))
     # Process final blocks.
     for b in range(len(fin) >> 6):
-        args = list(state) + [fin[64 * b : 64 * (b + 1)]]
-        state = compress(*args)
+        state = compress(*state, fin[64 * b : 64 * (b + 1)])
     # Produce output.
     return b"".join(struct.pack("<L", h & 0xFFFFFFFF) for h in state)
 
 
 class TestFrameworkKey(unittest.TestCase):
-    def test_ripemd160(self):
+    def test_ripemd160(self) -> None:
         """RIPEMD-160 test vectors."""
         # See https://homes.esat.kuleuven.be/~bosselae/ripemd160.html
         for msg, hexout in [

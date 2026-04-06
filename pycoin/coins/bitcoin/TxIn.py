@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, IO
+
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h, b2h_rev, h2b
 from pycoin.satoshi.satoshi_struct import parse_struct, stream_struct
@@ -8,58 +12,56 @@ from .ScriptTools import BitcoinScriptTools as ScriptTools  # BRAIN DAMAGE
 ZERO = b"\0" * 32
 
 
-class TxIn(object):
+class TxIn:
     """
     The part of a Tx that specifies where the Bitcoin comes from.
     """
 
-    def __init__(self, previous_hash, previous_index, script=b"", sequence=4294967295):
+    def __init__(self, previous_hash: bytes, previous_index: int, script: bytes = b"", sequence: int = 4294967295) -> None:
         self.previous_hash = previous_hash
         self.previous_index = previous_index
         self.script = script
         self.sequence = sequence
-        self.witness = ()
+        self.witness: list[bytes] = []
 
     @classmethod
-    def coinbase_tx_in(class_, script):
+    def coinbase_tx_in(class_, script: bytes) -> TxIn:
         tx = class_(previous_hash=ZERO, previous_index=4294967295, script=script)
         return tx
 
-    def stream(self, f, blank_solutions=False):
+    def stream(self, f: IO[bytes], blank_solutions: bool = False) -> None:
         script = b"" if blank_solutions else self.script
         stream_struct(
             "#LSL", f, self.previous_hash, self.previous_index, script, self.sequence
         )
 
     @classmethod
-    def parse(self, f):
-        return self(*parse_struct("#LSL", f))
+    def parse(cls, f: IO[bytes]) -> TxIn:
+        return cls(*parse_struct("#LSL", f))
 
-    def is_coinbase(self):
+    def is_coinbase(self) -> bool:
         return self.previous_hash == ZERO
 
-    def public_key_sec(self):
+    def public_key_sec(self) -> bytes | None:
         """Return the public key as sec, or None in case of failure."""
         if self.is_coinbase():
             return None
         opcodes = ScriptTools.opcode_list(self.script)
         if len(opcodes) == 2 and opcodes[0].startswith("[30"):
-            # the second opcode is probably the public key as sec
             sec = h2b(opcodes[1][1:-1])
             return sec
         return None
 
-    def address(self, address_api):
+    def address(self, address_api: Any) -> str:
         if self.is_coinbase():
             return "(coinbase)"
-        # attempt to return the source address
         sec = self.public_key_sec()
         if sec:
-            address = address_api.for_p2pkh(hash160(sec))
+            address: str = address_api.for_p2pkh(hash160(sec))
             return address
         return "(unknown)"
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.is_coinbase():
             return "TxIn<COINBASE: %s>" % b2h(self.script)
         return 'TxIn<%s[%d] "%s">' % (

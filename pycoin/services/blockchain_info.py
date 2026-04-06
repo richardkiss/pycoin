@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import io
 import json
 import warnings
+from typing import Any
 
 from .agent import request, urlencode, urlopen
 
@@ -8,8 +11,8 @@ from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.encoding.hexbytes import b2h, h2b, b2h_rev
 
 
-class BlockchainInfoProvider(object):
-    def __init__(self, netcode):
+class BlockchainInfoProvider:
+    def __init__(self, netcode: str) -> None:
         if netcode == "BTC":
             self.api_domain = "https://blockchain.info"
         elif netcode == "XTN":
@@ -19,13 +22,13 @@ class BlockchainInfoProvider(object):
         else:
             raise ValueError("unsupported netcode %s" % netcode)
 
-    def tx_for_tx_hash(self, tx_hash):
+    def tx_for_tx_hash(self, tx_hash: bytes) -> Any:
         "Get a Tx by its hash."
         URL = self.api_domain + ("/rawtx/%s?format=hex" % b2h_rev(tx_hash))
         tx = Tx.from_hex(urlopen(URL).read().decode("utf8"))
         return tx
 
-    def payments_for_address(self, address):
+    def payments_for_address(self, address: str) -> list[tuple[str, int]]:
         "return an array of (TX ids, net_payment)"
         URL = self.api_domain + ("/address/%s?format=json" % address)
         d = urlopen(URL).read()
@@ -40,7 +43,7 @@ class BlockchainInfoProvider(object):
                 response.append((tx.get("hash"), total_out))
         return response
 
-    def spendables_for_address(self, address):
+    def spendables_for_address(self, address: str) -> list[Any]:
         """
         Return a list of Spendable objects for the
         given bitcoin address.
@@ -58,27 +61,26 @@ class BlockchainInfoProvider(object):
             )
         return spendables
 
-    def broadcast_tx(self, tx):
+    def broadcast_tx(self, tx: Any) -> bytes:
         s = io.BytesIO()
         tx.stream(s)
         tx_as_hex = b2h(s.getvalue())
         data = urlencode(dict(tx=tx_as_hex)).encode("utf8")
         URL = self.api_domain + "/pushtx"
         try:
-            d = urlopen(URL, data=data).read()
+            d: bytes = urlopen(URL, data=data).read()
             return d
         except request.HTTPError as ex:
             try:
-                d = ex.read()
-                ex.message = d
+                ex.msg = ex.read().decode("utf8")  # type: ignore[attr-defined]
             except Exception:
                 pass
             raise ex
 
 
-def send_tx(self, tx):
+def send_tx(self: Any, tx: Any) -> bytes:
     warnings.warn(
         "use BlockchainInfoProvider.broadcast_tx instead of send_tx",
         category=DeprecationWarning,
     )
-    return BlockchainInfoProvider().broadcast_tx(tx)
+    return BlockchainInfoProvider("BTC").broadcast_tx(tx)

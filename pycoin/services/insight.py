@@ -1,9 +1,12 @@
 # provide support to insight API servers
 # see also https://github.com/bitpay/insight-api
 
+from __future__ import annotations
+
 import decimal
 import json
 import io
+from typing import Any
 
 from .agent import request, urlencode, urlopen
 
@@ -17,26 +20,26 @@ from pycoin.merkle import merkle
 from pycoin.networks.default import get_current_netcode
 
 
-class InsightProvider(object):
-    def __init__(self, base_url="https://insight.bitpay.com", netcode=None):
+class InsightProvider:
+    def __init__(self, base_url: str = "https://insight.bitpay.com", netcode: str | None = None) -> None:
         if netcode is None:
             netcode = get_current_netcode()
         while base_url[-1] == "/":
             base_url = base_url[:-1]
         self.base_url = base_url
 
-    def get_blockchain_tip(self):
+    def get_blockchain_tip(self) -> bytes:
         URL = "%s/status?q=getLastBlockHash" % self.base_url
-        d = urlopen(URL).read().decode("utf8")
+        d = urlopen(URL).read().decode("utf8")  # type: ignore[union-attr]
         r = json.loads(d)
         return h2b_rev(r.get("lastblockhash"))
 
-    def get_blockheader(self, block_hash):
+    def get_blockheader(self, block_hash: bytes) -> Any:
         return self.get_blockheader_with_transaction_hashes(block_hash)[0]
 
-    def get_blockheader_with_transaction_hashes(self, block_hash):
+    def get_blockheader_with_transaction_hashes(self, block_hash: bytes) -> tuple[Any, Any]:
         URL = "%s/block/%s" % (self.base_url, b2h_rev(block_hash))
-        r = json.loads(urlopen(URL).read().decode("utf8"))
+        r = json.loads(urlopen(URL).read().decode("utf8"))  # type: ignore[union-attr]
         version = r.get("version")
         previous_block_hash = h2b_rev(r.get("previousblockhash"))
         merkle_root = h2b_rev(r.get("merkleroot"))
@@ -52,30 +55,30 @@ class InsightProvider(object):
         calculated_hash = merkle(tx_hashes, double_sha256)
         if calculated_hash != merkle_root:
             return None, None
-        blockheader.height = r.get("height")
+        blockheader.height = r.get("height")  # type: ignore[attr-defined]
         return blockheader, tx_hashes
 
-    def get_block_height(self, block_hash):
+    def get_block_height(self, block_hash: bytes) -> Any:
         return self.get_blockheader_with_transaction_hashes(block_hash)[0].height
 
-    def tx_for_tx_hash(self, tx_hash):
+    def tx_for_tx_hash(self, tx_hash: bytes) -> Any:
         URL = "%s/tx/%s" % (self.base_url, b2h_rev(tx_hash))
-        r = json.loads(urlopen(URL).read().decode("utf8"))
+        r = json.loads(urlopen(URL).read().decode("utf8"))  # type: ignore[union-attr]
         tx = tx_from_json_dict(r)
         if tx.hash() == tx_hash:
             return tx
         return None
 
-    def get_tx_confirmation_block(self, tx_hash):
-        return self.get_tx(tx_hash).confirmation_block_hash
+    def get_tx_confirmation_block(self, tx_hash: bytes) -> Any:
+        return self.get_tx(tx_hash).confirmation_block_hash  # type: ignore[attr-defined]
 
-    def spendables_for_address(self, address):
+    def spendables_for_address(self, address: str) -> list[Any]:
         """
         Return a list of Spendable objects for the
         given bitcoin address.
         """
         URL = "%s/addr/%s/utxo" % (self.base_url, address)
-        r = json.loads(urlopen(URL).read().decode("utf8"))
+        r = json.loads(urlopen(URL).read().decode("utf8"))  # type: ignore[union-attr]
         spendables = []
         for u in r:
             coin_value = btc_to_satoshi(str(u.get("amount")))
@@ -87,20 +90,20 @@ class InsightProvider(object):
             )
         return spendables
 
-    def spendables_for_addresses(self, addresses):
-        spendables = []
+    def spendables_for_addresses(self, addresses: list[str]) -> list[Any]:
+        spendables: list[Any] = []
         for addr in addresses:
             spendables.extend(self.spendables_for_address(addr))
         return spendables
 
-    def send_tx(self, tx):
+    def send_tx(self, tx: Any) -> bytes:
         s = io.BytesIO()
         tx.stream(s)
         tx_as_hex = b2h(s.getvalue())
         data = urlencode(dict(rawtx=tx_as_hex)).encode("utf8")
         URL = "%s/tx/send" % self.base_url
         try:
-            d = urlopen(URL, data=data).read()
+            d: bytes = urlopen(URL, data=data).read()
             return d
         except request.HTTPError as err:
             if err.code == 400:
@@ -108,11 +111,11 @@ class InsightProvider(object):
             raise err
 
 
-def tx_from_json_dict(r):
+def tx_from_json_dict(r: dict[str, Any]) -> Any:
     version = r.get("version")
     lock_time = r.get("locktime")
     txs_in = []
-    for vin in r.get("vin"):
+    for vin in r.get("vin") or []:
         if "coinbase" in vin:
             previous_hash = b"\0" * 32
             script = h2b(vin.get("coinbase"))
@@ -128,13 +131,13 @@ def tx_from_json_dict(r):
         sequence = vin.get("sequence")
         txs_in.append(Tx.TxIn(previous_hash, previous_index, script, sequence))
     txs_out = []
-    for vout in r.get("vout"):
+    for vout in r.get("vout") or []:
         coin_value = btc_to_satoshi(decimal.Decimal(vout.get("value")))
         script = BitcoinScriptTools.compile(vout.get("scriptPubKey").get("asm"))
         txs_out.append(Tx.TxOut(coin_value, script))
-    tx = Tx(version, txs_in, txs_out, lock_time)
+    tx = Tx(version, txs_in, txs_out, lock_time)  # type: ignore[arg-type]
     bh = r.get("blockhash")
     if bh:
         bh = h2b_rev(bh)
-    tx.confirmation_block_hash = bh
+    tx.confirmation_block_hash = bh  # type: ignore[attr-defined]
     return tx

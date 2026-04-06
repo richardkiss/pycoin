@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import re
 import threading
 import warnings
+from typing import Any
 
 from pycoin.networks.default import get_current_netcode
 
@@ -24,13 +27,13 @@ THREAD_LOCALS = threading.local()
 # PYCOIN_BTC_PROVIDERS="insight:http(s?)://hostname/url bitcoinrpc://user:passwd@hostname:8332"
 
 
-def service_provider_methods(method_name, service_providers):
+def service_provider_methods(method_name: str, service_providers: list[Any]) -> list[Any]:
     methods = [getattr(m, method_name, None) for m in service_providers]
     methods = [m for m in methods if m]
     return methods
 
 
-def spendables_for_address(address, netcode, format=None):
+def spendables_for_address(address: str, netcode: str, format: str | None = None) -> list[Any]:
     """
     Return a list of Spendable objects for the
     given bitcoin address.
@@ -53,13 +56,13 @@ def spendables_for_address(address, netcode, format=None):
             spendables = m(address)
             if format:
                 spendables = [getattr(s, method)() for s in spendables]
-            return spendables
+            return spendables  # type: ignore[no-any-return]
         except Exception:
             pass
     return []
 
 
-def get_tx_db(netcode=None):
+def get_tx_db(netcode: str | None = None) -> Any:
     lookup_methods = service_provider_methods(
         "tx_for_tx_hash", get_default_providers_for_netcode(netcode)
     )
@@ -72,15 +75,16 @@ def get_tx_db(netcode=None):
     )
 
 
-def message_about_tx_cache_env():
+def message_about_tx_cache_env() -> str | None:
     if main_cache_dir() is None:
         return (
             "consider setting environment variable PYCOIN_CACHE_DIR=~/.pycoin_cache to"
             " cache transactions fetched via web services"
         )
+    return None
 
 
-def all_providers_message(method, netcode):
+def all_providers_message(method: str, netcode: str) -> str | None:
     if (
         len(
             service_provider_methods(method, get_default_providers_for_netcode(netcode))
@@ -91,24 +95,25 @@ def all_providers_message(method, netcode):
             "no service providers found for %s; consider setting environment variable "
             "PYCOIN_%s_PROVIDERS" % (method, netcode)
         )
+    return None
 
 
-def message_about_spendables_for_address_env(netcode):
+def message_about_spendables_for_address_env(netcode: str) -> str | None:
     return all_providers_message("spendables_for_address", netcode)
 
 
-def message_about_tx_for_tx_hash_env(netcode):
+def message_about_tx_for_tx_hash_env(netcode: str) -> str | None:
     return all_providers_message("tx_for_tx_hash", netcode)
 
 
-def bitcoin_rpc_init(match, netcode):
+def bitcoin_rpc_init(match: re.Match[str], netcode: str) -> BitcoindProvider:
     username, password, hostname, port = match.group(
         "user", "password", "hostname", "port"
     )
     return BitcoindProvider("http://%s:%s@%s:%s" % (username, password, hostname, port))
 
 
-def insight_init(match, netcode):
+def insight_init(match: re.Match[str], netcode: str) -> InsightProvider:
     return InsightProvider(base_url=match.group("url"), netcode=netcode)
 
 
@@ -137,7 +142,7 @@ DESCRIPTOR_CRE_INIT_TUPLES = [
 ]
 
 
-def provider_for_descriptor_and_netcode(descriptor, netcode=None):
+def provider_for_descriptor_and_netcode(descriptor: str, netcode: str | None = None) -> Any:
     if netcode is None:
         netcode = get_current_netcode()
     for cre, f in DESCRIPTOR_CRE_INIT_TUPLES:
@@ -147,8 +152,8 @@ def provider_for_descriptor_and_netcode(descriptor, netcode=None):
     return None
 
 
-def providers_for_config_string(config_string, netcode):
-    providers = []
+def providers_for_config_string(config_string: str, netcode: str) -> list[Any]:
+    providers: list[Any] = []
     for d in config_string.split():
         p = provider_for_descriptor_and_netcode(d, netcode)
         if p:
@@ -158,23 +163,23 @@ def providers_for_config_string(config_string, netcode):
     return providers
 
 
-def providers_for_netcode_from_env(netcode):
+def providers_for_netcode_from_env(netcode: str) -> list[Any]:
     return providers_for_config_string(
         config_string_for_netcode_from_env(netcode), netcode
     )
 
 
-def get_default_providers_for_netcode(netcode=None):
+def get_default_providers_for_netcode(netcode: str | None = None) -> list[Any]:
     if netcode is None:
         netcode = get_current_netcode()
     if not hasattr(THREAD_LOCALS, "providers"):
         THREAD_LOCALS.providers = {}
     if netcode not in THREAD_LOCALS.providers:
         THREAD_LOCALS.providers[netcode] = providers_for_netcode_from_env(netcode)
-    return THREAD_LOCALS.providers[netcode]
+    return THREAD_LOCALS.providers[netcode]  # type: ignore[no-any-return]
 
 
-def set_default_providers_for_netcode(netcode, provider_list):
+def set_default_providers_for_netcode(netcode: str, provider_list: list[Any]) -> None:
     if not hasattr(THREAD_LOCALS, "providers"):
         THREAD_LOCALS.providers = {}
     THREAD_LOCALS.providers[netcode] = provider_list

@@ -1,12 +1,16 @@
-def crack_secret_exponent_from_k(generator, signed_value, sig, k):
+from __future__ import annotations
+from typing import Any
+
+
+def crack_secret_exponent_from_k(generator: Any, signed_value: int, sig: tuple[int, int], k: int) -> int:
     """
     Given a signature of a signed_value and a known k, return the secret exponent.
     """
     r, s = sig
-    return ((s * k - signed_value) * generator.inverse(r)) % generator.order()
+    return ((s * k - signed_value) * generator.inverse(r)) % generator.order()  # type: ignore[no-any-return]
 
 
-def crack_k_from_sigs(generator, sig1, val1, sig2, val2):
+def crack_k_from_sigs(generator: Any, sig1: tuple[int, int], val1: int, sig2: tuple[int, int], val2: int) -> int:
     """
     Given two signatures with the same secret exponent and K value, return that K value.
     """
@@ -30,4 +34,4 @@ def crack_k_from_sigs(generator, sig1, val1, sig2, val2):
     if r1 != r2:
         raise ValueError("r values of signature do not match")
     k = (r2 * val1 - r1 * val2) * generator.inverse(r2 * s1 - r1 * s2)
-    return k % generator.order()
+    return k % generator.order()  # type: ignore[no-any-return]

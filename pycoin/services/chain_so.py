@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import io
 import json
+from typing import Any
 
 from .agent import urlopen
 
@@ -8,8 +11,8 @@ from pycoin.encoding.hexbytes import b2h_rev, h2b, h2b_rev
 from pycoin.networks.default import get_current_netcode
 
 
-class ChainSoProvider(object):
-    def __init__(self, netcode=None):
+class ChainSoProvider:
+    def __init__(self, netcode: str | None = None) -> None:
         NETWORK_PATHS = {
             "BTC": "BTC",
             "XTN": "BTCTEST",
@@ -20,10 +23,10 @@ class ChainSoProvider(object):
             netcode = get_current_netcode()
         self.network_path = NETWORK_PATHS.get(netcode)
 
-    def base_url(self, method, args):
+    def base_url(self, method: str, args: str) -> str:
         return "https://chain.so/api/v2/%s/%s/%s" % (method, self.network_path, args)
 
-    def spendables_for_address(self, address):
+    def spendables_for_address(self, address: str) -> list[Any]:
         """
         Return a list of Spendable objects for the
         given bitcoin address.
@@ -44,7 +47,7 @@ class ChainSoProvider(object):
 
         return spendables
 
-    def tx_for_tx_hash(self, tx_hash):
+    def tx_for_tx_hash(self, tx_hash: bytes) -> Any:
         "Get a Tx by its hash."
         url = self.base_url("get_tx", b2h_rev(tx_hash))
         r = json.loads(urlopen(url).read().decode("utf8"))

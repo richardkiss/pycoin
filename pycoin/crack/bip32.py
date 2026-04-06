@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import hmac
 import hashlib
 import struct
+from typing import Any
 
 from pycoin.encoding.bytes32 import from_bytes_32
 from pycoin.encoding.sec import public_pair_to_sec
 
 
-def ascend_bip32(bip32_pub_node, secret_exponent, child):
+def ascend_bip32(bip32_pub_node: Any, secret_exponent: int, child: int) -> int:
     """
     Given a BIP32Node with public derivation child "child" with a known private key,
     return the secret exponent for the bip32_pub_node.
@@ -18,15 +21,15 @@ def ascend_bip32(bip32_pub_node, secret_exponent, child):
         key=bip32_pub_node._chain_code, msg=data, digestmod=hashlib.sha512
     ).digest()
     I_left_as_exponent = from_bytes_32(I64[:32])
-    return (secret_exponent - I_left_as_exponent) % bip32_pub_node._generator.order()
+    return (secret_exponent - I_left_as_exponent) % bip32_pub_node._generator.order()  # type: ignore[no-any-return]
 
 
-def crack_bip32(bip32_pub_node, secret_exponent, path):
+def crack_bip32(bip32_pub_node: Any, secret_exponent: int, path: str) -> Any:
     paths = path.split("/")
     while len(paths):
-        path = int(paths.pop())
+        child = int(paths.pop())
         secret_exponent = ascend_bip32(
-            bip32_pub_node.subkey_for_path("/".join(paths)), secret_exponent, path
+            bip32_pub_node.subkey_for_path("/".join(paths)), secret_exponent, child
         )
     return bip32_pub_node.__class__(
         bip32_pub_node._chain_code,

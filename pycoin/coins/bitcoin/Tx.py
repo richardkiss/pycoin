@@ -362,10 +362,10 @@ class Tx(BaseTx):
     def parse_unspents(self, f: IO[bytes]) -> None:
         unspents: list[Any] = []
         for i in enumerate(self.txs_in):
-            tx_out = self.TxOut.parse(f)
-            if tx_out.coin_value == 0:
-                tx_out = None
-            unspents.append(tx_out)
+            tx_out_or_none: Any = self.TxOut.parse(f)
+            if tx_out_or_none.coin_value == 0:
+                tx_out_or_none = None
+            unspents.append(tx_out_or_none)
         self.set_unspents(unspents)
 
     def total_in(self) -> int:

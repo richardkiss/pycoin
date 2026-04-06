@@ -146,6 +146,11 @@ module = [
     "pycoin.coins.bcash.Solver",
     "pycoin.coins.bcash.SolutionChecker",
     "pycoin.coins.litecoin",
+    "pycoin.coins.bitcoin.TxIn",
+    "pycoin.coins.bitcoin.TxOut",
+    "pycoin.crack.*",
+    "pycoin.contrib.ripemd160",
+    "pycoin.services.*",
 ]
 disallow_untyped_defs = true
 disallow_any_generics = true
