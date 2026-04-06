@@ -1,22 +1,29 @@
+from __future__ import annotations
+
 import binascii
 import io
-
+from typing import Any, IO, Iterator
 
 from pycoin.coins.SolutionChecker import ScriptError
 
 
 class ScriptTools(object):
-    def __init__(self, opcode_list, IntStreamer, scriptStreamer):
+    def __init__(
+        self,
+        opcode_list: list[tuple[str, int]],
+        IntStreamer: Any,
+        scriptStreamer: Any,
+    ) -> None:
         self.intStreamer = IntStreamer
         self.scriptStreamer = scriptStreamer
 
-        self.opcode_to_int = dict(o for o in opcode_list)
-        self.int_to_opcode = dict(reversed(o) for o in opcode_list)
+        self.opcode_to_int: dict[str, int] = dict(o for o in opcode_list)
+        self.int_to_opcode: dict[int, str] = {v: k for k, v in opcode_list}
 
-    def int_for_opcode(self, opcode):
+    def int_for_opcode(self, opcode: str) -> int | None:
         return self.opcode_to_int.get(opcode)
 
-    def compile_expression(self, t):
+    def compile_expression(self, t: str) -> bytes:
         if (t[0], t[-1]) == ("[", "]"):
             return binascii.unhexlify(t[1:-1])
         if t.startswith("'") and t.endswith("'"):
@@ -24,7 +31,7 @@ class ScriptTools(object):
         try:
             t0 = int(t)
             if abs(t0) <= 0xFFFFFFFFFFFFFFFF and t[0] != "0":
-                return self.intStreamer.int_to_script_bytes(t0)
+                return self.intStreamer.int_to_script_bytes(t0)  # type: ignore[no-any-return]
         except (SyntaxError, ValueError):
             pass
         try:
@@ -33,7 +40,7 @@ class ScriptTools(object):
             pass
         raise SyntaxError("unknown expression %s" % t)
 
-    def compile(self, s):
+    def compile(self, s: str) -> bytes:
         """
         Compile the given script. Returns a bytes object with the compiled script.
         """
@@ -52,14 +59,16 @@ class ScriptTools(object):
                 self.write_push_data([v], f)
         return f.getvalue()
 
-    def disassemble_for_opcode_data(self, opcode, data):
+    def disassemble_for_opcode_data(self, opcode: int, data: bytes | None) -> str:
         # TODO: check data for int or string representation
         opcode_str = self.int_to_opcode.get(opcode, "???")
         if data is not None and len(data) > 0 and opcode_str.startswith("OP_PUSH"):
             return "[%s]" % binascii.hexlify(data).decode("utf8")
         return opcode_str
 
-    def get_opcodes(self, script, verify_minimal_data=False, pc=0):
+    def get_opcodes(
+        self, script: bytes, verify_minimal_data: bool = False, pc: int = 0
+    ) -> Iterator[tuple[int, bytes | None, int, int]]:
         """
         Iterator. Return opcode, data, pc, new_pc at each step
         """
@@ -70,9 +79,9 @@ class ScriptTools(object):
             yield opcode, data, pc, new_pc
             pc = new_pc
 
-    def opcode_list(self, script):
+    def opcode_list(self, script: bytes) -> list[str]:
         """Disassemble the given script. Returns a list of opcodes."""
-        opcodes = []
+        opcodes: list[str] = []
         new_pc = 0
         try:
             for opcode, data, pc, new_pc in self.get_opcodes(script):
@@ -82,16 +91,16 @@ class ScriptTools(object):
 
         return opcodes
 
-    def disassemble(self, script):
+    def disassemble(self, script: bytes) -> str:
         """Disassemble the given script. Returns a string."""
         return " ".join(self.opcode_list(script))
 
-    def write_push_data(self, data_list, f):
+    def write_push_data(self, data_list: list[bytes], f: IO[bytes]) -> None:
         # return bytes that causes the given data to be pushed onto the stack
         for t in data_list:
             f.write(self.scriptStreamer.compile_push_data(t))
 
-    def compile_push_data_list(self, data_list):
+    def compile_push_data_list(self, data_list: list[bytes | None]) -> bytes:
         return b"".join(
             self.scriptStreamer.compile_push_data(d) for d in data_list if d is not None
         )

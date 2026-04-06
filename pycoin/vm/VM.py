@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from pycoin.satoshi import errno
 from pycoin.satoshi.flags import VERIFY_MINIMALDATA
 from pycoin.vm.ConditionalStack import ConditionalStack
@@ -5,7 +9,7 @@ from pycoin.vm.ConditionalStack import ConditionalStack
 from pycoin.coins.SolutionChecker import ScriptError
 
 
-def conditional_error_f(msg):
+def conditional_error_f(msg: str) -> None:
     raise ScriptError(msg, errno.UNBALANCED_CONDITIONAL)
 
 
@@ -22,18 +26,18 @@ class VM(object):
 
     def __init__(
         self,
-        script,
-        tx_context,
-        signature_for_hash_type_f,
-        flags,
-        initial_stack=None,
-        traceback_f=None,
-    ):
+        script: bytes,
+        tx_context: Any,
+        signature_for_hash_type_f: Any,
+        flags: int,
+        initial_stack: list[Any] | None = None,
+        traceback_f: Any = None,
+    ) -> None:
         self.pc = 0
         self.script = script
         self.tx_context = tx_context
-        self.stack = initial_stack or list()
-        self.altstack = list()
+        self.stack: list[Any] = initial_stack or list()
+        self.altstack: list[Any] = list()
         self.conditional_stack = self.ConditionalStack(conditional_error_f)
         self.op_count = 0
         self.begin_code_hash = 0
@@ -41,25 +45,25 @@ class VM(object):
         self.traceback_f = traceback_f
         self.signature_for_hash_type_f = signature_for_hash_type_f
 
-    def append(self, a):
+    def append(self, a: Any) -> None:
         self.stack.append(a)
 
-    def pop(self, *args, **kwargs):
+    def pop(self, *args: Any, **kwargs: Any) -> Any:
         try:
             return self.stack.pop(*args, **kwargs)
         except IndexError:
             raise ScriptError("pop from empty stack", errno.INVALID_STACK_OPERATION)
 
-    def __getitem__(self, *args, **kwargs):
+    def __getitem__(self, *args: Any, **kwargs: Any) -> Any:
         try:
             return self.stack.__getitem__(*args, **kwargs)
         except IndexError:
             raise ScriptError("getitem out of range", errno.INVALID_STACK_OPERATION)
 
-    def pop_int(self):
+    def pop_int(self) -> int:
         raise NotImplementedError
 
-    def pop_nonnegative(self):
+    def pop_nonnegative(self) -> int:
         v = self.pop_int()
         if v < 0:
             raise ScriptError(
@@ -67,22 +71,22 @@ class VM(object):
             )
         return v
 
-    def push_int(self, v):
+    def push_int(self, v: int) -> None:
         raise NotImplementedError
 
     @classmethod
-    def bool_from_script_bytes(class_, v, require_minimal=False):
+    def bool_from_script_bytes(class_: type[VM], v: bytes, require_minimal: bool = False) -> bool:
         raise NotImplementedError
 
     @classmethod
-    def bool_to_script_bytes(class_, v):
+    def bool_to_script_bytes(class_: type[VM], v: Any) -> bytes:
         raise NotImplementedError
 
     @classmethod
-    def generator_for_signature_type(class_, signature_type):
+    def generator_for_signature_type(class_: type[VM], signature_type: int) -> Any:
         raise NotImplementedError
 
-    def eval_script(self):
+    def eval_script(self) -> list[Any]:
         if len(self.script) > self.MAX_SCRIPT_LENGTH:
             raise ScriptError("script too long", errno.SCRIPT_SIZE)
 
@@ -100,12 +104,12 @@ class VM(object):
         self.post_script_check()
         return self.stack
 
-    def eval_instruction(self):
+    def eval_instruction(self) -> None:
         all_if_true = self.conditional_stack.all_if_true()
 
         # don't actually check for minimal data unless data will be pushed onto the stack
         verify_minimal_data = self.flags & VERIFY_MINIMALDATA and all_if_true
-        opcode, data, pc, is_ok = self.ScriptStreamer.get_opcode(
+        opcode, data, pc, is_ok = self.ScriptStreamer.get_opcode(  # type: ignore[attr-defined]
             self.script, self.pc, verify_minimal_data=verify_minimal_data
         )
         if not is_ok:
@@ -118,7 +122,7 @@ class VM(object):
 
         self.check_stack_size()
 
-        f = self.INSTRUCTION_LOOKUP[opcode]
+        f = self.INSTRUCTION_LOOKUP[opcode]  # type: ignore[attr-defined]
         if self.traceback_f:
             f = self.traceback_f(opcode, data, pc, self) or f
 
@@ -133,12 +137,12 @@ class VM(object):
         if self.op_count > self.MAX_OP_COUNT:
             raise ScriptError("script contains too many operations", errno.OP_COUNT)
 
-    def check_stack_size(self):
+    def check_stack_size(self) -> None:
         if len(self.stack) + len(self.altstack) > self.MAX_STACK_SIZE:
             raise ScriptError(
                 "stack has > %d items" % self.MAX_STACK_SIZE, errno.STACK_SIZE
             )
 
-    def post_script_check(self):
+    def post_script_check(self) -> None:
         self.conditional_stack.check_final_state()
         self.check_stack_size()

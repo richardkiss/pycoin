@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Iterator
+
 from pycoin.encoding.bytes32 import from_bytes_32, to_bytes_32
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
@@ -18,24 +22,29 @@ class InvalidSecretExponentError(ValueError):
 
 
 class Key(object):
-    _network = None
-    _generator = None
+    _network: Any = None
+    _generator: Any = None
 
     @classmethod
-    def make_subclass(class_, symbol, network, generator):
+    def make_subclass(class_: type[Key], symbol: str, network: Any, generator: Any) -> type[Key]:
         return type(
             "%s_%s" % (symbol, class_.__name__),
             (class_,),
             dict(_network=network, _generator=generator),
         )
 
-    def override_network(self, override_network):
+    def override_network(self, override_network: Any) -> Any:
         secret_exponent = self.secret_exponent()
         if secret_exponent:
             return override_network.parse.secret_exponent(secret_exponent)
         raise ValueError("can't convert %s to %s" % (self, override_network))
 
-    def __init__(self, secret_exponent=None, public_pair=None, is_compressed=True):
+    def __init__(
+        self,
+        secret_exponent: int | None = None,
+        public_pair: Any = None,
+        is_compressed: bool = True,
+    ) -> None:
         """
         Include at most one of secret_exponent or public_pair.
 
@@ -55,9 +64,9 @@ class Key(object):
         self._secret_exponent = secret_exponent
         self._public_pair = public_pair
         self._is_compressed = is_compressed
-        self._hash160_uncompressed = None
-        self._hash160_compressed = None
-        self._hash256 = None
+        self._hash160_uncompressed: bytes | None = None
+        self._hash160_compressed: bytes | None = None
+        self._hash256: bytes | None = None
 
         if self._secret_exponent is not None:
             if (
@@ -74,23 +83,23 @@ class Key(object):
             raise InvalidPublicPairError()
 
     @classmethod
-    def from_sec(class_, sec):
+    def from_sec(class_: type[Key], sec: bytes) -> Key:
         """
         Create a key from an sec bytestream (which is an encoding of a public pair).
         """
         public_pair = sec_to_public_pair(sec, class_._generator)
         return class_(public_pair=public_pair, is_compressed=is_sec_compressed(sec))
 
-    def is_private(self):
+    def is_private(self) -> bool:
         return self.secret_exponent() is not None
 
-    def secret_exponent(self):
+    def secret_exponent(self) -> int | None:
         """
         Return an integer representing the secret exponent (or None).
         """
         return self._secret_exponent
 
-    def wif(self, is_compressed=None):
+    def wif(self, is_compressed: bool | None = None) -> str | None:
         """
         Return the WIF representation of this key, if available.
         """
@@ -102,15 +111,15 @@ class Key(object):
         blob = to_bytes_32(secret_exponent)
         if is_compressed:
             blob += b"\01"
-        return self._network.wif_for_blob(blob)
+        return self._network.wif_for_blob(blob)  # type: ignore[no-any-return]
 
-    def public_pair(self):
+    def public_pair(self) -> Any:
         """
         Return a pair of integers representing the public key (or None).
         """
         return self._public_pair
 
-    def sec(self, is_compressed=None):
+    def sec(self, is_compressed: bool | None = None) -> bytes | None:
         """
         Return the SEC representation of this key, if available.
         """
@@ -121,14 +130,14 @@ class Key(object):
             return None
         return public_pair_to_sec(public_pair, compressed=is_compressed)
 
-    def sec_as_hex(self, is_compressed=None):
+    def sec_as_hex(self, is_compressed: bool | None = None) -> str:
         """
         Return the SEC representation of this key as hex text.
         """
         sec = self.sec(is_compressed=is_compressed)
-        return self._network.sec_text_for_blob(sec)
+        return self._network.sec_text_for_blob(sec)  # type: ignore[no-any-return]
 
-    def hash160(self, is_compressed=None):
+    def hash160(self, is_compressed: bool | None = None) -> bytes:
         """
         Return the hash160 representation of this key, if available.
         """
@@ -137,26 +146,26 @@ class Key(object):
         if is_compressed:
             if self._hash160_compressed is None:
                 self._hash160_compressed = hash160(
-                    self.sec(is_compressed=is_compressed)
+                    self.sec(is_compressed=is_compressed)  # type: ignore[arg-type]
                 )
             return self._hash160_compressed
 
         if self._hash160_uncompressed is None:
-            self._hash160_uncompressed = hash160(self.sec(is_compressed=is_compressed))
+            self._hash160_uncompressed = hash160(self.sec(is_compressed=is_compressed))  # type: ignore[arg-type]
         return self._hash160_uncompressed
 
-    def fingerprint(self, is_compressed=None):
+    def fingerprint(self, is_compressed: bool | None = None) -> bytes:
         return self.hash160(is_compressed=is_compressed)[:4]
 
-    def address(self, is_compressed=None):
+    def address(self, is_compressed: bool | None = None) -> str:
         """
         Return the public address representation of this key, if available.
         """
-        return self._network.address.for_p2pkh(
+        return self._network.address.for_p2pkh(  # type: ignore[no-any-return]
             self.hash160(is_compressed=is_compressed)
         )
 
-    def as_text(self):
+    def as_text(self) -> str | None:
         """
         Return a textual representation of this key.
         """
@@ -167,30 +176,30 @@ class Key(object):
             return sec_hex
         return self.address()
 
-    def public_copy(self):
+    def public_copy(self) -> Key:
         if self.secret_exponent() is None:
             return self
         return self.__class__(
             public_pair=self.public_pair(), is_compressed=self.is_compressed()
         )
 
-    def subkey_for_path(self, path):
+    def subkey_for_path(self, path: str) -> Key:
         return self
 
-    def subkey(self, path_to_subkey):
+    def subkey(self, path_to_subkey: Any = None) -> Key:
         """
         Return the Key corresponding to the hierarchical wallet's subkey
         """
         return self
 
-    def subkeys(self, path_to_subkeys):
+    def subkeys(self, path_to_subkeys: Any = None) -> Iterator[Key]:
         """
         Return an iterator yielding Keys corresponding to the
         hierarchical wallet's subkey path (or just this key).
         """
         yield self
 
-    def sign(self, h):
+    def sign(self, h: bytes) -> bytes:
         """
         Return a der-encoded signature for a hash h.
         Will throw a RuntimeError if this key is not a private key
@@ -201,54 +210,53 @@ class Key(object):
         r, s = self._generator.sign(self.secret_exponent(), val)
         return sigencode_der(r, s)
 
-    def verify(self, h, sig):
+    def verify(self, h: bytes, sig: bytes) -> bool:
         """
         Return whether a signature is valid for hash h using this key.
         """
         try:
             val = from_bytes_32(h)
             pubkey = self.public_pair()
-            return self._generator.verify(
+            return self._generator.verify(  # type: ignore[no-any-return]
                 pubkey, val, sigdecode_der(sig, use_broken_open_ssl_mechanism=False)
             )
         except (UnexpectedDER, ValueError):
             return False
 
-    def is_compressed(self):
+    def is_compressed(self) -> bool:
         """
         Return whether this key has been marked as compressed when it was created.
         """
         return self._is_compressed
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r = self.public_copy()
         if r._network:
             s = r.as_text()
         elif r.sec():
-            s = b2h(r.sec())
+            s = b2h(r.sec())  # type: ignore[arg-type]
         else:
             s = b2h(r.hash160())
         if self.is_private():
             return "private_for <%s>" % s
         return "<%s>" % s
 
-    def ku_output(self):
+    def ku_output(self) -> Iterator[tuple[str, Any, Any]]:
         for f in [
             self.ku_output_for_secret_exponent,
             self.ku_output_for_public_pair,
             self.ku_output_for_address,
         ]:
-            for _ in f():
-                yield _
+            yield from f()
 
-    def ku_output_for_secret_exponent(self):
+    def ku_output_for_secret_exponent(self) -> Iterator[tuple[str, Any, Any]]:
         if self._secret_exponent:
             yield ("secret_exponent", "%d" % self._secret_exponent, None)
             yield ("secret_exponent_hex", "%x" % self._secret_exponent, " hex")
             yield ("wif", self.wif(is_compressed=True), None)
             yield ("wif_uncompressed", self.wif(is_compressed=False), " uncompressed")
 
-    def ku_output_for_public_pair(self):
+    def ku_output_for_public_pair(self) -> Iterator[tuple[str, Any, Any]]:
         if self._public_pair:
             yield ("public_pair_x", "%d" % self._public_pair[0], None)
             yield ("public_pair_y", "%d" % self._public_pair[1], None)
@@ -256,14 +264,14 @@ class Key(object):
             yield ("public_pair_y_hex", "%x" % self._public_pair[1], " y as hex")
             yield ("y_parity", "odd" if (self._public_pair[1] & 1) else "even", None)
 
-            yield ("key_pair_as_sec", b2h(self.sec(is_compressed=True)), None)
+            yield ("key_pair_as_sec", b2h(self.sec(is_compressed=True)), None)  # type: ignore[arg-type]
             yield (
                 "key_pair_as_sec_uncompressed",
-                b2h(self.sec(is_compressed=False)),
+                b2h(self.sec(is_compressed=False)),  # type: ignore[arg-type]
                 " uncompressed",
             )
 
-    def ku_output_for_address(self):
+    def ku_output_for_address(self) -> Iterator[tuple[str, Any, Any]]:
         network_name = self._network.network_name
         hash160_u = self.hash160(is_compressed=False)
         hash160_c = self.hash160(is_compressed=True)

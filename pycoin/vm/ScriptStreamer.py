@@ -1,25 +1,37 @@
+from __future__ import annotations
+
+from typing import Any, Callable
+
 from ..encoding.hexbytes import bytes_as_hex
 
 
-def make_const_handler(data):
+def make_const_handler(data: bytes) -> Callable[[bytes, int, bool], tuple[int, bytes]]:
     """
     Create a handler for a data opcode that returns a constant.
     """
     data = bytes_as_hex(data)
 
-    def constant_data_opcode_handler(script, pc, verify_minimal_data=False):
+    def constant_data_opcode_handler(
+        script: bytes, pc: int, verify_minimal_data: bool = False
+    ) -> tuple[int, bytes]:
         return pc + 1, data
 
     return constant_data_opcode_handler
 
 
-def make_sized_handler(size, const_values, non_minimal_data_handler):
+def make_sized_handler(
+    size: int,
+    const_values: Any,
+    non_minimal_data_handler: Callable[[str], Any],
+) -> Callable[[bytes, int, bool], tuple[int, bytes | None]]:
     """
     Create a handler for a data opcode that returns literal data of a fixed size.
     """
     const_values = list(const_values)
 
-    def constant_size_opcode_handler(script, pc, verify_minimal_data=False):
+    def constant_size_opcode_handler(
+        script: bytes, pc: int, verify_minimal_data: bool = False
+    ) -> tuple[int, bytes | None]:
         pc += 1
         data = bytes_as_hex(script[pc : pc + size])
         if len(data) < size:
@@ -31,14 +43,21 @@ def make_sized_handler(size, const_values, non_minimal_data_handler):
     return constant_size_opcode_handler
 
 
-def make_variable_handler(dec_f, sized_values, min_size, non_minimal_data_handler):
+def make_variable_handler(
+    dec_f: Any,
+    sized_values: Any,
+    min_size: int,
+    non_minimal_data_handler: Callable[[str], Any],
+) -> Callable[[bytes, int, bool], tuple[int, bytes | None]]:
     """
     Create a handler for a data opcode that returns literal data of a variable size
     that's fetched and decoded by the function dec_f.
     """
     sized_values = list(sized_values)
 
-    def f(script, pc, verify_minimal_data=False):
+    def f(
+        script: bytes, pc: int, verify_minimal_data: bool = False
+    ) -> tuple[int, bytes | None]:
         size, pc = dec_f(script, pc)
         data = bytes_as_hex(script[pc : pc + size])
         if len(data) < size:
@@ -51,14 +70,14 @@ def make_variable_handler(dec_f, sized_values, min_size, non_minimal_data_handle
     return f
 
 
-def make_sized_encoder(opcode_value):
+def make_sized_encoder(opcode_value: int) -> Callable[[bytes], bytes]:
     """
     Create an encoder that encodes the given opcode value as binary data
     and appends the given data.
     """
     opcode_bin = bytes([opcode_value])
 
-    def f(data):
+    def f(data: bytes) -> bytes:
         return opcode_bin + data
 
     return f
@@ -83,12 +102,12 @@ class ScriptStreamer(object):
 
     def __init__(
         self,
-        opcode_const_list,
-        opcode_sized_list,
-        opcode_variable_list,
-        opcode_lookup,
-        non_minimal_data_handler,
-    ):
+        opcode_const_list: list[tuple[str, bytes]],
+        opcode_sized_list: list[tuple[str, int]],
+        opcode_variable_list: list[tuple[str, int, Callable[..., Any], Callable[..., Any]]],
+        opcode_lookup: dict[str, int | None],
+        non_minimal_data_handler: Callable[[str], Any],
+    ) -> None:
         """
         :param opcode_const_list: list of ("OPCODE_NAME", const_value) pairs, where
             OPCODE_NAME is the name of an opcode and const_value is the value to be pushed
@@ -111,21 +130,21 @@ class ScriptStreamer(object):
         const_pairs = [
             (opcode_lookup.get(opcode), val) for opcode, val in opcode_const_list
         ]
-        self.const_encoder = {v: bytes([k]) for k, v in const_pairs}
+        self.const_encoder: dict[bytes, bytes] = {v: bytes([k]) for k, v in const_pairs if k is not None}  # type: ignore[misc]
 
         sized_pairs = [
             (opcode_lookup.get(opcode), size) for opcode, size in opcode_sized_list
         ]
-        self.sized_encoder = {v: make_sized_encoder(k) for k, v in sized_pairs}
+        self.sized_encoder: dict[int, Callable[[bytes], bytes]] = {v: make_sized_encoder(k) for k, v in sized_pairs if k is not None}  # type: ignore[misc]
         opcode_variable_list = sorted(opcode_variable_list, key=lambda o: o[0])
-        self.variable_encoder = list(
+        self.variable_encoder: list[tuple[int, int | None, Callable[..., Any]]] = list(
             (max_size, opcode_lookup.get(opcode), enc_f)
             for opcode, max_size, enc_f, dec_f in opcode_variable_list
         )
 
         # build decoder
 
-        self.decoder = {}
+        self.decoder: dict[int | None, Callable[..., Any]] = {}
 
         # deal with variable data opcodes
 
@@ -153,7 +172,9 @@ class ScriptStreamer(object):
 
         self.data_opcodes = frozenset(self.decoder.keys())
 
-    def get_opcode(self, script, pc, verify_minimal_data=False):
+    def get_opcode(
+        self, script: bytes, pc: int, verify_minimal_data: bool = False
+    ) -> tuple[int, bytes | None, int, bool]:
         """
         Step through the script, returning a tuple with the next opcode, the next
         piece of data (if the opcode represents data), the new PC, and a boolean indicated
@@ -171,14 +192,16 @@ class ScriptStreamer(object):
             is_ok = True
         return opcode, data, pc, is_ok
 
-    def compile_push_data(self, data):
+    def compile_push_data(self, data: bytes) -> bytes:
         # return bytes that causes the given data to be pushed onto the stack
         if data in self.const_encoder:
-            return self.const_encoder.get(data)
+            return self.const_encoder.get(data)  # type: ignore[return-value]
         size = len(data)
         if size in self.sized_encoder:
-            return self.sized_encoder.get(size)(data)
+            return self.sized_encoder.get(size)(data)  # type: ignore[misc]
+        opcode: int | None = None
+        enc_f: Any = None
         for max_size, opcode, enc_f in self.variable_encoder:
             if size <= max_size:
                 break
-        return bytes([opcode]) + enc_f(len(data)) + data
+        return bytes([opcode]) + enc_f(len(data)) + data  # type: ignore[arg-type,list-item,no-any-return]

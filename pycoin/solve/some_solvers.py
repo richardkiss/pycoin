@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 # generic solver
 
+from typing import Any, Iterator
 
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi.checksigops import parse_signature_blob
@@ -19,14 +22,14 @@ DEFAULT_SIGNATURE_TYPE = 1
 
 
 def _find_signatures(
-    script_blobs,
-    generator_for_signature_type_f,
-    signature_for_hash_type_f,
-    max_sigs,
-    sec_keys,
-):
-    signatures = []
-    secs_solved = set()
+    script_blobs: Any,
+    generator_for_signature_type_f: Any,
+    signature_for_hash_type_f: Any,
+    max_sigs: int,
+    sec_keys: Any,
+) -> tuple[list[Any], set[Any]]:
+    signatures: list[Any] = []
+    secs_solved: set[Any] = set()
     seen = 0
     for data in script_blobs:
         if seen >= max_sigs:
@@ -49,9 +52,9 @@ def _find_signatures(
     return signatures, secs_solved
 
 
-def hash_lookup_solver(m):
+def hash_lookup_solver(m: dict[str, Any]) -> tuple[Any, list[Any], tuple[()]]:
 
-    def f(solved_values, **kwargs):
+    def f(solved_values: Any, **kwargs: Any) -> dict[str, Any]:
         the_hash = m["the_hash"]
         db = kwargs.get("hash160_lookup", {})
         result = db.get(the_hash)
@@ -70,9 +73,9 @@ def hash_lookup_solver(m):
 setattr(hash_lookup_solver, "pattern", ("EQUAL", CONSTANT("the_hash"), ("HASH160", VAR("1"))))
 
 
-def constant_equality_solver(m):
+def constant_equality_solver(m: dict[str, Any]) -> tuple[Any, list[Any], tuple[()]]:
 
-    def f(solved_values, **kwargs):
+    def f(solved_values: Any, **kwargs: Any) -> dict[str, Any]:
         return {m["var"]: m["const"]}
 
     return (f, [m["var"]], ())
@@ -81,7 +84,11 @@ def constant_equality_solver(m):
 setattr(constant_equality_solver, "pattern", ("EQUAL", VAR("var"), CONSTANT("const")))
 
 
-def all_signature_hints(public_pair, signature_for_hash_type_f, **kwargs):
+def all_signature_hints(
+    public_pair: Any,
+    signature_for_hash_type_f: Any,
+    **kwargs: Any,
+) -> Iterator[Any]:
     default_sig_type = [kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)]
     sig_hash_types_to_try = kwargs.get("sig_hash_types_to_try", default_sig_type)
     shfsh = kwargs.get("signature_hints_for_sig_hash")
@@ -98,8 +105,8 @@ def all_signature_hints(public_pair, signature_for_hash_type_f, **kwargs):
         yield _
 
 
-def signing_solver(m):
-    def f(solved_values, **kwargs):
+def signing_solver(m: dict[str, Any]) -> tuple[Any, list[Any], list[Any]]:
+    def f(solved_values: Any, **kwargs: Any) -> dict[Any, Any]:
         signature_type = kwargs.get("signature_type", DEFAULT_SIGNATURE_TYPE)
         generator_for_signature_type_f = kwargs["generator_for_signature_type_f"]
         signature_for_hash_type_f = m["signature_for_hash_type_f"]
@@ -171,6 +178,6 @@ setattr(signing_solver, "pattern", (
 ))
 
 
-def register_all(solver):
+def register_all(solver: Any) -> None:
     for t in [hash_lookup_solver, constant_equality_solver, signing_solver]:
-        solver.register_solver(t.pattern, t)
+        solver.register_solver(t.pattern, t)  # type: ignore[attr-defined]

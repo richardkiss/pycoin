@@ -9,7 +9,7 @@ from .subpaths import subpaths_for_path_range
 
 
 class HierarchicalKey(Key):
-    def subkeys(self, path: str) -> Iterator[Any]:
+    def subkeys(self, path: str) -> Iterator[Any]:  # type: ignore[override]
         """
         A generalized form that can return multiple subkeys.
         """
