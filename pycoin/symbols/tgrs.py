@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from pycoin.coins.groestlcoin.hash import groestlHash
 from pycoin.coins.groestlcoin.parse import GRSParseAPI
 from pycoin.coins.groestlcoin.Block import Block as GrsBlock
@@ -36,16 +40,16 @@ _bip32_prv_prefix = h2b("04358394")
 _bip32_pub_prefix = h2b("043587CF")
 
 
-def b2a_hashed_base58_grs(data):
+def b2a_hashed_base58_grs(data: bytes) -> str:
     return b2a_base58(data + groestlHash(data)[:4])
 
 
-def bip32_as_string(blob, as_private):
+def bip32_as_string(blob: bytes, as_private: bool) -> str:
     prefix = _bip32_prv_prefix if as_private else _bip32_pub_prefix
     return b2a_hashed_base58_grs(prefix + blob)
 
 
-def wif_for_blob(blob):
+def wif_for_blob(blob: bytes) -> str:
     return b2a_hashed_base58_grs(_wif_prefix + blob)
 
 
@@ -59,7 +63,7 @@ try:
 except ImportError:
     network.Key = None
 
-    def none_parser(*args, **kwargs):
+    def none_parser(*args: Any, **kwargs: Any) -> None:
         return None
 
     for attr in "hierarchical_key private_key public_key address".split():

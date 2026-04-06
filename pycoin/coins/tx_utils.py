@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Generator, Iterator
+from typing import Any
+
 from ..convention import tx_fee
 
 
@@ -5,7 +10,7 @@ class SecretExponentMissing(Exception):
     pass
 
 
-def create_tx(network, spendables, payables, fee="standard", lock_time=0, version=1):
+def create_tx(network: Any, spendables: list[Any], payables: list[Any], fee: int | str = "standard", lock_time: int = 0, version: int = 1) -> Any:
     """
     This function provides the easiest way to create an unsigned transaction.
 
@@ -40,7 +45,7 @@ def create_tx(network, spendables, payables, fee="standard", lock_time=0, versio
 
     Tx = network.tx
 
-    def _fix_spendable(s):
+    def _fix_spendable(s: Any) -> Any:
         if isinstance(s, Tx.Spendable):
             return s
         if not hasattr(s, "keys"):
@@ -67,7 +72,7 @@ def create_tx(network, spendables, payables, fee="standard", lock_time=0, versio
     return tx
 
 
-def split_with_remainder(total_amount, split_count):
+def split_with_remainder(total_amount: int, split_count: int) -> Generator[int, None, None]:
     value_each, extra_count = divmod(total_amount, split_count)
     for _ in range(extra_count):
         yield value_each + 1
@@ -75,7 +80,7 @@ def split_with_remainder(total_amount, split_count):
         yield value_each
 
 
-def distribute_from_split_pool(tx, fee):
+def distribute_from_split_pool(tx: Any, fee: int | str) -> int:
     """
     :param tx: a transaction
     :param fee: integer, satoshi value to set aside for transaction fee
@@ -114,7 +119,7 @@ def distribute_from_split_pool(tx, fee):
     return zero_count
 
 
-def sign_tx(network, tx, wifs=[], **kwargs):
+def sign_tx(network: Any, tx: Any, wifs: list[str] | None = None, **kwargs: Any) -> None:
     """
     :param tx: a transaction
     :param wifs: the list of WIFs required to sign this transaction.
@@ -130,21 +135,21 @@ def sign_tx(network, tx, wifs=[], **kwargs):
         >> sign_tx(network, tx, wifs=["KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"])
     """
     keychain = network.keychain()
-    keychain.add_secrets((network.parse.wif(_) for _ in wifs))
+    keychain.add_secrets((network.parse.wif(_) for _ in (wifs or [])))
     solver = tx.Solver(tx)
     solver.sign(keychain, **kwargs)
 
 
 def create_signed_tx(
-    network,
-    spendables,
-    payables,
-    wifs=[],
-    fee="standard",
-    lock_time=0,
-    version=1,
-    **kwargs,
-):
+    network: Any,
+    spendables: list[Any],
+    payables: list[Any],
+    wifs: list[str] | None = None,
+    fee: int | str = "standard",
+    lock_time: int = 0,
+    version: int = 1,
+    **kwargs: Any,
+) -> Any:
     """
     This convenience function calls :func:`create_tx` and :func:`sign_tx` in turn. Read the documentation
     for those functions for information on the parameters.
@@ -164,7 +169,7 @@ def create_signed_tx(
     tx = create_tx(
         network, spendables, payables, fee=fee, lock_time=lock_time, version=version
     )
-    sign_tx(network, tx, wifs=wifs, **kwargs)
+    sign_tx(network, tx, wifs=wifs or [], **kwargs)
     for idx, tx_out in enumerate(tx.txs_in):
         if not tx.is_solution_ok(idx):
             raise SecretExponentMissing(

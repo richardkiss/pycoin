@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import io
+from typing import IO
 
 from pycoin.encoding.hash import double_sha256
 from pycoin.satoshi.satoshi_struct import parse_struct, stream_struct
@@ -22,7 +25,7 @@ class Block(BaseBlock):
     FORK_BLOCK = 491407
 
     @classmethod
-    def parse_as_header(class_, f):
+    def parse_as_header(class_, f: IO[bytes]) -> Block:
         """
         Parse the Block header from the file-like object
         """
@@ -43,26 +46,26 @@ class Block(BaseBlock):
 
     def __init__(
         self,
-        version,
-        previous_block_hash,
-        merkle_root,
-        timestamp,
-        difficulty,
-        nonce,
-        height,
-        solution,
-    ):
+        version: int,
+        previous_block_hash: bytes,
+        merkle_root: bytes,
+        timestamp: int,
+        difficulty: int,
+        nonce: bytes,
+        height: int,
+        solution: bytes,
+    ) -> None:
         self.version = version
         self.previous_block_hash = previous_block_hash
         self.merkle_root = merkle_root
         self.timestamp = timestamp
         self.difficulty = difficulty
-        self.nonce = nonce
+        self.nonce = nonce  # type: ignore[assignment]
         self.height = height
         self.solution = solution
         self.txs = []
 
-    def _calculate_hash(self):
+    def _calculate_hash(self) -> bytes:
         s = io.BytesIO()
         if self.height < self.FORK_BLOCK:
             self.stream_header_legacy(s)
@@ -70,19 +73,19 @@ class Block(BaseBlock):
             self.stream_header(s)
         return double_sha256(s.getvalue())
 
-    def as_blockheader(self):
+    def as_blockheader(self) -> Block:
         return Block(
             self.version,
             self.previous_block_hash,
             self.merkle_root,
             self.timestamp,
             self.difficulty,
-            self.nonce,
+            self.nonce,  # type: ignore[arg-type]
             self.height,
             self.solution,
         )
 
-    def stream_header_legacy(self, f):
+    def stream_header_legacy(self, f: IO[bytes]) -> None:
         """Stream the block header in the standard way to the file-like object f."""
         stream_struct(
             "L##LL",
@@ -93,9 +96,9 @@ class Block(BaseBlock):
             self.timestamp,
             self.difficulty,
         )
-        f.write(self.nonce[:4])
+        f.write(self.nonce[:4])  # type: ignore[index]
 
-    def stream_header(self, f):
+    def stream_header(self, f: IO[bytes]) -> None:
         """Stream the block header in the standard way to the file-like object f."""
         stream_struct(
             "L##L",

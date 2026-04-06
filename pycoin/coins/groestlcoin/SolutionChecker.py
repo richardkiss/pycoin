@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import io
+from typing import Any
 
 from .hash import sha256
 from pycoin.coins.bitcoin.SegwitChecker import ZERO32
@@ -15,7 +18,7 @@ from pycoin.satoshi.flags import (
 
 
 class GroestlcoinSolutionChecker(BitcoinSolutionChecker):
-    def _hash_prevouts(self, hash_type):
+    def _hash_prevouts(self, hash_type: int) -> bytes:
         if hash_type & SIGHASH_ANYONECANPAY:
             return ZERO32
         f = io.BytesIO()
@@ -24,7 +27,7 @@ class GroestlcoinSolutionChecker(BitcoinSolutionChecker):
             stream_struct("L", f, tx_in.previous_index)
         return sha256(f.getvalue())
 
-    def _hash_sequence(self, hash_type):
+    def _hash_sequence(self, hash_type: int) -> bytes:
         if (
             (hash_type & SIGHASH_ANYONECANPAY)
             or ((hash_type & 0x1F) == SIGHASH_SINGLE)
@@ -37,7 +40,7 @@ class GroestlcoinSolutionChecker(BitcoinSolutionChecker):
             stream_struct("L", f, tx_in.sequence)
         return sha256(f.getvalue())
 
-    def _hash_outputs(self, hash_type, tx_in_idx):
+    def _hash_outputs(self, hash_type: int, tx_in_idx: int) -> bytes:
         txs_out = self.tx.txs_out
         if hash_type & 0x1F == SIGHASH_SINGLE:
             if tx_in_idx >= len(txs_out):
@@ -50,7 +53,7 @@ class GroestlcoinSolutionChecker(BitcoinSolutionChecker):
             stream_struct("QS", f, tx_out.coin_value, tx_out.script)
         return sha256(f.getvalue())
 
-    def _signature_for_hash_type_segwit(self, script, tx_in_idx, hash_type):
+    def _signature_for_hash_type_segwit(self, script: Any, tx_in_idx: int, hash_type: int) -> int:
         return from_bytes_32(
             sha256(self._segwit_signature_preimage(script, tx_in_idx, hash_type))
         )

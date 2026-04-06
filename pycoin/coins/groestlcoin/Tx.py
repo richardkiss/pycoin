@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import io
+from typing import IO
 
 from pycoin.coins.bitcoin.Tx import Tx as BaseTx
 from pycoin.convention import SATOSHI_PER_COIN
@@ -15,17 +18,17 @@ class Tx(BaseTx):
 
     MAX_MONEY = 105000000 * SATOSHI_PER_COIN
 
-    def hash(self, hash_type=None):
+    def hash(self, hash_type: int | None = None) -> bytes:  # type: ignore[override]
         s = io.BytesIO()
         self.stream(s, include_witness_data=False)
         if hash_type is not None:
             stream_struct("L", s, hash_type)
         return sha256(s.getvalue())
 
-    def w_hash(self):
+    def w_hash(self) -> bytes:
         return sha256(self.as_bin())
 
-    def blanked_hash(self):
+    def blanked_hash(self) -> bytes:
         s = io.BytesIO()
         self.stream(s, blank_solutions=True)
         return sha256(s.getvalue())

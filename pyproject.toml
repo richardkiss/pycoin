@@ -152,6 +152,14 @@ module = [
     "pycoin.contrib.*",
     "pycoin.services.*",
     "pycoin.cmds.*",
+    "pycoin.coins.tx_utils",
+    "pycoin.coins.bgold.Block",
+    "pycoin.coins.groestlcoin.SolutionChecker",
+    "pycoin.coins.groestlcoin.Tx",
+    "pycoin.coins.groestlcoin.parse",
+    "pycoin.symbols.grs",
+    "pycoin.symbols.tgrs",
+    "pycoin.symbols.grsrt",
 ]
 disallow_untyped_defs = true
 disallow_any_generics = true
