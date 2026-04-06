@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import io
 import re
+from typing import Any
 
 from binascii import b2a_base64, a2b_base64
 
@@ -20,13 +23,13 @@ class MessageSigner(object):
         "SIGNATURE-----\n{addr}\n{sig}\n-----END {net_name} SIGNED MESSAGE-----"
     )
 
-    def __init__(self, network, generator):
+    def __init__(self, network: Any, generator: Any) -> None:
         self._network = network
         self._network_name = network.network_name
         self._generator = generator
 
     @classmethod
-    def parse_sections(class_, msg_in):
+    def parse_sections(class_, msg_in: str) -> tuple[str, str]:
         # Convert to Unix line feeds from DOS style, iff we find them, but
         # restore to same at the end. The RFC implies we should be using
         # DOS \r\n in the message, but that does not always happen in today's
@@ -54,7 +57,7 @@ class MessageSigner(object):
         return msg, hdr
 
     @classmethod
-    def parse_signed_message(class_, msg_in):
+    def parse_signed_message(class_, msg_in: str) -> tuple[str, str, str]:
         """
         Take an "armoured" message and split into the message body, signing address
         and the base64 signature. Should work on all altcoin networks, and should
@@ -65,10 +68,10 @@ class MessageSigner(object):
         a real spec for this. Should be a BIP really.
         """
 
-        msg, hdr = class_.parse_sections(msg_in)
+        msg, hdr_str = class_.parse_sections(msg_in)
 
         # after message, expect something like an email/http headers, so split into lines
-        hdr = list(filter(None, [i.strip() for i in hdr.split("\n")]))
+        hdr = list(filter(None, [i.strip() for i in hdr_str.split("\n")]))
 
         if "-----END" not in hdr[-1]:
             raise EncodingError("expecting END on last line")
@@ -100,7 +103,7 @@ class MessageSigner(object):
 
         return msg, addr, sig
 
-    def signature_for_message_hash(self, secret_exponent, msg_hash, is_compressed):
+    def signature_for_message_hash(self, secret_exponent: int, msg_hash: int, is_compressed: bool) -> str:
         """
         Return a signature, encoded in Base64, of msg_hash.
         """
@@ -110,11 +113,10 @@ class MessageSigner(object):
         # for discussion of the proprietary format used for the signature
 
         first = 27 + recid + (4 if is_compressed else 0)
-        sig = b2a_base64(bytes([first]) + to_bytes_32(r) + to_bytes_32(s)).strip()
-        sig = sig.decode("utf8")
-        return sig
+        sig_bytes = b2a_base64(bytes([first]) + to_bytes_32(r) + to_bytes_32(s)).strip()
+        return sig_bytes.decode("utf8")
 
-    def sign_message(self, key, message, verbose=False):
+    def sign_message(self, key: Any, message: str, verbose: bool = False) -> str:
         """
         Return a signature, encoded in Base64, which can be verified by anyone using the
         public key.
@@ -137,7 +139,7 @@ class MessageSigner(object):
             msg=message, sig=sig, addr=addr, net_name=self._network_name.upper()
         )
 
-    def pair_for_message_hash(self, signature, msg_hash):
+    def pair_for_message_hash(self, signature: str, msg_hash: int) -> tuple[Any, bool]:
         """
         Take a signature, encoded in Base64, and return the pair it was signed by.
         May raise EncodingError (from _decode_signature)
@@ -156,22 +158,19 @@ class MessageSigner(object):
             q = self._generator.Point(q[0] + order, q[1])
         return q, is_compressed
 
-    def pair_matches_key(self, pair, key, is_compressed):
+    def pair_matches_key(self, pair: Any, key: Any, is_compressed: bool) -> bool:
         # Check signing public pair is the one expected for the signature. It must be an
         # exact match for this key's public pair... or else we are looking at a validly
         # signed message, but signed by some other key.
         #
         if hasattr(key, "public_pair"):
-            # expect an exact match for public pair.
-            return key.public_pair() == pair
+            return bool(key.public_pair() == pair)
         else:
-            # Key() constructed from a hash of pubkey doesn't know the exact public pair, so
-            # must compare hashed addresses instead.
             key_hash160 = key.hash160()
             pair_hash160 = public_pair_to_hash160_sec(pair, compressed=is_compressed)
-            return key_hash160 == pair_hash160
+            return bool(key_hash160 == pair_hash160)
 
-    def verify_message(self, key_or_address, signature, message=None, msg_hash=None):
+    def verify_message(self, key_or_address: Any, signature: str, message: str | None = None, msg_hash: int | None = None) -> bool:
         """
         Take a signature, encoded in Base64, and verify it against a
         key object (which implies the public key),
@@ -184,15 +183,15 @@ class MessageSigner(object):
             key = key_or_address
 
         try:
-            msg_hash = (
-                self.hash_for_signing(message) if message is not None else msg_hash
+            resolved_hash: int = (
+                self.hash_for_signing(message) if message is not None else (msg_hash or 0)
             )
-            pair, is_compressed = self.pair_for_message_hash(signature, msg_hash)
+            pair, is_compressed = self.pair_for_message_hash(signature, resolved_hash)
         except EncodingError:
             return False
         return self.pair_matches_key(pair, key, is_compressed)
 
-    def msg_magic_for_netcode(self):
+    def msg_magic_for_netcode(self) -> str:
         """
         We need the constant "strMessageMagic" in C++ source code, from file "main.cpp"
 
@@ -204,7 +203,7 @@ class MessageSigner(object):
         """
         return "%s Signed Message:\n" % self._network_name
 
-    def _decode_signature(self, signature):
+    def _decode_signature(self, signature: str) -> tuple[bool, int, int, int]:
         """
         Decode the internal fields of the base64-encoded signature.
         """
@@ -230,7 +229,7 @@ class MessageSigner(object):
 
         return is_compressed, (first & 0x3), r, s
 
-    def hash_for_signing(self, msg):
+    def hash_for_signing(self, msg: str) -> int:
         """
         Return a hash of msg, according to odd bitcoin method: double SHA256 over a bitcoin
         encoded stream of two strings: a fixed magic prefix and the actual message.

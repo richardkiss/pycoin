@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Generator, Iterator
+from typing import Any
+
 from ..encoding.sec import (
     public_pair_to_hash160_sec,
     sec_to_public_pair,
@@ -10,15 +15,20 @@ from pycoin.satoshi.checksigops import parse_signature_blob
 from pycoin.satoshi.der import UnexpectedDER
 
 
-class WhoSigned(object):
-    def __init__(self, script_tools, address_api, generator):
+class WhoSigned:
+    OP_CHECKSIG: int
+    OP_CHECKSIGVERIFY: int
+    OP_CHECKMULTISIG: int
+    OP_CHECKMULTISIGVERIFY: int
+
+    def __init__(self, script_tools: Any, address_api: Any, generator: Any) -> None:
         self._script_tools = script_tools
         self._address = address_api
         self._generator = generator
         for _ in "CHECKSIG CHECKSIGVERIFY CHECKMULTISIG CHECKMULTISIGVERIFY".split():
             setattr(self, "OP_%s" % _, self._script_tools.compile("OP_%s" % _)[0])
 
-    def solution_blobs(self, tx, tx_in_idx):
+    def solution_blobs(self, tx: Any, tx_in_idx: int) -> Generator[bytes, None, None]:
         """
         This iterator yields data blobs that appear in the last solution_script or the witness.
         """
@@ -37,7 +47,7 @@ class WhoSigned(object):
         for s in solution_stack:
             yield s
 
-    def _handle_checksig(self, vmc):
+    def _handle_checksig(self, vmc: Any) -> tuple[list[Any], list[tuple[Any, Any]]]:
         sec_blob = sig_blob = None
         sig_hash = 0
         try:
@@ -53,7 +63,7 @@ class WhoSigned(object):
 
         return ([sec_blob], [(sig_blob, sig_hash)])
 
-    def _handle_checkmultisig(self, vmc):
+    def _handle_checkmultisig(self, vmc: Any) -> tuple[list[Any], list[tuple[Any, Any]]]:
         sec_blobs = []
         sig_blobs = []
         s = list(vmc.stack)
@@ -79,14 +89,14 @@ class WhoSigned(object):
         vmc.stack = s
         return (sec_blobs, sig_blobs)
 
-    def extract_secs(self, tx, tx_in_idx):
+    def extract_secs(self, tx: Any, tx_in_idx: int) -> Iterator[Any]:
         for sec_blobs, sig_and_hash_pairs in self.extract_secs_and_signatures(
             tx, tx_in_idx
         ):
             for blob in sec_blobs:
                 yield blob
 
-    def extract_signatures(self, tx, tx_in_idx):
+    def extract_signatures(self, tx: Any, tx_in_idx: int) -> Iterator[tuple[Any, Any]]:
         for sec_blobs, sig_and_hash_pairs in self.extract_secs_and_signatures(
             tx, tx_in_idx
         ):
@@ -97,7 +107,7 @@ class WhoSigned(object):
                 except (ValueError, TypeError, UnexpectedDER, ScriptError):
                     continue
 
-    def extract_secs_and_signatures(self, tx, tx_in_idx):
+    def extract_secs_and_signatures(self, tx: Any, tx_in_idx: int) -> list[Any]:
         """
         List[Tuple[List[bytes], List[Tuple[bytes, SigHashFType]]]
         """
@@ -106,7 +116,7 @@ class WhoSigned(object):
 
         blobs_for_sig_ops = []
 
-        def traceback_f(opcode, data, pc, vmc):
+        def traceback_f(opcode: Any, data: Any, pc: Any, vmc: Any) -> None:
             if opcode in (self.OP_CHECKSIG, self.OP_CHECKSIGVERIFY):
                 blobs_for_sig_ops.append(self._handle_checksig(vmc))
             if opcode in (self.OP_CHECKMULTISIG, self.OP_CHECKMULTISIGVERIFY):
@@ -120,7 +130,7 @@ class WhoSigned(object):
 
         return blobs_for_sig_ops
 
-    def public_pairs_for_script(self, tx, tx_in_idx, generator):
+    def public_pairs_for_script(self, tx: Any, tx_in_idx: int, generator: Any) -> list[Any]:
         """
         For a given script, iterate over and pull out public pairs encoded as sec values.
         """
@@ -132,7 +142,7 @@ class WhoSigned(object):
                 pass
         return public_pairs
 
-    def public_pairs_signed(self, tx, tx_in_idx):
+    def public_pairs_signed(self, tx: Any, tx_in_idx: int) -> list[Any]:
         signed_by = []
 
         public_pairs = self.public_pairs_for_script(tx, tx_in_idx, self._generator)
@@ -145,7 +155,7 @@ class WhoSigned(object):
                     signed_by.append((public_pair, sig_pair, sig_type))
         return signed_by
 
-    def who_signed_tx(self, tx, tx_in_idx):
+    def who_signed_tx(self, tx: Any, tx_in_idx: int) -> list[tuple[Any, Any]]:
         """
         Given a transaction (tx) an input index (tx_in_idx), attempt to figure
         out which addresses where used in signing (so far). This method

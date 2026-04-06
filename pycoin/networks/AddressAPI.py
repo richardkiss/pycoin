@@ -74,18 +74,18 @@ def make_address_api(
 
             def for_p2pkh_wit(self, h160: bytes) -> str:
                 assert len(h160) == 20
-                return bech32m.encode(bech32_hrp, 0, h160)  # type: ignore[arg-type,no-any-return]
+                return bech32m.encode(bech32_hrp, 0, h160)  # type: ignore[arg-type,return-value]
 
         if bech32_hrp:
 
             def for_p2sh_wit(self, hash256: bytes) -> str:
                 assert len(hash256) == 32
-                return bech32m.encode(bech32_hrp, 0, hash256)  # type: ignore[arg-type,no-any-return]
+                return bech32m.encode(bech32_hrp, 0, hash256)  # type: ignore[arg-type,return-value]
 
         if bech32_hrp:
 
             def for_p2tr(self, synthetic_key: bytes) -> str:
-                return bech32m.encode(bech32_hrp, 1, synthetic_key)  # type: ignore[arg-type,no-any-return]
+                return bech32m.encode(bech32_hrp, 1, synthetic_key)  # type: ignore[arg-type,return-value]
 
         if pay_to_script_prefix:
 

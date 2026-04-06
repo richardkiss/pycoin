@@ -58,14 +58,14 @@ def parse_b58_double_sha256(s: str) -> bytes | None:
 
 def parse_bech32_or_32m(s: str) -> tuple[str, int, bytes, Any] | None:
     triple = bech32m.bech32_decode(s)
-    if triple is None or triple[1] is None:
+    if triple is None or triple[0] is None or triple[1] is None:
         return None
     hr_prefix = triple[0]
     data = triple[1]
     spec = triple[2]
     version = data[0]
     decoded = bech32m.convertbits(data[1:], 5, 8, False)
-    decoded_data = b"".join(bytes([d]) for d in decoded)
+    decoded_data = b"".join(bytes([d]) for d in (decoded or []))
     rv = (hr_prefix, version, decoded_data, spec)
     return rv
 

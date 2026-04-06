@@ -149,7 +149,7 @@ module = [
     "pycoin.coins.bitcoin.TxIn",
     "pycoin.coins.bitcoin.TxOut",
     "pycoin.crack.*",
-    "pycoin.contrib.ripemd160",
+    "pycoin.contrib.*",
     "pycoin.services.*",
 ]
 disallow_untyped_defs = true
