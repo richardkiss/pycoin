@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
 
 import argparse
 import sys
+from typing import Any
 
 from pycoin.encoding.exceptions import EncodingError
 from pycoin.encoding.sec import public_pair_to_hash160_sec
@@ -11,7 +13,7 @@ from pycoin.networks.registry import network_for_netcode, network_codes
 from .ku import parse_key
 
 
-def add_read_msg_arguments(parser, operation):
+def add_read_msg_arguments(parser: argparse.ArgumentParser, operation: str) -> None:
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-i",
@@ -22,7 +24,7 @@ def add_read_msg_arguments(parser, operation):
     group.add_argument("-m", "--message", help="the message to be %s" % operation)
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     codes = network_codes()
     parser = argparse.ArgumentParser(
         description="Create or verify a text signature using bitcoin standards",
@@ -55,7 +57,7 @@ def create_parser():
     return parser
 
 
-def get_message_hash(args, message_signer):
+def get_message_hash(args: argparse.Namespace, message_signer: Any) -> Any:
     message = args.message
     if message is None:
         f = open(args.input) if args.input else sys.stdin
@@ -63,7 +65,7 @@ def get_message_hash(args, message_signer):
     return message_signer.hash_for_signing(message)
 
 
-def msg_sign(args, parser):
+def msg_sign(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     network = network_for_netcode(args.network)
     message_signer = network.msg
     message_hash = get_message_hash(args, message_signer)
@@ -75,7 +77,7 @@ def msg_sign(args, parser):
     print(sig)
 
 
-def msg_verify(args, parser):
+def msg_verify(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int | None:
     network = network_for_netcode(args.network)
     message_signer = network.msg
     message_hash = get_message_hash(args, message_signer)
@@ -97,9 +99,10 @@ def msg_verify(args, parser):
             return 1
     else:
         print(ta)
+    return None
 
 
-def msg(args, parser):
+def msg(args: argparse.Namespace, parser: argparse.ArgumentParser) -> Any:
     command_lookup = {"sign": msg_sign, "verify": msg_verify}
     f = command_lookup.get(args.command)
     if f is None:
@@ -109,11 +112,11 @@ def msg(args, parser):
     f(args, parser)
 
 
-def main():
+def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
-    return msg(args, parser)
+    msg(args, parser)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

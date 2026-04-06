@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
 
 import argparse
 import sqlite3
@@ -9,7 +10,7 @@ from pycoin.key.subpaths import subpaths_for_path_range
 from pycoin.networks.registry import network_codes, network_for_netcode
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     codes = network_codes()
     parser = argparse.ArgumentParser(
         description=(
@@ -45,7 +46,7 @@ def create_parser():
     return parser
 
 
-def keychain(args, parser):
+def keychain(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     network = network_for_netcode(args.netcode)
 
     parse = network.ui.parse
@@ -78,7 +79,7 @@ def keychain(args, parser):
     print("%d total paths" % total_paths, file=sys.stderr)
 
 
-def main():
+def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
     keychain(args, parser)

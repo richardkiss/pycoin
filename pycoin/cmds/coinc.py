@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 import argparse
+from typing import Any
 from pycoin.encoding.hexbytes import b2h
 from pycoin.networks.registry import network_codes, network_for_netcode
 from pycoin.networks.default import get_current_netcode
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     codes = network_codes()
     EPILOG = "Known networks codes:\n  " + ", ".join(
         ["%s (%s)" % (i, network_for_netcode(i).full_name()) for i in codes]
@@ -34,7 +37,7 @@ def create_parser():
     return parser
 
 
-def coinc(args, parser):
+def coinc(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     network = network_for_netcode(args.network)
 
     for arg in args.argument:
@@ -46,7 +49,7 @@ def coinc(args, parser):
             print(info[k])
 
 
-def info_for_arg(arg, network):
+def info_for_arg(arg: str, network: Any) -> dict[str, Any]:
     d = {}
     compiled_script = network.script.compile(arg)
     d["compiled_script_hex"] = "0x%s" % b2h(compiled_script)
@@ -63,7 +66,7 @@ def info_for_arg(arg, network):
     return d
 
 
-def main():
+def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
     coinc(args, parser)

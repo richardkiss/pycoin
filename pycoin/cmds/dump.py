@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import datetime
+from typing import Any, Callable
 
 from pycoin.convention import satoshi_to_mbtc
 from pycoin.encoding.hexbytes import b2h, b2h_rev
@@ -9,7 +12,7 @@ from pycoin.satoshi.checksigops import parse_signature_blob
 LOCKTIME_THRESHOLD = 500000000
 
 
-def dump_header(output, tx):
+def dump_header(output: list[str], tx: Any) -> None:
     tx_bin = stream_to_bytes(tx.stream)
     output.append(
         "Version: %2d  tx hash %s  %d bytes" % (tx.version, tx.id(), len(tx_bin))
@@ -22,7 +25,7 @@ def dump_header(output, tx):
     elif tx.lock_time < LOCKTIME_THRESHOLD:
         meaning = "valid after block index %d" % tx.lock_time
     else:
-        when = datetime.datetime.fromtimestamp(tx.lock_time, datetime.UTC)
+        when = datetime.datetime.fromtimestamp(tx.lock_time, datetime.timezone.utc)
         meaning = "valid on or after %s utc" % when.isoformat()
     if tx.lock_time != 0:
         if all(tx_in.sequence == 0xFFFFFFFF for tx_in in tx.txs_in):
@@ -31,11 +34,11 @@ def dump_header(output, tx):
     output.append("Input%s:" % ("s" if len(tx.txs_in) != 1 else ""))
 
 
-def make_trace_script(network, output, do_trace, use_pdb):
+def make_trace_script(network: Any, output: list[str], do_trace: bool, use_pdb: bool) -> Callable[..., None] | None:
     if not (do_trace or use_pdb):
         return None
 
-    def trace_script(opcode, data, pc, vmc):
+    def trace_script(opcode: Any, data: Any, pc: Any, vmc: Any) -> None:
         output.append("stack: [%s]" % " ".join(b2h(s) for s in vmc.stack))
         if len(vmc.altstack) > 0:
             output.append("altstack: %s" % vmc.altstack)
@@ -55,7 +58,7 @@ def make_trace_script(network, output, do_trace, use_pdb):
     return trace_script
 
 
-def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly_level):
+def dump_inputs(output: list[str], tx: Any, network: Any, verbose_signature: bool, traceback_f: Callable[..., None] | None, disassembly_level: int) -> None:
     for idx, tx_in in enumerate(tx.txs_in):
         if tx.is_coinbase():
             output.append(
@@ -97,7 +100,7 @@ def dump_inputs(output, tx, network, verbose_signature, traceback_f, disassembly
             dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f)
 
 
-def dump_disassembly(output, tx, tx_in_idx, annotate):
+def dump_disassembly(output: list[str], tx: Any, tx_in_idx: int, annotate: Any) -> None:
     for (
         pre_annotations,
         pc,
@@ -113,7 +116,7 @@ def dump_disassembly(output, tx, tx_in_idx, annotate):
             output.append("           %s" % line)
 
 
-def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
+def dump_signatures(output: list[str], tx: Any, tx_in: Any, tx_out: Any, idx: int, network: Any, traceback_f: Callable[..., None] | None) -> None:
     signatures = [
         parse_signature_blob(blob) + (sig_hash,)
         for blob, sig_hash in network.who_signed.extract_signatures(tx, idx)
@@ -122,7 +125,7 @@ def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
         sig_types_identical = tuple(zip(*signatures))[1].count(signatures[0][1]) == len(
             signatures
         )
-        i = 1 if len(signatures) > 1 else ""
+        i: int | str = 1 if len(signatures) > 1 else ""
         for sig_pair, sig_type, sig_hash in signatures:
             output.append("      r{0}: {1:#x}\n      s{0}: {2:#x}".format(i, *sig_pair))
             if not sig_types_identical and tx_out:
@@ -132,7 +135,7 @@ def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
                     )
                 )
             if i:
-                i += 1
+                i = int(i) + 1
         if sig_types_identical and tx_out:
             output.append(
                 "      z:{} {:#066x} {}".format(
@@ -143,7 +146,7 @@ def dump_signatures(output, tx, tx_in, tx_out, idx, network, traceback_f):
             )
 
 
-def dump_footer(network, output, tx, missing_unspents):
+def dump_footer(network: Any, output: list[str], tx: Any, missing_unspents: bool) -> None:
     if not missing_unspents:
         output.append(
             "Total input  %12.5f m%s" % (satoshi_to_mbtc(tx.total_in()), network.symbol)
@@ -160,8 +163,8 @@ def dump_footer(network, output, tx, missing_unspents):
 
 
 def dump_tx(
-    output, tx, network, verbose_signature, disassembly_level, do_trace, use_pdb
-):
+    output: list[str], tx: Any, network: Any, verbose_signature: bool, disassembly_level: int, do_trace: bool, use_pdb: bool
+) -> None:
     missing_unspents = tx.missing_unspents()
     traceback_f = make_trace_script(network, output, do_trace, use_pdb)
 

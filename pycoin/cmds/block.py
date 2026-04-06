@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 import argparse
 import datetime
+from typing import Any
 
 from .dump import dump_tx
 from pycoin.encoding.hexbytes import b2h, b2h_rev
@@ -10,7 +13,7 @@ from pycoin.networks.registry import network_for_netcode
 from pycoin.serialize import stream_to_bytes
 
 
-def dump_block(output, block, network):
+def dump_block(output: list[str], block: Any, network: Any) -> None:
     blob = stream_to_bytes(block.stream)
     output.append("%d bytes   block hash %s" % (len(blob), block.id()))
     output.append("version %d" % block.version)
@@ -18,7 +21,7 @@ def dump_block(output, block, network):
     output.append("merkle root %s" % b2h(block.merkle_root))
     output.append(
         "timestamp %s"
-        % datetime.datetime.fromtimestamp(block.timestamp, datetime.UTC).isoformat()
+        % datetime.datetime.fromtimestamp(block.timestamp, datetime.timezone.utc).isoformat()
     )
     output.append("difficulty %d" % block.difficulty)
     output.append("nonce %s" % block.nonce)
@@ -39,7 +42,7 @@ def dump_block(output, block, network):
     output.append("")
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Dump a block in human-readable form.")
     parser.add_argument(
         "-n",
@@ -59,19 +62,19 @@ def create_parser():
     return parser
 
 
-def block(args, parser):
+def block(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     network = args.network
     for path in args.block_file:
         with open(path, "rb") as f:
             block = network.block.parse(f)
-        output = []
+        output: list[str] = []
         dump_block(output, block, network)
 
         for line in output:
             print(line)
 
 
-def main():
+def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
     block(args, parser)

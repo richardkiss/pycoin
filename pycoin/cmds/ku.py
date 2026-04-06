@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
 
 import argparse
 import json
 import re
 import subprocess
 import sys
+from typing import Any
 
 from pycoin.encoding.hexbytes import h2b
 from pycoin.networks.default import get_current_netcode
@@ -15,7 +17,7 @@ from pycoin.networks.registry import network_codes, network_for_netcode
 HASH160_RE = re.compile(r"^([0-9a-fA-F]{40})$")
 
 
-def gpg_entropy():
+def gpg_entropy() -> bytes:
     try:
         output = subprocess.Popen(
             ["gpg", "--gen-random", "2", "64"], stdout=subprocess.PIPE
@@ -26,7 +28,7 @@ def gpg_entropy():
     return b""
 
 
-def get_entropy():
+def get_entropy() -> bytes:
     entropy = bytearray()
     try:
         entropy.extend(gpg_entropy())
@@ -36,17 +38,17 @@ def get_entropy():
         entropy.extend(open("/dev/random", "rb").read(64))
     except Exception:
         print("warning: can't use /dev/random as entropy source", file=sys.stdout)
-    entropy = bytes(entropy)
-    if len(entropy) < 64:
+    result = bytes(entropy)
+    if len(result) < 64:
         raise OSError("can't find sources of entropy")
-    return entropy
+    return result
 
 
-def create_output(item, key, output_key_set, subkey_path=None):
+def create_output(item: str, key: Any, output_key_set: set[str], subkey_path: str | None = None) -> tuple[dict[str, str], list[tuple[str, str]]]:
     output_dict = {}
     output_order = []
 
-    def add_output(json_key, value=None, human_readable_key=None):
+    def add_output(json_key: str, value: str | None = None, human_readable_key: str | None = None) -> None:
         if output_key_set and json_key not in output_key_set:
             return
         if human_readable_key is None:
@@ -72,7 +74,7 @@ def create_output(item, key, output_key_set, subkey_path=None):
     return output_dict, output_order
 
 
-def dump_output(output_dict, output_order):
+def dump_output(output_dict: dict[str, str], output_order: list[tuple[str, str]]) -> None:
     print("")
     max_length = max(len(v[1]) for v in output_order)
     for key, hr_key in output_order:
@@ -86,7 +88,7 @@ def dump_output(output_dict, output_order):
             print("%s%s: %s" % (hr_key, space_padding, val))
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     codes = network_codes()
     parser = argparse.ArgumentParser(
         description='Crypto coin utility ku ("key utility") to show'
@@ -156,7 +158,7 @@ def create_parser():
     return parser
 
 
-def _create_bip32(network):
+def _create_bip32(network: Any) -> Any:
     max_retries = 64
     for _ in range(max_retries):
         try:
@@ -167,7 +169,7 @@ def _create_bip32(network):
     raise RuntimeError("can't create BIP32 key")
 
 
-def parse_key(item, networks):
+def parse_key(item: str, networks: list[Any]) -> Any:
     default_network = networks[0]
     if item == "create":
         return _create_bip32(default_network)
@@ -187,7 +189,7 @@ def parse_key(item, networks):
     return None
 
 
-def generate_output(args, output_dict, output_order):
+def generate_output(args: argparse.Namespace, output_dict: dict[str, str], output_order: list[tuple[str, str]]) -> None:
     if args.json:
         # the python2 version of json.dumps puts an extra blank prior to the end of each line
         # the "replace" is a hack to make python2 produce the same output as python3
@@ -202,7 +204,7 @@ def generate_output(args, output_dict, output_order):
         dump_output(output_dict, output_order)
 
 
-def ku(args, parser):
+def ku(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     fallback_network = network_for_netcode(args.network or get_current_netcode())
     parse_networks = [fallback_network] + [
         network_for_netcode(netcode) for netcode in network_codes()
@@ -216,7 +218,7 @@ def ku(args, parser):
         # the values would be on each other network type.
         override_network = network_for_netcode(args.override_network)
 
-    def parse_stdin():
+    def parse_stdin() -> list[str]:
         return [
             item for item in sys.stdin.readline().strip().split(" ") if len(item) > 0
         ]
@@ -253,7 +255,7 @@ def ku(args, parser):
             generate_output(args, output_dict, output_order)
 
 
-def main():
+def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
     ku(args, parser)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
 
 import argparse
 
@@ -12,7 +13,7 @@ from pycoin.encoding.b58 import (
 from pycoin.encoding.hexbytes import b2h, h2b
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Convert b58 to hex or back")
     parser.add_argument(
         "-b", help="force b58 input (rather than best guess)", action="store_true"
@@ -21,7 +22,7 @@ def create_parser():
     return parser
 
 
-def parse_arg(arg, force_b58):
+def parse_arg(arg: str, force_b58: bool) -> tuple[bytes, bool]:
     is_hex_input = False
     blob = None
     if not force_b58:
@@ -40,7 +41,7 @@ def parse_arg(arg, force_b58):
     return blob, is_hex_input
 
 
-def b58(args, parser):
+def b58(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     for arg in args.input:
         blob, is_hex_input = parse_arg(arg, args.b)
 
@@ -59,7 +60,7 @@ def b58(args, parser):
                 print("not hashed b58")
 
 
-def main():
+def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
     b58(args, parser)
