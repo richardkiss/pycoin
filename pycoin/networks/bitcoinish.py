@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from pycoin.block import Block
+from .network import Network, NetworkKeys, NetworkMessage, NetworkMsg, NetworkTxUtils, NetworkValidator
 from pycoin.coins.bitcoin.ScriptTools import BitcoinScriptTools
 from pycoin.coins.bitcoin.Tx import Tx
 from pycoin.coins.exceptions import ValidationFailureError
@@ -43,20 +44,8 @@ from .parseable_str import parseable_str
 
 
 class API(object):
+    """Legacy namespace shim — kept for external compatibility but not used internally."""
     pass
-
-
-class Network(object):
-    def __init__(self, symbol: str, network_name: str, subnet_name: str) -> None:
-        self.symbol = symbol
-        self.network_name = network_name
-        self.subnet_name = subnet_name
-
-    def full_name(self) -> str:
-        return "%s %s" % (self.network_name, self.subnet_name)
-
-    def __repr__(self) -> str:
-        return "<Network %s>" % self.full_name()
 
 
 def make_output_for_secret_exponent(Key: Any) -> Any:
@@ -134,14 +123,14 @@ def make_output_for_public_pair(Key: Any, network: Any) -> Any:
     return f
 
 
-def create_bitcoinish_network(symbol: str, network_name: str, subnet_name: str, **kwargs: Any) -> Any:
+def create_bitcoinish_network(symbol: str, network_name: str, subnet_name: str, **kwargs: Any) -> Network:
     # potential kwargs:
     #   tx, block, magic_header_hex, default_port, dns_bootstrap,
     #   wif_prefix_hex, address_prefix_hex, pay_to_script_prefix_hex
     #   bip32_prv_prefix_hex, bip32_pub_prefix_hex, sec_prefix, script_tools
     #   bip49_prv_prefix, bip49_pub_prefix, bip84_prv_prefix, bip84_pub_prefix
 
-    network: Any = Network(symbol, network_name, subnet_name)
+    # --- Phase 1: primitives, no dependency on network object yet ---
 
     generator = kwargs.get("generator", secp256k1_generator)
     kwargs.setdefault("sec_prefix", "%sSEC" % symbol.upper())
@@ -164,8 +153,6 @@ def create_bitcoinish_network(symbol: str, network_name: str, subnet_name: str, 
     ).split()
     ui_kwargs = {k: kwargs[k] for k in UI_KEYS if k in kwargs}
 
-    _bip32_prv_prefix = ui_kwargs.get("bip32_prv_prefix")
-    _bip32_pub_prefix = ui_kwargs.get("bip32_pub_prefix")
     _wif_prefix = ui_kwargs.get("wif_prefix")
     _sec_prefix = ui_kwargs.get("sec_prefix")
 
@@ -187,6 +174,20 @@ def create_bitcoinish_network(symbol: str, network_name: str, subnet_name: str, 
     def sec_text_for_blob(blob: bytes) -> str:
         return _sec_prefix + b2h(blob)  # type: ignore[operator,no-any-return]
 
+    tx_class: Any = kwargs.get("tx") or Tx
+
+    # --- Phase 2: create bare Network so Key subclasses can store a reference ---
+    # Python reference semantics: subclasses store a pointer; remaining fields
+    # are filled in below and will be visible through that pointer.
+
+    network = Network(symbol=symbol, network_name=network_name, subnet_name=subnet_name)
+
+    # Propagate optional top-level network metadata from kwargs
+    for k in "dns_bootstrap default_port magic_header".split():
+        if k in kwargs:
+            setattr(network, k, kwargs[k])
+
+    # Key subclasses capture network by reference; they use it lazily at call time.
     NetworkKey: Any = Key.make_subclass(symbol, network=network, generator=generator)
     NetworkElectrumKey: Any = ElectrumWallet.make_subclass(
         symbol, network=network, generator=generator
@@ -201,36 +202,42 @@ def create_bitcoinish_network(symbol: str, network_name: str, subnet_name: str, 
         symbol, network=network, generator=generator
     )
 
-    NETWORK_KEYS = (
-        "network_name subnet_name dns_bootstrap default_port magic_header".split()
-    )
-    for k in NETWORK_KEYS:
-        if k in kwargs:
-            setattr(network, k, kwargs[k])
+    # --- Phase 3: build sub-objects and assign to network fields ---
 
-    network.Tx = network.tx = kwargs.get("tx") or Tx
-    network.Block = network.block = kwargs.get("block") or Block.make_subclass(
-        symbol, network.tx
-    )
+    network.tx = tx_class
+    network.block = kwargs.get("block") or Block.make_subclass(symbol, tx_class)
+    network.generator = generator
+    network.keychain = Keychain
+    network.script = script_tools
+    network.str = parseable_str
 
+    # tx.solve namespace (still uses API() shim — Tx class is untyped)
+    network.tx.solve = API()
+    network.tx.solve.build_hash160_lookup = (
+        lambda iter: build_hash160_lookup(iter, [generator])
+    )
+    network.tx.solve.build_p2sh_lookup = build_p2sh_lookup
+    network.tx.solve.build_sec_lookup = build_sec_lookup
+
+    # message (P2P serialisation)
     streamer = standard_streamer(standard_parsing_functions(network.block, network.tx))
-
-    network.message = API()
-    network.message.parse, network.message.pack = make_parser_and_packer(
+    msg_parse, msg_pack = make_parser_and_packer(
         streamer, standard_messages(), standard_message_post_unpacks(streamer)
     )
+    network.message = NetworkMessage(parse=msg_parse, pack=msg_pack)
 
-    network.output_for_secret_exponent = make_output_for_secret_exponent(NetworkKey)
-    network.output_for_public_pair = make_output_for_public_pair(NetworkKey, network)
-
-    network.keychain = Keychain
-
+    # circular-dep sub-objects: contract → parse → address
+    network.contract = ContractAPI(network, script_tools)
     parse_api_class = kwargs.get("parse_api_class", ParseAPI)
     network.parse = parse_api_class(network, **ui_kwargs)
-
-    network.contract = ContractAPI(network, script_tools)
-
     network.address = make_address_api(network.contract, **ui_kwargs)
+
+    # objects that depend on network.address
+    message_signer = MessageSigner(network, generator)
+    network.annotate = Annotate(script_tools, network.address)
+    network.who_signed = WhoSigned(script_tools, network.address, generator)
+
+    # typed sub-dataclasses
 
     def keys_private(secret_exponent: int, is_compressed: bool = True) -> Any:
         return NetworkKey(secret_exponent=secret_exponent, is_compressed=is_compressed)
@@ -239,91 +246,59 @@ def create_bitcoinish_network(symbol: str, network_name: str, subnet_name: str, 
         if isinstance(item, tuple):
             if is_compressed is None:
                 is_compressed = True
-            # it's a public pair
             return NetworkKey(public_pair=item, is_compressed=is_compressed)
         if is_compressed is not None:
             raise ValueError("can't set is_compressed from sec")
         return NetworkKey.from_sec(item)
 
-    network.keys = API()
-    network.keys.private = keys_private
-    network.keys.public = keys_public
+    network.keys = NetworkKeys(
+        private=keys_private,
+        public=keys_public,
+        bip32_seed=NetworkBIP32Node.from_master_secret,
+        bip32_deserialize=NetworkBIP32Node.deserialize,
+        bip49_deserialize=NetworkBIP49Node.deserialize,
+        bip84_deserialize=NetworkBIP84Node.deserialize,
+        electrum_seed=lambda seed=None, **kw: NetworkElectrumKey(initial_key=seed, **kw),
+        electrum_private=lambda master_private_key=None, **kw: NetworkElectrumKey(
+            master_private_key=master_private_key, **kw
+        ),
+        electrum_public=lambda master_public_key=None, **kw: NetworkElectrumKey(
+            master_public_key=master_public_key, **kw
+        ),
+        InvalidSecretExponentError=InvalidSecretExponentError,
+        InvalidPublicPairError=InvalidPublicPairError,
+    )
 
-    def electrum_seed(seed: str) -> Any:
-        return NetworkElectrumKey(initial_key=seed)
+    network.msg = NetworkMsg(
+        sign=message_signer.sign_message,
+        verify=message_signer.verify_message,
+        parse_signed=message_signer.parse_signed_message,
+        hash_for_signing=message_signer.hash_for_signing,
+        signature_for_message_hash=message_signer.signature_for_message_hash,
+        pair_for_message_hash=message_signer.pair_for_message_hash,
+    )
 
-    def electrum_private(master_private_key: int) -> Any:
-        return NetworkElectrumKey(master_private_key=master_private_key)
+    network.validator = NetworkValidator(
+        ScriptError=ScriptError,
+        ValidationFailureError=ValidationFailureError,
+        errno=errno,
+        flags=flags,
+    )
 
-    def electrum_public(master_public_key: bytes) -> Any:
-        return NetworkElectrumKey(master_public_key=master_public_key)
-
-    network.keys.bip32_seed = NetworkBIP32Node.from_master_secret
-    network.keys.bip32_deserialize = NetworkBIP32Node.deserialize
-    network.keys.bip49_deserialize = NetworkBIP49Node.deserialize
-    network.keys.bip84_deserialize = NetworkBIP84Node.deserialize
-
-    network.keys.electrum_seed = electrum_seed
-    network.keys.electrum_private = electrum_private
-    network.keys.electrum_public = electrum_public
-    network.keys.InvalidSecretExponentError = InvalidSecretExponentError
-    network.keys.InvalidPublicPairError = InvalidPublicPairError
-
-    network.msg = API()
-    message_signer = MessageSigner(network, generator)
-    network.msg.sign = message_signer.sign_message
-    network.msg.verify = message_signer.verify_message
-    network.msg.parse_signed = message_signer.parse_signed_message
-    network.msg.hash_for_signing = message_signer.hash_for_signing
-    network.msg.signature_for_message_hash = message_signer.signature_for_message_hash
-    network.msg.pair_for_message_hash = message_signer.pair_for_message_hash
-    network.script = script_tools
+    network.tx_utils = NetworkTxUtils(
+        create_tx=lambda *a, **kw: create_tx(network, *a, **kw),
+        sign_tx=lambda *a, **kw: sign_tx(network, *a, **kw),
+        create_signed_tx=lambda *a, **kw: create_signed_tx(network, *a, **kw),
+        split_with_remainder=lambda *a, **kw: split_with_remainder(*a, **kw),
+        distribute_from_split_pool=distribute_from_split_pool,
+    )
 
     network.bip32_as_string = bip32_as_string
     network.bip49_as_string = bip49_as_string
     network.bip84_as_string = bip84_as_string
-    network.sec_text_for_blob = sec_text_for_blob
     network.wif_for_blob = wif_for_blob
-
-    def network_build_hash160_lookup(iter: Any) -> Any:
-        return build_hash160_lookup(iter, [generator])
-
-    network.tx.solve = API()
-    network.tx.solve.build_hash160_lookup = network_build_hash160_lookup
-    network.tx.solve.build_p2sh_lookup = build_p2sh_lookup
-    network.tx.solve.build_sec_lookup = build_sec_lookup
-
-    network.validator = API()
-    network.validator.ScriptError = ScriptError
-    network.validator.ValidationFailureError = ValidationFailureError
-    network.validator.errno = errno
-    network.validator.flags = flags
-
-    def my_create_tx(*args: Any, **kwargs: Any) -> Any:
-        return create_tx(network, *args, **kwargs)
-
-    def my_sign_tx(*args: Any, **kwargs: Any) -> Any:
-        return sign_tx(network, *args, **kwargs)
-
-    def my_create_signed_tx(*args: Any, **kwargs: Any) -> Any:
-        return create_signed_tx(network, *args, **kwargs)
-
-    def my_split_with_remainder(*args: Any, **kwargs: Any) -> Any:
-        return split_with_remainder(network, *args, **kwargs)
-
-    network.tx_utils = API()
-    network.tx_utils.create_tx = my_create_tx
-    network.tx_utils.sign_tx = my_sign_tx
-    network.tx_utils.create_signed_tx = my_create_signed_tx
-    network.tx_utils.split_with_remainder = my_split_with_remainder
-    network.tx_utils.distribute_from_split_pool = distribute_from_split_pool
-
-    network.annotate = Annotate(script_tools, network.address)
-
-    network.who_signed = WhoSigned(script_tools, network.address, generator)
-
-    network.str = parseable_str
-
-    network.generator = generator
+    network.sec_text_for_blob = sec_text_for_blob
+    network.output_for_secret_exponent = make_output_for_secret_exponent(NetworkKey)
+    network.output_for_public_pair = make_output_for_public_pair(NetworkKey, network)
 
     return network
