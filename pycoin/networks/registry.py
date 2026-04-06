@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import importlib
 import os
 import pkgutil
+from typing import Any, Iterator
 
 
-def search_prefixes():
+def search_prefixes() -> list[str]:
     prefixes = ["pycoin.symbols"]
     try:
         prefixes = os.getenv("PYCOIN_NETWORK_PATHS", "").split() + prefixes
@@ -12,21 +15,21 @@ def search_prefixes():
     return prefixes
 
 
-def network_for_netcode(symbol):
+def network_for_netcode(symbol: str) -> Any:
     symbol = symbol.upper()
     netcode = symbol.lower()
     for prefix in search_prefixes():
         try:
             module = importlib.import_module("%s.%s" % (prefix, netcode))
             if module.network.symbol.upper() == symbol:
-                module.symbol = symbol
+                module.symbol = symbol  # type: ignore[attr-defined]
                 return module.network
         except (AttributeError, ImportError):
             pass
     raise ValueError("no network with symbol %s found" % netcode)
 
 
-def iterate_symbols():
+def iterate_symbols() -> Iterator[Any]:
     """
     Return an iterator yielding registered netcodes.
     """
@@ -40,5 +43,5 @@ def iterate_symbols():
                 yield network.symbol.upper()
 
 
-def network_codes():
+def network_codes() -> list[Any]:
     return list(iterate_symbols())

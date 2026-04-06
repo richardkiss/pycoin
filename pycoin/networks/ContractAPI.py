@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import collections
 import hashlib
+from typing import Any
 
 from pycoin.encoding.hash import hash160
 from pycoin.encoding.hexbytes import b2h
@@ -8,54 +11,55 @@ from .Contract import Contract
 
 
 class ContractAPI(object):
-    def __init__(self, network, script_tools):
+    def __init__(self, network: Any, script_tools: Any) -> None:
         self._network = network
         self._script_tools = script_tools
 
-    def for_address(self, address):
+    def for_address(self, address: str) -> bytes | None:
         info = self._network.parse.address(address)
         if info:
-            return info.script()
+            return info.script()  # type: ignore[no-any-return]
+        return None
 
-    def for_p2pk(self, sec):
+    def for_p2pk(self, sec: bytes) -> bytes:
         return self.for_info(dict(type="p2pk", sec=sec))
 
-    def for_p2pkh(self, hash160):
-        return self.for_info(dict(type="p2pkh", hash160=hash160))
+    def for_p2pkh(self, hash160_val: bytes) -> bytes:
+        return self.for_info(dict(type="p2pkh", hash160=hash160_val))
 
-    def for_p2pkh_wit(self, hash160):
-        return self.for_info(dict(type="p2pkh_wit", hash160=hash160))
+    def for_p2pkh_wit(self, hash160_val: bytes) -> bytes:
+        return self.for_info(dict(type="p2pkh_wit", hash160=hash160_val))
 
-    def for_p2sh(self, hash160):
-        return self.for_info(dict(type="p2sh", hash160=hash160))
+    def for_p2sh(self, hash160_val: bytes) -> bytes:
+        return self.for_info(dict(type="p2sh", hash160=hash160_val))
 
-    def for_p2sh_wit(self, hash256):
+    def for_p2sh_wit(self, hash256: bytes) -> bytes:
         return self.for_info(dict(type="p2sh_wit", hash256=hash256))
 
-    def for_multisig(self, m, sec_keys):
+    def for_multisig(self, m: int, sec_keys: list[bytes]) -> bytes:
         return self.for_info(dict(type="multisig", m=m, sec_keys=sec_keys))
 
-    def for_nulldata(self, data):
+    def for_nulldata(self, data: bytes) -> bytes:
         return self.for_info(dict(type="nulldata", data=data))
 
-    def for_nulldata_push(self, data):
+    def for_nulldata_push(self, data: bytes) -> bytes:
         # BRAIN DAMAGE
-        return self._script_tools.compile("OP_RETURN [%s]" % b2h(data))
+        return self._script_tools.compile("OP_RETURN [%s]" % b2h(data))  # type: ignore[no-any-return]
 
     # BRAIN DAMAGE: the stuff above is redundant
 
-    def for_p2s(self, underlying_script):
+    def for_p2s(self, underlying_script: bytes) -> bytes:
         return self.for_p2sh(hash160(underlying_script))
 
-    def for_p2s_wit(self, underlying_script):
+    def for_p2s_wit(self, underlying_script: bytes) -> bytes:
         return self.for_p2sh_wit(hashlib.sha256(underlying_script).digest())
 
-    def for_p2tr(self, synthetic_key):
+    def for_p2tr(self, synthetic_key: bytes) -> bytes:
         return self.for_info(dict(type="p2tr", synthetic_key=synthetic_key))
 
-    def match(self, template_disassembly, script):
+    def match(self, template_disassembly: str, script: bytes) -> dict[str, list[Any]] | None:
         template = self._script_tools.compile(template_disassembly)
-        r = collections.defaultdict(list)
+        r: dict[str, list[Any]] = collections.defaultdict(list)
         pc1 = pc2 = 0
         while 1:
             if pc1 == len(script) and pc2 == len(template):
@@ -91,7 +95,7 @@ class ContractAPI(object):
                 break
         return None
 
-    _SCRIPT_LOOKUP = dict(
+    _SCRIPT_LOOKUP: dict[str, Any] = dict(
         p2pk=lambda info: "%s OP_CHECKSIG" % b2h(info.get("sec")),
         p2pkh=lambda info: (
             "OP_DUP OP_HASH160 %s OP_EQUALVERIFY OP_CHECKSIG" % b2h(info.get("hash160"))
@@ -110,23 +114,19 @@ class ContractAPI(object):
         ),
     )
 
-    def for_info(self, info):
+    def for_info(self, info: dict[str, Any]) -> bytes:
         type = info.get("type")
         if type == "nulldata":
-            return self._script_tools.compile("OP_RETURN") + info.get("data")
+            return self._script_tools.compile("OP_RETURN") + info.get("data")  # type: ignore[no-any-return]
         if type == "unknown":
-            return info["script"]
-        script_text = self._SCRIPT_LOOKUP[type](info)
-        return self._script_tools.compile(script_text)
+            return info["script"]  # type: ignore[no-any-return]
+        script_text = self._SCRIPT_LOOKUP[type](info)  # type: ignore[index]
+        return self._script_tools.compile(script_text)  # type: ignore[no-any-return]
 
-    def new(self, script_info):
+    def new(self, script_info: dict[str, Any]) -> Contract:
         return Contract(script_info, self._network)
 
-    # MISSING to consider
-    # p2s: SCRIPTHASH160
-    # nulldata_push: DATA, RAW_DATA
-
-    def info_for_script(self, script):
+    def info_for_script(self, script: bytes) -> dict[str, Any]:
         d = self.match(
             "OP_DUP OP_HASH160 'PUBKEYHASH' OP_EQUALVERIFY OP_CHECKSIG", script
         )
@@ -163,7 +163,7 @@ class ContractAPI(object):
 
         return dict(type="unknown", script=script)
 
-    def _info_from_multisig_script(self, script):
+    def _info_from_multisig_script(self, script: bytes) -> dict[str, Any] | None:
         script_tools = self._script_tools
         scriptStreamer = script_tools.scriptStreamer
         OP_1 = script_tools.int_for_opcode("OP_1")

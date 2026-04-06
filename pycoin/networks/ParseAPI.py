@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from .parseable_str import (
     parse_b58_double_sha256,
     parse_bech32,
@@ -12,7 +16,7 @@ from pycoin.encoding.hexbytes import b2h, h2b
 from .Contract import Contract
 
 
-def hparse(api, pub_prv, key_type, s):
+def hparse(api: ParseAPI, pub_prv: str, key_type: str, s: str) -> Any:
     """
     Generalize parsing bip32-type b58-encoded strings.
     """
@@ -29,19 +33,19 @@ def hparse(api, pub_prv, key_type, s):
 class ParseAPI(object):
     def __init__(
         self,
-        network,
-        bip32_prv_prefix=None,
-        bip32_pub_prefix=None,
-        bip49_prv_prefix=None,
-        bip49_pub_prefix=None,
-        bip84_prv_prefix=None,
-        bip84_pub_prefix=None,
-        address_prefix=None,
-        pay_to_script_prefix=None,
-        bech32_hrp=None,
-        wif_prefix=None,
-        sec_prefix=None,
-    ):
+        network: Any,
+        bip32_prv_prefix: bytes | None = None,
+        bip32_pub_prefix: bytes | None = None,
+        bip49_prv_prefix: bytes | None = None,
+        bip49_pub_prefix: bytes | None = None,
+        bip84_prv_prefix: bytes | None = None,
+        bip84_pub_prefix: bytes | None = None,
+        address_prefix: bytes | None = None,
+        pay_to_script_prefix: bytes | None = None,
+        bech32_hrp: str | None = None,
+        wif_prefix: bytes | None = None,
+        sec_prefix: bytes | None = None,
+    ) -> None:
         self._network = network
         self._bip32_prv_prefix = bip32_prv_prefix
         self._bip32_pub_prefix = bip32_pub_prefix
@@ -55,14 +59,13 @@ class ParseAPI(object):
         self._wif_prefix = wif_prefix
         self._sec_prefix = sec_prefix
 
-    def parse_b58_hashed(self, s):
+    def parse_b58_hashed(self, s: str) -> bytes | None:
         """
         Override me to change how the b58 hashing check is done.
         """
         return parse_b58_double_sha256(s)
 
-    # hierarchical key
-    def bip32_seed(self, s):
+    def bip32_seed(self, s: str) -> Any:
         """
         Parse a bip32 private key from a seed.
         Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
@@ -76,11 +79,10 @@ class ParseAPI(object):
             except ValueError:
                 return None
         else:
-            master_secret = pair[1].encode("utf8")
+            master_secret = pair[1].encode("utf8")  # type: ignore[assignment]
         return self._network.keys.bip32_seed(master_secret)
 
-    # hierarchical key
-    def hd_seed(self, s):
+    def hd_seed(self, s: str) -> Any:
         """
         Parse a bip32 private key from a seed.
         Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
@@ -94,24 +96,24 @@ class ParseAPI(object):
             except ValueError:
                 return None
         else:
-            master_secret = pair[1].encode("utf8")
+            master_secret = pair[1].encode("utf8")  # type: ignore[assignment]
         return self._network.keys.hd_seed(master_secret)
 
-    def bip32_prv(self, s):
+    def bip32_prv(self, s: str) -> Any:
         """
         Parse a bip32 private key from a text string ("xprv" type).
         Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
         """
         return hparse(self, "prv", "bip32", s)
 
-    def bip32_pub(self, s):
+    def bip32_pub(self, s: str) -> Any:
         """
         Parse a bip32 public key from a text string ("xpub" type).
         Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
         """
         return hparse(self, "pub", "bip32", s)
 
-    def bip32(self, s):
+    def bip32(self, s: str) -> Any:
         """
         Parse a bip32 public key from a text string, either a seed, a prv or a pub.
         Return a :class:`BIP32 <pycoin.key.BIP32Node.BIP32Node>` or None.
@@ -119,21 +121,21 @@ class ParseAPI(object):
         s = parseable_str(s)
         return self.bip32_prv(s) or self.bip32_pub(s)
 
-    def bip49_prv(self, s):
+    def bip49_prv(self, s: str) -> Any:
         """
         Parse a bip84 private key from a text string ("yprv" type).
         Return a :class:`BIP49 <pycoin.key.BIP49Node.BIP49Node>` or None.
         """
         return hparse(self, "prv", "bip49", s)
 
-    def bip49_pub(self, s):
+    def bip49_pub(self, s: str) -> Any:
         """
         Parse a bip84 public key from a text string ("ypub" type).
         Return a :class:`BIP49 <pycoin.key.BIP49Node.BIP49Node>` or None.
         """
         return hparse(self, "pub", "bip49", s)
 
-    def bip49(self, s):
+    def bip49(self, s: str) -> Any:
         """
         Parse a bip49 public key from a text string, either a seed, a prv or a pub.
         Return a :class:`BIP49 <pycoin.key.BIP49Node.BIP49Node>` or None.
@@ -141,21 +143,21 @@ class ParseAPI(object):
         s = parseable_str(s)
         return self.bip49_prv(s) or self.bip49_pub(s)
 
-    def bip84_prv(self, s):
+    def bip84_prv(self, s: str) -> Any:
         """
         Parse a bip84 private key from a text string ("zprv" type).
         Return a :class:`BIP84 <pycoin.key.BIP84Node.BIP84Node>` or None.
         """
         return hparse(self, "prv", "bip84", s)
 
-    def bip84_pub(self, s):
+    def bip84_pub(self, s: str) -> Any:
         """
         Parse a bip84 public key from a text string ("zpub" type).
         Return a :class:`BIP84 <pycoin.key.BIP84Node.BIP84Node>` or None.
         """
         return hparse(self, "pub", "bip84", s)
 
-    def bip84(self, s):
+    def bip84(self, s: str) -> Any:
         """
         Parse a bip84 public key from a text string, either a seed, a prv or a pub.
         Return a :class:`BIP84 <pycoin.key.BIP84Node.BIP84Node>` or None.
@@ -163,7 +165,7 @@ class ParseAPI(object):
         s = parseable_str(s)
         return self.bip84_prv(s) or self.bip84_pub(s)
 
-    def _electrum_to_blob(self, s):
+    def _electrum_to_blob(self, s: str) -> bytes | None:
         pair = parse_colon_prefix(s)
         if pair is None or pair[0] != "E":
             return None
@@ -172,7 +174,7 @@ class ParseAPI(object):
         except ValueError:
             return None
 
-    def electrum_seed(self, s):
+    def electrum_seed(self, s: str) -> Any:
         """
         Parse an electrum key from a text string in seed form ("E:xxx" where xxx
         is a 32-character hex string).
@@ -180,10 +182,11 @@ class ParseAPI(object):
         """
         blob = self._electrum_to_blob(s)
         if blob and len(blob) == 16:
-            blob = b2h(blob)
-            return self._network.keys.electrum_seed(seed=blob)
+            blob_hex = b2h(blob)
+            return self._network.keys.electrum_seed(seed=blob_hex)
+        return None
 
-    def electrum_prv(self, s):
+    def electrum_prv(self, s: str) -> Any:
         """
         Parse an electrum private key from a text string in seed form ("E:xxx" where xxx
         is a 64-character hex string).
@@ -193,8 +196,9 @@ class ParseAPI(object):
         if blob and len(blob) == 32:
             mpk = from_bytes_32(blob)
             return self._network.keys.electrum_private(master_private_key=mpk)
+        return None
 
-    def electrum_pub(self, s):
+    def electrum_pub(self, s: str) -> Any:
         """
         Parse an electrum public key from a text string in seed form ("E:xxx" where xxx
         is a 128-character hex string).
@@ -203,37 +207,37 @@ class ParseAPI(object):
         blob = self._electrum_to_blob(s)
         if blob and len(blob) == 64:
             return self._network.keys.electrum_public(master_public_key=blob)
+        return None
 
-    # address
-    def p2pkh(self, s):
+    def p2pkh(self, s: str) -> Contract | None:
         """
         Parse a pay-to-public-key-hash address.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         data = self.parse_b58_hashed(s)
-        if data is None or not data.startswith(self._address_prefix):
+        if data is None or self._address_prefix is None or not data.startswith(self._address_prefix):
             return None
         size = len(self._address_prefix)
         script = self._network.contract.for_p2pkh(data[size:])
         script_info = self._network.contract.info_for_script(script)
         return Contract(script_info, self._network)
 
-    def p2sh(self, s):
+    def p2sh(self, s: str) -> Contract | None:
         """
         Parse a pay-to-script-hash address.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         data = self.parse_b58_hashed(s)
-        if None in (data, self._pay_to_script_prefix) or not data.startswith(
-            self._pay_to_script_prefix
+        if None in (data, self._pay_to_script_prefix) or not data.startswith(  # type: ignore[union-attr,arg-type]
+            self._pay_to_script_prefix  # type: ignore[arg-type]
         ):
             return None
-        size = len(self._pay_to_script_prefix)
-        script = self._network.contract.for_p2sh(data[size:])
+        size = len(self._pay_to_script_prefix)  # type: ignore[arg-type]
+        script = self._network.contract.for_p2sh(data[size:])  # type: ignore[index]
         script_info = self._network.contract.info_for_script(script)
         return Contract(script_info, self._network)
 
-    def _bech32m(self, s, expected_version, blob_len, segwit_attr):
+    def _bech32m(self, s: str, expected_version: int, blob_len: int, segwit_attr: str) -> Contract | None:
         v = parse_bech32(s)
         if v is None:
             return None
@@ -257,29 +261,28 @@ class ParseAPI(object):
         script_info = self._network.contract.info_for_script(script)
         return Contract(script_info, self._network)
 
-    def p2pkh_segwit(self, s):
+    def p2pkh_segwit(self, s: str) -> Contract | None:
         """
         Parse a pay-to-pubkey-hash segwit address.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         return self._bech32m(s, 0, 20, "for_p2pkh_wit")
 
-    def p2sh_segwit(self, s):
+    def p2sh_segwit(self, s: str) -> Contract | None:
         """
         Parse a pay-to-script-hash segwit address.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         return self._bech32m(s, 0, 32, "for_p2sh_wit")
 
-    def p2tr(self, s):
+    def p2tr(self, s: str) -> Contract | None:
         """
         Parse a pay-to-taproot segwit address.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
         """
         return self._bech32m(s, 1, 32, "for_p2tr")
 
-    # payable (+ all address types)
-    def script(self, s):
+    def script(self, s: str) -> Contract | None:
         """
         Parse a script by compiling it.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>` or None.
@@ -291,7 +294,7 @@ class ParseAPI(object):
         except Exception:
             return None
 
-    def as_number(self, s):
+    def as_number(self, s: str) -> int | None:
         try:
             return int(s)
         except ValueError:
@@ -300,15 +303,15 @@ class ParseAPI(object):
             return int(s, 16)
         except ValueError:
             pass
+        return None
 
-    # private key
-    def wif(self, s):
+    def wif(self, s: str) -> Any:
         """
         Parse a WIF.
         Return a :class:`Key <pycoin.key.Key>` or None.
         """
         data = self.parse_b58_hashed(s)
-        if data is None or not data.startswith(self._wif_prefix):
+        if data is None or self._wif_prefix is None or not data.startswith(self._wif_prefix):
             return None
         data = data[len(self._wif_prefix) :]
         is_compressed = len(data) > 32
@@ -317,7 +320,7 @@ class ParseAPI(object):
         se = from_bytes_32(data)
         return self._network.keys.private(se, is_compressed=is_compressed)
 
-    def secret_exponent(self, s):
+    def secret_exponent(self, s: str) -> Any:
         """
         Parse an integer secret exponent.
         Return a :class:`Key <pycoin.key.Key>` or None.
@@ -328,9 +331,9 @@ class ParseAPI(object):
                 return self._network.keys.private(v)
             except ValueError:
                 pass
+        return None
 
-    # public key
-    def public_pair(self, s):
+    def public_pair(self, s: str) -> Any:
         """
         Parse a public pair X/Y or X,Y where X is a coordinate and Y is a coordinate or
         the string "even" or "odd".
@@ -354,8 +357,9 @@ class ParseAPI(object):
                             point = generator.Point(v0, v1)
         if point:
             return self._network.keys.public(point)
+        return None
 
-    def sec(self, s):
+    def sec(self, s: str) -> Any:
         """
         Parse a public pair as a text SEC.
         Return a :class:`Key <pycoin.key.Key>` or None.
@@ -368,36 +372,36 @@ class ParseAPI(object):
             return self._network.keys.public(sec)
         except Exception:
             pass
+        return None
 
-    def address(self, s):
+    def address(self, s: str) -> Contract | None:
         """
         Parse an address, any of p2pkh, p2sh, p2pkh_segwit, or p2sh_segwit.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>`, or None.
         """
-        s = parseable_str(s)
+        ps = parseable_str(s)
         return (
-            self.p2pkh(s)
-            or self.p2sh(s)
-            or self.p2pkh_segwit(s)
-            or self.p2sh_segwit(s)
-            or self.p2tr(s)
+            self.p2pkh(ps)
+            or self.p2sh(ps)
+            or self.p2pkh_segwit(ps)
+            or self.p2sh_segwit(ps)
+            or self.p2tr(ps)
         )
 
-    def payable(self, s):
+    def payable(self, s: str) -> Contract | None:
         """
         Parse text as either an address or a script to be compiled.
         Return a :class:`Contract <pycoin.networks.Contract.Contract>`, or None.
         """
-        s = parseable_str(s)
-        return self.address(s) or self.script(s)
+        ps = parseable_str(s)
+        return self.address(ps) or self.script(ps)
 
-    # semantic items
-    def hierarchical_key(self, s):
+    def hierarchical_key(self, s: str) -> Any:
         """
         Parse text as some kind of hierarchical key.
         Return a subclass of :class:`Key <pycoin.key.Key>`, or None.
         """
-        s = parseable_str(s)
+        ps = parseable_str(s)
         for f in [
             self.bip32_seed,
             self.bip32,
@@ -407,71 +411,75 @@ class ParseAPI(object):
             self.electrum_prv,
             self.electrum_pub,
         ]:
-            v = f(s)
+            v = f(ps)
             if v:
                 return v
+        return None
 
-    def private_key(self, s):
+    def private_key(self, s: str) -> Any:
         """
         Parse text as some kind of private key.
         Return a subclass of :class:`Key <pycoin.key.Key>`, or None.
         """
-        s = parseable_str(s)
+        ps = parseable_str(s)
         for f in [self.wif, self.secret_exponent]:
-            v = f(s)
+            v = f(ps)
             if v:
                 return v
+        return None
 
-    def secret(self, s):
+    def secret(self, s: str) -> Any:
         """
         Parse text either a private key or a private hierarchical key.
         Return a subclass of :class:`Key <pycoin.key.Key>`, or None.
         """
-        s = parseable_str(s)
+        ps = parseable_str(s)
         for f in [self.private_key, self.hierarchical_key]:
-            v = f(s)
+            v = f(ps)
             if v:
                 return v
+        return None
 
-    def public_key(self, s):
+    def public_key(self, s: str) -> Any:
         """
         Parse text as either a public pair or an sec.
         Return a subclass of :class:`Key <pycoin.key.Key>`, or None.
         """
-        s = parseable_str(s)
+        ps = parseable_str(s)
         for f in [self.public_pair, self.sec]:
-            v = f(s)
+            v = f(ps)
             if v:
                 return v
+        return None
 
-    def input(self, s):
+    def input(self, s: str) -> None:
         """
         NOT YET SUPPORTED
         """
         # BRAIN DAMAGE: TODO
         return None
 
-    def tx(self, s):
+    def tx(self, s: str) -> None:
         """
         NOT YET SUPPORTED
         """
         # BRAIN DAMAGE: TODO
         return None
 
-    def spendable(self, s):
+    def spendable(self, s: str) -> None:
         """
         NOT YET SUPPORTED
         """
         # BRAIN DAMAGE: TODO
         return None
 
-    def script_preimage(self, s):
+    def script_preimage(self, s: str) -> None:
         """
         NOT YET SUPPORTED
         """
         # BRAIN DAMAGE: TODO
         return None
 
-    def __call__(self, s):
-        s = parseable_str(s)
-        return self.payable(s) or self.input(s) or self.secret(s) or self.tx(s)
+    def __call__(self, s: str) -> Any:
+        ps = parseable_str(s)
+        return self.payable(ps) or self.secret(ps)
