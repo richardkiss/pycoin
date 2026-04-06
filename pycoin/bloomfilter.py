@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import math
 import struct
+from typing import Any
 
 from pycoin.encoding.b58 import a2b_hashed_base58
 
@@ -7,7 +10,7 @@ from pycoin.encoding.b58 import a2b_hashed_base58
 LOG_2 = math.log(2)
 
 
-def filter_size_required(element_count, false_positive_probability):
+def filter_size_required(element_count: int, false_positive_probability: float) -> int:
     # The size S of the filter in bytes is given by
     # (-1 / pow(log(2), 2) * N * log(P)) / 8
     # Of course you must ensure it does not go over the maximum size
@@ -17,7 +20,7 @@ def filter_size_required(element_count, false_positive_probability):
     return min(36000, int(((-1 / pow(LOG_2, 2) * element_count * lfpp) + 7) // 8))
 
 
-def hash_function_count_required(filter_size, element_count):
+def hash_function_count_required(filter_size: int, element_count: int) -> int:
     # The number of hash functions required is given by S * 8 / N * log(2).
     return int(filter_size * 8.0 / element_count * LOG_2 + 0.5)
 
@@ -25,7 +28,7 @@ def hash_function_count_required(filter_size, element_count):
 class BloomFilter(object):
     MASK_ARRAY = [1 << _ for _ in range(8)]
 
-    def __init__(self, size_in_bytes, hash_function_count, tweak):
+    def __init__(self, size_in_bytes: int, hash_function_count: int, tweak: int) -> None:
         if size_in_bytes > 36000:
             raise ValueError("too large")
         self.filter_bytes = bytearray(size_in_bytes)
@@ -33,44 +36,44 @@ class BloomFilter(object):
         self.hash_function_count = hash_function_count
         self.tweak = tweak
 
-    def add_item(self, item_bytes):
+    def add_item(self, item_bytes: bytes) -> None:
         for hash_index in range(self.hash_function_count):
             seed = hash_index * 0xFBA4C795 + self.tweak
             self.set_bit(murmur3(item_bytes, seed=seed) % self.bit_count)
 
-    def add_address(self, address):
+    def add_address(self, address: str) -> None:
         the_hash160 = a2b_hashed_base58(address)[1:]
         self.add_item(the_hash160)
 
-    def add_hash160(self, the_hash160):
+    def add_hash160(self, the_hash160: bytes) -> None:
         self.add_item(the_hash160)
 
-    def add_spendable(self, spendable):
+    def add_spendable(self, spendable: Any) -> None:
         item_bytes = spendable.tx_hash + struct.pack("<L", spendable.tx_out_index)
         self.add_item(item_bytes)
 
-    def _index_for_bit(self, v):
+    def _index_for_bit(self, v: int) -> tuple[int, int]:
         v %= self.bit_count
         byte_index, mask_index = divmod(v, 8)
         mask = self.MASK_ARRAY[mask_index]
         return byte_index, mask
 
-    def set_bit(self, v):
+    def set_bit(self, v: int) -> None:
         byte_index, mask = self._index_for_bit(v)
         self.filter_bytes[byte_index] |= mask
 
-    def check_bit(self, v):
+    def check_bit(self, v: int) -> bool:
         byte_index, mask = self._index_for_bit(v)
         return (self.filter_bytes[byte_index] & mask) == mask
 
-    def filter_load_params(self):
+    def filter_load_params(self) -> tuple[bytearray, int, int]:
         return self.filter_bytes, self.hash_function_count, self.tweak
 
 
 # http://stackoverflow.com/questions/13305290/is-there-a-pure-python-implementation-of-murmurhash
 
 
-def murmur3(data, seed=0):
+def murmur3(data: bytes, seed: int = 0) -> int:
     c1 = 0xCC9E2D51
     c2 = 0x1B873593
 

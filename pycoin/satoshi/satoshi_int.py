@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import struct
+from typing import IO
 
 
-def parse_satoshi_int(f, v=None):
+def parse_satoshi_int(f: IO[bytes], v: int | None = None) -> int:
     if v is None:
         v = ord(f.read(1))
     if v == 253:
@@ -13,7 +16,7 @@ def parse_satoshi_int(f, v=None):
     return v
 
 
-def stream_satoshi_int(f, v):
+def stream_satoshi_int(f: IO[bytes], v: int) -> None:
     if v < 253:
         f.write(struct.pack("<B", v))
     elif v <= 65535:

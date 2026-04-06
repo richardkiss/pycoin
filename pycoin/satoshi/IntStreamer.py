@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pycoin.coins.SolutionChecker import ScriptError
 
 from . import errno
@@ -5,19 +7,19 @@ from . import errno
 
 class IntStreamer(object):
     @classmethod
-    def int_from_script_bytes(class_, s, require_minimal=False):
+    def int_from_script_bytes(class_, s: bytes, require_minimal: bool = False) -> int:
         if len(s) == 0:
             return 0
-        s = bytearray(s)
-        s.reverse()
-        i = s[0]
+        ba = bytearray(s)
+        ba.reverse()
+        i = ba[0]
         v = i & 0x7F
         if require_minimal:
             if v == 0:
-                if len(s) <= 1 or ((s[1] & 0x80) == 0):
+                if len(ba) <= 1 or ((ba[1] & 0x80) == 0):
                     raise ScriptError("non-minimally encoded", errno.UNKNOWN_ERROR)
         is_negative = (i & 0x80) > 0
-        for b in s[1:]:
+        for b in ba[1:]:
             v <<= 8
             v += b
         if is_negative:
@@ -25,7 +27,7 @@ class IntStreamer(object):
         return v
 
     @classmethod
-    def int_to_script_bytes(class_, v):
+    def int_to_script_bytes(class_, v: int) -> bytes:
         if v == 0:
             return b""
         is_negative = v < 0

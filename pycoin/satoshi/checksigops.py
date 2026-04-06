@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from ..encoding.sec import sec_to_public_pair, EncodingError
 
 from . import der
@@ -18,7 +22,7 @@ from .flags import (
 from pycoin.coins.SolutionChecker import ScriptError
 
 
-def _check_valid_signature_1(sig):
+def _check_valid_signature_1(sig: list[int]) -> None:
     ls = len(sig)
     if ls < 9 or ls > 73:
         raise ScriptError("bad signature size", errno.SIG_DER)
@@ -31,7 +35,7 @@ def _check_valid_signature_1(sig):
         raise ScriptError("r length exceed signature size", errno.SIG_DER)
 
 
-def _check_valid_signature_2(sig):
+def _check_valid_signature_2(sig: list[int]) -> None:
     ls = len(sig)
     r_len = sig[3]
     s_len = sig[5 + r_len]
@@ -61,14 +65,14 @@ def _check_valid_signature_2(sig):
         )
 
 
-def check_valid_signature(sig):
+def check_valid_signature(sig: bytes) -> None:
     # ported from bitcoind src/script/interpreter.cpp IsValidSignatureEncoding
-    sig = [s for s in sig]
-    _check_valid_signature_1(sig)
-    _check_valid_signature_2(sig)
+    sig_list = [s for s in sig]
+    _check_valid_signature_1(sig_list)
+    _check_valid_signature_2(sig_list)
 
 
-def check_low_der_signature(sig_pair, generator):
+def check_low_der_signature(sig_pair: tuple[int, int], generator: Any) -> None:
     # IsLowDERSignature
     r, s = sig_pair
     hi_s = generator.p() - s
@@ -76,7 +80,7 @@ def check_low_der_signature(sig_pair, generator):
         raise ScriptError("signature has high S value", errno.SIG_HIGH_S)
 
 
-def check_defined_hashtype_signature(sig):
+def check_defined_hashtype_signature(sig: bytes) -> None:
     # IsDefinedHashtypeSignature
     if len(sig) == 0:
         raise ScriptError("signature is length 0")
@@ -85,7 +89,7 @@ def check_defined_hashtype_signature(sig):
         raise ScriptError("bad hash type after signature", errno.SIG_HASHTYPE)
 
 
-def parse_signature_blob(sig_blob):
+def parse_signature_blob(sig_blob: bytes) -> tuple[tuple[int, int], int]:
     if len(sig_blob) == 0:
         raise ValueError("empty sig_blob")
     sig_pair = der.sigdecode_der(sig_blob[:-1], use_broken_open_ssl_mechanism=True)
@@ -93,7 +97,9 @@ def parse_signature_blob(sig_blob):
     return sig_pair, signature_type
 
 
-def parse_and_check_signature_blob(sig_blob, flags, vm):
+def parse_and_check_signature_blob(
+    sig_blob: bytes, flags: int, vm: Any
+) -> tuple[tuple[int, int], int]:
     if len(sig_blob) == 0:
         raise ValueError("empty sig_blob")
     if flags & (VERIFY_DERSIG | VERIFY_LOW_S | VERIFY_STRICTENC):
@@ -107,7 +113,7 @@ def parse_and_check_signature_blob(sig_blob, flags, vm):
     return sig_pair, signature_type
 
 
-def check_public_key_encoding(blob):
+def check_public_key_encoding(blob: bytes) -> None:
     lb = len(blob)
     if lb >= 33:
         fb = blob[0]
@@ -121,15 +127,15 @@ def check_public_key_encoding(blob):
 
 
 def checksig(
-    vm,
-    sig_pair,
-    signature_type,
-    pair_blob,
-    blobs_to_delete,
-    sighash_cache,
-    verify_witness_pubkeytype,
-    verify_strict,
-):
+    vm: Any,
+    sig_pair: tuple[int, int],
+    signature_type: int,
+    pair_blob: bytes,
+    blobs_to_delete: Any,
+    sighash_cache: dict[int, Any],
+    verify_witness_pubkeytype: bool,
+    verify_strict: bool,
+) -> bool:
     generator = vm.generator_for_signature_type(signature_type)
     if verify_strict:
         check_public_key_encoding(pair_blob)
@@ -154,10 +160,10 @@ def checksig(
     return False
 
 
-def checksigs(vm, sig_blobs, public_pair_blobs):
+def checksigs(vm: Any, sig_blobs: list[bytes], public_pair_blobs: list[bytes]) -> None:
     sig_blobs_remaining = list(sig_blobs)
     flags = vm.flags
-    sighash_cache = {}
+    sighash_cache: dict[int, Any] = {}
     verify_witness_pubkeytype = flags & VERIFY_WITNESS_PUBKEYTYPE
     verify_strict = not not (flags & VERIFY_STRICTENC)
     any_nonblank = (flags & VERIFY_NULLFAIL) and any(len(s) > 0 for s in sig_blobs)
@@ -191,13 +197,13 @@ def checksigs(vm, sig_blobs, public_pair_blobs):
     vm.append(vm.VM_TRUE)
 
 
-def do_OP_CHECKSIG(vm):
+def do_OP_CHECKSIG(vm: Any) -> None:
     pair_blob = vm.pop()
     sig_blob = vm.pop()
     checksigs(vm, [sig_blob], [pair_blob])
 
 
-def do_OP_CHECKMULTISIG(vm):
+def do_OP_CHECKMULTISIG(vm: Any) -> None:
     key_count = vm.pop_int()
     if key_count < 0 or key_count > 20:
         raise ScriptError("key_count not in range 0 to 20", errno.PUBKEY_COUNT)
@@ -224,14 +230,14 @@ def do_OP_CHECKMULTISIG(vm):
     vm.op_count += key_count
 
 
-def do_OP_CHECKMULTISIGVERIFY(vm):
+def do_OP_CHECKMULTISIGVERIFY(vm: Any) -> None:
     do_OP_CHECKMULTISIG(vm)
     v = vm.bool_from_script_bytes(vm.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.VERIFY)
 
 
-def do_OP_CHECKSIGVERIFY(vm):
+def do_OP_CHECKSIGVERIFY(vm: Any) -> None:
     do_OP_CHECKSIG(vm)
     v = vm.bool_from_script_bytes(vm.pop())
     if not v:

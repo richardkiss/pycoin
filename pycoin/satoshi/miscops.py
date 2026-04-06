@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Callable
+
 from . import errno
 
 from .flags import (
@@ -12,44 +16,46 @@ from .flags import (
 from pycoin.coins.SolutionChecker import ScriptError
 
 
-def make_bad_opcode(opcode, even_outside_conditional=False, err=errno.BAD_OPCODE):
-    def bad_opcode(vm):
+def make_bad_opcode(
+    opcode: str, even_outside_conditional: bool = False, err: int = errno.BAD_OPCODE
+) -> Callable[[Any], None]:
+    def bad_opcode(vm: Any) -> None:
         raise ScriptError("invalid opcode %s at %d" % (opcode, vm.pc - 1), err)
 
-    bad_opcode.outside_conditional = even_outside_conditional
+    setattr(bad_opcode, "outside_conditional", even_outside_conditional)
     return bad_opcode
 
 
-def do_OP_CODESEPARATOR(vm):
+def do_OP_CODESEPARATOR(vm: Any) -> None:
     vm.begin_code_hash = vm.pc
 
 
-def do_OP_TOALTSTACK(vm):
+def do_OP_TOALTSTACK(vm: Any) -> None:
     vm.altstack.append(vm.pop())
 
 
-def do_OP_RESERVED(vm):
+def do_OP_RESERVED(vm: Any) -> None:
     if vm.conditional_stack.all_if_true():
         raise ScriptError("OP_RESERVED encountered", errno.BAD_OPCODE)
     vm.op_count -= 1
 
 
-do_OP_RESERVED.outside_conditional = True
+setattr(do_OP_RESERVED, "outside_conditional", True)
 
 
-def do_OP_FROMALTSTACK(vm):
+def do_OP_FROMALTSTACK(vm: Any) -> None:
     if len(vm.altstack) < 1:
         raise ScriptError("alt stack empty", errno.INVALID_ALTSTACK_OPERATION)
     vm.append(vm.altstack.pop())
 
 
-def discourage_nops(vm):
+def discourage_nops(vm: Any) -> None:
     if vm.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS:
         raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
 
 
-def make_if(reverse_bool=False):
-    def f(vm):
+def make_if(reverse_bool: bool = False) -> Callable[[Any], None]:
+    def f(vm: Any) -> None:
         stack = vm.stack
         conditional_stack = vm.conditional_stack
         the_bool = False
@@ -63,25 +69,25 @@ def make_if(reverse_bool=False):
             the_bool = vm.bool_from_script_bytes(item)
         vm.conditional_stack.OP_IF(the_bool, reverse_bool=reverse_bool)
 
-    f.outside_conditional = True
+    setattr(f, "outside_conditional", True)
     return f
 
 
-def do_OP_ELSE(vm):
+def do_OP_ELSE(vm: Any) -> None:
     vm.conditional_stack.OP_ELSE()
 
 
-do_OP_ELSE.outside_conditional = True
+setattr(do_OP_ELSE, "outside_conditional", True)
 
 
-def do_OP_ENDIF(vm):
+def do_OP_ENDIF(vm: Any) -> None:
     vm.conditional_stack.OP_ENDIF()
 
 
-do_OP_ENDIF.outside_conditional = True
+setattr(do_OP_ENDIF, "outside_conditional", True)
 
 
-def do_OP_CHECKLOCKTIMEVERIFY(vm):
+def do_OP_CHECKLOCKTIMEVERIFY(vm: Any) -> None:
     if not (vm.flags & VERIFY_CHECKLOCKTIMEVERIFY):
         if vm.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS:
             raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
@@ -104,7 +110,7 @@ def do_OP_CHECKLOCKTIMEVERIFY(vm):
         raise ScriptError("nLockTime too soon")
 
 
-def _check_sequence_verify(sequence, tx_context_sequence):
+def _check_sequence_verify(sequence: int, tx_context_sequence: int) -> None:
     # this mask is applied to extract lock-time from the sequence field
     SEQUENCE_LOCKTIME_MASK = 0xFFFF
 
@@ -126,7 +132,7 @@ def _check_sequence_verify(sequence, tx_context_sequence):
         raise ScriptError("sequence number too small")
 
 
-def do_OP_CHECKSEQUENCEVERIFY(vm):
+def do_OP_CHECKSEQUENCEVERIFY(vm: Any) -> None:
     if not (vm.flags & VERIFY_CHECKSEQUENCEVERIFY):
         if vm.flags & VERIFY_DISCOURAGE_UPGRADABLE_NOPS:
             raise ScriptError("discouraging nops", errno.DISCOURAGE_UPGRADABLE_NOPS)
@@ -156,8 +162,8 @@ def do_OP_CHECKSEQUENCEVERIFY(vm):
     _check_sequence_verify(sequence, vm.tx_context.sequence)
 
 
-def extra_opcodes():
-    d = {}
+def extra_opcodes() -> dict[str, Any]:
+    d: dict[str, Any] = {}
     BAD_OPCODES = "OP_VERIF OP_VERNOTIF ".split()
     for opcode in BAD_OPCODES:
         d[opcode] = make_bad_opcode(opcode, even_outside_conditional=True)

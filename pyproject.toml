@@ -72,26 +72,26 @@ disallow_any_generics = true
 warn_return_any = true
 strict_optional = true
 
-# [[tool.mypy.overrides]]
-# module = "pycoin.satoshi.*"
-# disallow_untyped_defs = true
-# disallow_any_generics = true
-# warn_return_any = true
-# strict_optional = true
+[[tool.mypy.overrides]]
+module = "pycoin.satoshi.*"
+disallow_untyped_defs = true
+disallow_any_generics = true
+warn_return_any = true
+strict_optional = true
 
-# [[tool.mypy.overrides]]
-# module = "pycoin.serialize.*"
-# disallow_untyped_defs = true
-# disallow_any_generics = true
-# warn_return_any = true
-# strict_optional = true
+[[tool.mypy.overrides]]
+module = "pycoin.serialize.*"
+disallow_untyped_defs = true
+disallow_any_generics = true
+warn_return_any = true
+strict_optional = true
 
-# [[tool.mypy.overrides]]
-# module = ["pycoin.merkle", "pycoin.block", "pycoin.bloomfilter"]
-# disallow_untyped_defs = true
-# disallow_any_generics = true
-# warn_return_any = true
-# strict_optional = true
+[[tool.mypy.overrides]]
+module = ["pycoin.merkle", "pycoin.block", "pycoin.bloomfilter"]
+disallow_untyped_defs = true
+disallow_any_generics = true
+warn_return_any = true
+strict_optional = true
 
 # [[tool.mypy.overrides]]
 # module = "pycoin.key.*"
