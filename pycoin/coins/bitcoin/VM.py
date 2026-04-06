@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.ecdsa.secp256k1 import secp256k1_generator
 from pycoin.satoshi import errno, opcodes
@@ -21,12 +25,12 @@ class BitcoinVM(VM):
     INSTRUCTION_LOOKUP = make_instruction_lookup(opcodes.OPCODE_LIST)
     ScriptStreamer = BitcoinScriptStreamer
 
-    def pop_int(self):
-        return self.IntStreamer.int_from_script_bytes(
-            self.pop(), require_minimal=self.flags & VERIFY_MINIMALDATA
+    def pop_int(self) -> int:
+        return self.IntStreamer.int_from_script_bytes(  # type: ignore[no-any-return]
+            self.pop(), require_minimal=bool(self.flags & VERIFY_MINIMALDATA)
         )
 
-    def pop_nonnegative(self):
+    def pop_nonnegative(self) -> int:
         v = self.pop_int()
         if v < 0:
             raise ScriptError(
@@ -34,21 +38,21 @@ class BitcoinVM(VM):
             )
         return v
 
-    def push_int(self, v):
+    def push_int(self, v: int) -> None:
         self.append(self.IntStreamer.int_to_script_bytes(v))
 
     @classmethod
-    def bool_from_script_bytes(class_, v, require_minimal=False):
-        v = class_.IntStreamer.int_from_script_bytes(v, require_minimal=require_minimal)
+    def bool_from_script_bytes(class_: type[BitcoinVM], v: bytes, require_minimal: bool = False) -> bool:  # type: ignore[override]
+        int_v = class_.IntStreamer.int_from_script_bytes(v, require_minimal=require_minimal)
         if require_minimal:
-            if v not in (class_.VM_FALSE, class_.VM_TRUE):
+            if int_v not in (class_.VM_FALSE, class_.VM_TRUE):
                 raise ScriptError("non-minimally encoded", errno.UNKNOWN_ERROR)
-        return bool(v)
+        return bool(int_v)
 
     @classmethod
-    def bool_to_script_bytes(class_, v):
+    def bool_to_script_bytes(class_: type[BitcoinVM], v: Any) -> bytes:  # type: ignore[override]
         return class_.VM_TRUE if v else class_.VM_FALSE
 
     @classmethod
-    def generator_for_signature_type(class_, signature_type):
+    def generator_for_signature_type(class_: type[BitcoinVM], signature_type: int) -> Any:  # type: ignore[override]
         return secp256k1_generator

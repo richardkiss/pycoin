@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import io
-from typing import Any, ClassVar
+from typing import Any, ClassVar, IO
 
 from .SolutionChecker import SolutionChecker, ScriptError
 from .TxIn import TxIn
@@ -17,13 +17,18 @@ class Tx(object):
     Solver: ClassVar[Any] = None
     SolutionChecker: ClassVar[Any] = SolutionChecker
 
+    # declared here so mypy knows concrete subclasses provide them
+    txs_in: list[Any]
+    txs_out: list[Any]
+    unspents: list[Any]
+
     @classmethod
-    def parse(class_, f):
+    def parse(class_: type[Tx], f: IO[bytes]) -> Tx:
         """Parse a transaction Tx from the file-like object f."""
         raise NotImplementedError()
 
     @classmethod
-    def from_bin(class_, blob):
+    def from_bin(class_: type[Tx], blob: bytes) -> Tx:
         """Return the Tx for the given binary blob.
 
         :param blob: a binary blob containing a transaction streamed in standard
@@ -36,14 +41,14 @@ class Tx(object):
         f = io.BytesIO(blob)
         tx = class_.parse(f)
         try:
-            tx.parse_unspents(f)
+            tx.parse_unspents(f)  # type: ignore[attr-defined]
         except Exception:
             # parsing unspents failed
             tx.unspents = []
         return tx
 
     @classmethod
-    def from_hex(class_, hex_string):
+    def from_hex(class_: type[Tx], hex_string: str) -> Tx:
         """Return the Tx for the given hex string.
 
         :param hex_string: a hex string containing a transaction streamed in standard
@@ -55,14 +60,14 @@ class Tx(object):
         """
         return class_.from_bin(h2b(hex_string))
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         raise NotImplementedError()
 
-    def stream(self, f, *args, **kwargs):
+    def stream(self, f: IO[bytes], *args: Any, **kwargs: Any) -> None:
         """Stream a transaction Tx to the file-like object f."""
         raise NotImplementedError()
 
-    def as_bin(self, *args, **kwargs):
+    def as_bin(self, *args: Any, **kwargs: Any) -> bytes:
         """Returns a binary blob containing the streamed transaction.
 
         For information about the parameters, see :func:`Tx.stream <stream>`
@@ -73,7 +78,7 @@ class Tx(object):
         self.stream(f, *args, **kwargs)
         return f.getvalue()
 
-    def as_hex(self, *args, **kwargs):
+    def as_hex(self, *args: Any, **kwargs: Any) -> str:
         """Returns a text string containing the streamed transaction encoded as hex.
 
         For information about the parameters, see :func:`Tx.stream <stream>`
@@ -82,31 +87,31 @@ class Tx(object):
         """
         return b2h(self.as_bin(*args, **kwargs))
 
-    def hash(self, hash_type=None):
+    def hash(self, hash_type: int | None = None) -> bytes:
         """Return the hash for this Tx object."""
         raise NotImplementedError()
 
-    def id(self):
+    def id(self) -> str:
         """Return the human-readable hash for this Tx object."""
         return b2h_rev(self.hash())
 
-    def total_out(self):
+    def total_out(self) -> int:
         return sum(tx_out.coin_value for tx_out in self.txs_out)
 
-    def tx_outs_as_spendable(self, block_index_available=0):
+    def tx_outs_as_spendable(self, block_index_available: int = 0) -> list[Any]:
         h = self.hash()
         return [
             self.Spendable.from_tx_out(tx_out, h, tx_out_index, block_index_available)
             for tx_out_index, tx_out in enumerate(self.txs_out)
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         raise NotImplementedError()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         raise NotImplementedError()
 
-    def check(self):
+    def check(self) -> None:
         """
         Basic checks that don't depend on network or block context.
         """
@@ -118,7 +123,7 @@ class Tx(object):
     list of self.tx_in objects.
     """
 
-    def set_unspents(self, unspents):
+    def set_unspents(self, unspents: list[Any]) -> None:
         """
         Set the unspent inputs for a transaction.
 
@@ -130,7 +135,7 @@ class Tx(object):
             raise ValueError("wrong number of unspents")
         self.unspents = unspents
 
-    def sign(self, *args, **kwargs):
+    def sign(self, *args: Any, **kwargs: Any) -> Tx:
         """
         Sign all transaction inputs. The parameters vary depending upon the way the coins being
         spent are encumbered.
@@ -138,12 +143,12 @@ class Tx(object):
         self.Solver(self).sign(*args, **kwargs)
         return self
 
-    def check_solution(self, tx_in_idx, *args, **kwargs):
+    def check_solution(self, tx_in_idx: int, *args: Any, **kwargs: Any) -> None:
         sc = self.SolutionChecker(self)
         tx_context = sc.tx_context_for_idx(tx_in_idx)
         sc.check_solution(tx_context, *args, **kwargs)
 
-    def is_solution_ok(self, tx_in_idx, *args, **kwargs):
+    def is_solution_ok(self, tx_in_idx: int, *args: Any, **kwargs: Any) -> bool:
         if len(self.unspents) <= tx_in_idx or self.unspents[tx_in_idx] is None:
             return False
         try:
@@ -152,12 +157,12 @@ class Tx(object):
         except ScriptError:
             return False
 
-    def bad_solution_count(self, *args, **kwargs):
+    def bad_solution_count(self, *args: Any, **kwargs: Any) -> int:
         "Return a count of how many :class:`TxIn` objects are not correctly solved."
         return sum(
             0 if self.is_solution_ok(idx, *args, **kwargs) else 1
             for idx in range(len(self.txs_in))
-        )
+        )  # type: ignore[misc]
 
 
 """

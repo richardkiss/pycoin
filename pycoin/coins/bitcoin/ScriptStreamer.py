@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import struct
+from typing import Any, Callable
 
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi import errno, opcodes
@@ -6,21 +9,21 @@ from pycoin.satoshi.IntStreamer import IntStreamer
 from pycoin.vm.ScriptStreamer import ScriptStreamer
 
 
-def make_opcode_const_list():
+def make_opcode_const_list() -> list[tuple[str, bytes]]:
     return [("OP_%d" % i, IntStreamer.int_to_script_bytes(i)) for i in range(17)] + [
         ("OP_1NEGATE", IntStreamer.int_to_script_bytes(-1))
     ]
 
 
-def make_opcode_sized_list():
+def make_opcode_sized_list() -> list[tuple[str, int]]:
     return [("OP_PUSH_%d" % i, i) for i in range(1, 76)]
 
 
-def make_opcode_variable_list():
-    def make_variable_decoder(struct_data):
+def make_opcode_variable_list() -> list[tuple[str, int, Callable[..., Any], Callable[..., Any]]]:
+    def make_variable_decoder(struct_data: str) -> Callable[[bytes, int], tuple[int, int]]:
         struct_size = struct.calcsize(struct_data)
 
-        def decode_OP_PUSHDATA(script, pc):
+        def decode_OP_PUSHDATA(script: bytes, pc: int) -> tuple[int, int]:
             pc += 1
             try:
                 size = struct.unpack(struct_data, script[pc : pc + struct_size])[0]
@@ -31,7 +34,7 @@ def make_opcode_variable_list():
 
         return decode_OP_PUSHDATA
 
-    OPCODE_VARIABLE_LIST = [
+    OPCODE_VARIABLE_LIST: list[tuple[str, int, Callable[..., Any], Callable[..., Any]]] = [
         (
             "OP_PUSHDATA1",
             (1 << 8) - 1,
@@ -54,11 +57,11 @@ def make_opcode_variable_list():
     return OPCODE_VARIABLE_LIST
 
 
-def non_minimal_f(msg):
+def non_minimal_f(msg: str) -> None:
     raise ScriptError(msg, errno.MINIMALDATA)
 
 
-def make_script_streamer():
+def make_script_streamer() -> ScriptStreamer:
     OPCODE_CONST_LIST = make_opcode_const_list()
     OPCODE_SIZED_LIST = make_opcode_sized_list()
     OPCODE_VARIABLE_LIST = make_opcode_variable_list()

@@ -15,7 +15,7 @@ class BIP49Node(BIP32Node):
     [https://github.com/bitcoin/bips/blob/master/bip-0049.mediawiki]
     """
 
-    def address(self, is_compressed: bool = True) -> str:
+    def address(self, is_compressed: bool | None = True) -> str:  # type: ignore[override]
         pk_hash = self.hash160(is_compressed=is_compressed)
         underlying_script = self._network.contract.for_p2pkh_wit(pk_hash)  # type: ignore[attr-defined]
         return self._network.address.for_p2s(underlying_script)  # type: ignore[attr-defined,no-any-return]

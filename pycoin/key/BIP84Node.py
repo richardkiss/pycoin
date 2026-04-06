@@ -15,7 +15,7 @@ class BIP84Node(BIP32Node):
     [https://github.com/bitcoin/bips/blob/master/bip-0084.mediawiki]
     """
 
-    def address(self, is_compressed: bool = True) -> str:
+    def address(self, is_compressed: bool | None = True) -> str:  # type: ignore[override]
         pk_hash = self.hash160(is_compressed=is_compressed)
         return self._network.address.for_p2pkh_wit(pk_hash)  # type: ignore[attr-defined,no-any-return]
 

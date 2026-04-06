@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Iterator
+
 from .ScriptTools import BitcoinScriptTools
 from .VM import BitcoinVM
 
@@ -30,11 +34,11 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
 
     DEFAULT_FLAGS = VERIFY_P2SH | VERIFY_WITNESS
 
-    def __init__(self, tx):
+    def __init__(self, tx: Any) -> None:
         self.tx = tx
         # self.sighash_cache = {}
 
-    def _delete_signature(self, script, sig_blob):
+    def _delete_signature(self, script: bytes, sig_blob: bytes) -> bytes:
         """
         Returns a script with the given subscript removed. The subscript
         must appear in the main script aligned to opcode boundaries for it
@@ -49,9 +53,9 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
                 new_script.extend(section)
         return bytes(new_script)
 
-    def _make_sighash_f(self, tx_in_idx):
+    def _make_sighash_f(self, tx_in_idx: int) -> Any:
 
-        def sig_for_hash_type_f(hash_type, sig_blobs, vm):
+        def sig_for_hash_type_f(hash_type: int, sig_blobs: list[bytes], vm: Any) -> int:
             script = vm.script[vm.begin_code_hash :]
             for sig_blob in sig_blobs:
                 script = self._delete_signature(script, sig_blob)
@@ -59,7 +63,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
 
         return sig_for_hash_type_f
 
-    def _solution_script_to_stack(self, tx_context, flags, traceback_f):
+    def _solution_script_to_stack(self, tx_context: Any, flags: int, traceback_f: Any) -> list[Any]:
         if flags & VERIFY_SIGPUSHONLY:
             self._check_script_push_only(tx_context.solution_script)
 
@@ -73,23 +77,25 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
             f1,
         )
 
-        vm.is_solution_script = True
+        vm.is_solution_script = True  # type: ignore[attr-defined]
         vm.traceback_f = traceback_f
 
         solution_stack = vm.eval_script()
         return solution_stack
 
-    def _check_script_push_only(self, script):
+    def _check_script_push_only(self, script: bytes) -> None:
         scriptStreamer = self.VM.ScriptStreamer
         pc = 0
         while pc < len(script):
             opcode, data, pc, is_ok = scriptStreamer.get_opcode(script, pc)
             if opcode not in scriptStreamer.data_opcodes:
-                raise self.ScriptError(
+                raise self.ScriptError(  # type: ignore[attr-defined]
                     "signature has non-push opcodes", errno.SIG_PUSHONLY
                 )
 
-    def _tx_in_for_idx(self, idx, tx_in, tx_out_script, unsigned_txs_out_idx):
+    def _tx_in_for_idx(
+        self, idx: int, tx_in: Any, tx_out_script: bytes, unsigned_txs_out_idx: int
+    ) -> Any:
         if idx == unsigned_txs_out_idx:
             return self.tx.TxIn(
                 tx_in.previous_hash, tx_in.previous_index, tx_out_script, tx_in.sequence
@@ -99,7 +105,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         )
 
     @classmethod
-    def delete_subscript(class_, script, subscript):
+    def delete_subscript(class_: type[BitcoinSolutionChecker], script: bytes, subscript: bytes) -> bytes:
         """
         Returns a script with the given subscript removed. The subscript
         must appear in the main script aligned to opcode boundaries for it
@@ -113,7 +119,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
                 new_script.extend(section)
         return bytes(new_script)
 
-    def _signature_hash(self, tx_out_script, unsigned_txs_out_idx, hash_type):
+    def _signature_hash(self, tx_out_script: bytes, unsigned_txs_out_idx: int, hash_type: int) -> int:
         """
         Return the canonical hash for a transaction. We need to
         remove references to the signature, since it's a signature
@@ -177,7 +183,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         tmp_tx = self.tx.__class__(self.tx.version, txs_in, txs_out, self.tx.lock_time)
         return from_bytes_32(tmp_tx.hash(hash_type=hash_type))
 
-    def tx_context_for_idx(self, tx_in_idx):
+    def tx_context_for_idx(self, tx_in_idx: int) -> TxContext:
         """
         solution_script: alleged solution to the puzzle_script
         puzzle_script: the script protecting the coins
@@ -185,25 +191,25 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         tx_in = self.tx.txs_in[tx_in_idx]
 
         tx_context = TxContext()
-        tx_context.lock_time = self.tx.lock_time
-        tx_context.version = self.tx.version
-        tx_context.puzzle_script = (
+        tx_context.lock_time = self.tx.lock_time  # type: ignore[attr-defined]
+        tx_context.version = self.tx.version  # type: ignore[attr-defined]
+        tx_context.puzzle_script = (  # type: ignore[attr-defined]
             b""
             if self.tx.missing_unspent(tx_in_idx)
             else self.tx.unspents[tx_in_idx].script
         )
-        tx_context.solution_script = tx_in.script
-        tx_context.witness_solution_stack = tx_in.witness
-        tx_context.sequence = tx_in.sequence
-        tx_context.tx_in_idx = tx_in_idx
+        tx_context.solution_script = tx_in.script  # type: ignore[attr-defined]
+        tx_context.witness_solution_stack = tx_in.witness  # type: ignore[attr-defined]
+        tx_context.sequence = tx_in.sequence  # type: ignore[attr-defined]
+        tx_context.tx_in_idx = tx_in_idx  # type: ignore[attr-defined]
         return tx_context
 
-    def check_solution(self, tx_context, flags=None, traceback_f=None):
+    def check_solution(self, tx_context: Any, flags: int | None = None, traceback_f: Any = None) -> None:  # type: ignore[override]
         """
         tx_context: information about the transaction that the VM may need
         flags: gives the VM hints about which additional constraints to check
         """
-
+        stack: list[Any] = []
         for t in self.puzzle_and_solution_iterator(
             tx_context, flags=flags, traceback_f=traceback_f
         ):
@@ -217,17 +223,19 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
                 initial_stack=solution_stack[:],
             )
 
-            vm.is_solution_script = False
+            vm.is_solution_script = False  # type: ignore[attr-defined]
             vm.traceback_f = traceback_f
 
             stack = vm.eval_script()
             if len(stack) == 0 or not vm.bool_from_script_bytes(stack[-1]):
-                raise self.ScriptError("eval false", errno.EVAL_FALSE)
+                raise self.ScriptError("eval false", errno.EVAL_FALSE)  # type: ignore[attr-defined]
 
-        if flags & VERIFY_CLEANSTACK and len(stack) != 1:
-            raise self.ScriptError("stack not clean after evaluation", errno.CLEANSTACK)
+        if flags and flags & VERIFY_CLEANSTACK and len(stack) != 1:
+            raise self.ScriptError("stack not clean after evaluation", errno.CLEANSTACK)  # type: ignore[attr-defined]
 
-    def puzzle_and_solution_iterator(self, tx_context, flags=None, traceback_f=None):
+    def puzzle_and_solution_iterator(
+        self, tx_context: Any, flags: int | None = None, traceback_f: Any = None
+    ) -> Iterator[tuple[bytes, list[Any], int, Any]]:
         if flags is None:
             flags = self.DEFAULT_FLAGS
 
@@ -241,7 +249,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
         sighash_f = self._make_sighash_f(tx_context.tx_in_idx)
         yield puzzle_script, solution_stack, flags_1, sighash_f
 
-        p2sh_tuple = self.p2s_program_tuple(
+        p2sh_tuple = self.p2s_program_tuple(  # type: ignore[attr-defined]
             tx_context, puzzle_script, solution_stack, flags_1, sighash_f
         )
         if p2sh_tuple:
@@ -249,7 +257,7 @@ class BitcoinSolutionChecker(SegwitChecker, P2SChecker):
             puzzle_script, solution_stack = p2sh_tuple[:2]
 
         is_p2sh = p2sh_tuple is not None
-        witness_tuple = self.witness_program_tuple(
+        witness_tuple = self.witness_program_tuple(  # type: ignore[attr-defined]
             tx_context, puzzle_script, solution_stack, flags, is_p2sh
         )
         if witness_tuple:

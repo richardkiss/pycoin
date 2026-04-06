@@ -71,4 +71,4 @@ class ConstraintSolver(object):
                     d.update(r)  # type: ignore[arg-type]
                 return d
             return False
-        return m.match(c)
+        return m.match(c)  # type: ignore[no-any-return]

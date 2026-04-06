@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Callable
+
 from pycoin.coins.SolutionChecker import ScriptError
 from pycoin.satoshi import intops, stackops, checksigops, miscops
 from pycoin.satoshi import errno
@@ -5,8 +9,8 @@ from pycoin.satoshi import errno
 from .ScriptStreamer import BitcoinScriptStreamer
 
 
-def _make_bad_instruction(v):
-    def f(vm_state):
+def _make_bad_instruction(v: int) -> Callable[[Any], None]:
+    def f(vm_state: Any) -> None:
         raise ScriptError(
             "invalid instruction x%02x at %d" % (v, vm_state.pc), errno.BAD_OPCODE
         )
@@ -14,27 +18,28 @@ def _make_bad_instruction(v):
     return f
 
 
-def _collect_opcodes(module):
-    d = {}
+def _collect_opcodes(module: Any) -> dict[str, Any]:
+    d: dict[str, Any] = {}
     for k in dir(module):
         if k.startswith("do_OP"):
             d[k[3:]] = getattr(module, k)
     return d
 
 
-def _no_op(vm):
+def _no_op(vm: Any) -> None:
     pass
 
 
-def make_instruction_lookup(opcode_pairs):
+def make_instruction_lookup(opcode_pairs: list[tuple[str, int]]) -> list[Callable[[Any], None]]:
     OPCODE_DATA_LIST = list(BitcoinScriptStreamer.data_opcodes)
 
     # start with all opcodes invalid
-    instruction_lookup = [_make_bad_instruction(i) for i in range(256)]
+    instruction_lookup: list[Callable[[Any], None]] = [_make_bad_instruction(i) for i in range(256)]
 
     for i in OPCODE_DATA_LIST:
-        instruction_lookup[i] = _no_op
-    opcode_lookups = {}
+        if i is not None:
+            instruction_lookup[i] = _no_op
+    opcode_lookups: dict[str, Any] = {}
     opcode_lookups.update(_collect_opcodes(checksigops))
     opcode_lookups.update(_collect_opcodes(intops))
     opcode_lookups.update(_collect_opcodes(stackops))

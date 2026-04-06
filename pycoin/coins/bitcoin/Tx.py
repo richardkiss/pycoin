@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import io
 import warnings
+from typing import Any, IO
 
 from ..Tx import Tx as BaseTx
 
@@ -40,8 +43,13 @@ class Tx(BaseTx):
 
     @classmethod
     def coinbase_tx(
-        cls, public_key_sec, coin_value, coinbase_bytes=b"", version=1, lock_time=0
-    ):
+        cls: type[Tx],
+        public_key_sec: bytes,
+        coin_value: int,
+        coinbase_bytes: bytes = b"",
+        version: int = 1,
+        lock_time: int = 0,
+    ) -> Tx:
         """Create the special "first in block" transaction that includes the mining fees."""
         tx_in = cls.TxIn.coinbase_tx_in(script=coinbase_bytes)
         COINBASE_SCRIPT_OUT = "%s OP_CHECKSIG"
@@ -51,7 +59,7 @@ class Tx(BaseTx):
         return cls(version, [tx_in], [tx_out], lock_time)
 
     @classmethod
-    def parse(class_, f, allow_segwit=None):
+    def parse(class_: type[Tx], f: IO[bytes], allow_segwit: bool | None = None) -> Tx:  # type: ignore[override]
         """Parse a Bitcoin transaction Tx.
 
         :param f: a file-like object that contains a binary streamed transaction
@@ -61,9 +69,9 @@ class Tx(BaseTx):
         if allow_segwit is None:
             allow_segwit = class_.ALLOW_SEGWIT
         (version,) = parse_struct("L", f)
-        v1 = ord(f.read(1))
-        is_segwit = allow_segwit and (v1 == 0)
-        v2 = None
+        v1: int | None = ord(f.read(1))
+        is_segwit: bool | int = bool(allow_segwit and (v1 == 0))
+        v2: int | None = None
         if is_segwit:
             flag = f.read(1)
             if flag == b"\0" or len(flag) == 0:
@@ -92,7 +100,7 @@ class Tx(BaseTx):
         return class_(version, txs_in, txs_out, lock_time)
 
     @classmethod
-    def tx_from_hex(cls, hex_string):
+    def tx_from_hex(cls: type[Tx], hex_string: str) -> Tx:  # type: ignore[override]
         warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "Call to deprecated function tx_from_hex, use from_hex instead",
@@ -100,9 +108,16 @@ class Tx(BaseTx):
             stacklevel=2,
         )
         warnings.simplefilter("default", DeprecationWarning)
-        return cls.from_hex(hex_string)
+        return cls.from_hex(hex_string)  # type: ignore[return-value]
 
-    def __init__(self, version, txs_in, txs_out, lock_time=0, unspents=None):
+    def __init__(  # type: ignore[override]
+        self,
+        version: int,
+        txs_in: list[Any],
+        txs_out: list[Any],
+        lock_time: int = 0,
+        unspents: list[Any] | None = None,
+    ) -> None:
         """Tx constructor.
 
         :param version: version number of the Tx, usually 1
@@ -119,19 +134,19 @@ class Tx(BaseTx):
         self.txs_in = txs_in
         self.txs_out = txs_out
         self.lock_time = lock_time
-        self.unspents = unspents or []
+        self.unspents: list[Any] = unspents or []
         for tx_in in self.txs_in:
             assert type(tx_in) is self.TxIn
         for tx_out in self.txs_out:
             assert type(tx_out) is self.TxOut
 
-    def stream(
+    def stream(  # type: ignore[override]
         self,
-        f,
-        blank_solutions=False,
-        include_unspents=False,
-        include_witness_data=True,
-    ):
+        f: IO[bytes],
+        blank_solutions: bool = False,
+        include_unspents: bool = False,
+        include_witness_data: bool = True,
+    ) -> None:
         """Stream a Bitcoin transaction Tx to the file-like object f.
 
         :param f: writable file-like object to stream binary data of transaction
@@ -162,7 +177,7 @@ class Tx(BaseTx):
         if include_unspents and not self.missing_unspents():
             self.stream_unspents(f)
 
-    def set_witness(self, tx_idx_in, witness):
+    def set_witness(self, tx_idx_in: int, witness: list[bytes]) -> None:
         """Set the witness data for a given :class:`TxIn`.
 
         :param tx_idx_in: an integer index corresponding to the txs_in puzzle script entry that this is a witness to
@@ -170,11 +185,11 @@ class Tx(BaseTx):
         """
         self.txs_in[tx_idx_in].witness = tuple(witness)
 
-    def has_witness_data(self):
+    def has_witness_data(self) -> bool:
         """Return a boolean indicating if the transaction has any segwit data."""
         return any(len(tx_in.witness) > 0 for tx_in in self.txs_in)
 
-    def hash(self, hash_type=None):
+    def hash(self, hash_type: int | None = None) -> bytes:  # type: ignore[override]
         """Return the binary hash for this :class:`Tx` object.
 
         :param hash_type: (optional) if set, generates a hash specific to a particular type of signature.
@@ -187,14 +202,14 @@ class Tx(BaseTx):
             stream_struct("L", s, hash_type)
         return double_sha256(s.getvalue())
 
-    def w_hash(self):
+    def w_hash(self) -> bytes:
         """Return the segwit-specific binary hash for this :class:`Tx` object.
 
         :return: 32 byte long binary blob corresponding to the hash
         """
         return double_sha256(self.as_bin())
 
-    def w_id(self):
+    def w_id(self) -> str:
         """Return the segwit-specific binary hash for this :class:`Tx` object as a hex string.
         Note that this is a ``reversed`` version of :func:`Tx.w_hash <w_hash>`.
 
@@ -202,7 +217,7 @@ class Tx(BaseTx):
         """
         return b2h_rev(self.w_hash())
 
-    def blanked_hash(self):
+    def blanked_hash(self) -> bytes:
         """
         Return the hash for this Tx object with solution scripts blanked.
         This hash is useful for determining if two Txs might be equivalent modulo
@@ -215,23 +230,23 @@ class Tx(BaseTx):
         self.stream(s, blank_solutions=True)
         return double_sha256(s.getvalue())
 
-    def total_out(self):
+    def total_out(self) -> int:
         return sum(tx_out.coin_value for tx_out in self.txs_out)
 
-    def tx_outs_as_spendable(self, block_index_available=0):
+    def tx_outs_as_spendable(self, block_index_available: int = 0) -> list[Any]:
         h = self.hash()
         return [
             self.Spendable.from_tx_out(tx_out, h, tx_out_index, block_index_available)
             for tx_out_index, tx_out in enumerate(self.txs_out)
         ]
 
-    def is_coinbase(self):
+    def is_coinbase(self) -> bool:
         return len(self.txs_in) == 1 and self.txs_in[0].is_coinbase()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Tx [%s]" % self.id()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Tx [%s] (v:%d) [%s] [%s]" % (
             self.id(),
             self.version,
@@ -239,18 +254,18 @@ class Tx(BaseTx):
             ", ".join(str(t) for t in self.txs_out),
         )
 
-    def _check_tx_inout_count(self):
+    def _check_tx_inout_count(self) -> None:
         if not self.txs_out:
             raise ValidationFailureError("txs_out = []")
         if not self.is_coinbase() and not self.txs_in:
             raise ValidationFailureError("txs_in = []")
 
-    def _check_size_limit(self):
+    def _check_size_limit(self) -> None:
         size = len(self.as_bin())
         if size > self.MAX_TX_SIZE:
             raise ValidationFailureError("size > MAX_TX_SIZE")
 
-    def _check_txs_out(self):
+    def _check_txs_out(self) -> None:
         # Check for negative or overflow output values
         nValueOut = 0
         for tx_out in self.txs_out:
@@ -260,7 +275,7 @@ class Tx(BaseTx):
             if nValueOut > self.MAX_MONEY:
                 raise ValidationFailureError("tx_out total out of range")
 
-    def _check_txs_in(self):
+    def _check_txs_in(self) -> None:
         # Check for duplicate inputs
         if [x for x in self.txs_in if self.txs_in.count(x) > 1]:
             raise ValidationFailureError("duplicate inputs")
@@ -268,7 +283,7 @@ class Tx(BaseTx):
             if not (2 <= len(self.txs_in[0].script) <= 100):
                 raise ValidationFailureError("bad coinbase script size")
         else:
-            refs = set()
+            refs: set[tuple[bytes, int]] = set()
             for tx_in in self.txs_in:
                 if tx_in.previous_hash == ZERO32:
                     raise ValidationFailureError("prevout is null")
@@ -277,7 +292,7 @@ class Tx(BaseTx):
                     raise ValidationFailureError("spendable reused")
                 refs.add(pair)
 
-    def check(self):
+    def check(self) -> None:
         """
         Basic checks that don't depend on any context.
         Adapted from Bicoin Code: main.cpp
@@ -288,7 +303,7 @@ class Tx(BaseTx):
         # Size limits
         self._check_size_limit()
 
-    def bad_solution_count(self, *args, **kwargs):
+    def bad_solution_count(self, *args: Any, **kwargs: Any) -> int:
         if self.is_coinbase():
             return 0
         return super(Tx, self).bad_solution_count(*args, **kwargs)
@@ -299,8 +314,8 @@ class Tx(BaseTx):
     list of self.tx_in objects.
     """
 
-    def unspents_from_db(self, tx_db, ignore_missing=False):
-        unspents = []
+    def unspents_from_db(self, tx_db: Any, ignore_missing: bool = False) -> None:
+        unspents: list[Any] = []
         for tx_in in self.txs_in:
             if tx_in.is_coinbase():
                 unspents.append(None)
@@ -317,35 +332,35 @@ class Tx(BaseTx):
                 )
         self.unspents = unspents
 
-    def missing_unspent(self, idx):
+    def missing_unspent(self, idx: int) -> bool:
         if self.is_coinbase():
             return True
         if len(self.unspents) <= idx:
             return True
         return self.unspents[idx] is None
 
-    def missing_unspents(self):
+    def missing_unspents(self) -> bool:
         if self.is_coinbase():
             return False
         return len(self.unspents) != len(self.txs_in) or any(
             self.missing_unspent(idx) for idx, tx_in in enumerate(self.txs_in)
         )
 
-    def check_unspents(self):
+    def check_unspents(self) -> None:
         if self.missing_unspents():
             raise ValueError(
                 "wrong number of unspents. Call unspents_from_db or set_unspents."
             )
 
-    def stream_unspents(self, f):
+    def stream_unspents(self, f: IO[bytes]) -> None:
         self.check_unspents()
         for tx_out in self.unspents:
             if tx_out is None:
                 tx_out = self.TxOut(0, b"")
             tx_out.stream(f)
 
-    def parse_unspents(self, f):
-        unspents = []
+    def parse_unspents(self, f: IO[bytes]) -> None:
+        unspents: list[Any] = []
         for i in enumerate(self.txs_in):
             tx_out = self.TxOut.parse(f)
             if tx_out.coin_value == 0:
@@ -353,16 +368,16 @@ class Tx(BaseTx):
             unspents.append(tx_out)
         self.set_unspents(unspents)
 
-    def total_in(self):
+    def total_in(self) -> int:
         if self.is_coinbase():
-            return self.txs_out[0].coin_value
+            return self.txs_out[0].coin_value  # type: ignore[no-any-return]
         self.check_unspents()
         return sum(tx_out.coin_value for tx_out in self.unspents)
 
-    def fee(self):
+    def fee(self) -> int:
         return self.total_in() - self.total_out()
 
-    def validate_unspents(self, tx_db):
+    def validate_unspents(self, tx_db: Any) -> int:
         """
         Spendable objects returned from blockchain.info or
         similar services contain coin_value information that must be trusted
@@ -380,7 +395,7 @@ class Tx(BaseTx):
         tx_hashes = set((tx_in.previous_hash for tx_in in self.txs_in))
 
         # build a local copy of the DB
-        tx_lookup = {}
+        tx_lookup: dict[bytes, Any] = {}
         for h in tx_hashes:
             if h == ZERO32:
                 continue
@@ -390,7 +405,7 @@ class Tx(BaseTx):
             if the_tx.hash() != h:
                 raise KeyError(
                     "attempt to load Tx %s yielded a Tx with id %s"
-                    % (h2b_rev(h), the_tx.id())
+                    % (b2h_rev(h), the_tx.id())
                 )
             tx_lookup[h] = the_tx
 

@@ -11,29 +11,34 @@ from pycoin.solve.ConstraintSolver import SolvingError, ConstraintSolver
 from pycoin.solve.some_solvers import register_all
 
 
-def generate_default_placeholder_signature(generator):
+def generate_default_placeholder_signature(generator: Any) -> bytes:
     return h2b(
         "3045022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036414002207"
         "fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001"
     )
 
 
-class DynamicStack(list):
-    def __init__(self, initial_stack=[], reserve_count=0, fill_template="x_%d"):
+class DynamicStack(list):  # type: ignore[type-arg]
+    def __init__(
+        self,
+        initial_stack: list[Any] = [],
+        reserve_count: int = 0,
+        fill_template: str = "x_%d",
+    ) -> None:
         self.total_item_count = reserve_count
         self.fill_template = fill_template
         super(DynamicStack, self).__init__(initial_stack)
 
-    def _fill(self):
+    def _fill(self) -> None:
         self.insert(0, Atom(self.fill_template % self.total_item_count))
         self.total_item_count += 1
 
-    def pop(self, i=-1):
+    def pop(self, i: int = -1) -> Any:  # type: ignore[override]
         while len(self) < abs(i):
             self._fill()
         return super(DynamicStack, self).pop(i)
 
-    def __getitem__(self, *args, **kwargs):
+    def __getitem__(self, *args: Any, **kwargs: Any) -> Any:
         while True:
             try:
                 return super(DynamicStack, self).__getitem__(*args, **kwargs)
@@ -45,12 +50,14 @@ class Solver(object):
     SolutionChecker: Any = None
     ScriptTools: Any = None
 
-    def __init__(self, tx):
+    def __init__(self, tx: Any) -> None:
         self.tx = tx
         self.solution_checker = self.SolutionChecker(tx)
         # self.sighash_cache = {}
 
-    def determine_constraints(self, tx_in_idx, p2sh_lookup={}):
+    def determine_constraints(
+        self, tx_in_idx: int, p2sh_lookup: dict[bytes, bytes] = {}
+    ) -> list[Any]:
         tx_context = self.solution_checker.tx_context_for_idx(tx_in_idx)
         tx_context.witness_solution_stack = DynamicStack(
             [Atom("w_%d" % (1 - _)) for _ in range(2)], fill_template="w_%d"
@@ -64,6 +71,9 @@ class Solver(object):
         tx_context.solution_script = b""
         solution_reserve_count = 0
         fill_template = "x_%d"
+        underlying_script: bytes | None = None
+        underlying_script_wit: bytes | None = None
+        witness_program: bytes = b""
         if script_hash:
             underlying_script = p2sh_lookup.get(script_hash, None)
             if underlying_script is None:
@@ -79,9 +89,8 @@ class Solver(object):
                 underlying_script
             )
         if witness_version == 0:
-            witness_program = (
-                underlying_script if script_hash else tx_context.puzzle_script
-            )[2:]
+            base_script: bytes = underlying_script if script_hash else tx_context.puzzle_script  # type: ignore[assignment]
+            witness_program = base_script[2:]
             if len(witness_program) == 32:
                 underlying_script_wit = p2sh_lookup.get(witness_program, None)
                 if underlying_script_wit is None:
@@ -92,9 +101,9 @@ class Solver(object):
                 fill_template = "w_%d"
                 solution_reserve_count = 1
                 tx_context.witness_solution_stack = [underlying_script_wit]
-        constraints = []
+        constraints: list[Any] = []
 
-        def reset_stack_f(stack):
+        def reset_stack_f(stack: list[Any]) -> DynamicStack:
             return DynamicStack(stack, solution_reserve_count, fill_template)
 
         try:
@@ -113,17 +122,19 @@ class Solver(object):
                 )
         return constraints
 
-    def solve_for_constraints(self, constraints, **kwargs):
-        solutions = []
+    def solve_for_constraints(
+        self, constraints: list[Any], **kwargs: Any
+    ) -> tuple[list[Any], list[Any]]:
+        solutions: list[Any] = []
         for c in constraints:
             s = self.solutions_for_constraint(c)
             # s = (solution_f, target atom, dependency atom list)
             if s:
                 solutions.append(s)
-        deps = set()
+        deps: set[Any] = set()
         for c in constraints:
             deps.update(c.dependencies())
-        solved_values = {d: None for d in deps}
+        solved_values: dict[Any, Any] = {d: None for d in deps}
         progress = True
         while progress and None in solved_values.values():
             progress = False
@@ -146,7 +157,9 @@ class Solver(object):
         witness_list = [solved_values.get(k) for k in w_keys]
         return solution_list, witness_list
 
-    def solve(self, hash160_lookup, tx_in_idx, hash_type=None, **kwargs):
+    def solve(
+        self, hash160_lookup: Any, tx_in_idx: int, hash_type: int | None = None, **kwargs: Any
+    ) -> Any:
         """
         Sign a standard transaction.
         hash160_lookup:
@@ -179,7 +192,7 @@ class Solver(object):
             self.solution_checker.VM.generator_for_signature_type
         )
         constraints = self.determine_constraints(
-            tx_in_idx, p2sh_lookup=kwargs.get("p2sh_lookup")
+            tx_in_idx, p2sh_lookup=kwargs.get("p2sh_lookup") or {}
         )
         solution_list, witness_list = self.solve_for_constraints(constraints, **kwargs)
         solution_script = self.ScriptTools.compile_push_data_list(solution_list)
@@ -187,7 +200,13 @@ class Solver(object):
             return solution_script, witness_list
         return solution_script
 
-    def sign(self, hash160_lookup, tx_in_idx_set=None, hash_type=None, **kwargs):
+    def sign(
+        self,
+        hash160_lookup: Any,
+        tx_in_idx_set: Any = None,
+        hash_type: int | None = None,
+        **kwargs: Any,
+    ) -> Solver:
         """
         Sign a standard transaction.
         hash160_lookup:
@@ -217,6 +236,9 @@ class Solver(object):
                 pass
         return self
 
+    def solutions_for_constraint(self, c: Any) -> Any:
+        raise NotImplementedError
+
 
 BitcoinConstraintSolver = ConstraintSolver()
 register_all(BitcoinConstraintSolver)
@@ -229,5 +251,5 @@ class BitcoinSolver(Solver):
     SolutionChecker = BitcoinSolutionChecker
     ScriptTools = BitcoinScriptTools
 
-    def solutions_for_constraint(self, c):
+    def solutions_for_constraint(self, c: Any) -> Any:
         return BitcoinConstraintSolver.solutions_for_constraint(c)

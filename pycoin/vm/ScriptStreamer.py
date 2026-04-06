@@ -105,7 +105,7 @@ class ScriptStreamer(object):
         opcode_const_list: list[tuple[str, bytes]],
         opcode_sized_list: list[tuple[str, int]],
         opcode_variable_list: list[tuple[str, int, Callable[..., Any], Callable[..., Any]]],
-        opcode_lookup: dict[str, int | None],
+        opcode_lookup: dict[str, Any],
         non_minimal_data_handler: Callable[[str], Any],
     ) -> None:
         """
