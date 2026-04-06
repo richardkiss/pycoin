@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import binascii
 
 
@@ -5,7 +7,7 @@ class UnexpectedDER(Exception):
     pass
 
 
-def encode_integer(r):
+def encode_integer(r: int) -> bytes:
     assert r >= 0  # can't support negative numbers yet
     h = "%x" % r
     if len(h) % 2:
@@ -20,15 +22,15 @@ def encode_integer(r):
         return b"\x02" + bytes([len(s) + 1]) + b"\x00" + s
 
 
-def encode_sequence(*encoded_pieces):
+def encode_sequence(*encoded_pieces: bytes) -> bytes:
     total_len = sum([len(p) for p in encoded_pieces])
     return b"\x30" + encode_length(total_len) + b"".join(encoded_pieces)
 
 
-def remove_sequence(string):
+def remove_sequence(string: bytes) -> tuple[bytes, bytes]:
     if not string.startswith(b"\x30"):
         raise UnexpectedDER(
-            "wanted sequence (0x30), got string length %d %s"
+            "wanted sequence (0x30), got string length %d %r"
             % (len(string), binascii.hexlify(string[:10]))
         )
     length, lengthlength = read_length(string[1:])
@@ -36,7 +38,7 @@ def remove_sequence(string):
     return string[1 + lengthlength : endseq], string[endseq:]
 
 
-def remove_integer(string, use_broken_open_ssl_mechanism=False):
+def remove_integer(string: bytes, use_broken_open_ssl_mechanism: bool = False) -> tuple[int, bytes]:
     # OpenSSL treats DER-encoded negative integers (that have their most significant
     # bit set) as positive integers. Some apps depend upon this bug.
     if not string.startswith(b"\x02"):
@@ -53,19 +55,19 @@ def remove_integer(string, use_broken_open_ssl_mechanism=False):
     return v, rest
 
 
-def encode_length(length):
+def encode_length(length: int) -> bytes:
     assert length >= 0
     if length < 0x80:
         return bytes([length])
-    s = "%x" % length
-    if len(s) % 2:
-        s = "0" + s
-    s = binascii.unhexlify(s)
-    llen = len(s)
-    return bytes([0x80 | llen]) + s
+    h = "%x" % length
+    if len(h) % 2:
+        h = "0" + h
+    b = binascii.unhexlify(h)
+    llen = len(b)
+    return bytes([0x80 | llen]) + b
 
 
-def read_length(string):
+def read_length(string: bytes) -> tuple[int, int]:
     s0 = ord(string[:1])
     if not (s0 & 0x80):
         # short form
@@ -78,11 +80,11 @@ def read_length(string):
     return int(binascii.hexlify(string[1 : 1 + llen]), 16), 1 + llen
 
 
-def sigencode_der(r, s):
+def sigencode_der(r: int, s: int) -> bytes:
     return encode_sequence(encode_integer(r), encode_integer(s))
 
 
-def sigdecode_der(sig_der, use_broken_open_ssl_mechanism=True):
+def sigdecode_der(sig_der: bytes, use_broken_open_ssl_mechanism: bool = True) -> tuple[int, int]:
     # if use_broken_open_ssl_mechanism is true, this is a non-standard implementation
     rs_strings, remainder = remove_sequence(sig_der)
     if remainder and not use_broken_open_ssl_mechanism:

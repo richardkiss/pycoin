@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import hashlib
+from typing import Any
 
 from . import errno
 from pycoin.coins.SolutionChecker import ScriptError
@@ -6,7 +9,7 @@ from pycoin.coins.SolutionChecker import ScriptError
 from ..encoding.hash import hash160, double_sha256, ripemd160
 
 
-def do_OP_NOP(s):
+def do_OP_NOP(s: Any) -> None:
     pass
 
 
@@ -14,89 +17,89 @@ for i in range(1, 11):
     exec("def do_OP_NOP%d(s): pass" % i)
 
 
-def do_OP_VER(stack):
+def do_OP_VER(stack: Any) -> None:
     raise ScriptError("OP_VER encountered", errno.BAD_OPCODE)
 
 
-def do_OP_RESERVED1(stack):
+def do_OP_RESERVED1(stack: Any) -> None:
     raise ScriptError("OP_RESERVED1 encountered", errno.BAD_OPCODE)
 
 
-def do_OP_RESERVED2(stack):
+def do_OP_RESERVED2(stack: Any) -> None:
     raise ScriptError("OP_RESERVED2 encountered", errno.BAD_OPCODE)
 
 
-def do_OP_RETURN(stack):
+def do_OP_RETURN(stack: Any) -> None:
     raise ScriptError("OP_RETURN encountered", errno.OP_RETURN)
 
 
-def do_OP_2DROP(stack):
+def do_OP_2DROP(stack: Any) -> None:
     stack.pop()
     stack.pop()
 
 
-def do_OP_2DUP(stack):
+def do_OP_2DUP(stack: Any) -> None:
     #  (x1 x2 -- x1 x2 x1 x2)
     stack.append(stack[-2])
     stack.append(stack[-2])
 
 
-def do_OP_3DUP(stack):
+def do_OP_3DUP(stack: Any) -> None:
     #  (x1 x2 x3 -- x1 x2 x3 x1 x2 x3)
     stack.append(stack[-3])
     stack.append(stack[-3])
     stack.append(stack[-3])
 
 
-def do_OP_2OVER(stack):
+def do_OP_2OVER(stack: Any) -> None:
     #  (x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2)
     stack.append(stack[-4])
     stack.append(stack[-4])
 
 
-def do_OP_2ROT(stack):
+def do_OP_2ROT(stack: Any) -> None:
     # (1, 2, 3, 4, 5, 6 -- 3, 4, 5, 6, 1, 2)
     stack.append(stack.pop(-6))
     stack.append(stack.pop(-6))
 
 
-def do_OP_2SWAP(stack):
+def do_OP_2SWAP(stack: Any) -> None:
     stack.append(stack.pop(-4))
     stack.append(stack.pop(-4))
 
 
-def do_OP_IFDUP(stack):
+def do_OP_IFDUP(stack: Any) -> None:
     if stack[-1]:
         stack.append(stack[-1])
 
 
-def do_OP_DROP(stack):
+def do_OP_DROP(stack: Any) -> None:
     stack.pop()
 
 
-def do_OP_DUP(stack):
+def do_OP_DUP(stack: Any) -> None:
     stack.append(stack[-1])
 
 
-def do_OP_NIP(stack):
+def do_OP_NIP(stack: Any) -> None:
     v = stack.pop()
     stack.pop()
     stack.append(v)
 
 
-def do_OP_OVER(stack):
+def do_OP_OVER(stack: Any) -> None:
     stack.append(stack[-2])
 
 
-def do_OP_ROT(stack):
+def do_OP_ROT(stack: Any) -> None:
     stack.append(stack.pop(-3))
 
 
-def do_OP_SWAP(stack):
+def do_OP_SWAP(stack: Any) -> None:
     stack.append(stack.pop(-2))
 
 
-def do_OP_TUCK(stack):
+def do_OP_TUCK(stack: Any) -> None:
     v1 = stack.pop()
     v2 = stack.pop()
     stack.append(v1)
@@ -104,29 +107,29 @@ def do_OP_TUCK(stack):
     stack.append(v1)
 
 
-def do_OP_CAT(stack):
+def do_OP_CAT(stack: Any) -> None:
     v1 = stack.pop()
     v2 = stack.pop()
     stack.append(v2 + v1)
 
 
-def do_OP_RIPEMD160(stack):
+def do_OP_RIPEMD160(stack: Any) -> None:
     stack.append(ripemd160(stack.pop()).digest())
 
 
-def do_OP_SHA1(stack):
+def do_OP_SHA1(stack: Any) -> None:
     stack.append(hashlib.sha1(stack.pop()).digest())
 
 
-def do_OP_SHA256(stack):
+def do_OP_SHA256(stack: Any) -> None:
     stack.append(hashlib.sha256(stack.pop()).digest())
 
 
-def do_OP_HASH160(stack):
+def do_OP_HASH160(stack: Any) -> None:
     stack.append(hash160(stack.pop()))
 
 
-def do_OP_HASH256(stack):
+def do_OP_HASH256(stack: Any) -> None:
     stack.append(double_sha256(stack.pop()))
 
 

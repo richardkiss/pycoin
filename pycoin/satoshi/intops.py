@@ -1,16 +1,20 @@
+from __future__ import annotations
+
+from typing import Any, Callable
+
 from . import errno
 from pycoin.coins.SolutionChecker import ScriptError
 
 from .flags import VERIFY_MINIMALDATA
 
 
-def do_OP_VERIFY(vm):
+def do_OP_VERIFY(vm: Any) -> None:
     v = vm.bool_from_script_bytes(vm.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.VERIFY)
 
 
-def do_OP_DEPTH(vm):
+def do_OP_DEPTH(vm: Any) -> None:
     """
     >>> s = [1, 2, 1, 2, 1, 2]
     >>> do_OP_DEPTH(s)
@@ -20,7 +24,7 @@ def do_OP_DEPTH(vm):
     vm.push_int(len(vm.stack))
 
 
-def do_OP_PICK(vm):
+def do_OP_PICK(vm: Any) -> None:
     """
     >>> s = [b'a', b'b', b'c', b'd', b'\2']
     >>> do_OP_PICK(s, require_minimal=True)
@@ -31,7 +35,7 @@ def do_OP_PICK(vm):
     vm.append(vm[-v - 1])
 
 
-def do_OP_ROLL(vm):
+def do_OP_ROLL(vm: Any) -> None:
     """
     >>> s = [b'a', b'b', b'c', b'd', b'\2']
     >>> do_OP_ROLL(s, require_minimal=True)
@@ -42,7 +46,7 @@ def do_OP_ROLL(vm):
     vm.append(vm.pop(-v - 1))
 
 
-def do_OP_SUBSTR(vm):
+def do_OP_SUBSTR(vm: Any) -> None:
     """
     >>> s = [b'abcdef', b'\3', b'\2']
     >>> do_OP_SUBSTR(s, require_minimal=True)
@@ -54,7 +58,7 @@ def do_OP_SUBSTR(vm):
     vm.append(vm.pop()[length : length + pos])
 
 
-def do_OP_LEFT(vm):
+def do_OP_LEFT(vm: Any) -> None:
     """
     >>> s = [b'abcdef', b'\3']
     >>> do_OP_LEFT(s, require_minimal=True)
@@ -69,7 +73,7 @@ def do_OP_LEFT(vm):
     vm.append(vm.pop()[:pos])
 
 
-def do_OP_RIGHT(vm):
+def do_OP_RIGHT(vm: Any) -> None:
     """
     >>> s = [b'abcdef', b'\\3']
     >>> do_OP_RIGHT(s, require_minimal=True)
@@ -88,12 +92,12 @@ def do_OP_RIGHT(vm):
         vm.append(b"")
 
 
-def do_OP_SIZE(vm):
+def do_OP_SIZE(vm: Any) -> None:
     """
     >>> import binascii
     >>> s = [b'abcdef']
     >>> do_OP_SIZE(s)
-    >>> print(s == [b'abcdef', b'\x06'])
+    >>> print(s == [b'abcdef', b'\\x06'])
     True
     >>> s = [b'abcdef'*1000]
     >>> do_OP_SIZE(s)
@@ -103,7 +107,7 @@ def do_OP_SIZE(vm):
     vm.push_int(len(vm[-1]))
 
 
-def do_OP_EQUAL(vm):
+def do_OP_EQUAL(vm: Any) -> None:
     """
     >>> s = [b'string1', b'string1']
     >>> do_OP_EQUAL(s)
@@ -118,29 +122,29 @@ def do_OP_EQUAL(vm):
     vm.append(vm.bool_to_script_bytes(v1 == v2))
 
 
-def do_OP_EQUALVERIFY(vm):
+def do_OP_EQUALVERIFY(vm: Any) -> None:
     do_OP_EQUAL(vm)
     v = vm.bool_from_script_bytes(vm.pop())
     if not v:
         raise ScriptError("VERIFY failed", errno.EQUALVERIFY)
 
 
-def pop_check_bounds(vm):
+def pop_check_bounds(vm: Any) -> int:
     if len(vm[-1]) > 4:
         raise ScriptError("overflow in binop", errno.UNKNOWN_ERROR)
-    return vm.pop_int()
+    return vm.pop_int()  # type: ignore[no-any-return]
 
 
-def make_bin_op(binop):
-    def f(vm):
+def make_bin_op(binop: Callable[[int, int], int]) -> Callable[[Any], None]:
+    def f(vm: Any) -> None:
         v1, v2 = [pop_check_bounds(vm) for i in range(2)]
         vm.push_int(binop(v2, v1))
 
     return f
 
 
-def make_bool_bin_op(binop):
-    def f(vm):
+def make_bool_bin_op(binop: Callable[[int, int], Any]) -> Callable[[Any], None]:
+    def f(vm: Any) -> None:
         v1, v2 = [pop_check_bounds(vm) for i in range(2)]
         vm.append(vm.bool_to_script_bytes(binop(v2, v1)))
 
@@ -166,12 +170,12 @@ do_OP_MIN = make_bin_op(min)
 do_OP_MAX = make_bin_op(max)
 
 
-def do_OP_NUMEQUALVERIFY(vm):
+def do_OP_NUMEQUALVERIFY(vm: Any) -> None:
     do_OP_NUMEQUAL(vm)
     do_OP_VERIFY(vm)
 
 
-def do_OP_WITHIN(vm):
+def do_OP_WITHIN(vm: Any) -> None:
     """
     >>> s = [b'b', b'a', b'c']
     >>> do_OP_WITHIN(s, False)
@@ -187,8 +191,8 @@ def do_OP_WITHIN(vm):
     vm.append(vm.bool_to_script_bytes(ok))
 
 
-def make_unary_num_op(unary_f):
-    def f(vm):
+def make_unary_num_op(unary_f: Callable[[int], int]) -> Callable[[Any], None]:
+    def f(vm: Any) -> None:
         vm.push_int(unary_f(pop_check_bounds(vm)))
 
     return f
@@ -202,12 +206,12 @@ do_OP_NEGATE = make_unary_num_op(lambda x: -x)
 do_OP_ABS = make_unary_num_op(lambda x: abs(x))
 
 
-def do_OP_NOT(vm):
-    return vm.append(vm.bool_to_script_bytes(not pop_check_bounds(vm)))
+def do_OP_NOT(vm: Any) -> None:
+    vm.append(vm.bool_to_script_bytes(not pop_check_bounds(vm)))
 
 
-def do_OP_0NOTEQUAL(vm):
-    return vm.push_int(
+def do_OP_0NOTEQUAL(vm: Any) -> None:
+    vm.push_int(
         vm.bool_from_script_bytes(
             vm.pop(), require_minimal=vm.flags & VERIFY_MINIMALDATA
         )
