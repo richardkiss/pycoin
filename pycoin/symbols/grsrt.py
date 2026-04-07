@@ -52,6 +52,7 @@ def wif_for_blob(blob: bytes) -> str:
     return b2a_hashed_base58_grs(_wif_prefix + blob)
 
 
+assert network.address is not None
 network.address.b2a = b2a_hashed_base58_grs
 network.bip32_as_string = bip32_as_string
 network.wif_for_blob = wif_for_blob

@@ -97,8 +97,8 @@ def make_output_for_public_pair(Key: Any, network: Any) -> Any:
         yield ("%s_address_uncompressed" % network.symbol, address, "legacy")
 
         # don't print segwit addresses unless we're sure we have a compressed key
-        if hash160_c and hasattr(network.address, "for_p2pkh_wit"):
-            address_segwit = network.address.for_p2pkh_wit(hash160_c)
+        if hash160_c:
+            address_segwit = network.address.for_p2pkh_wit(hash160_c) if network.address else None
             if address_segwit:
                 # this network seems to support segwit
                 yield (
@@ -209,7 +209,7 @@ def create_bitcoinish_network(symbol: str, network_name: str, subnet_name: str, 
     network.generator = generator
     network.keychain = Keychain
     network.script = script_tools
-    network.str = parseable_str
+    network.parseable_str_type = parseable_str
 
     # tx.solve namespace (still uses API() shim — Tx class is untyped)
     network.tx.solve = API()

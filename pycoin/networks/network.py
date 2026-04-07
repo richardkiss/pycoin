@@ -4,6 +4,16 @@ import dataclasses
 from collections.abc import Callable
 from typing import Any
 
+from pycoin.ecdsa.Generator import Generator
+from pycoin.key.Keychain import Keychain
+from pycoin.vm.ScriptTools import ScriptTools
+from pycoin.vm.annotate import Annotate
+from pycoin.contrib.who_signed import WhoSigned
+from .AddressAPI import AddressAPI
+from .ContractAPI import ContractAPI
+from .ParseAPI import ParseAPI
+from .parseable_str import parseable_str
+
 
 @dataclasses.dataclass
 class NetworkKeys:
@@ -79,19 +89,22 @@ class Network:
     tx_utils: NetworkTxUtils | None = None
     validator: NetworkValidator | None = None
 
-    # Any-typed fields (circular deps or dynamically typed)
+    # Concrete types — all set by create_bitcoinish_network before it returns.
+    # Optional only to support the two-phase construction pattern.
+    parse: ParseAPI | None = None
+    contract: ContractAPI | None = None
+    address: AddressAPI | None = None
+    annotate: Annotate | None = None
+    who_signed: WhoSigned | None = None
+    generator: Generator | None = None
+    script: ScriptTools | None = None
+    keychain: type[Keychain] | None = None
+    parseable_str_type: type[parseable_str] | None = None
+
+    # Any-typed fields
     Key: Any = None  # set to None by Groestlcoin symbols when C library is absent
     tx: Any = None
     block: Any = None
-    address: Any = None
-    parse: Any = None
-    contract: Any = None
-    keychain: Any = None
-    script: Any = None
-    annotate: Any = None
-    who_signed: Any = None
-    generator: Any = None
-    str: Any = None  # parseable_str class
 
     # String-encoding callables
     bip32_as_string: Callable[[bytes, bool], str] | None = None

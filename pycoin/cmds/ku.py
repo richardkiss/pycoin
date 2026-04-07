@@ -178,7 +178,7 @@ def parse_key(item: str, networks: list[Any]) -> Any:
         # BRAIN DAMAGE: lame hack for now
         item = default_network.address.for_p2pkh(h2b(item))
 
-    item = default_network.str(item)
+    item = default_network.parseable_str_type(item)
 
     for network in networks:
         for f in "hierarchical_key private_key public_key address".split():

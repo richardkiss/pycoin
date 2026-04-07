@@ -294,7 +294,7 @@ class Key(object):
         yield ("%s_address_uncompressed" % self._network.symbol, address, "legacy")
 
         # don't print segwit addresses unless we're sure we have a compressed key
-        if hash160_c and hasattr(self._network.address, "for_p2pkh_wit"):
+        if hash160_c:
             address_segwit = self._network.address.for_p2pkh_wit(hash160_c)
             if address_segwit:
                 # this network seems to support segwit
