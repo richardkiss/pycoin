@@ -25,6 +25,15 @@ def hparse(api: ParseAPI, pub_prv: str, key_type: str, s: str) -> Any:
     prefix = getattr(api, attr_name, None)
     if data is None or prefix is None or not data.startswith(prefix):
         return None
+    # The prefix declares whether this is a private or a public key, and the
+    # payload has to agree: a private key is a zero pad byte followed by the
+    # 32-byte exponent, a public key is a 33-byte compressed SEC point, which
+    # never starts with a zero byte. Without this, an xpub carrying private
+    # key data (or the reverse) is accepted -- the "pubkey version / prvkey
+    # mismatch" and "prvkey version / pubkey mismatch" cases of BIP32 test
+    # vector 5.
+    if (data[45:46] == b"\0") != (pub_prv == "prv"):
+        return None
     parse_method_name = "%s_deserialize" % key_type
     parse_method = getattr(api._network.keys, parse_method_name, lambda *args: None)
     return parse_method(data)

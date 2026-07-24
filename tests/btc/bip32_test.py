@@ -318,6 +318,142 @@ class Bip0032TestCase(unittest.TestCase):
             "private_for <XTNSEC:03ad094b1dc9fdce5d3648ca359b4e210a89d049532fdd39d9ccdd8ca393ac82f4>",
         )
 
+    # BIP32 test vector 5: every one of these must be rejected.
+    # https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
+    INVALID_KEYS = [
+        (
+            "pubkey version / prvkey mismatch",
+            "xpub661MyMwAqRbcEYS8w7XLSVeEsBXy79zSzH1J8vCdxAZningWLdN3zgtU6LBpB85b3D"
+            "2yc8sfvZU521AAwdZafEz7mnzBBsz4wKY5fTtTQBm",
+        ),
+        (
+            "prvkey version / pubkey mismatch",
+            "xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63oStZzFGTQQD3dC4"
+            "H2D5GBj7vWvSQaaBv5cxi9gafk7NF3pnBju6dwKvH",
+        ),
+        (
+            "invalid pubkey prefix 04",
+            "xpub661MyMwAqRbcEYS8w7XLSVeEsBXy79zSzH1J8vCdxAZningWLdN3zgtU6Txnt3siSu"
+            "jt9RCVYsx4qHZGc62TG4McvMGcAUjeuwZdduYEvFn",
+        ),
+        (
+            "invalid prvkey prefix 04",
+            "xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63oStZzFGpWnsj83B"
+            "HtEy5Zt8CcDr1UiRXuWCmTQLxEK9vbz5gPstX92JQ",
+        ),
+        (
+            "invalid pubkey prefix 01",
+            "xpub661MyMwAqRbcEYS8w7XLSVeEsBXy79zSzH1J8vCdxAZningWLdN3zgtU6N8ZMMXctd"
+            "iCjxTNq964yKkwrkBJJwpzZS4HS2fxvyYUA4q2Xe4",
+        ),
+        (
+            "invalid prvkey prefix 01",
+            "xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63oStZzFAzHGBP2Uu"
+            "GCqWLTAPLcMtD9y5gkZ6Eq3Rjuahrv17fEQ3Qen6J",
+        ),
+        (
+            "zero depth with non-zero parent fingerprint (prv)",
+            "xprv9s2SPatNQ9Vc6GTbVMFPFo7jsaZySyzk7L8n2uqKXJen3KUmvQNTuLh3fhZMBoG3G4"
+            "ZW1N2kZuHEPY53qmbZzCHshoQnNf4GvELZfqTUrcv",
+        ),
+        (
+            "zero depth with non-zero parent fingerprint (pub)",
+            "xpub661no6RGEX3uJkY4bNnPcw4URcQTrSibUZ4NqJEw5eBkv7ovTwgiT91XX27VbEXGEN"
+            "hYRCf7hyEbWrR3FewATdCEebj6znwMfQkhRYHRLpJ",
+        ),
+        (
+            "zero depth with non-zero index (prv)",
+            "xprv9s21ZrQH4r4TsiLvyLXqM9P7k1K3EYhA1kkD6xuquB5i39AU8KF42acDyL3qsDbU9N"
+            "mZn6MsGSUYZEsuoePmjzsB3eFKSUEh3Gu1N3cqVUN",
+        ),
+        (
+            "zero depth with non-zero index (pub)",
+            "xpub661MyMwAuDcm6CRQ5N4qiHKrJ39Xe1R1NyfouMKTTWcguwVcfrZJaNvhpebzGerh7g"
+            "ucBvzEQWRugZDuDXjNDRmXzSZe4c7mnTK97pTvGS8",
+        ),
+        (
+            "unknown extended key version (1)",
+            "DMwo58pR1QLEFihHiXPVykYB6fJmsTeHvyTp7hRThAtCX8CvYzgPcn8XnmdfHGMQzT7ayA"
+            "mfo4z3gY5KfbrZWZ6St24UVf2Qgo6oujFktLHdHY4",
+        ),
+        (
+            "unknown extended key version (2)",
+            "DMwo58pR1QLEFihHiXPVykYB6fJmsTeHvyTp7hRThAtCX8CvYzgPcn8XnmdfHPmHJiEDXk"
+            "TiJTVV9rHEBUem2mwVbbNfvT2MTcAqj3nesx8uBf9",
+        ),
+        (
+            "private key 0 not in 1..n-1",
+            "xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63oStZzF93Y5wvzdU"
+            "ayhgkkFoicQZcP3y52uPPxFnfoLZB21Teqt1VvEHx",
+        ),
+        (
+            "private key n not in 1..n-1",
+            "xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63oStZzFAzHGBP2Uu"
+            "GCqWLTAPLcMtD5SDKr24z3aiUvKr9bJpdrcLg1y3G",
+        ),
+        (
+            "invalid pubkey 0200000000000000000000000000000000000000000000000000000000000007",
+            "xpub661MyMwAqRbcEYS8w7XLSVeEsBXy79zSzH1J8vCdxAZningWLdN3zgtU6Q5JXayek4"
+            "PRsn35jii4veMimro1xefsM58PgBMrvdYre8QyULY",
+        ),
+        (
+            "invalid checksum",
+            "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPG"
+            "JxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHL",
+        ),
+    ]
+
+    @staticmethod
+    def _rejected(parse, hwif):
+        """pycoin rejects a bad key either by returning None or by raising."""
+        try:
+            return parse(hwif) is None
+        except ValueError:
+            return True
+
+    def test_vector_5_invalid_keys(self):
+        """Every BIP32 test vector 5 key must be rejected, not parsed."""
+        for description, hwif in self.INVALID_KEYS:
+            for name in ("bip32_prv", "bip32_pub"):
+                self.assertTrue(
+                    self._rejected(getattr(BTC.parse, name), hwif),
+                    "%s: accepted by parse.%s" % (description, name),
+                )
+            self.assertTrue(
+                self._rejected(BTC.parse, hwif),
+                "%s: accepted by parse()" % description,
+            )
+
+    def test_bip32_fuzzer_findings(self):
+        """Malformed keys found by differential fuzzing against Bitcoin Core."""
+        # zero depth with a non-zero child index
+        self.assertTrue(
+            self._rejected(
+                BTC.parse.bip32_prv,
+                "xprv9s21ZrQMAtJo7CW4HK4GvxFgsNRcoEyP4PE8oGjs6TLWzwgo1mfNKbhsgo6UbDM"
+                "DeopTS2uLBTAaTNfpgAhSeExw76dVnqbH7qjTjQzY2R8",
+            )
+        )
+        # public version prefix carrying private key data
+        self.assertTrue(
+            self._rejected(
+                XTN.parse.bip32_pub,
+                "tpubD6NzVbkrYhZ4WLczPJWReQycCJdd6YVWXubbVUFnJ5KgU5MDQrD998ZJLNGbhd2"
+                "pq7ZtDiPYTfJ7iBenLjh2unfjahXkTz5HcayoN9Mrarm",
+            )
+        )
+
+    def test_valid_keys_still_parse(self):
+        """The version/depth checks must not reject well-formed keys."""
+        master = BTC.keys.bip32_seed(h2b("000102030405060708090a0b0c0d0e0f"))
+        for hwif in (master.hwif(as_private=True), master.hwif()):
+            self.assertIsNotNone(BTC.parse(hwif))
+        # a derived key has non-zero depth, fingerprint and index
+        child = master.subkey_for_path("0H/1/2H")
+        self.assertNotEqual(child._depth, 0)
+        for hwif in (child.hwif(as_private=True), child.hwif()):
+            self.assertIsNotNone(BTC.parse(hwif))
+
 
 if __name__ == "__main__":
     unittest.main()

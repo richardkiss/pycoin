@@ -1,11 +1,11 @@
-# BIP84 (native P2WPKH) Litecoin key derived from P:foo, encoded as zpub
-ku -n LTC -j zpub6jftahH18ngZx5dP94C5kp4Ev1og5StgEPf7wQwUzN9o86JjcDPLaXq5Svk3Aj2Em6L3hkc55gSV63UX6U6nFc9GzEjjYQuwRKXZHJrTPZ6
+# BIP84 (native P2WPKH) Litecoin key derived from P:foo, encoded as zprv
+ku -n LTC -j zprvAWgYBBk7JR8GjbYv32f5Pg7WMyyBfzApsAjX92XsS2cpFHyb4g562jWbbjbm5YseMMt3oJV9Qvh2UbvjCocEVkZ7UERMh66tVTeKXGLgqvo
 {
    "address": "ltc1qt56n5tkdkf3ywutjs5k40gl3rhsvry5xjdppsp",
    "chain_code": "5eeb1023fd6dd1ae52a005ce0e73420821e1d90e08be980a85e9111fd7646bbc",
    "child_index": "0",
    "fingerprint": "5d353a2e",
-   "input": "zpub6jftahH18ngZx5dP94C5kp4Ev1og5StgEPf7wQwUzN9o86JjcDPLaXq5Svk3Aj2Em6L3hkc55gSV63UX6U6nFc9GzEjjYQuwRKXZHJrTPZ6",
+   "input": "zprvAWgYBBk7JR8GjbYv32f5Pg7WMyyBfzApsAjX92XsS2cpFHyb4g562jWbbjbm5YseMMt3oJV9Qvh2UbvjCocEVkZ7UERMh66tVTeKXGLgqvo",
    "key_pair_as_sec": "02b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f",
    "key_pair_as_sec_uncompressed": "04b4e599dfa44555a4ed38bcfff0071d5af676a86abf123c5b4b4e8e67a0b0b13f826d8b4d3010aea16ff4c1c1d3ae68541d9a04df54a2c48cc241c2983544de52",
    "network": "Litecoin mainnet",
