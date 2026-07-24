@@ -53,9 +53,19 @@ class BIP32Node(HierarchicalKey):
     @classmethod
     def deserialize(class_: type[BIP32Node], data: bytes) -> BIP32Node:
         parent_fingerprint, child_index = struct.unpack(">4sL", data[5:13])
+        depth = ord(data[4:5])
+        # A depth of zero identifies a master key, which by definition has no
+        # parent and is nobody's child, so both fields must be zero. See the
+        # "zero depth with non-zero parent fingerprint" and "zero depth with
+        # non-zero index" cases of BIP32 test vector 5.
+        if depth == 0:
+            if parent_fingerprint != b"\0\0\0\0":
+                raise EncodingError("zero depth with non-zero parent fingerprint")
+            if child_index != 0:
+                raise EncodingError("zero depth with non-zero index")
         d: dict[str, Any] = dict(
             chain_code=data[13:45],
-            depth=ord(data[4:5]),
+            depth=depth,
             parent_fingerprint=parent_fingerprint,
             child_index=child_index,
         )
