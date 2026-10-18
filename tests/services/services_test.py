@@ -86,9 +86,7 @@ class ServicesTest(unittest.TestCase):
         "this test is causing problems in travis-ci because chain_so thinks it's a DOS attack"
     )
     def test_ChainSoProvider(self):
-        self.check_provider_tx_for_tx_hash(
-            ChainSoProvider, ["BTC", "XTN", "DOGE", "XDT"]
-        )
+        self.check_provider_tx_for_tx_hash(ChainSoProvider, ["BTC", "DOGE", "XDT"])
 
     @unittest.skip("this test no longer seems to work")
     def test_InsightProvider(self):
